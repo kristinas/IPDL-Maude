@@ -1,0 +1,157 @@
+***( IPDL
+
+  Copyright : (C) 2022, Kristina Sojakova, INRIA
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+)
+
+load ../src/strategies
+
+mod COIN-TOSS is
+ protecting PROTOCOL-EQUALITY .
+
+ op msg  : -> Type .
+ op key  : -> Type .
+ op ctxt : -> Type .
+ 
+ op zerosF : -> SigElem .
+ eq zerosF = 'zeros : unit ~> msg .
+ 
+ op decF : -> SigElem .
+ eq decF = 'dec : (ctxt * key) ~> msg .
+ 
+ op encF : -> SigElem .
+ eq encF = 'enc : (msg * key) ~>> ctxt .
+
+ op muKeySym : -> SigElem .
+ eq muKeySym = 'mu_key : unit ~>> key .
+ 
+ op secSig : -> Signature .
+ eq secSig = muKeySym encF decF zerosF .
+ 
+ op n : -> Nat .
+   
+ op idealPlusSim : -> Protocol .
+ eq idealPlusSim = 
+    ('Flip ::= samp flip)
+    || 
+    ('LeakFlip_id_adv ::= read 'Flip)
+    ||
+    (family 'Out 'i (n + 1) ::= case 'i is 
+        (honest --> 'x : unit <- read ('Ok_adv_id) ;
+                    read 'Flip ) ;;
+        (corrupt --> read ('Out ['i]) )
+    )
+    ||
+    (family 'Commit ('i) n ::= case 'i is 
+       (honest --> samp flip) ;;
+       (corrupt --> read ('AdvCommit_adv_real ['i]))
+    )
+    ||
+    ('LastCommit ::= 'x : bool <- read ('SumCommit [ 'n ++ 1 ]) ;
+                     'f : bool <- read 'LeakFlip_id_adv ;
+                     return (ap 'xor pair('x, 'f)) 
+    )
+    ||
+    (family 'SumCommit ('i) (n + 2) ::= case 'i is
+        (index =i= 0 --> return False) ;; 
+        (index =i= (n + 2) --> 
+                 'x : bool <- read ('SumCommit [ n + 1 ]) ; 
+                 'y : bool <- read 'LastCommit ;
+                 return (ap 'xor pair('x, 'y)) ) ;;
+        (otherwise --> 'x : bool <- read ('SumCommit ['i -- 1]) ; 
+                     'y : bool <- read ('Commit ['i -- 1]) ;
+                     return (ap 'xor pair('x, 'y))  )                  
+    )
+    ||
+    (family 'Committed 'i (n + 1) ::= case 'i is
+        (index =i= n + 1 --> return ()) ;;
+        (otherwise --> 'x : bool <- read ('Commit ['i]) ;
+                       return () )
+    )
+    ||
+    (family 'LeakCommitted_real_adv 'i (n + 1) ::= read ('Committed ['i]) 
+    )
+    ||
+    (family 'Open 'i (n + 1) ::= case 'i is 
+      (honest --> 'x : bool <- read ('SumCommit [n + 2]) ; return () ) ;;
+      (corrupt --> read ('AdvOpen_adv_real ['i])) )
+    ||
+    (family 'AllOpen 'i (n + 1) ::= case 'i is 
+      (index =i= 0 --> return ()) ;;
+      (otherwise --> 'x : bool <- read ('AllOpen ['i]);
+                   'y : bool <- read ('Open ['i]);
+                   return () )
+    )
+    ||
+    (family 'Opened 'i (n + 1) ::= 
+                      'x : bool <- read ('Open ['i]) ;
+                      read ('Commit ['i])
+    )
+    ||
+    (family 'LeakOpened_real_adv 'i (n + 1) ::= read ('Opened ['i])
+    )
+    ||
+    ('Ok_adv_id ::= 'x : unit <- read ('AllOpen [ n + 2]) ;
+                    'y : bool <- read ('SumCommit [ n + 1]) ;
+                    return ()) .
+   
+ op real : -> Protocol .
+ eq real = 
+   (family 'Commit 'i (n + 1) ::= case 'i is 
+       (honest --> samp flip) ;;
+       (corrupt --> read ('AdvCommit_adv_real ['i]) )
+   )       
+   ||
+   (family 'Committed 'i (n + 1) ::= 
+                        'x : bool <- read ('Commit ['i]) ;
+                        return ()
+   )
+   ||
+   (family 'LeakCommitted_real_adv 'i (n + 1) ::= read ('Committed ['i]) 
+    )
+    ||
+    (family 'AllCommitted ('i 'j) (n + 1) ::= case 'j is
+       (index =i= 0 --> return ()) ;;
+       (otherwise --> 'x : unit <- read ('AllCommitted ['i ('j -- 1)] ) ;
+                    'y : unit <- read ('Committed [ 'j -- 1]) ;
+                    return () )
+    )              
+    ||
+    (family 'Open 'i (n + 1) ::= case 'i is
+      (honest --> 'x : unit  <- read ('AllCommitted [('i (n + 2)) ]) ; return () ) ;; 
+      (corrupt --> read ('AdvOpen_adv_real ['i]) )
+    ) 
+    ||
+    (family 'Opened 'i (n + 1) ::= 'x : unit <- read ('Open ['i]) ;
+                             read ('Commit ['i])
+    )
+    ||
+    (family 'LeakOpened_real_adv 'i (n + 1) ::= read ('Opened ['i]))
+    ||
+    (family 'SumOpened ('i 'j) (n + 1) ::= case 'j is
+        (index =i= 0 --> return False) ;;
+        (otherwise --> 'x : bool <- read ('SumOpened [ 'i ('j -- 1) ]) ; 
+                     'y : bool <- read ('Opened ['j]) ;
+                     return (ap 'xor pair('x, 'y)) )
+    )
+    ||
+    (family 'Out 'i (n + 1) ::= case 'i is
+       (honest --> read ('SumOpened ['i (n + 2)]) ) ;;
+       (corrupt --> read ('Out ['i]) )
+    ) .
+                      
+endm
+
+
+smod EXECUTE is
+ pr STRATS .
+ pr COIN-TOSS .
+ 
+ *** no assumptions, we work only with Booleans
+   
+endsm
+
+

@@ -1,0 +1,195 @@
+***( IPDL
+
+  Copyright : (C) 2022, Kristina Sojakova, INRIA
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+)
+
+load ../src/strategies
+
+mod SECURE is
+ protecting PROTOCOL-EQUALITY .
+
+ op msg  : -> Type .
+ op key  : -> Type .
+ op ctxt : -> Type .
+ 
+ op zerosF : -> SigElem .
+ eq zerosF = 'zeros : unit ~> msg .
+ 
+ op decF : -> SigElem .
+ eq decF = 'dec : (ctxt * key) ~> msg .
+ 
+ op encF : -> SigElem .
+ eq encF = 'enc : (msg * key) ~>> ctxt .
+
+ op muKeySym : -> SigElem .
+ eq muKeySym = 'mu_key : unit ~>> key .
+ 
+ op secSig : -> Signature .
+ eq secSig = muKeySym encF decF zerosF .
+ 
+ op n : -> Nat .
+ 
+ op idealPlusSim : -> Protocol .
+ eq idealPlusSim = 
+    new 'Key : key in
+    newfamily 'LeakMsgRcvd_id_adv ('i) n : unit in
+    newfamily 'OkMsg_adv_id ('i) n : msg in     
+    (
+    ('Key ::= samp ('mu_key < () >)) 
+    ||
+    (family 'LeakCtxt_net_adv 'i n ::= 
+                'x : unit <- read ('LeakMsgRcvd_id_adv ['i]) ;
+                'k : key <- read 'Key ;
+                samp ('enc < pair(ap 'zeros (), 'k) >)  
+                ) 
+    ||
+    (family 'OkMsg_adv_id 'i n ::= read ('OkCtxt_adv_net ['i]))   
+    ||
+    (family 'LeakMsgRcvd_id_adv 'i n ::= 
+            'x : msg <- read ('In ['i]) ;
+            return ())
+    ||
+    (family 'Out 'i n ::= 
+            'x : msg <- read ('OkMsg_adv_id ['i]) ;
+            read ('In ['i])) 
+    ) . *** end of new, leave here
+    
+ op real : -> Protocol .
+ eq real = 
+    new 'Key : key in
+    newfamily 'Send ('i) n : ctxt in
+    newfamily 'Recv ('i) n : ctxt in
+    ( 
+    ('Key ::= samp ('mu_key < () >))
+    || 
+    (family 'Send ('i) n ::= 
+            'm : msg <- read ('In ['i]) ;
+            'k : key <- read 'Key ;
+            samp ('enc < pair('m, 'k) >)
+    )    
+    ||
+    (family 'LeakCtxt_net_adv ('i) n ::= read ('Send [ 'i ]) )
+    || 
+    (family 'Recv ('i) n ::= 
+            'x : msg <- read ('OkCtxt_adv_net [ 'i ]) ;
+            read ('Send [ 'i ])
+    ) 
+    ||
+    (family 'Out ('i) n ::=
+            'c : ctxt <- read ('Recv [ 'i ]) ;
+            'k : key <- read 'Key ;
+            return (ap 'dec pair('c, 'k))
+            ) 
+    ) . *** end of new, leave here
+   
+endm
+
+smod EXECUTE is
+ pr STRATS .
+ pr SECURE .
+ 
+ var Sigma : Signature .
+ var Delta : ChannelContext .
+ var Gamma : VarContext .
+ vars i1 i2 X Y Z In : ChannelName .  
+ vars m x y z k c Enc Dec Key i : Qid .
+ var I O : Set{CName} .
+ var li : List{NatTerm} .
+ var cOf : CaseOf .
+ 
+ crl [enc-dec-correctness] :
+  pConfig(Sigma, Delta (In :: msg) (Key :: key) (Enc :: ctxt) (Dec :: msg), 
+          (Key ::= samp ('mu_key < () >))
+          || 
+          (Enc ::= m : msg <- read In ;
+                   k : key <- read Key ;
+                   samp ('enc < pair('m, 'k) >))
+          ||
+          (Dec ::= c : msg <- read Enc ;
+                   k : key <- read Key ;
+                   return (ap 'dec pair('c, 'k)))  , I, O)
+  => 
+  pConfig(Sigma, Delta (In :: msg) (Key :: key) (Enc :: ctxt) (Dec :: msg), 
+          (Key ::= samp ('mu_key < () >))
+          || 
+          (Enc ::= m : msg <- read In ;
+                   k : key <- read Key ;
+                   samp ('enc < pair('m, 'k) >))
+          ||
+          (Dec ::= read In)
+                     , I, O) 
+  if In in I . 
+  
+  var bound : Nat .
+ 
+  
+  rl [enc-dec-correctness-fam] :
+  pConfig(Sigma ('mu_key : unit ~>> key) ('enc : (msg * key) ~>> ctxt), Delta, 
+          (Key ::= samp ('mu_key < () >))
+          || 
+          (family Enc (i) bound ::= 
+                   m : msg <- read (In [i]) ; 
+                   k : key <- read Key ;
+                   samp ('enc < pair(m, k) >)
+          )
+          ||
+          (family Dec (i) bound ::= 
+                   c : msg <- read (Enc [i]) ; 
+                   k : key <- read Key ;
+                   return (ap 'dec pair(c, k))) 
+         , I, O) 
+  => 
+  pConfig(Sigma ('mu_key : unit ~>> key) ('enc : (msg * key) ~>> ctxt), Delta, 
+          (Key ::= samp ('mu_key < () >))
+          || 
+          (family Enc (i) bound ::= 
+                   m : msg <- read (In [i]) ; 
+                   k : key <- read Key ;
+                   samp ('enc < pair(m, k) >))
+          ||
+          (family Dec (i) bound ::= read (In [i]) 
+          ) 
+          , I, O) 
+  .  *** In should be in I and all channels  in Delta
+  
+  rl [ind-cpa] :
+    pConfig(Sigma ('mu_key : unit ~>> key) , Delta, 
+          (Key ::= samp ('mu_key < () >))
+          || 
+          (family Enc i bound  ::= 
+                   m : msg <- read (In [i]) ;
+                   k : key <- read Key ;
+                   samp ('enc < pair(m, k) >))
+          , I, O) 
+          =>
+             pConfig(Sigma, Delta, 
+          (Key ::= samp ('mu_key < () >))
+          || 
+          (family Enc i bound ::= 
+                   m : msg <- read (In [i]) ;
+                   k : key <- read Key ;
+                   samp ('enc < pair('zeros(()), k) >))
+          , I, O) 
+  . *** if In in I .  *** and all channels  in Delta
+  
+  
+endsm
+
+srew pConfig(secSig, emptyChannelCtx, 
+          ('Key ::= samp ('mu_key < () >))
+          || 
+          (family 'Enc ('i) 5 ::= 
+                   'm : msg <- read ('In ['i]) ; 
+                   'k : key <- read 'Key ;
+                   samp ('enc < pair('m, 'k) >)
+          )
+          ||
+          (family 'Dec ('i) 5 ::= 
+                   'c : msg <- read ('Enc ['i]) ; 
+                   'k : key <- read 'Key ;
+                   return (ap 'dec pair('c, 'k))) 
+         , empty, empty) using enc-dec-correctness-fam .

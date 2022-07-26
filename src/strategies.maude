@@ -1,0 +1,494 @@
+***( IPDL
+
+  Copyright : (C) 2022, Kristina Sojakova, INRIA
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+)
+
+in ../src/syntax
+
+smod STRATS is
+ pr PROTOCOL-EQUALITY .
+ 
+ strat moveToLast : Qid @ ProtocolConfig .
+ 
+ op isLastNew___ : ProtocolConfig Qid Bool -> Bool .
+ 
+ var S : Signature .
+ var D : ChannelContext .
+ var G : VarContext .
+ var P P1 P2 : Protocol .
+ var R R1 R2 R3 R4 : Reaction .
+ *** var Q Q' C Q1 Q2 x1 x2 y x : Qid .
+ var I O : Set{CName} .
+ var T T' T1 : Type .
+ var flag : Bool .
+ var M M1 M2 : Message .
+ var Dis : Distribution .
+ var C C1 C2 : ChannelName .
+ var Q Q' x1 : Qid .
+ 
+ eq isLastNew pConfig(S, D, emptyProtocol, I, O) Q flag = not flag .
+ eq isLastNew pConfig(S, D, P1 || P2, I, O) Q flag = not flag .
+ eq isLastNew pConfig(S, D, C ::= R, I, O) Q flag = not flag .
+ eq isLastNew pConfig(S, D, new Q : T in P, I, O) Q false = false .
+ eq isLastNew pConfig(S, D, new Q : T in P, I, O) Q true = 
+    isLastNew pConfig(S, D, P, I, O) Q false .
+ ceq isLastNew pConfig(S, D, new Q' : T in P, I, O) Q true = 
+     isLastNew pConfig(S, D, P, I, O) Q true if Q =/= Q' .
+ ceq isLastNew pConfig(S, D, new Q' : T in P, I, O) Q false = 
+     false if Q =/= Q' .    
+     
+ op foundQ__  : ProtocolConfig Qid -> Bool .
+ eq foundQ pConfig(S, D, emptyProtocol, I, O) Q = false .
+ eq foundQ pConfig(S, D, P1 || P2, I, O) Q = false .
+ eq foundQ pConfig(S, D, C ::= R, I, O) Q = false .
+ eq foundQ pConfig(S, D, new Q : T in P, I, O) Q = true .
+ ceq foundQ pConfig(S, D, new Q' : T in P, I, O) Q = false if Q' =/= Q .   
+ 
+ var pConf : ProtocolConfig .
+ 
+ sd moveToLast(Q) := match pConf s.t. (foundQ pConf Q) 
+                       ? (match pConf s.t. (isLastNew pConf Q true) 
+                         ? idle 
+                         : (NEW-EXCH ; CONG-NEW{moveToLast(Q)})) 
+                       : CONG-NEW{moveToLast(Q)} .
+                        
+ var N : Nat .
+ 
+ op startsWithNew_ : ProtocolConfig -> Bool .
+ eq startsWithNew pConfig(S, D, emptyProtocol, I, O) = false .
+ eq startsWithNew pConfig(S, D, P1 || P2, I, O) = false .
+ eq startsWithNew pConfig(S, D, C ::= R, I, O) = false .
+ eq startsWithNew pConfig(S, D, new Q : T in P, I, O) = true .
+
+ op startsWithNewC__ : ProtocolConfig ChannelName -> Bool .
+ eq startsWithNewC pConfig(S, D, emptyProtocol, I, O) C = false .
+ eq startsWithNewC pConfig(S, D, P1 || P2, I, O) C = false .
+ eq startsWithNewC pConfig(S, D, C ::= R, I, O) C = false .
+ eq startsWithNewC pConfig(S, D, new Q : T in P, I, O) C = (Q == C) .
+ 
+ strat nTimesCong : ChannelName @ ProtocolConfig .
+ sd nTimesCong(C) := 
+      match pConf s.t. startsWithNewC pConf C
+      ? COMP-NEW-2 ; ABSORB-RIGHT 
+      : CONG-NEW{nTimesCong(C)} .
+ 
+ strat nTimesBindRet2 : ChannelName @ ProtocolConfig .
+ sd nTimesBindRet2(C) := 
+  match pConf s.t. startsWithNew pConf
+  ? CONG-NEW{nTimesBindRet2(C)}
+  : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{bind-ret-2[x:Qid <- 'x]}} .
+ 
+ strat nTimesSubst @ ProtocolConfig .
+ sd nTimesSubst := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW{nTimesSubst}
+    : CONG-COMP-RIGHT{(SUBST [x2:Qid <- 'x2]{read-det})} .
+   
+ strat nTimesBindRet @ ProtocolConfig .
+ sd nTimesBindRet := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW{nTimesBindRet} 
+    : CONG-COMP-RIGHT{CONG-REACT{bind-ret}} .
+ 
+ var rConf : ReactionConfig .
+ 
+ op startsWithBind : Reaction -> Bool .
+ eq startsWithBind(return M) = false .
+ eq startsWithBind(samp Dis) = false .
+ eq startsWithBind(read M) = false .
+ eq startsWithBind(if M then R1 else R2) = false .
+ eq startsWithBind(Q : T <- R1 ; R2) = true .
+ 
+ op startsWithBindRead : Reaction -> Bool .
+ eq startsWithBindRead(Q : T <- read M ; R2) = true .
+ eq startsWithBindRead(R) = false [owise] .
+ 
+ op startsWithIfRead : ReactionConfig -> Bool .
+ eq startsWithIfRead(rConfig(S, D, G, if M then x1 : T1 <- R1 ; R2 else 
+                                                x1 : T1 <- R1 ; R3, I, T)) = true . 
+ eq startsWithIfRead(rConfig(S, D, G, R, I, T)) = false [owise] .
+ 
+ op rBindRead : ReactionConfig -> Bool .
+ eq rBindRead(rConfig(S, D, G, R, I, T)) = startsWithBindRead(R) .
+ 
+ op firstBind : ReactionConfig -> Qid .
+ eq firstBind(rConfig(S, D, G, Q : T <- R1 ; R2, I, T')) = Q .
+ 
+ op rBind : ReactionConfig -> Bool .
+ eq rBind(rConfig(S, D, G, R, I, T)) = startsWithBind(R) .
+ 
+ strat liftInnerBinds @ ReactionConfig .
+ sd liftInnerBinds := bind-bind ? cong-bind{idle, liftInnerBinds} : idle .
+ 
+ strat liftAllInnerBinds @ ReactionConfig .
+ sd liftAllInnerBinds := 
+      match rConf s.t. rBind(rConf) 
+       ? (liftInnerBinds ; cong-bind{idle, liftAllInnerBinds})
+       : idle .  
+ 
+ strat liftInnerBindsPr : ChannelName @ ProtocolConfig .
+ sd liftInnerBindsPr(C) := 
+  match pConf s.t. startsWithNew pConf 
+  ? CONG-NEW{liftInnerBindsPr(C)}
+  : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{liftAllInnerBinds}} .
+
+
+ strat moveBindToLast @ ReactionConfig .
+ sd moveBindToLast := exchange ? cong-bind{idle, moveBindToLast} : idle . 
+ 
+ strat moveCertainBindToLast : Qid @ ReactionConfig .
+ sd moveCertainBindToLast(Q) :=
+    match rConf s.t. Q =/= firstBind(rConf)
+    ? cong-bind{idle, moveCertainBindToLast(Q)}
+    : moveBindToLast . 
+  
+ strat moveBindToFirst : Qid @ ReactionConfig .
+ sd moveBindToFirst(Q) := 
+   match rConf s.t. Q =/= firstBind(rConf)
+     ? moveBindToLast ; moveBindToFirst(Q)
+     : idle .
+     
+ strat moveBindProtocol : Qid ChannelName @ ProtocolConfig .
+ sd moveBindProtocol(Q, C) := CONG-REACT[o:ChannelName <- C]{moveBindToFirst(Q)} . 
+ 
+ 
+ strat moveCertainBindLastProtocol : Qid ChannelName @ ProtocolConfig .
+ sd moveCertainBindLastProtocol(Q, C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{moveCertainBindLastProtocol(Q, C)}
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{moveCertainBindToLast(Q)}} .   
+
+ strat moveFirst : Qid ChannelName @ ProtocolConfig .
+ sd moveFirst(Q, C) := CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{moveBindToFirst(Q)}} .
+        
+ strat nTimesMoveFirst : Qid ChannelName @ ProtocolConfig .
+ sd nTimesMoveFirst(Q, C) := 
+   match pConf s.t. startsWithNew pConf
+   ? CONG-NEW{nTimesMoveFirst(Q, C)}
+   : moveFirst(Q, C) .
+   
+ strat nTimesSubstSampFree : ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesSubstSampFree(C1, C2) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesSubstSampFree(C1, C2)} 
+     : CONG-COMP-RIGHT{SUBST[x2:Qid <- 'x2, 
+                             o1:ChannelName <- C1, 
+                             o2:ChannelName <- C2]{samp-free}} .
+     
+ strat nTimesSubst2SampFree : ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesSubst2SampFree(C1, C2) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesSubst2SampFree(C1, C2)} 
+     : CONG-COMP-RIGHT{SUBST-2[x2:Qid <- 'x2, 
+                               o1:ChannelName <- C1, 
+                               o2:ChannelName <- C2]{samp-free}} .    
+     
+ strat ifOverBindAfterBinds @ ReactionConfig .
+ sd ifOverBindAfterBinds :=  
+     match rConf s.t. rBindRead(rConf) 
+      ? cong-bind{idle, ifOverBindAfterBinds}
+      : if-over-bind .  
+ 
+ strat nTimesIfOverBind : ChannelName @ ProtocolConfig .
+ sd nTimesIfOverBind(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesIfOverBind(C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{ifOverBindAfterBinds}} .
+     
+ strat ifOverBindInBranch @ ReactionConfig .  
+ sd ifOverBindInBranch :=  
+     match rConf s.t. rBindRead(rConf) 
+      ? cong-bind{idle, ifOverBindInBranch}
+      : cong-branch-refl{if-over-bind, if-over-bind} . 
+      
+ strat ifOverBindInBranch2 @ ReactionConfig .  
+ sd ifOverBindInBranch2 :=  
+     match rConf s.t. rBindRead(rConf) 
+      ? cong-bind{idle, ifOverBindInBranch2}
+      : cong-branch-refl{ifOverBindInBranch, ifOverBindInBranch} . 
+     
+      
+ strat ifLeftOverBind @ ReactionConfig .
+ sd ifLeftOverBind := 
+    match rConf s.t. rBind(rConf) 
+    ? cong-bind{idle, ifLeftOverBind}
+    : if-left .
+    
+ strat ifRightOverBind @ ReactionConfig .
+ sd ifRightOverBind := 
+    match rConf s.t. rBind(rConf) 
+    ? cong-bind{idle, ifRightOverBind}
+    : if-right .   
+     
+ strat nTimesIfOverBindBranch : ChannelName @ ProtocolConfig .
+ sd nTimesIfOverBindBranch(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesIfOverBindBranch(C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{ifOverBindInBranch}} .    
+     
+ strat nTimesIfOverBindBranch2 : ChannelName @ ProtocolConfig .
+ sd nTimesIfOverBindBranch2(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesIfOverBindBranch2(C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{ifOverBindInBranch2}} .    
+     
+ strat bindRetInBranchTwiceIOB @ ReactionConfig .
+ sd bindRetInBranchTwiceIOB := 
+    match rConf s.t. rBindRead(rConf)
+    ? cong-bind{idle, bindRetInBranchTwiceIOB}
+    : cong-branch-refl
+        {cong-branch-refl{ret-bind ; ifRightOverBind, ret-bind ; ifLeftOverBind},
+         cong-branch-refl{ret-bind ; ifLeftOverBind, ret-bind ; ifRightOverBind}} .
+ 
+ strat bindRetInBranchTwice @ ReactionConfig .
+ sd bindRetInBranchTwice := 
+    match rConf s.t. rBindRead(rConf)
+    ? cong-bind{idle, bindRetInBranchTwice}
+    : cong-branch-refl
+        {cong-branch-refl{ret-bind , ret-bind},
+         cong-branch-refl{ret-bind , ret-bind}} .
+         
+ strat moveInsideIf : Qid ChannelName @ ProtocolConfig .
+ sd moveInsideIf(Q, C) :=  *** first what var and then the channel
+    moveCertainBindLastProtocol(Q, C) ;
+    applyReadOverIf(Q, C) .
+        
+ strat applyReadOverInnerIf : Qid ChannelName @ ProtocolConfig .
+ sd applyReadOverInnerIf(Q, C) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{applyReadOverInnerIf(Q, C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]
+             {moveLastBindInsideInnerIf(Q)}} .
+ 
+ strat applyReadOverIf : Qid ChannelName @ ProtocolConfig .
+ sd applyReadOverIf(Q, C) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{applyReadOverIf(Q, C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{moveLastBindInsideIf(Q)}} .
+
+ 
+ strat moveLastBindInsideIf : Qid @ ReactionConfig .
+ sd moveLastBindInsideIf(Q) :=
+    match rConf s.t. Q =/= firstBind(rConf)
+    ? cong-bind{idle, moveLastBindInsideIf(Q)}
+    : read-inside-if . 
+    
+ strat moveLastBindInsideInnerIf : Qid @ ReactionConfig .
+ sd moveLastBindInsideInnerIf(Q) :=
+    match rConf s.t. rBind(rConf)
+    ? cong-bind{idle, moveLastBindInsideInnerIf(Q)}
+    : cong-branch-refl{read-inside-if, read-inside-if} .   
+           
+         
+ strat bindRetInBranch @ ReactionConfig .
+ sd bindRetInBranch :=  
+     match rConf s.t. rBindRead(rConf) *** TODO: allow any bind?
+    ? cong-bind{idle, bindRetInBranch}
+    : cong-branch-refl{ret-bind , ret-bind} . 
+    
+ strat nTimesBindRetBranch : ChannelName @ ProtocolConfig .
+ sd nTimesBindRetBranch(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesBindRetBranch(C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{bindRetInBranch}} . 
+         
+ 
+ strat nTimesBindRetBranchTwiceIOB : ChannelName @ ProtocolConfig .
+ sd nTimesBindRetBranchTwiceIOB(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesBindRetBranchTwiceIOB(C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{bindRetInBranchTwiceIOB}} . 
+   
+ strat nTimesBindRetBranchTwice : ChannelName @ ProtocolConfig .
+ sd nTimesBindRetBranchTwice(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesBindRetBranchTwice(C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{bindRetInBranchTwice}} . 
+  
+     
+ strat moveAllBindsToFrontIf @ ReactionConfig .
+ sd moveAllBindsToFrontIf :=
+     match rConf s.t. rBind(rConf)
+     ? cong-bind{idle, moveAllBindsToFrontIf}
+     : match rConf s.t. startsWithIfRead(rConf) 
+       ? if-over-read ; moveAllBindsToFrontIf
+       : idle .
+        
+ strat moveAllBindsTwoIfs @ ReactionConfig .
+ sd moveAllBindsTwoIfs := 
+    match rConf s.t. rBind(rConf)
+     ? cong-bind{idle, moveAllBindsTwoIfs}
+     : cong-branch-refl{ moveAllBindsToFrontIf, moveAllBindsToFrontIf} .
+    
+ strat moveBinds : ChannelName @ ProtocolConfig .
+ sd moveBinds(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{moveBinds(C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{moveAllBindsTwoIfs}} . 
+
+ strat moveBindsOne : ChannelName @ ProtocolConfig .
+ sd moveBindsOne(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{moveBindsOne(C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{moveAllBindsToFrontIf}} .
+   
+    
+ op canApplyIfBindSame : Reaction -> Bool .
+ eq canApplyIfBindSame(x1 : T1 <- if M then R1 else R2 ; if M then R3 else R4) = true .
+ eq canApplyIfBindSame(R) = false [owise] .  
+ 
+
+ op canApplyIfBindSameC : ReactionConfig -> Bool .
+ eq canApplyIfBindSameC(rConfig(S, D, G, R, I, T)) = canApplyIfBindSame(R) .
+ 
+ strat ifBindSame @ ReactionConfig .
+ sd ifBindSame :=
+  match rConf s.t. canApplyIfBindSameC(rConf) 
+  ? if-over-bind-same
+  : match rConf s.t. rBind(rConf)
+     ? cong-bind{idle, ifBindSame}
+     : idle .
+     
+ strat ifBindSame2 @ ReactionConfig .
+ sd ifBindSame2 :=
+  match rConf s.t. canApplyIfBindSameC(rConf) 
+  ? if-over-bind-same-2
+  : match rConf s.t. rBind(rConf)
+     ? cong-bind{idle, ifBindSame2}
+     : idle .    
+     
+ strat ifBindSamePr : ChannelName @ ProtocolConfig .
+ sd ifBindSamePr(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{ifBindSamePr(C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{ifBindSame}} .
+    
+ strat ifBindSame2Pr : ChannelName @ ProtocolConfig .
+ sd ifBindSame2Pr(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{ifBindSame2Pr(C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{ifBindSame2}} .
+     
+ strat recursiveReadDet @ ReactionConfig .
+ sd recursiveReadDet := 
+   match rConf s.t. rBindRead(rConf)
+     ? (read-det
+          ? recursiveReadDet
+          : (exchange ? cong-bind{idle, recursiveReadDet} : idle)) 
+     : idle . 
+  
+ strat recReadDet : ChannelName Nat @ ProtocolConfig .
+ sd recReadDet(C, 0) := idle .
+ sd recReadDet(C, s(N)) :=
+     (match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{recReadDet(C, s(N))} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{recursiveReadDet}}) ; recReadDet(C, N) .
+    
+ strat readOutsideIf2 : ChannelName @ ProtocolConfig .
+ sd readOutsideIf2(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{readOutsideIf2(C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]
+                       {moveAllBindsTwoIfs ; moveAllBindsToFrontIf}} .
+ 
+ strat sameReactionIfAfterBinds @ ReactionConfig .
+ sd sameReactionIfAfterBinds := 
+   match rConf s.t. rBindRead(rConf)
+     ? cong-bind{idle, sameReactionIfAfterBinds} 
+     : same-reaction-if .
+ 
+ strat sameReactionIf : ChannelName @ ProtocolConfig .
+ sd sameReactionIf(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{sameReactionIf(C)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{sameReactionIfAfterBinds}} .
+     
+ strat removeUnused : ChannelName ChannelName @ ProtocolConfig .
+ sd removeUnused(C1, C2) := 
+ match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{removeUnused(C1, C2)} 
+     : CONG-COMP-RIGHT{UNUSED[o1:ChannelName <- C1, o2:ChannelName <- C2]{samp-pure}} .
+            
+ strat addNewChannel : Protocol @ ProtocolConfig .
+ sd addNewChannel(P) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{addNewChannel(P)}
+     : ABSORB-LEFT-2[P2:Protocol <- P] ; COMP-NEW .  
+     
+ var Msg1 Msg2 : Message .    
+     
+ strat applyCongRetBranch : Message Message @ ReactionConfig .
+ sd applyCongRetBranch(Msg1, Msg2) :=
+    match rConf s.t. rBindRead(rConf) 
+    ? cong-bind{idle, applyCongRetBranch(Msg1, Msg2)}
+    : cong-branch-refl{cong-ret[M2 <- Msg1],
+                      cong-ret[M2 <- Msg2]} .
+                     
+ strat applyCongRetBranchPr : ChannelName Message Message @ ProtocolConfig .
+ sd applyCongRetBranchPr(C, M1, M2) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{applyCongRetBranchPr(C, M1, M2)} 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{applyCongRetBranch(M1, M2)}} .  
+     
+ var q1 q2 : Qid .  
+ sort QidPair .
+ op <<_,_>> : Qid Qid -> QidPair [ctor] .
+ op getFst : QidPair -> Qid .
+ op getSnd : QidPair -> Qid .
+ eq getFst(<< q1, q2 >>) = q1 .
+ eq getSnd(<< q1, q2 >>) = q2 .
+ 
+ sort QidPairList .
+ subsort QidPair < QidPairList .
+ op emptyQidPairList : -> QidPairList [ctor] .
+ op __ : QidPair QidPairList -> QidPairList [ctor] . 
+ 
+ var QL : QidPairList .
+ var QP : QidPair .
+ 
+ strat alphaOverList : QidPairList @ ReactionConfig .
+ sd alphaOverList(emptyQidPairList) := idle .
+ sd alphaOverList(QP QL) := alpha [x:Qid <- getFst(QP), y:Qid <- getSnd(QP)] ; 
+                            cong-bind{idle, alphaOverList(QL)} .     
+     
+ strat applyAlphaPr : ChannelName QidPairList @ ProtocolConfig .
+ sd applyAlphaPr(C, QL) :=                                 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{applyAlphaPr(C, QL) } 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{alphaOverList(QL)}} .
+     
+ var x : Qid .    
+     
+ strat retBind2OverIf : Type Message Message Reaction Qid @ ReactionConfig .
+ sd retBind2OverIf(T, M1, M2 , R, x) := 
+    match rConf s.t. rBind(rConf) 
+    ? cong-bind{idle, retBind2OverIf(T, M1, M2, R, x) }
+    : cong-branch-refl{
+           ret-bind-2[M1:Message <- M1 , T1:Type <- T, R2:Reaction <- R , x:Qid <- x],
+           ret-bind-2[M1:Message <- M2 , T1:Type <- T, R2:Reaction <- R , x:Qid <- x]} .
+     
+ strat applyRetBind2OverIf : ChannelName Type Message Message Reaction Qid @ ProtocolConfig .
+ sd applyRetBind2OverIf(C, T, M1, M2, R, x) :=                                 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{applyRetBind2OverIf(C, T, M1, M2, R, x) } 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{retBind2OverIf(T, M1, M2, R, x)}} .
+     
+ strat symOverIf : Reaction Message Message @ ReactionConfig .
+ sd symOverIf(R, Msg1, Msg2) :=
+    sym[R1:Reaction <- R]
+      {liftAllInnerBinds ; 
+       ifOverBindAfterBinds ;
+       bindRetInBranch ;
+       applyCongRetBranch(Msg1, Msg2)} .   
+       
+ strat applySymOverIf : ChannelName Reaction Message Message @ ProtocolConfig .      
+ sd applySymOverIf(C, R, Msg1, Msg2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{applySymOverIf(C, R, Msg1, Msg2) } 
+     : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{symOverIf(R, Msg1, Msg2)}} .
+            
+endsm

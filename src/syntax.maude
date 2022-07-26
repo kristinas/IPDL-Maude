@@ -1,0 +1,1287 @@
+***( IPDL
+
+  Copyright : (C) 2022, Kristina Sojakova, INRIA
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+)
+
+
+fmod TYPES is
+ protecting NAT .
+
+ sort Type . 
+ op unit : -> Type . 
+ op bool : -> Type .
+ op _*_ : Type Type -> Type .
+
+ op |_| : Type -> Nat .
+ 
+ vars A B : Type .
+
+ eq | unit | = 0 . 
+ eq | bool | = 1 .
+ eq | A * B | = | A | + | B | .
+
+ op prj1 : Type -> Type .
+ op prj2 : Type -> Type .
+ eq prj1(A * B) = A .
+ eq prj2(A * B) = B .
+
+endfm
+
+fmod VAR-CONTEXT is
+ protecting QID . 
+ protecting TYPES .
+
+ sort VarContextElem .
+
+ op _:_ : Qid Type -> VarContextElem [ctor] .
+
+ var q : Qid . 
+ var t : Type .
+
+ op qidOf_ : VarContextElem -> Qid . 
+ eq qidOf (q : t) = q . 
+
+ op typeOf_ : VarContextElem -> Type . 
+ eq typeOf (q : t) = t .
+
+ sort VarContext . 
+ op emptyVarContext : -> VarContext [ctor] .
+ subsort VarContextElem < VarContext . 
+ op __ : VarContext VarContext -> VarContext [ctor assoc comm id: emptyVarContext] .
+
+ vars Q1 Q2 : Qid .
+ vars T T1 T2 : Type . 
+ vars Gamma1 Gamma2 : VarContext .
+ 
+ op _elem_ : Qid VarContext -> Bool .
+ eq Q1 elem emptyVarContext = false . 
+ ceq Q1 elem ((Q2 : T) Gamma1) = true if Q1 == Q2 .
+ ceq Q1 elem ((Q2 : T) Gamma1) = Q1 elem Gamma1 if Q1 =/= Q2 .
+
+ op varType : Qid VarContext -> Type .
+ ceq varType(Q1, (Q2 : T) Gamma1) = T if Q1 == Q2 .
+ ceq varType(Q1, (Q2 : T) Gamma1) = varType(Q1, Gamma1) if Q1 =/= Q2 .
+
+ op validContext_ : VarContext -> Bool .
+ eq validContext emptyVarContext = true .
+ eq validContext ((Q1 : T1) Gamma1) = not (Q1 elem Gamma1) and validContext Gamma1 .  
+
+endfm
+
+fmod SIGNATURE is 
+ protecting QID . 
+ protecting TYPES .
+
+ sort SigElem .
+
+ op _:_~>_  : Qid Type Type -> SigElem [ctor] . *** function symbol
+ op _:_~>>_ : Qid Type Type -> SigElem [ctor] . *** distribution
+
+ vars Q1 Q2 : Qid .
+ vars T T1 T2 : Type . 
+
+ op dom_ : SigElem -> Type .
+ op cod_ : SigElem -> Type .
+  
+ eq dom(Q1 : T1 ~> T2)  = T1 .
+ eq dom(Q1 : T1 ~>> T2) = T1 .
+  
+ eq cod(Q1 : T1 ~> T2) = T2 . 
+ eq cod(Q1 : T1 ~>> T2) = T2 .
+
+ sort Signature . 
+ op emptySig : -> Signature [ctor] .
+ subsort SigElem < Signature . 
+ op __ : Signature Signature -> Signature [ctor assoc comm id: emptySig] .
+
+ vars Sig1 Sig2 : Signature .
+
+ op _elem_ : Qid Signature -> Bool .
+ eq Q1 elem emptySig = false .
+ ceq Q1 elem ((Q2 : T1 ~> T2) Sig1) = true if Q1 == Q2 .
+ ceq Q1 elem ((Q2 : T1 ~> T2) Sig1) = Q1 elem Sig1 if Q1 =/= Q2 .
+ ceq Q1 elem ((Q2 : T1 ~>> T2) Sig1) = true if Q1 == Q2 .
+ ceq Q1 elem ((Q2 : T1 ~>> T2) Sig1) = Q1 elem Sig1 if Q1 =/= Q2 .
+
+ op find__ : Qid Signature -> SigElem . *** only find symbols that appear in signature!
+ ceq find Q1 ((Q2 : T1 ~> T2) Sig1)  = Q1 : T1 ~> T2 if Q1 == Q2 .
+ ceq find Q1 ((Q2 : T1 ~> T2) Sig1)  = find Q1 Sig1 if Q1 =/= Q2 .
+ ceq find Q1 ((Q2 : T1 ~>> T2) Sig1) = Q1 : T1 ~>> T2 if Q1 == Q2 .
+ ceq find Q1 ((Q2 : T1 ~>> T2) Sig1) = find Q1 Sig1 if Q1 =/= Q2 .
+
+ op validSig_ : Signature -> Bool .
+ eq validSig emptySig = true .
+ eq validSig ((Q1 : T1 ~> T2) Sig1) = not (Q1 elem Sig1) and validSig Sig1 .
+ eq validSig ((Q1 : T1 ~>> T2) Sig1) = not (Q1 elem Sig1) and validSig Sig1 .
+
+endfm
+ 
+fmod MESSAGE is
+ protecting QID .
+
+ sort Message . 
+ 
+ subsort Qid < Message . *** variables
+
+ ops True, False : -> Message [ctor] . 
+
+ op () : -> Message [ctor] .
+
+ op ap__ : Qid Message -> Message [ctor] . *** function application
+
+ op pair : Message Message -> Message [ctor] . *** (_,_)
+
+ op fst_ : Message -> Message [ctor] .
+ op snd_ : Message -> Message [ctor] .
+ 
+endfm
+
+fmod MESSAGE-TYPING is 
+ protecting MESSAGE .
+ protecting SIGNATURE .
+ protecting VAR-CONTEXT .
+
+ op typeOf : Signature VarContext Message -> Type .
+
+ var Sigma : Signature .
+ var Gamma : VarContext .
+ var x f : Qid .
+ var M M1 M2 : Message .
+ var T T1 T2 : Type .
+
+ eq typeOf(Sigma, Gamma (x : T), x) = T .
+ eq typeOf(Sigma, Gamma, ()) = unit .
+ eq typeOf(Sigma, Gamma, True) = bool .
+ eq typeOf(Sigma, Gamma, False) = bool .
+ ceq typeOf(Sigma (f : T1 ~> T2), Gamma, ap f M) = T2 
+     if typeOf(Sigma (f : T1 ~> T2), Gamma, M) == T1 .
+ eq typeOf(Sigma, Gamma, pair(M1, M2)) = typeOf(Sigma, Gamma, M1) * typeOf(Sigma, Gamma, M2) .
+
+ eq typeOf(Sigma, Gamma, fst M) = prj1(typeOf(Sigma, Gamma, M)) .
+ eq typeOf(Sigma, Gamma, snd M) = prj2(typeOf(Sigma, Gamma, M)) .
+
+endfm
+
+fmod MESSAGE-EQUALITY is
+ protecting MESSAGE-TYPING . 
+
+ op _;_|-_=M=_:_ : Signature VarContext Message Message Type -> Bool .
+ 
+ var Sigma : Signature .
+ var Gamma : VarContext . 
+ vars M M1 M2 M3 M4 : Message .
+ vars T T1 T2 T3 T4 : Type . 
+ var f c : Qid .
+  
+ ceq Sigma ; Gamma |- M =M= M : T = true
+     if 
+     typeOf(Sigma, Gamma, M) == T .
+
+ ceq Sigma ; Gamma |- M1 =M= M2 : T = true
+     if 
+     Sigma ; Gamma |- M2 =M= M1 : T == true [nonexec] .
+
+ ceq Sigma ; Gamma |- M1 =M= M3 : T = true 
+     if
+     Sigma ; Gamma |- M1 =M= M2 : T == true
+     and
+     Sigma ; Gamma |- M2 =M= M3 : T == true [nonexec] .
+
+ ceq Sigma (f : T1 ~> T2 ) ; Gamma |- ap f M1 =M= ap f M2 : T2 = true
+     if
+     Sigma (f : T1 ~> T2 ) ; Gamma |- M1 =M= M2 : T1 == true .
+
+ ceq Sigma ; Gamma |- pair(M1, M2) =M= pair(M3, M4) : T1 * T2 = true 
+     if
+     Sigma ; Gamma |- M1 =M= M3 : T1 == true
+     and
+     Sigma ; Gamma |- M2 =M= M4 : T2 == true .
+
+ ceq Sigma ; Gamma |- fst M1 =M= fst M2 : T1 = true
+     if
+     Sigma ; Gamma |- M1 =M= M2 : T1 * T2 == true [nonexec] . 
+
+ ceq Sigma ; Gamma |- snd M1 =M= snd M2 : T2 = true
+     if
+     Sigma ; Gamma |- M1 =M= M2 : T1 * T2 == true [nonexec] . 
+
+ ceq Sigma ; Gamma |- M =M= () : unit = true
+     if
+     typeOf(Sigma, Gamma, M) == unit .
+
+ ceq Sigma ; Gamma |- fst pair(M1, M2) =M= M1 : T = true 
+     if T == typeOf(Sigma, Gamma, M1) .
+
+ ceq Sigma ; Gamma |- snd pair(M1, M2) =M= M2 : T = true 
+     if T ==  typeOf(Sigma, Gamma, M2) .
+ 
+ ceq Sigma ; Gamma |- M1 =M= fst pair(M1, M2) : T = true 
+    if T == typeOf(Sigma, Gamma, M1) .
+
+ ceq Sigma ; Gamma |- M2 =M= snd pair(M1, M2) : T = true 
+    if T == typeOf(Sigma, Gamma, M1) .
+
+
+ ceq Sigma ; Gamma |- M =M= pair(fst M, snd M) : T1 * T2 = true
+     if
+     typeOf(Sigma, Gamma, M) == T1 * T2 .
+
+endfm
+
+fmod DISTRIBUTION is
+ protecting MESSAGE .
+ protecting TYPES . 
+
+ sort Distribution . 
+ op flip : -> Distribution [ctor] .
+ op _<_> : Qid Message -> Distribution [ctor] .
+endfm 
+
+fmod DISTRIBUTION-TYPING is
+ protecting DISTRIBUTION .
+ protecting MESSAGE-TYPING .
+
+ op typeOf : Signature VarContext Distribution -> Type .
+
+ vars T T1 T2 : Type .
+ var M : Message .
+ var Sigma : Signature .
+ var Gamma : VarContext .
+ var d : Qid .
+
+ eq typeOf(Sigma, Gamma, flip) = bool .
+ ceq typeOf(Sigma (d : T1 ~>> T2), Gamma, d < M >) = T2 
+     if typeOf(Sigma, Gamma, M) == T1 .  
+
+endfm
+ 
+fmod DISTRIBUTION-EQUALITY is
+ protecting MESSAGE-EQUALITY .
+ protecting DISTRIBUTION .
+
+ op _;_|-_=D=_:_ : Signature VarContext Distribution Distribution Type -> Bool .
+
+ vars T1 T2 : Type .
+ var M1 M2 : Message .
+ var Sigma : Signature .
+ var Gamma : VarContext .
+ var d : Qid .
+
+ ceq Sigma (d : T1 ~>> T2); Gamma |- d < M1 > =D= d < M2 > : T2 = true
+     if Sigma (d : T1 ~>> T2); Gamma |- M1 =M= M2 : T1 .
+
+endfm
+
+fmod NAT-TERM is
+ protecting QID .
+ 
+ sort NatTerm .
+ subsort Nat < NatTerm .
+ subsort Qid < NatTerm .
+ 
+ op _++_ : NatTerm NatTerm -> NatTerm .
+ op _--_ : NatTerm NatTerm -> NatTerm .
+ *** more if needed.
+ 
+endfm
+
+view NatTerm from TRIV to NAT-TERM is
+ sort Elt to NatTerm .
+endv
+
+fmod CHANNEL-NAME is
+ protecting QID .
+ protecting LIST{NatTerm} .
+ 
+ sort ChannelName .
+ subsort Qid < ChannelName .
+ op _[_] : Qid List{NatTerm} -> ChannelName [ctor] .
+ 
+endfm
+
+view CName from TRIV to CHANNEL-NAME is
+ sort Elt to ChannelName .
+endv
+
+fmod CNAME-SET is
+ protecting SET{CName} .
+endfm
+
+fmod CHANNEL is
+ protecting QID .
+ protecting TYPES .
+ protecting CNAME-SET .
+ protecting CHANNEL-NAME .
+ 
+ sort TypedChannel .
+ op _::_ : ChannelName Type -> TypedChannel [ctor] .
+
+ sort ChannelContext .
+ op emptyChannelCtx : -> ChannelContext [ctor] .
+ subsort TypedChannel < ChannelContext .
+ op __ : ChannelContext ChannelContext -> ChannelContext 
+         [ctor assoc comm id: emptyChannelCtx] .
+
+ vars Q Q1 Q2 : ChannelName .
+ var T1 T2 : Type .
+ vars Delta1 Delta2 : ChannelContext .
+ var I : Set{CName} .
+
+ op elem___ : ChannelName Type ChannelContext -> Bool .
+ ceq elem Q1 T1 ((Q2 :: T2) Delta1) = true if Q1 == Q2 and T1 == T2 .
+ eq elem Q1 T1 emptyChannelCtx = false .
+ ceq elem Q1 T1 ((Q2 :: T2) Delta1) = elem Q1 T1 Delta1 if Q1 =/= Q2 or T1 =/= T2 .
+
+ op occurs__ : ChannelName ChannelContext -> Bool .
+ eq occurs Q1 emptyChannelCtx = false .
+ eq occurs Q1 ((Q1 :: T1) Delta1) = true .
+ ceq occurs Q1 ((Q2 :: T1) Delta1) = occurs Q1 Delta1 if Q1 =/= Q2 .
+
+ op validChannelCtx_ : ChannelContext -> Bool .
+ eq validChannelCtx emptyChannelCtx = true .
+ ceq validChannelCtx ((Q1 :: T1) Delta1) = false if occurs Q1 Delta1 .
+ ceq validChannelCtx ((Q1 :: T1) Delta1) = validChannelCtx Delta1 if not occurs Q1 Delta1 .
+ 
+ op validChanSet__ : Set{CName} ChannelContext -> Bool .
+ eq validChanSet empty Delta1 = true . 
+ ceq validChanSet (Q, I) Delta1 = false if not occurs Q Delta1 .
+ ceq validChanSet (Q, I) Delta1 = validChanSet I Delta1 if occurs Q Delta1 . 
+
+endfm
+
+fmod QID-NAT-MAP is
+ pr QID .
+ pr MAP{Qid, Nat} .
+endfm
+
+fmod REACTION is
+ protecting MESSAGE .
+ protecting TYPES . 
+ protecting DISTRIBUTION .
+ protecting CHANNEL-NAME .
+ protecting QID-NAT-MAP .
+
+ sort Reaction .
+
+ op return_ : Message -> Reaction [ctor] .
+ op samp_ : Distribution -> Reaction [ctor] .
+ op read_ : ChannelName -> Reaction [ctor] .
+ op if_then_else_ : Message Reaction Reaction -> Reaction [ctor] .
+ op _:_<-_;_ : Qid Type Reaction Reaction -> Reaction [ctor] .
+     *** make the type optional or add a construction without it
+     
+   
+ vars M M1 M2 V : Message .
+ var c : ChannelName .
+ var x w f d i : Qid .
+ vars R R1 R2 : Reaction .
+ var T : Type .
+ var n : Nat .
+ 
+ op isSampFree : Reaction -> Bool .
+ eq isSampFree(return M) = true .
+ eq isSampFree(samp flip) = false .
+ eq isSampFree(samp (d < M >)) = false .
+ eq isSampFree(read c) = true .
+ eq isSampFree(if M then R1 else R2) = isSampFree(R1) and isSampFree(R2) .
+ eq isSampFree(x : T <- R1 ; R2) = isSampFree(R1) and isSampFree(R2) .
+
+ op _[_/_] : Reaction Qid Message -> Reaction . 
+ eq (return M) [w / V] = return (M [w := V]) .
+ eq (samp (d < M >)) [w / V] = samp (d < M [w := V] >) .
+ eq (read c) [w / V] = read c . *** don't replace ?
+ eq (if M then R1 else R2) [w / V] = if M [w := V] then (R1 [w / V]) else (R2 [w / V]) .
+ eq (x : T <- R1 ; R2) [w / V] = x : T <- (R1 [w / V]) ; (R2 [w / V]) .
+
+
+ op _[_:=_] : Message Qid Message -> Message .
+
+ eq w [w := V] = V . 
+ ceq x [w := V] = x if x =/= w .
+ eq True [w := V] = True .
+ eq False [w := V] = False .
+ eq (ap f M) [w := V] = ap f (M [w := V]) .
+ eq (pair(M1, M2)) [w := V] = pair(M1 [w := V] , M2 [w := V]) .
+ eq (fst M) [w := V] = fst (M [w := V]) .
+ eq (snd M) [w := V] = snd (M [w := V]) .
+ 
+ var lq : List{NatTerm} .
+ var val : Map{Qid,Nat} .
+ 
+ vars nt1 nt2 : NatTerm .
+ var m : Nat .
+ 
+ op evalCName : ChannelName Map{Qid,Nat} -> ChannelName .
+ eq evalCName(x [ lq ], val) = x [ evalList(lq, val) ] .
+ 
+ op evalList : List{NatTerm} Map{Qid,Nat} -> List{NatTerm} .
+ eq evalList(nil, val) = nil .
+ eq evalList(nt1 lq, val) = (eval(nt1, val)) (evalList(lq, val)) . 
+ 
+ op _-_ : Nat Nat -> Nat . *** unsafe difference on Nat.
+ eq n - 0 = n .
+ eq s(n) - s(m) = n - m .
+   
+ op eval : NatTerm Map{Qid,Nat} -> Nat .
+ eq eval(n, val) = n .
+ eq eval(x, val) = val[x] .
+ eq eval(nt1 ++ nt2, val) = eval(nt1, val) + eval(nt2, val) .
+ eq eval(nt1 -- nt2, val) = eval(nt1, val) - eval(nt2, val) .
+  
+ 
+ op replaceVars : Reaction Map{Qid,Nat}  -> Reaction .
+ eq replaceVars(return M, val) = return M .
+ eq replaceVars(samp (d < M >), val) = samp (d < M >) .
+ eq replaceVars(read c, val) = read (evalCName(c, val)) . 
+ eq replaceVars(if M then R1 else R2, val) = 
+      if M then replaceVars(R1, val) else replaceVars(R2, val) .
+ eq replaceVars(x : T <- R1 ; R2, val) = 
+      x : T <- replaceVars(R1, val); replaceVars(R2, val) .
+      
+endfm
+
+fmod REACTION-TYPING is
+ protecting REACTION .
+ protecting CHANNEL .
+ protecting MESSAGE-TYPING .
+ protecting DISTRIBUTION-TYPING .
+
+ op typeOf : Signature ChannelContext VarContext Set{CName} Reaction -> Type .
+
+ var Sigma : Signature .
+ var Gamma : VarContext .
+ var Delta : ChannelContext .
+ vars R1 R2 R3 : Reaction .
+ vars T T1 T2 T3 : Type .
+ var M M1 M2 : Message .
+ var I : Set{CName} . 
+ var d i x : Qid .
+ var c : ChannelName .
+ var D : Distribution .
+
+ eq typeOf(Sigma, Delta, Gamma, I, return M) = typeOf(Sigma, Gamma, M) .
+ eq typeOf(Sigma, Delta, Gamma, I, samp D) = typeOf(Sigma, Gamma, D) .
+ ceq typeOf(Sigma, Delta (c :: T), Gamma, I, read c) = T if c in I .
+ ceq typeOf(Sigma, Delta, Gamma, I, if M then R1 else R2) = typeOf(Sigma, Delta, Gamma, I, R1)
+     if typeOf(Sigma, Gamma, M) == bool
+     /\ typeOf(Sigma, Delta, Gamma, I, R1) == typeOf(Sigma, Delta, Gamma, I, R2) .
+ ceq typeOf(Sigma, Delta, Gamma, I, x : T1 <- R1 ; R2) = 
+     typeOf(Sigma, Delta, Gamma (x : T1), I, R2)
+     if typeOf(Sigma, Delta, Gamma, I, R1) == T1 .
+
+endfm
+
+mod REACTION-EQUALITY is
+ protecting MESSAGE-TYPING .
+ protecting MESSAGE-EQUALITY .
+ protecting REACTION-TYPING .
+ protecting DISTRIBUTION-EQUALITY .
+
+ sort ReactionConfig . 
+  
+ op rConfig : Signature ChannelContext VarContext Reaction Set{CName} Type 
+                     -> ReactionConfig [ctor] .
+
+ var Sigma : Signature .
+ var Gamma : VarContext .
+ var Delta : ChannelContext .
+ vars R R1 R2 R3 R4 S S1 S2 S3 S4 : Reaction .
+ vars T T1 T2 T3 : Type .
+ var M M1 M2 : Message .
+ var I I' : Set{CName} . 
+ var x x1 x2 y b : Qid .
+ var i o1 o2 : ChannelName .
+ var D D' : Distribution .
+
+ crl [sym] : rConfig(Sigma, Delta, Gamma, R2, I, T) 
+             => 
+             rConfig(Sigma, Delta, Gamma, R1, I, T)
+     if rConfig(Sigma, Delta, Gamma, R1, I, T) 
+        =>
+        rConfig(Sigma, Delta, Gamma, R2, I, T) [nonexec] .
+ 
+ *** refl and trans are properties of => anyways.
+
+ crl [cong-ret] : rConfig(Sigma, Delta, Gamma, return M1, I, T)
+                  =>
+                  rConfig(Sigma, Delta, Gamma, return M2, I, T) 
+     if Sigma ; Gamma |- M1 =M= M2 : T [nonexec] .
+
+ crl [cong-samp] : rConfig(Sigma, Delta, Gamma, samp D, I, T)
+                   => 
+                   rConfig(Sigma, Delta, Gamma, samp D', I, T)
+     if Sigma ; Gamma |- D =D= D' : T [nonexec] .
+
+ crl [cong-branch] : 
+     rConfig(Sigma, Delta, Gamma, if M1 then R1 else R2, I, T)
+     => 
+     rConfig(Sigma, Delta, Gamma, if M2 then R3 else R4, I, T)
+     if
+     rConfig(Sigma, Delta, Gamma, R1, I , T) => 
+     rConfig(Sigma, Delta, Gamma, R3, I, T)
+     /\
+     rConfig(Sigma, Delta, Gamma, R2, I, T) => 
+     rConfig(Sigma, Delta, Gamma, R4, I, T) 
+     /\
+     Sigma ; Gamma |- M1 =M= M2 : bool == true [nonexec] .
+     *** /\ ((R1 =/= R3) or (R2 =/= R4)) [nonexec] . *** this ensures termination
+      
+ crl [cong-bind] :
+     rConfig(Sigma, Delta, Gamma, x : T1 <- R1 ; R2, I , T2) 
+     => 
+     rConfig(Sigma, Delta, Gamma, x : T1 <- R3 ; R4, I, T2) 
+     if
+     rConfig(Sigma, Delta, Gamma, R1, I, T1)  
+     => 
+     rConfig(Sigma, Delta, Gamma, R3, I, T1) 
+     /\
+     rConfig(Sigma, Delta, Gamma (x : T1), R2, I, T2)
+     => 
+     rConfig(Sigma, Delta, Gamma (x : T1), R4, I, T2) .
+     *** /\ ((R1 =/= R3) or (R2 =/= R4)) .
+
+ crl [samp-pure] : 
+     rConfig(Sigma, Delta, Gamma, x : T1 <- samp D ; R, I, T2)
+     => 
+     rConfig(Sigma, Delta, Gamma, R, I, T2)
+     if typeOf(Sigma, Gamma, D) == T1 /\ typeOf(Sigma, Delta, Gamma, I, R) == T2 . 
+
+ crl [read-det] : 
+     rConfig(Sigma, Delta (i :: T1), Gamma, 
+                    x : T1 <- read i ; y : T1 <- read i ; R , I, T2) 
+     => 
+     rConfig(Sigma, Delta (i :: T1), Gamma, 
+                    x : T1 <- read i ; (R [y / x]), I, T2)
+     if
+     i in I
+     /\
+     typeOf(Sigma, Delta (i :: T1), Gamma (x : T1) (y : T1), I, R) == T2 .
+
+  crl [if-left] : 
+     rConfig(Sigma, Delta, Gamma, if True then R1 else R2, I, T) 
+     =>  
+     rConfig(Sigma, Delta, Gamma, R1, I, T)
+     if
+     typeOf(Sigma, Delta, Gamma, I, R1) == T
+     /\
+     typeOf(Sigma, Delta, Gamma, I, R2) == T .
+
+ crl [if-right] : 
+     rConfig(Sigma, Delta, Gamma, if False then R1 else R2, I, T) 
+     =>  
+     rConfig(Sigma, Delta, Gamma, R2, I, T)
+     if
+     typeOf(Sigma, Delta, Gamma, I, R1) == T 
+     /\
+     typeOf(Sigma, Delta, Gamma, I, R2) ==  T . 
+
+***( this rule can't be applied by Maude so we replaced it with derived rules
+  crl [if-ext] : 
+     rConfig(Sigma, Delta, Gamma, R [b / M], I, T)
+     => 
+     rConfig(Sigma, Delta, Gamma, if M then (R [b / True]) else (R [b / False]), I, T)
+     if
+     typeOf(Sigma, Gamma, M) == bool
+     /\
+     typeOf(Sigma, Delta, Gamma (b : bool), I, R) == T . 
+)
+
+ crl [ret-bind] : 
+     rConfig(Sigma, Delta, Gamma, x : T1 <- return M ; R , I , T2) 
+     => 
+     rConfig(Sigma, Delta, Gamma, R [x / M], I, T2) 
+     if
+     typeOf(Sigma, Gamma, M) == T1
+     /\
+     typeOf(Sigma, Delta, Gamma (x : T1), I, R) == T2 .
+     
+ crl [ret-bind-2] :
+     rConfig(Sigma, Delta, Gamma, R, I, T2) 
+     =>
+     rConfig(Sigma, Delta, Gamma, x : T1 <- return M1 ; R2, I, T2)
+     if  
+     typeOf(Sigma, Gamma, M1) == T1  /\
+     typeOf(Sigma, Delta, Gamma, I, R) == T2 /\
+     typeOf(Sigma, Delta, Gamma (x : T1), I, R2) == T2 /\
+     R == R2[x / M1] [nonexec] .
+
+ crl [bind-ret] : 
+     rConfig(Sigma, Delta, Gamma, x : T <- R ; return x, I , T) 
+     => 
+     rConfig(Sigma, Delta, Gamma, R, I, T)
+     if 
+     typeOf(Sigma, Delta, Gamma, I, R) == T . 
+
+ crl [bind-ret-2] : 
+     rConfig(Sigma, Delta, Gamma, R, I , T) 
+     => 
+     rConfig(Sigma, Delta, Gamma, x : T <- R ; return x, I, T)
+     if 
+     typeOf(Sigma, Delta, Gamma, I, R) == T [nonexec] .
+
+ crl [bind-bind] : 
+     rConfig(Sigma, Delta, Gamma, x2 : T2 <- (x1 : T1 <- R1 ; R2) ; R3, I, T3)
+     => 
+     rConfig(Sigma, Delta, Gamma, x1 : T1 <- R1 ; (x2 : T2 <- R2 ; R3), I, T3)
+     if
+     typeOf(Sigma, Delta, Gamma, I, R1) == T1
+     /\
+     typeOf(Sigma, Delta, Gamma (x1 : T1), I, R2) == T2
+     /\ 
+     typeOf(Sigma, Delta, Gamma (x2 : T2), I, R3) == T3 .
+
+ crl [exchange] : 
+     rConfig(Sigma, Delta, Gamma, x1 : T1 <- R1 ; x2 : T2 <- R2 ; R, I, T3)
+     => 
+     rConfig(Sigma, Delta, Gamma, x2 : T2 <- R2 ; x1 : T1 <- R1 ; R, I, T3)
+     if
+     typeOf(Sigma, Delta, Gamma, I, R1) == T1
+     /\
+     typeOf(Sigma, Delta, Gamma, I, R2) == T2
+     /\
+     typeOf(Sigma, Delta, Gamma(x1 : T1) (x2 : T2), I, R) == T3 .
+     
+     
+ *** derived rules:
+ 
+  rl [same-reaction-if] : 
+     rConfig(Sigma, Delta, Gamma, if M then R else R, I, T)
+     => 
+     rConfig(Sigma, Delta, Gamma, R, I, T) . *** could we prove this without if-ext? 
+ 
+  crl [cong-branch-refl] : 
+     rConfig(Sigma, Delta, Gamma, if M then R1 else R2, I, T)
+     => 
+     rConfig(Sigma, Delta, Gamma, if M then R3 else R4, I, T)
+     if
+     rConfig(Sigma, Delta, Gamma, R1, I , T) => 
+     rConfig(Sigma, Delta, Gamma, R3, I, T)
+     /\
+     rConfig(Sigma, Delta, Gamma, R2, I, T) => 
+     rConfig(Sigma, Delta, Gamma, R4, I, T) . 
+     
+ rl [read-inside-if] : 
+    rConfig(Sigma, Delta (i :: T1), Gamma, x : T1 <- read i ; if M then R1 else R2, I, T) 
+    => 
+    rConfig(Sigma, Delta (i :: T1), Gamma, 
+             if M then x : T1 <- read i ; R1 
+                  else x : T1 <- read i ; R2, I, T) .
+
+ rl [read-outside-if] : 
+    rConfig(Sigma, Delta (i :: T1), Gamma, if M then x : T1 <- read i ; R1 
+                                                else x : T1 <- read i ; R2
+            , I, T) 
+    => 
+    rConfig(Sigma, Delta (i :: T1), Gamma, 
+             x : T1 <- read i ; if M then R1 else R2, I, T) .
+                  
+     
+ rl [if-over-bind-same-2] :
+     rConfig(Sigma, Delta, Gamma, x : T1 <- if M1 
+                                             then if M2 then R1 else R2
+                                             else if M2 then R3 else R4 ;
+                                  if M1 
+                                     then if M2 then S1 else S2
+                                     else if M2 then S3 else S4,
+                                 I, T)
+    => 
+    rConfig(Sigma, Delta, Gamma, if M1 
+                                    then if M2 then (x : T1 <- R1 ; S1) 
+                                               else (x : T1 <- R2 ; S2)
+                                    else if M2 then (x : T1 <- R3 ; S3) 
+                                               else (x : T1 <- R4 ; S4),          
+                                 I, T) .                             
+ 
+ crl [if-over-bind-same] :
+    rConfig(Sigma, Delta, Gamma, x : T1 <- if M then R1 else R2 ; 
+                                 if M then R3 else R4, I, T)
+    =>
+    rConfig(Sigma, Delta, Gamma, if M then x : T1 <- R1 ; R3 else x : T1 <- R2 ; R4 , 
+                                 I, T)                   
+    if typeOf(Sigma, Delta, Gamma, I, R1) == T1  /\
+       typeOf(Sigma, Delta, Gamma, I, R2) == T1  /\
+       typeOf(Sigma, Delta, Gamma (x : T1), I, R3) == T /\
+       typeOf(Sigma, Delta, Gamma (x : T1), I, R4) == T /\
+       typeOf(Sigma, Gamma, M) == bool .
+ 
+ crl [if-over-bind] : 
+    rConfig(Sigma, Delta, Gamma, x : T1 <- if M then R1 else R2 ; R , I, T) 
+    =>
+    rConfig(Sigma, Delta, Gamma, if M then x : T1 <- R1 ; R else x : T1 <- R2 ; R , 
+            I, T) 
+    if typeOf(Sigma, Delta, Gamma, I, R1) == T1  /\
+       typeOf(Sigma, Delta, Gamma, I, R2) == T1  /\
+       typeOf(Sigma, Delta, Gamma (x : T1), I, R) == T /\
+       typeOf(Sigma, Gamma, M) == bool .
+       
+ crl [if-over-read] : 
+     rConfig(Sigma, Delta, Gamma, if M then x : T1 <- R1 ; R else x : T1 <- R1 ; S, I, T)
+     =>        
+     rConfig(Sigma, Delta, Gamma, x : T1 <- R1 ; if M then R else S, I, T)
+     if
+     typeOf(Sigma, Delta, Gamma, I, R1) == T1 /\
+     typeOf(Sigma, Delta, Gamma (x : T1), I, R) == T /\
+     typeOf(Sigma, Delta, Gamma (x : T1), I, S) == T /\
+     typeOf(Sigma, Gamma, M) == bool .
+       
+ crl [alpha] :
+     rConfig(Sigma, Delta, Gamma, x : T1 <- R1 ; R2 , I, T2 )
+     =>
+     rConfig(Sigma, Delta, Gamma, y : T1 <- R1 ; (R2 [x / y]), I, T2)
+     if typeOf(Sigma, Delta, Gamma, I, R1) == T1 /\
+        typeOf(Sigma, Delta, Gamma (x : T1), I, R2) == T2 [nonexec] .
+        
+ crl [samp-free] : 
+     rConfig(Sigma, Delta, emptyVarContext,
+             x1 : T1 <- R1 ; x2 : T1 <- R1 ; return pair(x1, x2),
+             I, T1 * T2)
+     => 
+     rConfig(Sigma, Delta, emptyVarContext,
+             x1 : T1 <- R1 ;  return pair(x1, x1),
+             I, T1 * T2)
+     if isSampFree(R1) .        
+           
+endm
+
+fmod PROTOCOL is
+ protecting REACTION .
+ protecting QID .
+ sort Protocol .
+
+ op emptyProtocol : -> Protocol [ctor] .
+ op _::=_ : ChannelName Reaction -> Protocol [ctor] .
+ op _||_ : Protocol Protocol -> Protocol [ctor assoc comm] .
+ op new_:_in_ : Qid Type Protocol -> Protocol [ctor] .
+  *** but only Qids are allowed!
+ op newfamily___:_in_ : Qid List{NatTerm} Nat Type Protocol -> Protocol [ctor] . 
+ op family___::=_ : Qid List{NatTerm} Nat CaseOf -> Protocol [ctor] .
+
+ var q q2 i : Qid .
+ var n x y n2 : Nat .
+ var R : Reaction .
+ var T : Type .
+ 
+ op checkHonest : Nat -> Bool .
+
+ sort CaseOf .
+ subsort Reaction < CaseOf .
+
+
+ op case_is_ : Qid CaseList -> CaseOf [ctor] .
+ op emptyCaseOf : -> CaseOf [ctor] .
+  
+ sort CaseList .
+  subsort Case < CaseList .
+ op emptyCaseList : -> CaseList [ctor] . 
+ op _;;_ : CaseList CaseList -> CaseList [ctor assoc].
+ 
+ sort Case .
+ 
+ op _-->_ : CaseValue Reaction -> Case [ctor] .
+ 
+ sort CaseValue .
+ 
+ sort CaseOp .
+ op =i= : -> CaseOp [ctor] .
+ op < : -> CaseOp [ctor] .
+ op <= : -> CaseOp [ctor] .
+ 
+ op honest : -> CaseValue [ctor] .
+ op corrupt : -> CaseValue [ctor] .
+ op otherwise : -> CaseValue [ctor] .
+ op index__ : CaseOp Nat -> CaseValue [ctor] .
+ 
+ var cOf : CaseOf .
+ var cv : CaseValue .
+ var C q' : Qid .
+ var lq : List{NatTerm} .
+ var ln : List{NatTerm} .
+ var P : Protocol .
+ var B : Bool .
+ var cl : CaseList .
+ var cval : CaseValue .
+ 
+ op nf2p : Protocol -> Protocol .
+ eq nf2p(newfamily C q n : T in P) = genNew1 C n T P 0 .
+ eq nf2p(newfamily C (q q') n : T in P) = genNew2 C n T P 0 0 .
+ eq nf2p(P) = P [owise] .
+ 
+ op genNew1_____ : Qid Nat Type Protocol Nat -> Protocol .
+ ceq genNew1 C n T P x = P if x == n + 1 .
+ eq genNew1 C n T P x = new C [ x ] : T in (genNew1 C n T P s(x)) .
+ 
+ op genNew2______ : Qid Nat Type Protocol Nat Nat -> Protocol .
+ ceq genNew2 C n T P x y = P if x == n + 1 .
+ eq genNew2 C n T P x y = new C [ x y ] : T in 
+    (if y == n then genNew2 C n T P (x + 1) 0 
+               else genNew2 C n T P x (y + 1)
+     fi) .
+ 
+ op f2p : Protocol -> Protocol .
+ ceq f2p(family C lq n ::= cOf) = f2p1 C lq n cOf 0   if size(lq) == 1 .
+ ceq f2p(family C lq n ::= cOf) = f2p2 C lq n cOf 0 0 if size(lq) == 2 .
+ ceq f2p(family C lq n ::= cOf) = emptyProtocol if size(lq) > 2 .
+ eq f2p(P) = P [owise] .
+ 
+ op f2p2______ : Qid List{NatTerm} Nat CaseOf Nat Nat -> Protocol .
+ ceq f2p2 C lq n cOf x y = emptyProtocol if x == n + 1 .
+ eq f2p2 C lq n cOf x y = (valCase2 C lq (x y) cOf) || 
+   (if y < n then f2p2 C lq n cOf x (y + 1)
+             else f2p2 C lq n cOf (x + 1) 0
+    fi) [owise] .
+    
+ op valCase2____ : Qid List{NatTerm} List{NatTerm} CaseOf -> Protocol . 
+ *** eq valCase2 C (q q') (x y) cOf = C [ x y ] ::= return True .
+ eq valCase2 C (q q') (x y) (case q2 is emptyCaseList) = emptyProtocol . *** shouldn't happen
+ eq valCase2 C (q q') (x y)
+    (case q2 is ((honest --> R) ;; cl)) = emptyProtocol .
+ eq valCase2 C (q q') (x y)
+    (case q2 is ((corrupt --> R) ;; cl)) = emptyProtocol . 
+ eq valCase2 C (q q') (x y) 
+    (case q2 is ((otherwise --> R) ;; cl)) = 
+      C [ x y ] ::= replaceVars(R, (q |-> x , q' |-> y))  .  
+ ceq valCase2 C (q q') (x y) (case q2 is ((index =i= n2 --> R) ;; cl)) = 
+     C [ x y] ::= replaceVars(R, (q |-> x , q' |-> y)) 
+     if (if q2 == q then x else y fi) == n2 .  
+ ceq valCase2 C (q q') (x y) (case q2 is ((index =i= n2 --> R) ;; cl)) = 
+     valCase2 C (q q') (x y) (case q2 is cl)
+     if (if q2 == q then x else y fi) =/= n2 .  
+ ceq valCase2 C (q q') (x y) (case q2 is ((index < n2 --> R) ;; cl)) = 
+     C [ x y] ::= replaceVars(R, (q |-> x , q' |-> y)) 
+     if (if q2 == q then x else y fi) < n2 .  
+ ceq valCase2 C (q q') (x y) (case q2 is ((index < n2 --> R) ;; cl)) = 
+     valCase2 C (q q') (x y) (case q2 is cl)
+     if (if q2 == q then x else y fi) >= n2 .  
+ ceq valCase2 C (q q') (x y) (case q2 is ((index <= n2 --> R) ;; cl)) = 
+     C [ x y] ::= replaceVars(R,(q |-> x , q' |-> y)) 
+     if (if q2 == q then x else y fi) <= n2 .  
+ ceq valCase2 C (q q') (x y) (case q2 is ((index <= n2 --> R) ;; cl)) = 
+     valCase2 C (q q') (x y) (case q2 is cl)
+     if (if q2 == q then x else y fi) > n2 .                        
+ 
+ op f2p1_____ : Qid List{NatTerm} Nat CaseOf Nat -> Protocol .
+ ceq f2p1 C q n cOf x = emptyProtocol if x == n + 1 .
+ eq f2p1 C q n cOf x = (valCase1 C q x cOf) || (f2p1 C q n cOf s(x)) [owise] .
+ 
+ op valCase1____ : Qid Qid Nat CaseOf -> Protocol .
+ eq valCase1 C q x R = C [ x ] ::= R .
+ eq valCase1 C q x (case q is emptyCaseList) = emptyProtocol . *** shouldn't happen
+ ceq valCase1 C q x (case q is ((honest --> R) ;; cl)) = 
+     C [ x ] ::= replaceVars(R, q |-> x) 
+      if checkHonest(x) .
+ ceq valCase1 C q x (case q is ((honest --> R) ;; cl)) = valCase1 C q x (case q is cl)  
+      if not checkHonest(x) .    
+ ceq valCase1 C q x (case q is ((corrupt --> R) ;; cl)) = 
+     C [ x ] ::= replaceVars(R, q |-> x) 
+      if not checkHonest(x) .
+ ceq valCase1 C q x (case q is ((corrupt --> R) ;; cl)) = valCase1 C q x (case q is cl)  
+      if checkHonest(x) . 
+ eq valCase1 C q x (case q is ((otherwise --> R) ;; cl)) = 
+      C [ x ] ::= replaceVars(R, q |-> x)  .
+ ceq valCase1 C q x (case q is ((index =i= n2 --> R) ;; cl)) = 
+     C [ x ] ::= replaceVars(R, q |-> x) 
+     if x == n2 . 
+ ceq valCase1 C q x (case q is ((index =i= n2 --> R) ;; cl)) = valCase1 C q x (case q is cl)
+      if x =/= n2 .
+ ceq valCase1 C q x (case q is ((index < n2 --> R) ;; cl)) = 
+     C [ x ] ::= replaceVars(R, q |-> x)
+      if x < n2 .     
+ ceq valCase1 C q x (case q is ((index < n2 --> R) ;; cl)) = valCase1 C q x (case q is cl)
+      if x >= n2 . 
+ ceq valCase1 C q x (case q is ((index <= n2 --> R) ;; cl)) = 
+      C [ x ] ::= replaceVars(R, q |-> x)
+      if x <= n2 .     
+ ceq valCase1 C q x (case q is ((index <= n2 --> R) ;; cl)) = valCase1 C q x (case q is cl)
+      if x > n2 . 
+                         
+endfm
+
+fmod PROTOCOL-IO is
+ protecting PROTOCOL .
+ protecting CHANNEL .
+
+ op getOutputs : Protocol -> Set{CName} .
+
+ var c : ChannelName .
+ var P P1 P2 : Protocol .
+ var T : Type .
+ vars R : Reaction .
+
+ eq getOutputs(emptyProtocol) = empty .
+ eq getOutputs(c ::= R) = c .
+ eq getOutputs(P1 || P2) = union(getOutputs(P1), getOutputs(P2)) .
+ eq getOutputs(new c : T in P) = getOutputs(P) \  c .
+   
+endfm
+
+fmod PROTOCOL-TYPING is 
+ protecting PROTOCOL-IO .
+ protecting REACTION-TYPING .
+
+ var Sigma : Signature .
+ var Delta : ChannelContext .
+ var I : Set{CName} .
+ var Q o : ChannelName .
+ var c : Qid .
+ var T : Type .
+ var R : Reaction .
+ var P1 P2 P : Protocol .
+
+ op typeOf : Signature ChannelContext Set{CName} Protocol -> Bool .
+ 
+ eq typeOf(Sigma, Delta, I, emptyProtocol) = validChanSet I Delta .
+ 
+ eq typeOf(Sigma, Delta (o :: T), I, o ::= R) =  
+     validChanSet I (Delta (o :: T)) 
+     and
+     typeOf (Sigma, Delta (o :: T), emptyVarContext, I, R) == T
+     and 
+     not o in I .
+
+ eq typeOf(Sigma, Delta, I, P1 || P2) = 
+     validChanSet I Delta 
+     and
+     typeOf(Sigma, Delta, union(I, getOutputs(P2)), P1) 
+     and 
+     typeOf(Sigma, Delta, union(I,  getOutputs(P1)), P2) .
+
+ eq typeOf(Sigma, Delta, I, new c : T in P) = 
+     validChanSet I Delta 
+     and 
+     not occurs c Delta 
+     and
+     typeOf(Sigma, Delta (c :: T), I, P) .
+ 
+endfm
+
+mod PROTOCOL-EQUALITY is
+ protecting PROTOCOL-TYPING .
+ protecting REACTION-EQUALITY .
+
+ var Sigma : Signature .
+ vars Delta D : ChannelContext .
+ vars R R' R1 R2 R3 R4 S1 S2 S : Reaction .
+ vars T T0 T1 T2 T3 : Type .
+ vars M M1 M2 : Message .
+ vars I I' I'' I1 O O' O'' O1 O2 O3 : Set{CName} . 
+ var l r c i o o1 o2 : ChannelName .
+ var b x x0 x1 x2 y y0 y1 y2 z : Qid .
+ vars P P1 P2 P3 P4 Q : Protocol .
+ var n : Nat .
+ var lq : List{NatTerm} .
+
+ sort ProtocolConfig . 
+ op pConfig : Signature ChannelContext Protocol Set{CName} Set{CName} -> ProtocolConfig [ctor] .
+
+ *** helpers
+ 
+ op countNew : ProtocolConfig -> Nat .
+ 
+ eq countNew(pConfig(Sigma, D, emptyProtocol, I, O)) = 0 .
+ eq countNew(pConfig(Sigma, D, c ::= R, I, O)) = 0 .
+ eq countNew(pConfig(Sigma, D, P1 || P2, I, O)) = 0 .
+ eq countNew(pConfig(Sigma, D, new c : T in P, I, O)) = 1 + countNew(pConfig(Sigma, D, P, I, O)) .
+
+ var C : Qid .
+ var cOf : CaseOf .
+
+ rl [desugar-family] : 
+    family C lq n ::= cOf =>
+    f2p(family C lq n ::= cOf) . 
+    
+ rl [desugar-newfamily] :
+    newfamily C lq n : T in P =>
+    nf2p(newfamily C lq n : T in P) .  
+
+ crl [SYM] :
+     pConfig(Sigma, Delta, P2, I, O) 
+     => 
+     pConfig(Sigma, Delta, P1, I, O)
+     if
+     pConfig(Sigma, Delta, P1, I, O)
+     => 
+     pConfig(Sigma, Delta, P2, I, O) [nonexec] .
+
+ crl [CONG-REACT] : 
+     pConfig(Sigma, Delta (o :: T), o ::= R, I, o ) 
+     =>
+     pConfig(Sigma, Delta (o :: T), o ::= R', I, o )
+     if
+     rConfig(Sigma, Delta (o :: T), emptyVarContext, R, insert(o, I), T)
+     =>
+     rConfig(Sigma, Delta (o :: T), emptyVarContext, R', I', T) /\
+     I' == insert(o, I)
+     .
+     *** /\ R =/= R' .
+
+ crl [CONG-COMP-LEFT] :
+     pConfig(Sigma, Delta, P1 || Q, I, O) 
+     => 
+     pConfig(Sigma, Delta, P2 || Q, I, O)
+     if
+     pConfig(Sigma, Delta, P1, union(I, getOutputs(Q)), getOutputs(P1))
+     => 
+     pConfig(Sigma, Delta, P2, I1, O1)
+     /\
+     O1 == getOutputs(P1) /\ I1 == union(I, getOutputs(Q))
+     /\
+     typeOf(Sigma, Delta, union(I, getOutputs(P1)), Q) 
+     /\
+     O == union(getOutputs(P1), getOutputs(Q)) .
+     *** /\ P1 =/= P2 .
+      
+
+  crl [CONG-COMP-RIGHT] :
+     pConfig(Sigma, Delta, Q || P1, I, O) 
+     => 
+     pConfig(Sigma, Delta, Q || P2, I, O)
+     if
+     pConfig(Sigma, Delta, P1, union(I, getOutputs(Q)), getOutputs(P1))
+     => 
+     pConfig(Sigma, Delta, P2, I1, O1)
+     /\
+     O1 == getOutputs(P1) /\ I1 == union(I, getOutputs(Q))
+     /\ 
+     typeOf(Sigma, Delta, union(I, getOutputs(P1)), Q) 
+     /\
+     O == union(getOutputs(P1), getOutputs(Q)) .
+     *** /\ P1 =/= P2 .
+
+ crl [CONG-NEW] : 
+     pConfig(Sigma, Delta, new o : T in P1, I, O)
+     => 
+     pConfig(Sigma, Delta, new o : T in P2, I, O)
+     if
+     pConfig(Sigma, Delta (o :: T),  P1, I, insert(o, O))
+     => 
+     pConfig(Sigma, Delta (o :: T),  P2, I, O') 
+     /\ O' == insert(o, O) [nonexec] .
+     *** /\ P1 =/= P2 .
+
+  *** COMP-COMM and COMP-ASSOC are out, || has these attributes
+  *** AXIOM don't requires a new rule, one is added for each axiom
+  *** EMBED is just application of rules to terms.
+
+  crl [NEW-EXCH] :
+     pConfig(Sigma, Delta, new o1 : T1 in new o2 : T2 in P, I, O) 
+     => 
+     pConfig(Sigma, Delta, new o2 : T2 in new o1 : T1 in P, I, O)
+     if
+     typeOf(Sigma, Delta (o1 :: T1) (o2 :: T2), I, P) /\
+     getOutputs(P) == insert(o1, insert(o2, O)) .
+
+ crl [COMP-NEW] :
+     pConfig(Sigma, Delta, P || (new o : T in Q), I, O)
+     =>  
+     pConfig(Sigma, Delta, new o : T in (P || Q), I, O)
+     if
+     typeOf(Sigma, Delta (o :: T), union(I, getOutputs(P)), Q)
+     /\
+     typeOf(Sigma, Delta, union(I ,(getOutputs(Q) \ o)), P) .
+
+  crl [COMP-NEW-2] :
+     pConfig(Sigma, Delta, new o : T in (P || Q), I, O)
+     =>  
+     pConfig(Sigma, Delta, P || (new o : T in Q), I, O)
+     if
+     typeOf(Sigma, Delta (o :: T), union(I, getOutputs(P)), Q)
+     /\
+     typeOf(Sigma, Delta, union(I ,(getOutputs(Q) \ o)), P) .
+
+  crl [ABSORB-LEFT] : 
+     pConfig(Sigma, Delta, P1 || P2, I, O) =>
+     pConfig(Sigma, Delta, P1, I, O) 
+     if
+     typeOf(Sigma, Delta, I, P1) 
+     /\
+     typeOf(Sigma, Delta, union(I, O), P2) 
+     /\
+     getOutputs(P1) == O
+     /\ 
+     getOutputs(P2) == empty .
+      
+     
+ crl [ABSORB-LEFT-2] : 
+     pConfig(Sigma, Delta, P1 , I, O) =>
+     pConfig(Sigma, Delta, P1 || P2, I, O) 
+     if
+     typeOf(Sigma, Delta, I, P1) 
+     /\
+     typeOf(Sigma, Delta, union(I, O), P2) 
+     /\
+     getOutputs(P1) == O
+     /\ 
+     getOutputs(P2) == empty [nonexec] .    
+
+ crl [ABSORB-RIGHT] : 
+     pConfig(Sigma, Delta, P1 || P2, I, O) =>
+     pConfig(Sigma, Delta, P2, I, O) 
+     if
+     typeOf(Sigma, Delta, I, P2) 
+     /\
+     typeOf(Sigma, Delta, union(I, O), P1) 
+     /\
+     getOutputs(P2) == O
+     /\ 
+     getOutputs(P1) == empty .
+
+  crl [DIVERGE] :
+     pConfig(Sigma, Delta (o :: T), o ::= x : T <- read o ; R, I, o)
+     =>
+     pConfig(Sigma, Delta (o :: T), o ::= read o, I, o)
+     if
+     typeOf(Sigma, Delta, emptyVarContext, insert(o, I), R) == T .
+
+    crl [FLIP-UNIF] : 
+      pConfig(Sigma, Delta (o :: bool),
+              o ::= x : bool <- samp flip ;
+                    if x then return True else read o, I, O)
+      => 
+      pConfig(Sigma, Delta (o :: bool),
+              o ::= x : bool <- samp flip ;
+                    if x then read o else return False , I, O)
+    if O == o /\ not o in I .
+
+ crl [FOLD-IF-RIGHT] :
+     pConfig(Sigma, Delta (o :: T),
+             new r : T in ((o ::= b : bool <- R ;
+                                if b then S1 else read r)
+                          ||
+                           (r ::= S2))
+            ,I, O)
+     => 
+     pConfig(Sigma, Delta (o :: T),
+             o ::= b : bool <- R ;
+                   if b then S1 else S2
+             , I, O)
+     if
+     typeOf(Sigma, Delta (o :: T), emptyVarContext, insert(o, I), S1) == T
+     /\
+     typeOf(Sigma, Delta (o :: T), emptyVarContext, insert(o, I), S2) == T
+     /\
+     O == o .
+
+  crl [FOLD-IF-LEFT] :
+     pConfig(Sigma, Delta (o :: T),
+             new l : T in ((o ::= b : bool <- R ;
+                                if b then read l else S2)
+                          ||
+                           (l ::= S1))
+            ,I, O)
+     => 
+     pConfig(Sigma, Delta (o :: T),
+             o ::= b : bool <- R ;
+                   if b then S1 else S2
+             , I, O)
+     if
+     typeOf(Sigma, Delta (o :: T), emptyVarContext, insert(o, I), S1) == T
+     /\
+     typeOf(Sigma, Delta (o :: T), emptyVarContext, insert(o, I), S2) == T
+     /\
+     O == o .
+
+  crl [FOLD-BIND] :
+     pConfig(Sigma, Delta, 
+             new c : T in ((o ::= x : T <- read c ; S)
+                           ||
+                           (c ::= R)),
+             I, O)
+     =>
+     pConfig(Sigma, Delta,
+             o ::= x : T <- R ; S,
+             I, O)
+    if O == o .
+    
+  crl [FOLD-BIND-2] :
+     pConfig(Sigma, Delta, 
+             o ::= x : T <- R ; S,
+             I, O)
+     =>
+     pConfig(Sigma, Delta,
+             new c : T in ((o ::= x : T <- read c ; S)
+                           ||
+                           (c ::= R)),
+             I, O)
+    if O == o [nonexec] .    
+
+ crl [SUBSUME] :
+    pConfig(Sigma, Delta (o1 :: T1) ( o2 :: T2), 
+            (o1 ::= x0 : T0 <- read i ; R1) || 
+            (o2 ::= x0 : T0 <- read i ; x1 : T1 <- read o1 ; R2) 
+           , I, O)
+    => 
+    pConfig(Sigma, Delta (o1 :: T1) ( o2 :: T2),
+            (o1 ::= x0 : T0 <- read i ; R1) || 
+            (o2 ::= x1 : T1 <- read o1 ; R2)  
+           , I, O)
+   if typeOf(Sigma, Delta, x1 : T1, insert(o1, insert(o2,I)), R2) == T2  
+   /\ O == insert(o1, insert(o2, empty)) /\ o1 =/= o2 . 
+    
+ crl [UNUSED] : 
+   pConfig(Sigma, Delta (o1 :: T1) (o2 :: T2),
+           (o1 ::= R1) || (o2 ::= x1 : T1 <- read o1 ; R2)
+          ,I, O)
+   => 
+   pConfig(Sigma, Delta (o1 :: T1) (o2 :: T2),
+           (o1 ::= R1) || (o2 ::= R2)
+          ,I, O)
+   if rConfig(Sigma, Delta, emptyVarContext, 
+              x1 : T1 <- R1 ; R2
+             , insert(o1, insert(o2, I)), T2) 
+      => 
+      rConfig(Sigma, Delta, emptyVarContext, 
+              R2
+             ,I', T2) /\
+      I' == insert(o1, insert(o2, I)) /\
+      O == insert(o1, insert(o2, empty)) /\
+      typeOf(Sigma, Delta, emptyVarContext, 
+             insert(o1, insert(o2, I)), R2) == T2 /\ 
+      o1 =/= o2 [nonexec] .
+
+   crl [SUBST] : 
+     pConfig(Sigma, Delta (o1 :: T1) (o2 :: T2),
+             (o1 ::= R1) || (o2 ::= x1 : T1 <- read o1 ; R2),
+             I, O)  
+     => 
+     pConfig(Sigma, Delta (o1 :: T1) (o2 :: T2),
+             (o1 ::= R1) || (o2 ::= x1 : T1 <- R1 ; R2),
+             I, O) 
+     if
+     rConfig(Sigma, Delta (o1 :: T1) (o2 :: T2), emptyVarContext,
+             x1 : T1 <- R1 ; x2 : T1 <- R1 ; return pair(x1, x2),
+             insert(o1, insert(o2, I)), T1 * T2)
+     => 
+     rConfig(Sigma, Delta (o1 :: T1) (o2 :: T2), emptyVarContext,
+             x1 : T1 <- R1 ;  return pair(x1, x1),
+             I', T1 * T2) /\
+     O == insert(o1, o2) /\ 
+     I' == insert(o1, insert(o2, I)) /\
+     o1 =/= o2 [nonexec] .
+     
+   crl [SUBST-2] : 
+     pConfig(Sigma, Delta (o1 :: T1) (o2 :: T2),
+             (o1 ::= R1) || (o2 ::= x1 : T1 <- R1 ; R2),
+             I, O)  
+     => 
+     pConfig(Sigma, Delta (o1 :: T1) (o2 :: T2),
+             (o1 ::= R1) || (o2 ::= x1 : T1 <- read o1 ; R2),
+             I, O) 
+     if
+     rConfig(Sigma, Delta (o1 :: T1) (o2 :: T2), emptyVarContext,
+             x1 : T1 <- R1 ; x2 : T1 <- R1 ; return pair(x1, x2),
+             insert(o1, insert(o2, I)), T1 * T2)
+     => 
+     rConfig(Sigma, Delta (o1 :: T1) (o2 :: T2), emptyVarContext,
+             x1 : T1 <- R1 ;  return pair(x1, x1),
+             I', T1 * T2) /\
+     O == insert(o1, insert(o2, empty)) /\ 
+     I' == insert(o1, insert(o2, I)) /\
+     o1 =/= o2 [nonexec] .  
+       
+endm
+
+

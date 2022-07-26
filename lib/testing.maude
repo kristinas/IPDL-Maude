@@ -1,0 +1,450 @@
+***( IPDL
+
+  Copyright : (C) 2022, Kristina Sojakova, INRIA
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+)
+
+
+sload ../src/strategies
+
+*** TYPES
+
+fmod TYPES-TEST is
+ protecting TYPES .
+
+ op atype : -> Type .
+ eq | atype | = 20 .
+
+ op btype : -> Type .
+ eq | btype | = 10 .
+endfm
+
+red | atype * btype | .
+
+*** VAR-CONTEXT
+
+fmod VAR-CONTEXT-TEST is
+ protecting VAR-CONTEXT .
+
+ op varC : -> VarContext .
+
+ eq varC = ('a : unit) ('b : bool) ('c : unit * bool) .
+
+endfm
+
+red validContext(('a : unit)('b : bool)('c : unit) emptyVarContext) .
+red validContext(('a : unit)('a : bool)('c : unit) emptyVarContext) .
+
+
+fmod SIGNATURE-TEST is
+ pr SIGNATURE .
+ pr VAR-CONTEXT-TEST .
+endfm
+
+
+red find 'd (('a : unit ~> unit) ('b : unit ~>> unit) ('c : unit ~> unit)) .
+
+red validSig( ('f : unit ~> unit) ('g : bool ~> bool) ('h : unit ~>> unit ) ) .
+
+red 'c elem varC .
+
+red varType('c, varC).
+
+
+fmod MESSAGE-TYPING-TEST is
+ protecting MESSAGE-TYPING .
+endfm
+
+red typeOf(('a : unit ~> unit) ('b : unit ~> unit), emptyVarContext, ap 'b ()) .
+red typeOf(emptySig, 'x : unit, 'y) .
+red typeOf(emptySig, 'x : unit, pair('x, 'x)) .
+
+fmod MESSAGE-EQUALITY-TEST is
+ pr MESSAGE-EQUALITY .
+endfm
+
+red 'f : unit ~> unit ; 'x : unit |- ap 'f 'x =M= () : unit .
+red ('f : unit ~> unit) ; 'x : unit |- ap 'f 'x =M= () : unit .
+*** but we don't have that () =M= ap 'f 'x !
+red emptySig ; emptyVarContext |- False =M= True : bool . 
+red 'f : unit ~> unit ; 'x : unit |- pair(ap 'f 'x, 'x) =M= pair((), ()) : unit * unit .
+red 'f : unit ~> unit ; 'x : unit |- fst(pair(ap 'f 'x, 'x)) =M= () : unit .
+
+fmod DISTRIBUTION-TYPING-TEST is
+ pr DISTRIBUTION-TYPING .
+endfm
+
+red typeOf('d : unit ~>> unit, emptyVarContext, 'd < () >) .
+red typeOf('d : unit ~>> unit, emptyVarContext, 'd < False >) .
+red typeOf(('d : unit ~>> unit) ('f : unit ~> unit), emptyVarContext, 'd < ap 'f () >) .
+red typeOf(emptySig, emptyVarContext, flip) .
+
+fmod DISTRIBUTION-EQUALITY-TEST is
+ pr DISTRIBUTION-EQUALITY .
+endfm
+
+red ('f : unit ~> unit) ('d : unit ~>> unit) ; 'x : unit |- 'd < 'x > =D= 'd < () > : unit .
+
+
+fmod CHANNEL-TEST is
+ pr CHANNEL .
+endfm
+
+red validChannelCtx (('a :: bool) ('b :: unit) ('a :: unit)) .
+red elem 'a unit (('x :: unit) ('a :: bool) ('z :: unit)('C ['x ] :: unit )) .
+red 'x in ( 'a , 'b , 'c ) .
+red 'a in 'a .
+red ( 'a , 'b , 'c ) \ ( 'a , 'c) .
+red union(( 'a , 'b , 'c ),  ( 'a , 'b , 'c , 'd , 'e  )) .
+
+
+
+fmod REACTION-TEST is
+ pr REACTION .
+endfm
+
+red isSampFree('x : bool <- read 'C ; if 'x then return True else samp flip) .
+
+fmod REACTION-TYPING-TEST is
+ pr REACTION-TYPING .
+endfm
+
+red typeOf(emptySig, emptyChannelCtx, emptyVarContext, empty, return True) .
+red typeOf('f : unit ~> unit, emptyChannelCtx, 'x : unit, 'i, return (ap 'f 'x)) .
+
+red typeOf(emptySig, emptyChannelCtx, emptyVarContext, empty, samp flip) .
+red typeOf(emptySig, 'o :: unit, emptyVarContext, 'o, read 'o) .
+red typeOf(emptySig, 'o :: unit, emptyVarContext, insert('i  , insert('a , insert('b  ,  insert( 'o, empty)))) , read 'o) .
+red typeOf(emptySig, emptyChannelCtx, ('b : bool), empty, if 'b then return True else return 'a) .
+red typeOf(emptySig, emptyChannelCtx, ('b : bool), empty, if 'b then return True else return False) .
+red typeOf(emptySig, 'b :: bool, emptyVarContext, empty, read 'b) .
+red typeOf(emptySig, 'b :: bool, emptyVarContext, empty, 'x : bool <- read 'b ; if 'x then return True else return False) .
+red typeOf(emptySig, 'b :: bool, emptyVarContext, 'b, 'x : bool <- read 'b ; if 'x then return True else return False) .
+
+
+mod REACTION-EQUALITY-TEST is
+ pr REACTION-EQUALITY .
+endm
+
+
+srew [1] in REACTION-EQUALITY : 
+  rConfig(emptySig, emptyChannelCtx, 'x : unit, return 'x, empty, unit) 
+using cong-ret[M2 <- ()] . 
+
+srew [1] in REACTION-EQUALITY :
+  rConfig(('f : unit ~> unit) ('d : unit ~>> unit), emptyChannelCtx, 'x : unit, samp ('d < 'x >), empty, unit) 
+using cong-samp[D' <- 'd < () >] .
+
+srew [1] in REACTION-EQUALITY : 
+  rConfig(emptySig, emptyChannelCtx, 'x : unit, return 'x, empty, unit) 
+using cong-ret[M2 <- ()] .
+
+srew [1] in REACTION-EQUALITY : 
+     rConfig(emptySig, emptyChannelCtx, emptyVarContext, 
+             'x : bool <- samp flip ; return True, 
+             empty, bool) 
+using samp-pure .
+
+srew [1] in REACTION-EQUALITY :
+ rConfig('f : unit ~> bool, 'i :: unit, 'b : bool,
+         'x : unit <- read 'i ; 
+         'y : unit <- read 'i ; 
+          if 'b then return (ap 'f 'y) else return (ap 'f 'x ),
+         'i, bool)
+ using read-det .
+
+srew [1] in REACTION-EQUALITY : 
+ rConfig(emptySig, emptyChannelCtx, ('l : bool) ('r : bool) ,
+         if True then return 'l else return 'r, empty, bool) 
+ using if-left .
+
+srew [1] in REACTION-EQUALITY : 
+ rConfig(emptySig, emptyChannelCtx, ('l : bool) ('r : bool) ,
+         if False then return 'l else return 'r, empty, bool) 
+ using if-right .
+
+srew [1] in REACTION-EQUALITY :
+ rConfig('f : bool ~> bool, emptyChannelCtx, emptyVarContext,
+         'x : bool <- return True ; return (ap 'f 'x),
+         empty, bool)
+ using ret-bind . 
+
+srew [1] in REACTION-EQUALITY :
+ rConfig('f : bool ~> bool, emptyChannelCtx, emptyVarContext,
+         'x : bool <- return (ap 'f True) ; return 'x, empty, bool) 
+ using bind-ret .
+
+srew [1] in REACTION-EQUALITY :
+ rConfig('f : bool ~> bool, emptyChannelCtx, emptyVarContext,
+         'x2 : bool <- ('x1 : bool <- return False ; return (ap 'f 'x1)) ; return True,
+         empty, bool)
+ using bind-bind .
+
+srew [1] in REACTION-EQUALITY :
+ rConfig('f : bool ~> bool, emptyChannelCtx, emptyVarContext,
+         'x1 : bool <- return False ; x2 : bool <- return True ; return (ap 'f 'x1),
+         empty, bool )
+ using exchange .
+
+
+fmod PROTOCOL-TYPING-TEST is
+ pr PROTOCOL-TYPING .
+endfm
+
+red typeOf(emptySig, emptyChannelCtx, empty, emptyProtocol) .
+
+red typeOf(emptySig, 'o :: bool, empty, 'o ::= return True) .
+
+red typeOf(emptySig, ('o :: bool) ('a :: bool), empty, 'o ::= read 'a) .
+
+red typeOf(emptySig, ('o :: bool) ('a :: bool), 'a, 'o ::= read 'a) .
+
+red typeOf(emptySig, 'o :: bool, empty, new 'c : bool in 'o ::= return True) .
+
+red typeOf(emptySig, 'o :: bool, empty, new 'c : bool in 'o ::= return 'c) .
+*** can't read from new!
+
+red typeOf(emptySig, ('o1 :: bool) ('o2 :: bool), empty, ('o1 ::= return True) || ('o2 ::= return False)) .
+
+mod PROTOCOL-EQUALITY-TEST is
+ pr PROTOCOL-EQUALITY .
+endm
+
+
+srew [1] in PROTOCOL-EQUALITY :
+ pConfig(emptySig, ('o :: bool), 'o ::= x : bool <- samp flip ; return True, empty,  'o)
+using CONG-REACT{samp-pure} .
+
+srew [1] in PROTOCOL-EQUALITY :
+ pConfig(emptySig, ('o :: bool) ('c :: unit), ('o ::= x : bool <- samp flip ; return True) || ('c ::= return ()), empty, insert('o, 'c)) 
+using CONG-COMP-LEFT{CONG-REACT{samp-pure}} .
+
+srew [1] in PROTOCOL-EQUALITY : 
+ pConfig(emptySig, ('o :: bool), new 'a : bool in 'a ::= x : bool <- samp flip ; return True, 'o, empty) 
+using CONG-NEW{CONG-REACT{samp-pure}} .
+
+srew [1] in PROTOCOL-EQUALITY :
+ pConfig(emptySig, emptyChannelCtx, new 'o1 : bool in new 'o2 : bool in ( ('o1 ::= return True) || ('o2 ::= return False) ), empty, empty) 
+using NEW-EXCH .
+
+
+srew [1] in PROTOCOL-EQUALITY : pConfig(emptySig, ('o :: bool) ('i :: bool), new 'c : bool in (('o ::= read 'i) || ('c ::= return True)), 'i, 'o)
+using COMP-NEW-2 [P <- 'o ::= read 'i] ; ABSORB-LEFT .
+
+
+srew [1] in PROTOCOL-EQUALITY :
+ pConfig(emptySig, ('i :: bool) ('o :: bool), (new 'c : bool in 'c ::= return True) || 'o ::= read 'i, 'i, 'o) 
+using ABSORB-LEFT .
+
+srew [1] in PROTOCOL-EQUALITY :
+ pConfig(emptySig, ('i :: bool) ('o :: bool), ('o ::= read 'i) || (new 'c : bool in 'c ::= return True) , 'i, 'o) 
+using ABSORB-RIGHT .
+
+srew [1] in PROTOCOL-EQUALITY :
+ pConfig('f : bool ~> bool, 'o :: bool, 'o ::= 'x : bool <- read 'o ; return True, empty, 'o)
+using DIVERGE .
+
+srew [1] in PROTOCOL-EQUALITY :
+ pConfig(emptySig, 'o :: bool,
+         'o ::= 'x : bool <- samp flip ;
+                 if 'x then return True else read 'o, empty, 'o)
+using FLIP-UNIF .
+
+
+*** UNIF-EXT!
+*** srew [1] in PROTOCOL-EQUALITY :
+*** pConfig('f : bool ~> bool, 'o :: bool,
+***              'o ::= 'x : bool <- return True ;
+***                     'y : bool <- samp unif bool ;
+***                     'z : bool <- samp unif bool ; 
+***                     if 'y =? 'z then return (ap 'f 'x) else read 'o, emptySet, singleton 'o)
+*** using UNIF-UNIF .
+
+srew [1] in PROTOCOL-EQUALITY :
+ pConfig('f : bool ~> bool, ('o :: bool),
+             new 'l : bool in (('o ::= 'b : bool <- return False ;
+                                if 'b then read 'l else return True)
+                          ||
+                           ('l ::= samp flip))
+            ,empty, 'o)
+using FOLD-IF-LEFT .
+
+srew [1] in PROTOCOL-EQUALITY :
+ pConfig('f : bool ~> bool, ('o :: bool),
+             new 'r : bool in (('o ::= 'b : bool <- return False ;
+                                if 'b then return True else read 'r)
+                          ||
+                           ('r ::= samp flip))
+            ,empty, 'o)
+using FOLD-IF-RIGHT .
+
+srew [1] in PROTOCOL-EQUALITY : 
+ pConfig('f : bool ~> bool, ('o :: bool), 
+             new 'c : bool in (('o ::= 'x : bool <- read 'c ; return (ap 'f 'x))
+                           ||
+                           ('c ::= return True)),
+             empty, 'o)
+using FOLD-BIND .
+
+srew [1] in PROTOCOL-EQUALITY :
+pConfig('f : bool ~> bool, ('o1 :: bool) ('o2 :: bool) ('i :: bool), 
+            ('o1 ::= 'x0 : bool <- read 'i ; return True) || 
+            ('o2 ::= 'x0 : bool <- read 'i ; 'x1 : bool <- read 'o1 ; return (ap 'f 'x1)) 
+           , 'i, insert('o1 , 'o2))
+using SUBSUME .
+
+srew [1] in PROTOCOL-EQUALITY : pConfig(emptySig, ('o1 :: bool) ('o2 :: bool), 
+             ('o1 ::= samp flip) || ('o2 ::= 'x : bool <- read 'o1 ; return True),
+            empty, insert('o1 , 'o2))
+using UNUSED{samp-pure} .
+
+
+*** aux for subst:
+srew [1] in PROTOCOL-EQUALITY : rConfig('f : bool ~> bool, ('o1 :: bool) ('o2 :: bool), emptyVarContext, 
+             'x1 : bool <- ('x : bool <- samp flip ; return True) ;
+             return pair('x1, 'x1), insert('o1 , 'o2), bool * bool)
+ using cong-bind{samp-pure , idle} ; ret-bind .
+
+
+
+srew [1] in PROTOCOL-EQUALITY : rConfig('f : bool ~> bool, ('o1 :: bool) ('o2 :: bool), emptyVarContext, 
+             'x1 : bool <- ('x : bool <- samp flip ; return True) ;
+             'x2 : bool <- ('x : bool <- samp flip ; return True) ; 
+             return pair('x1, 'x2), insert('o1 , 'o2), bool * bool)
+ using cong-bind{samp-pure , idle} ; exchange ; cong-bind{samp-pure , idle} ; ret-bind ; ret-bind ; sym[R1 <- ('x1 : bool <- ('x : bool <- samp flip ; return True) ; 
+           return pair('x1, 'x1))]{cong-bind{samp-pure , idle} ; ret-bind} .
+
+srew [1] in PROTOCOL-EQUALITY : 
+pConfig('f : bool ~> bool, ('o1 :: bool) ('o2 :: bool), ('o1 ::= 'x : bool <- samp flip ; return True) || ('o2 ::= 'x : bool <- read 'o1 ; return (ap 'f 'x)), empty, insert('o1 , 'o2)) 
+ using SUBST[x2:Qid <- 'x2]{cong-bind{samp-pure , idle} ; exchange ; cong-bind{samp-pure , idle} ; ret-bind ; ret-bind ; 
+       sym[R1 <- ('x1 : bool <- ('x : bool <- samp flip ; return True) ; return pair('x1, 'x1))] {cong-bind{samp-pure , idle} ; ret-bind}} .
+
+
+srew [1] in PROTOCOL-EQUALITY : pConfig(emptySig, ('i :: bool)('a :: bool),
+     new 'o : bool in (('o ::= read 'i)||('a ::= 'x : bool <- read 'o ; return 'x)), 
+     'i, 'a ) 
+using CONG-NEW{CONG-COMP-LEFT{CONG-REACT{bind-ret}}} .
+
+srew [1] in PROTOCOL-EQUALITY : pConfig(emptySig, ('i :: bool)('a :: bool),
+     new 'o : bool in (('o ::= read 'i)||('a ::= read 'o)), 'i, 'a ) 
+using CONG-NEW{CONG-COMP-RIGHT{CONG-REACT{bind-ret-2[x <- 'x]}}} ;
+      CONG-NEW{(SUBST [x2 <- 'x2]{read-det})} ;
+      CONG-NEW{CONG-COMP-LEFT{CONG-REACT{bind-ret}}} ;
+      COMP-NEW-2 ;
+      ABSORB-RIGHT .
+
+srew [1] in PROTOCOL-EQUALITY : pConfig(emptySig, ('i :: bool)('a :: bool),
+     new 'o : bool in new 't : bool in new 'c : bool in (('c ::= return True) || ('o ::= read 'i)||('a ::= read 'o) || ('t ::= read 'i)), 'i, 'a ) 
+using CONG-NEW{CONG-NEW{CONG-NEW{CONG-COMP-RIGHT{CONG-REACT[o <- 'a]{bind-ret-2[x <- 'x]}}}}} ;
+      CONG-NEW{CONG-NEW{CONG-NEW{CONG-COMP-RIGHT{(SUBST [x2 <- 'x2]{read-det})}}}} ;
+      CONG-NEW{CONG-NEW{CONG-NEW{CONG-COMP-RIGHT{CONG-REACT{bind-ret}}}}} ; 
+      NEW-EXCH ; 
+      CONG-NEW{NEW-EXCH} ;
+      CONG-NEW{CONG-NEW{COMP-NEW-2}} ;
+      CONG-NEW{CONG-NEW{ABSORB-RIGHT}} .
+
+
+
+srewrite [1] in STRATS : pConfig(emptySig, emptyChannelCtx, new 'a : bool in
+    new 'b : bool in new 'c : bool in (('c ::= return True) || ('a ::= return True) || ('b ::= return False)), empty,
+    empty) using moveToLast('a) .
+
+
+srewrite [1] in STRATS : pConfig(emptySig, ('i :: bool), new 'a : bool in
+    new 'b : bool in new 'c : bool in (('c ::= read 'i) || ('a ::= read 'i) || ('b ::= return False)), 'i, empty) using moveToLast('a) ; nTimesCong('a) .
+
+***(
+
+srew [1] in STRATS : pConfig(emptySig, ('i :: bool)('a :: bool) ('b :: bool),
+     new 't : bool in new 'o : bool in new 'c : bool in (('c ::= return True) || ('o ::= read 'i)||('a ::= 'x : bool <- read 'i ; return 'x) || ('t ::= read 'i) ||('b ::= 'x : bool <- read 'i ; return 'x) ), 'i, insert('a , 'b)) 
+using composed('o, 'a) . *** ; composed('t, 'b) .
+)
+
+srew [1] in STRATS : 
+    pConfig(('f : bool ~> bool) 
+            ('g : bool * bool ~> bool), 
+            ('i1 :: bool) ('i2 ::  bool) ('o :: bool) ('c :: bool),
+            ('o ::= 
+            'c : bool <- return True ; 
+            'x : bool <- ('a : bool <- read 'i1 ; 
+                          'b : bool <- read 'i2 ;  
+                          return (ap 'g (pair('a, 'b)))) ; 
+            'd : bool <- return (ap 'f 'c ) ; 
+            return (ap 'g pair('x, 'd))) || ('c ::= return True) ,
+            insert('i1 , insert ('i2, empty)),
+            insert('o , 'c) ) 
+using liftInnerBindsPr('o) .
+
+srew [1] rConfig(emptySig, ('i1 :: bool)('i2 :: bool) , ('f : bool),
+             'c : bool <- if 'f then read 'i1 else read 'i2 ; 
+             if 'c then return True else return False
+             , insert('i1 , 'i2), bool) 
+using if-over-bind . 
+
+srew [1] rConfig(emptySig, ('i1 :: bool)('i2 :: bool) , ('c : bool),
+             'ce : bool <- if 'c then return False else return True ; 
+             if 'ce then read 'i1 else read 'i2
+             , insert('i1 , 'i2), bool) 
+using if-over-bind .  
+
+srew [1] in STRATS :
+pConfig(emptySig, ('in0 :: bool) ('in1 :: bool), 
+ new 'ce : bool in new 'key0 : bool in new 'key1 : bool in new 'flip : bool in new 'choice : bool
+ in(
+ ( 'ce ::= 'f : bool <- read 'flip ;
+          'c : bool <- read 'choice ;
+          if 'f then 
+           (if 'c then return False else return True)
+          else 
+           (if 'c then return True else return False)
+ )
+ ||
+ ('msgenc0 ::= 'd : bool <- read 'ce ;
+               'm0 : bool <- read 'in0 ; 
+               'm1 : bool <- read 'in1 ;
+               'k0 : bool <- read 'key0 ;
+               'k1 : bool <- read 'key1 ;
+               if 'd then return 'k0 else return 'k1)
+  || 
+  ('key0 ::= return True) || ('key1 ::= return False)
+  || ('flip ::= return True) || ('choice ::= return False) ),
+  insert('in0 , 'in1), empty) 
+using nTimesMoveFirst('c, 'ce) . ***this one shouldn't work
+                
+srew [1] in STRATS :
+pConfig(emptySig, ('in0 :: bool) ('in1 :: bool) 
+ ('ce :: bool) ('msgenc0 :: bool),
+ new 'test : bool in new 'a : bool in (
+ ('a ::= read 'in0) || 
+ ('test ::= return True) || 
+ ( 'ce ::= 'x : bool <- return True ; 
+          'f : bool <- return False ;
+          'c : bool <- return True ;
+          if 'f then 
+           (if 'c then return False else return 'x)
+          else 
+           (if 'c then return True else return False)
+ )
+ ||
+ ('msgenc0 ::= 'd : bool <- read 'a ;
+               'm0 : bool <- read 'in0 ; 
+               'm1 : bool <- read 'in1 ;
+               'k0 : bool <- return True ;
+               'k1 : bool <- return True ;
+               if 'd then return 'k0 else return 'k1)) ,
+  insert('in0 , 'in1), insert('ce , 'msgenc0)) 
+using nTimesMoveFirst('c, 'ce) .     
+
+srew [1] in PROTOCOL-EQUALITY : rConfig(emptySig, emptyChannelCtx, emptyVarContext, 'x1 : bool <- return True ; 'x2 : bool <- return True ; return pair('x1, 'x2), empty, bool * bool) using samp-free .      
+    
+select STRATS .    
+              
+red startsWithIfRead(rConfig('f : unit ~> unit, emptyChannelCtx, emptyVarContext,
+if 'c then 'm0 : unit <- read 'In0 ; 'm1 : unit <- read 'In1 ; 'k0 : unit <- read 'Key0
+    ; 'k1 : unit <- read 'Key1 ; return (ap 'f 'k1) else 'm0 : unit
+    <- read 'In0 ; 'm1 : unit <- read 'In1 ; 'k0 : unit <- read 'Key0 ; 'k1 :
+    unit <- read 'Key1 ; return (ap 'f 'k0), empty, unit)) .     
+        
