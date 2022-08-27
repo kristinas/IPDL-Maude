@@ -1,3 +1,5 @@
+Milestone 0: 
+
  Maude 
  - fast rewriting
  - declarative style of specification, close to the original notation
