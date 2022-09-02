@@ -1,0 +1,293 @@
+***( IPDL
+
+  Copyright : (C) 2022, Kristina Sojakova
+  License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+)
+
+load ../src/strategies
+
+mod SECURE is
+ protecting PROTOCOL-EQUALITY .
+
+ op msg  : -> Type .
+ op key  : -> Type .
+ op ctxt : -> Type .
+ 
+ op zerosF : -> SigElem .
+ eq zerosF = 'zeros : unit ~> msg .
+ 
+ op decF : -> SigElem .
+ eq decF = 'dec : (ctxt * key) ~> msg .
+ 
+ op encF : -> SigElem .
+ eq encF = 'enc : (msg * key) ~>> ctxt .
+
+ op muKeySym : -> SigElem .
+ eq muKeySym = 'mu_key : unit ~>> key .
+ 
+ op secSig : -> Signature .
+ eq secSig = muKeySym encF decF zerosF .
+ 
+ op n : -> Nat .
+ 
+ op idealPlusSim : -> Protocol .
+ eq idealPlusSim = 
+    new 'Key : key in
+    new 'LeakMsgRcvd_id_adv : unit in
+    new 'OkMsg_adv_id : ctxt in     
+    (
+    ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)
+    ) 
+    ||
+    ('LeakCtxt_net_adv ::= nf(
+                ('x : unit <- read 'LeakMsgRcvd_id_adv)
+                ('k : key <- read 'Key ),
+                samp ('enc < pair(ap 'zeros (), 'k) >),
+                'x :: 'k :: emptyQidList
+                ) 
+    )            
+    ||
+    ('OkMsg_adv_id ::= nf('okCtxt : ctxt <- read 'OkCtxt_adv_net, 
+                          return 'okCtxt , 
+                          'okCtxt :: emptyQidList ))   
+    ||
+    ('LeakMsgRcvd_id_adv ::= nf(
+            'in : msg <- read 'In ,
+            return (),
+            'in :: emptyQidList)
+    )        
+    ||
+    ('Out ::= nf(
+            ('okMsg : ctxt <- read 'OkMsg_adv_id)
+            ('in : msg <- read 'In),
+            return 'in,
+            'okMsgs :: 'in :: emptyQidList ) 
+    ) 
+    ) . *** end of new, leave here
+    
+ op real : -> Protocol .
+ eq real = 
+    new 'Key : key in
+    new 'Recv : ctxt in
+    new 'Send : ctxt in
+    ( 
+    ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)
+    ) 
+    || 
+    ('Send ::= nf(
+            ('m : msg <- read 'In )
+            ('k : key <- read 'Key) ,
+            samp ('enc < pair('m, 'k) >),
+            'm :: 'k :: emptyQidList
+            )
+    )    
+    ||
+    ('LeakCtxt_net_adv ::= nf('send : ctxt <- read 'Send, return 'send, 'send :: emptyQidList)) 
+    || 
+    ('Recv ::= nf(
+            ('okCtxt : ctxt <- read 'OkCtxt_adv_net )
+            ('send : ctxt <- read 'Send), 
+                return 'send,
+                'okCtxt :: 'send :: emptyQidList
+            )
+    ) 
+    ||
+    ('Out ::= nf(
+            ('c : ctxt <- read 'Recv )
+            ('k : key <- read 'Key ),
+            return (ap 'dec pair('c, 'k)),
+            'c :: 'k :: emptyQidList
+            )
+    ) 
+    ) . *** end of new, leave here
+    
+  
+  op addEncDec : -> Protocol .
+  eq addEncDec =  
+  new 'Key : key in 
+  new 'Send : ctxt in 
+  new 'Recv : ctxt in 
+  new 'Enc : ctxt in
+  new 'Dec : msg in
+  (
+  ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)) 
+  || 
+  ('LeakCtxt_net_adv ::= nf('send : ctxt <- read 'Send, return 'send, 'send :: emptyQidList)) 
+  ||
+  ('Dec ::= nf(('send : ctxt <- read 'Send) 
+               ('k : key <- read 'Key), 
+               return (ap 'dec pair('send, 'k)), 
+               'send :: 'k :: emptyQidList)
+               ) 
+  ||
+  ('Out ::= nf(
+                 ('okCtxt : ctxt <- read 'OkCtxt_adv_net)
+                 ('d : msg <- read 'Dec),
+                 return 'd, 
+                 'okCtxt :: 'd :: emptyQidList)
+                 )
+  || 
+  ('Recv ::= nf(('okCtxt : ctxt <- read 'OkCtxt_adv_net) 
+                ('send : ctxt <- read 'Send), 
+                return 'send,
+                'okCtxt :: 'send :: emptyQidList)) 
+  ||
+  ('Send ::= nf(('e : ctxt <- read 'Enc), return 'e, 'e :: emptyQidList)) 
+  ||
+  ('Enc ::= nf(('k : key <- read 'Key) 
+                ('m : msg <- read 'In), 
+                samp ('enc < pair('m, 'k) >), 
+                'm :: 'k :: emptyQidList) ) 
+   ) *** end of new, leave here!
+   .
+  
+endm
+
+smod EXECUTE is
+ pr STRATS .
+ pr SECURE .
+ 
+ var Sigma : Signature .
+ var Delta : ChannelContext .
+ var Gamma : VarContext .
+ vars i1 i2 X Y Z In : ChannelName .  
+ vars m x y z k c Enc Dec Key i : Qid .
+ var I O : Set{CName} .
+ var li : List{NatTerm} .
+ var cOf : CaseOf .
+ 
+ crl [enc-dec-correctness] :
+  pConfig(Sigma, Delta (In :: msg) (Key :: key) (Enc :: ctxt) (Dec :: msg), 
+           (Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)
+           ) 
+           || 
+           (Enc ::= nf((m : msg <- read In)
+                       (k : key <- read Key),
+                    samp ('enc < pair(m, k) >),
+                    m :: k :: emptyQidList
+                    )
+           )
+           ||
+           (Dec ::= nf ((c : ctxt <- read Enc)
+                    (k : key <- read Key) ,
+                    return (ap 'dec pair(c, k)),
+                    c :: k :: emptyQidList
+                    )
+           )  
+          , I, O)
+  => 
+  pConfig(Sigma, Delta (In :: msg) (Key :: key) (Enc :: ctxt) (Dec :: msg), 
+          (Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)
+           ) 
+           || 
+           (Enc ::= nf((m : msg <- read In)
+                       (k : key <- read Key),
+                    samp ('enc < pair(m, k) >),
+                    m :: k :: emptyQidList
+                    )
+           )
+           ||
+           (Dec ::= nf (i : msg <- read In ,
+                    return i,
+                    i :: emptyQidList
+                    )
+           )  
+                     , I, O) 
+  if In in I [nonexec]. 
+  
+ var in key enc dec : ChannelName . 
+ var pConf : ProtocolConfig .
+  
+ strat applyEDC : ChannelName ChannelName ChannelName ChannelName @ ProtocolConfig .  
+ sd applyEDC(in, key, enc, dec) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{applyEDC(in, key, enc, dec)} 
+     : CONG-COMP-RIGHT{
+         enc-dec-correctness[In:ChannelName <- in, 
+                             Key:ChannelName <- key,
+                             Enc:ChannelName <- enc,
+                             Dec:ChannelName <- dec,
+                             i:Qid <- 'in]
+       } .
+  
+  var bound : Nat .
+ 
+  rl [ind-cpa] :
+    pConfig(Sigma, Delta, 
+          (Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)
+           ) 
+          || 
+          (Enc ::= nf(
+                   (m : msg <- read In)
+                   (k : key <- read Key),
+                   samp ('enc < pair(m, k) >),
+                   m :: k :: emptyQidList
+                   )
+          )
+          , I, O) 
+          =>
+             pConfig(Sigma, Delta, 
+          (Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)
+           )
+          || 
+          (Enc ::= nf(
+                   (m : msg <- read In)
+                   (k : key <- read Key),
+                   samp ('enc < pair(ap 'zeros (), k) >),
+                   m :: k :: emptyQidList
+                   )
+          )         
+          , I, O) 
+  . 
+  
+ strat applyCPA : ChannelName ChannelName @ ProtocolConfig .  
+ sd applyCPA(key, enc) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{applyCPA(key, enc)} 
+     : CONG-COMP-RIGHT{
+         ind-cpa[ Key:ChannelName <- key,
+                  Enc:ChannelName <- enc
+                ]
+       } .
+    
+endsm
+       
+srew [1] pConfig(secSig, 
+                 ('In :: msg) ('Out :: msg) ('OkCtxt_adv_net :: ctxt)
+                 ('LeakCtxt_net_adv :: ctxt), 
+                 real,  
+                 insert('In, 'OkCtxt_adv_net),
+                 getOutputs(idealPlusSim))
+         using  smart-subst-nf('Recv, 'Out)  ;   
+                SYM[P1:Protocol <- addEncDec] 
+                    {foldNF('Enc, 'Send) ;
+                     foldNF('Dec, 'Out)
+                    } ;
+                absorbChannel('Recv) ;
+                smart-subst-nf('Send, 'LeakCtxt_net_adv) ;
+                smart-subst-nf('Send, 'Dec) ;
+                absorbChannel('Send) ;
+                applyEDC('In, 'Key, 'Enc, 'Dec) ;
+                applyCPA('Key, 'Enc);
+                foldNF('Enc, 'LeakCtxt_net_adv) ;
+                foldNF('Dec, 'Out)
+                
+                .       
+            
+  srew [1] pConfig(secSig, 
+                 ('In :: msg) ('Out :: msg) ('OkCtxt_adv_net :: ctxt)
+                 ('LeakCtxt_net_adv :: ctxt), 
+                 idealPlusSim,  
+                 insert('In, 'OkCtxt_adv_net),
+                 getOutputs(idealPlusSim))
+         using        
+               smart-subst-nf('OkMsg_adv_id, 'Out) ;
+               smart-subst-nf('LeakMsgRcvd_id_adv, 'LeakCtxt_net_adv) ;
+               absorbChannel('LeakMsgRcvd_id_adv) ;
+               absorbChannel('OkMsg_adv_id)
+               .   
+               
+        

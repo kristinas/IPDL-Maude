@@ -1,7 +1,7 @@
 ***( IPDL
 
   Copyright : (C) 2022, Kristina Sojakova
-  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
   Authors   : Mihai Codescu <mscodescu@gmail.com>
               Kristina Sojakova <sojakova.kristina@gmail.com>
 
@@ -22,24 +22,31 @@ mod PREPROCESSING is
 
  op idealPlusSim : -> Protocol .
  eq idealPlusSim = 
-    new 'LeakChoice_id_adv : bool in
-    new 'LeakOut_id_adv : msg in  
+    new 'ChoiceEnc : bool in
+    new 'Flip : bool in
     new 'Key0 : msg in
     new 'Key1 : msg in
-    new 'Flip : bool in
-    new 'SharedKey : msg in
-    new 'ChoiceEnc : bool in
     new 'MsgEnc0 : msg in
     new 'MsgEnc1 : msg in
+    new 'LeakChoice_id_adv : bool in
+    new 'LeakOut_id_adv : msg in  
+    new 'SharedKey : msg in
     (
-    ('Out ::= 'm0 : msg <- read 'In0 ;
-              'm1 : msg <- read 'In1 ;
-              'c : bool <- read 'Choice ;
-              if 'c then return 'm1 else return 'm0)
+    ('Out ::= nf(('m0 : msg <- read 'In0)
+                 ('m1 : msg <- read 'In1)
+                 ('c : bool <- read 'Choice),
+                 if 'c then return 'm1 else return 'm0,
+                 'm0 :: 'm1 :: 'c :: emptyQidList)
+    )
     ||
-    ('LeakChoice_id_adv ::= read 'Choice)
+    ('LeakChoice_id_adv ::= nf(('choice : bool <- read 'Choice), 
+                               return 'choice, 
+                               'choice :: emptyQidList)
+    )
     ||
-    ('LeakOut_id_adv ::= read 'Out)
+    ('LeakOut_id_adv ::= nf(('out : msg <- read 'Out), 
+                               return 'out, 
+                               'out :: emptyQidList))
     ||
     ('Key0 ::= samp ('mu_msg < () >))
     ||
@@ -47,53 +54,85 @@ mod PREPROCESSING is
     || 
     ('Flip ::= samp flip)
     ||
-    ('LeakFlip_rec_adv ::= read 'Flip)
+    ('LeakFlip_rec_adv ::= nf(('flip : bool <- read 'Flip), 
+                               return 'flip, 
+                               'flip :: emptyQidList))
     ||
-    ('SharedKey ::= read 'Key0)
+    ('SharedKey ::= nf(('key0 : msg <- read 'Key0), 
+                               return 'key0, 
+                               'key0 :: emptyQidList))
     ||
-    ('LeakSharedKey_rec_adv ::= read 'Key0)
+    ('LeakSharedKey_rec_adv ::= nf(('key0 : msg <- read 'Key0), 
+                               return 'key0, 
+                               'key0 :: emptyQidList))
     ||
-    ('LeakChoice_rec_adv ::= read 'LeakChoice_id_adv)
+    ('LeakChoice_rec_adv ::= nf(('leakChoice : bool <- read 'LeakChoice_id_adv), 
+                               return 'leakChoice, 
+                               'leakChoice :: emptyQidList)
+    )
     ||
-    ('ChoiceEnc ::= 'f : bool <- read 'Flip ;
-                    'c : bool <- read 'LeakChoice_id_adv ;
+    ('ChoiceEnc ::= nf(('f : bool <- read 'Flip)
+                    ('c : bool <- read 'LeakChoice_id_adv), 
                      if 'f then
                 (if 'c then return False else return True)
               else 
-                (if 'c then return True else return False))
+                (if 'c then return True else return False),
+                'f :: 'c :: emptyQidList)
+    )
     ||
-    ( 'LeakChoiceEnc_rec_adv ::= read 'ChoiceEnc)
+    ( 'LeakChoiceEnc_rec_adv ::= nf(('choiceEnc : bool <- read 'ChoiceEnc), 
+                               return 'choiceEnc, 
+                               'choiceEnc :: emptyQidList)
+    )
     ||
-    ('MsgEnc0 ::= 'm : msg <- read 'LeakOut_id_adv ;
-                  'k0 : msg <- read 'Key0 ;
-                  'k1 : msg <- read 'Key1 ;
-                  'c : bool <- read 'LeakChoice_id_adv ;
+    ('MsgEnc0 ::= nf(
+                  ('m : msg <- read 'LeakOut_id_adv )
+                  ('k0 : msg <- read 'Key0 )
+                  ('k1 : msg <- read 'Key1 )
+                  ('c : bool <- read 'LeakChoice_id_adv) ,
                   if 'c then return 'k1
-                        else return (ap 'xor pair('m, 'k0)))
-    ||
-    ('MsgEnc1 ::= 'm : msg <- read 'LeakOut_id_adv ;
-                  'k0 : msg <- read 'Key0 ;
-                  'k1 : msg <- read 'Key1 ;
-                  'c : bool <- read 'LeakChoice_id_adv ;
+                        else return (ap 'xor pair('m, 'k0)),
+                  'm :: 'k0 :: 'k1 :: 'c :: emptyQidList
+                        )
+    )
+     ||
+    ('MsgEnc1 ::= nf(
+                  ('m : msg <- read 'LeakOut_id_adv )
+                  ('k0 : msg <- read 'Key0 )
+                  ('k1 : msg <- read 'Key1 )
+                  ('c : bool <- read 'LeakChoice_id_adv) ,
                    if 'c then return (ap 'xor pair('m, 'k0))
-                   else return 'k1)
+                   else return 'k1,
+                   'm :: 'k0 :: 'k1 :: 'c :: emptyQidList
+                   )
+     )              
     ||
-    ('LeakMsgEnc_rec_adv0 ::= read 'MsgEnc0)
+    ('LeakMsgEnc0_rec_adv ::= nf(('msgEnc0 : msg <- read 'MsgEnc0), 
+                               return 'msgEnc0, 
+                               'msgEnc0 :: emptyQidList)
+    )
     ||
-    ('LeakMsgEnc_rec_adv1 ::= read 'MsgEnc1)
+    ('LeakMsgEnc1_rec_adv ::= nf(('msgEnc1 : msg <- read 'MsgEnc1), 
+                               return 'msgEnc1, 
+                               'msgEnc1 :: emptyQidList)
+    )
     ||
-    ('LeakOut_rec_adv ::= read 'LeakOut_id_adv)
-  ) .
+    ('LeakOut_rec_adv ::= nf(('leakOut : msg <- read 'LeakOut_id_adv), 
+                               return 'leakOut, 
+                               'leakOut :: emptyQidList)
+    )
+  ) *** end new, leave here
+   .
 
   op real : -> Protocol .
-  eq real =  
+  eq real = 
+    new 'ChoiceEnc : bool in
+    new 'Flip : bool in
     new 'Key0 : msg in
     new 'Key1 : msg in
-    new 'Flip : bool in
-    new 'SharedKey : msg in
-    new 'ChoiceEnc : bool in
     new 'MsgEnc0 : msg in
     new 'MsgEnc1 : msg in
+    new 'SharedKey : msg in   
    (
     ('Key0 ::= samp ('mu_msg < () >))
     ||
@@ -101,61 +140,435 @@ mod PREPROCESSING is
     || 
     ('Flip ::= samp flip)
     ||
-    ('LeakFlip_rec_adv ::= read 'Flip)
+    ('LeakFlip_rec_adv ::= nf(('flip : bool <- read 'Flip), 
+                               return 'flip, 
+                               'flip :: emptyQidList)
+                               )
     ||
-    ('SharedKey ::= 'k0 : msg <- read 'Key0 ;
-                    'k1 : msg <- read 'Key1 ;
-                    'f : bool <- read 'Flip ;
-                    if 'f then return 'k1 else return 'k0)
+    ('SharedKey ::= nf(('k0 : msg <- read 'Key0 )
+                    ('k1 : msg <- read 'Key1 )
+                    ('f : bool <- read 'Flip),
+                    if 'f then return 'k1 else return 'k0,
+                    'k0 :: 'k1 :: 'f :: emptyQidList )
+    )
     ||
-    ('LeakSharedKey_rec_adv ::= read 'SharedKey)
+    ('LeakSharedKey_rec_adv ::= nf(('sharedKey : msg <- read 'SharedKey), 
+                               return 'sharedKey, 
+                               'sharedKey :: emptyQidList)
+                               )
     ||
-    ('LeakChoice_rec_adv ::= read 'Choice)
+    ('LeakChoice_rec_adv ::= nf(('choice : bool <- read 'Choice), 
+                               return 'choice, 
+                               'choice :: emptyQidList)
+    )
     ||
-    ('ChoiceEnc ::= 'f : bool <- read 'Flip ; 
-                    'c : bool <- read 'Choice ;
+    ('ChoiceEnc ::= nf(
+                    ('f : bool <- read 'Flip )
+                    ('c : bool <- read 'Choice),
                     if 'f then
                       (if 'c then return False 
                              else return True)
                     else 
-                      (if 'c then return False 
-                             else return True)) 
+                      (if 'c then return True
+                             else return False),
+                     'f :: 'c :: emptyQidList        
+                       )
+    ) 
     ||
-    ('LeakChoiceEnc_rec_adv ::= read 'ChoiceEnc) 
+    ('LeakChoiceEnc_rec_adv ::= nf(('choiceEnc : bool <- read 'ChoiceEnc), 
+                               return 'choiceEnc, 
+                               'choiceEnc :: emptyQidList)) 
     || 
-    ('MsgEnc0 ::= 'm0 : msg <- read 'In0 ;
-                  'm1 : msg <- read 'In1 ;
-                  'k0 : msg <- read 'Key0 ;
-                  'k1 : msg <- read 'Key1 ;
-                  'c : bool <- read 'ChoiceEnc ;
-                  if 'c then return (ap 'xor pair('m0, 'k1))
+    ('MsgEnc0 ::= nf(
+                  ('m0 : msg <- read 'In0 )
+                  ('m1 : msg <- read 'In1 )
+                  ('k0 : msg <- read 'Key0 )
+                  ('k1 : msg <- read 'Key1 )
+                  ('e : bool <- read 'ChoiceEnc)
+                  ,
+                  if 'e then return (ap 'xor pair('m0, 'k1))
                   else return (ap 'xor pair('m0, 'k0))
+                  ,
+                  'm0 :: 'm1 :: 'k0 :: 'k1 :: 'e :: emptyQidList
+                  )
     )                                        
     ||
-    ('MsgEnc1 ::= 'm0 : msg <- read 'In0 ;
-                  'm1 : msg <- read 'In1 ;
-                  'k0 : msg <- read 'Key0 ;
-                  'k1 : msg <- read 'Key1 ;
-                  'c : bool <- read 'ChoiceEnc ;
-                  if 'c then return (ap 'xor pair('m1, 'k0))
-                  else return (ap 'xor pair('m1, 'k1))
+    ('MsgEnc1 ::= nf( 
+                  ('m0 : msg <- read 'In0 )
+                  ('m1 : msg <- read 'In1 )
+                  ('k0 : msg <- read 'Key0 )
+                  ('k1 : msg <- read 'Key1 )
+                  ('e : bool <- read 'ChoiceEnc ),
+                  if 'e then return (ap 'xor pair('m1, 'k0))
+                  else return (ap 'xor pair('m1, 'k1)),
+                  'm0 :: 'm1 :: 'k0 :: 'k1 :: 'e :: emptyQidList
+                  )
+     )
+    ||
+    ('LeakMsgEnc0_rec_adv ::= nf(('msgEnc0 : msg <- read 'MsgEnc0), 
+                               return 'msgEnc0, 
+                               'msgEnc0 :: emptyQidList)
     )
     ||
-    ('LeakMsgEnc0_rec_adv ::= read 'MsgEnc0)
+    ('LeakMsgEnc1_rec_adv ::= nf(('msgEnc1 : msg <- read 'MsgEnc1), 
+                               return 'msgEnc1, 
+                               'msgEnc1 :: emptyQidList)
+    )
     ||
-    ('LeakMsgEnc1_rec_adv ::= read 'MsgEnc1)
-    ||
-    ('Out ::= 'm0 : msg <- read 'MsgEnc0 ;
-              'm1 : msg <- read 'MsgEnc1 ;
-              'k : msg <- read 'SharedKey ;
-              'c : bool <- read 'Choice ;
-              if 'c then return (ap 'xor pair('m1, 'k))
-              else return (ap 'xor pair('m0, 'k))
+    ('Out ::= nf(
+              ('e0 : msg <- read 'MsgEnc0)
+              ('e1 : msg <- read 'MsgEnc1)
+              ('s : msg <- read 'SharedKey)
+              ('c : bool <- read 'Choice) ,
+              if 'c then return (ap 'xor pair('e1, 's))
+              else return (ap 'xor pair('e0, 's)),
+              'e0 :: 'e1 :: 's :: 'c :: emptyQidList
               )
+    )
      ||
-     ('LeakOut_rec_adv ::= read 'Out)          
-   ) .
+     ('LeakOut_rec_adv ::= nf(('out : msg <- read 'Out), 
+                               return 'out, 
+                               'out :: emptyQidList))          
+   ) *** end new leave here
+      .
      
+ op addSharedKey : -> Protocol .
+ eq addSharedKey = 
+ new 'KeyPair : msg * msg in 
+ new 'ChoiceEnc : bool in
+ new 'Flip : bool in
+ new 'Key0 : msg in
+ new 'Key1 : msg in
+ new 'MsgEnc0 : msg in
+ new 'MsgEnc1 : msg in
+ new 'SharedKey : msg in  
+ ( *** new starts here
+ ('ChoiceEnc ::= nf(('c : bool <- read 'Choice) ('f : bool <- read 'Flip), 
+                    if 'f then if 'c then return False else return True
+                          else if 'c then return True else return False, 
+                          'f :: 'c :: emptyQidList)) 
+ || 
+ ('Flip ::= samp flip) 
+ ||
+ ('KeyPair ::= nf(('f : bool <- read 'Flip) 
+                       ('k0 : msg <- read 'Key0) 
+                       ('k1 : msg <- read 'Key1), 
+                       if 'f then return pair('k1, 'k0) else return pair('k0, 'k1), 
+                       'k0 :: 'k1 :: 'f :: emptyQidList)) 
+ ||
+ ('Key0 ::= samp ('mu_msg < () >)) 
+ || 
+ ('Key1 ::= samp ('mu_msg < () >)) 
+ || 
+ ('LeakChoiceEnc_rec_adv ::= nf('choiceEnc : bool <- read 'ChoiceEnc, 
+                                return 'choiceEnc, 
+                                'choiceEnc :: emptyQidList)) 
+ || 
+ ('LeakChoice_rec_adv ::= nf('choice : bool <- read 'Choice, 
+                             return 'choice,
+                            'choice :: emptyQidList)) 
+ || 
+ ('LeakFlip_rec_adv ::= nf('flip : bool <- read 'Flip, 
+                           return 'flip, 
+                           'flip :: emptyQidList)) 
+ || 
+ ('LeakMsgEnc0_rec_adv ::= nf('msgEnc0 : msg <- read 'MsgEnc0, 
+                              return 'msgEnc0, 
+                              'msgEnc0 :: emptyQidList)) 
+ || 
+ ('LeakMsgEnc1_rec_adv ::= nf('msgEnc1 : msg <- read 'MsgEnc1, 
+                              return 'msgEnc1, 
+                              'msgEnc1 :: emptyQidList)) 
+ || 
+ ('LeakOut_rec_adv ::= nf('out : msg <- read 'Out, 
+                          return 'out, 
+                          'out :: emptyQidList)) 
+ || 
+ ('LeakSharedKey_rec_adv ::= nf('sharedKey : msg <- read 'SharedKey, 
+                                return 'sharedKey, 
+                                'sharedKey :: emptyQidList)) 
+ || 
+ ('MsgEnc0 ::= nf(('c : bool <- read 'Choice) 
+                  ('k : msg * msg <- read 'KeyPair) 
+                  ('m0 : msg <- read 'In0) 
+                  ('m1 : msg <- read 'In1), 
+                  if 'c then return (ap 'xor pair('m0, snd 'k)) 
+                        else return (ap 'xor pair('m0, fst 'k)) , 
+                  'm0 :: 'm1 :: 'k :: 'c :: emptyQidList)) 
+ || 
+ ('MsgEnc1 ::= nf(('c : bool <- read 'Choice) 
+                  ('k : msg * msg <- read 'KeyPair) 
+                  ('m0 : msg <- read 'In0) 
+                  ('m1 : msg <- read 'In1), 
+                  if 'c then return (ap 'xor pair('m1, fst 'k)) 
+                        else return (ap 'xor pair('m1, snd 'k)) , 
+                  'm0 :: 'm1 :: 'k :: 'c :: emptyQidList))  
+ || 
+ ('Out ::= nf(('c : bool <- read 'Choice) 
+              ('m0 : msg <- read 'In0) 
+              ('m1 : msg <- read 'In1), 
+              if 'c then return 'm1 else return 'm0, 
+              'm0 :: 'm1 :: 'c :: emptyQidList)) 
+ || ('SharedKey ::= nf(('k : msg * msg <- read 'KeyPair),
+                       return (fst 'k), 
+                       'k :: emptyQidList))
+    ) *** new ends, leave here
+    .   
+      
+  op addKey0Key1 : -> Protocol .
+  eq addKey0Key1 = 
+     new 'ChoiceEnc : bool in
+     new 'Flip : bool in
+     new 'Key0 : msg in
+     new 'Key1 : msg in 
+     new 'KeyPair : msg * msg in 
+     new 'MsgEnc0 : msg in 
+     new 'MsgEnc1 : msg in 
+     new 'SharedKey : msg in 
+     ( *** new starts here
+     ('ChoiceEnc ::= nf(('c : bool <- read 'Choice) 
+                        ('f : bool <- read 'Flip), 
+                         if 'f then if 'c then return False else return True
+                               else if 'c then return True else return False, 
+                        'f :: 'c :: emptyQidList)
+     ) || 
+     ('Flip ::= samp flip) 
+     || 
+     ('Key0 ::= samp ('mu_msg < () >)) 
+     ||
+     ('Key1 ::= samp ('mu_msg < () >)) 
+     ||
+     ('KeyPair ::= nf(('k0 : msg <- read 'Key0) 
+                      ('k1 : msg <- read 'Key1) ,
+                      return pair('k0, 'k1), 
+                      'k0 :: 'k1 :: emptyQidList)
+     ) || 
+     ('LeakChoiceEnc_rec_adv ::= nf('choiceEnc : bool <- read 'ChoiceEnc, 
+                                    return 'choiceEnc, 
+                                    'choiceEnc :: emptyQidList)
+     ) || 
+     ('LeakChoice_rec_adv ::= nf('choice : bool <- read 'Choice, 
+                                 return 'choice, 
+                                 'choice :: emptyQidList)
+     ) || 
+     ('LeakFlip_rec_adv ::= nf('flip : bool <- read 'Flip, 
+                               return 'flip, 
+                               'flip :: emptyQidList)
+     ) || 
+     ('LeakMsgEnc0_rec_adv ::= nf('msgEnc0 : msg <- read 'MsgEnc0, 
+                                  return 'msgEnc0, 
+                                  'msgEnc0 :: emptyQidList)
+     ) || 
+     ('LeakMsgEnc1_rec_adv ::= nf('msgEnc1 : msg <- read 'MsgEnc1,
+                                  return 'msgEnc1, 
+                                  'msgEnc1 :: emptyQidList)
+     ) || 
+     ('LeakOut_rec_adv ::= nf('out : msg <- read 'Out, 
+                              return 'out, 
+                              'out ::  emptyQidList)
+     ) || 
+     ('LeakSharedKey_rec_adv ::= nf('sharedKey : msg <- read 'SharedKey, 
+                                    return 'sharedKey, 
+                                    'sharedKey :: emptyQidList)
+     ) || 
+     ('MsgEnc0 ::= nf(('c : bool <- read 'Choice) 
+                      ('k : msg * msg <- read 'KeyPair) 
+                      ('m0 : msg <- read 'In0) 
+                      ('m1 : msg <- read 'In1), 
+                      if 'c then return (ap 'xor pair('m0, snd 'k)) 
+                            else return (ap 'xor pair('m0, fst 'k)), 
+                      'm0 :: 'm1 :: 'k :: 'c :: emptyQidList)
+     ) || 
+     ('MsgEnc1 ::= nf(('c : bool <- read 'Choice) 
+                      ('k : msg * msg <- read 'KeyPair) 
+                      ('m0 : msg <- read 'In0) 
+                      ('m1 : msg <- read 'In1), 
+                      if 'c then return (ap 'xor pair('m1, fst 'k)) 
+                            else return (ap 'xor pair('m1, snd 'k)), 
+                      'm0 :: 'm1 :: 'k :: 'c :: emptyQidList)
+     ) || 
+     ('Out ::= nf(('c : bool <- read 'Choice) 
+                  ('m0 : msg <- read 'In0) 
+                  ('m1 : msg <- read 'In1),
+                  if 'c then return 'm1 else return 'm0, 
+                  'm0 :: 'm1 :: 'c :: emptyQidList)
+     ) || 
+     ('SharedKey ::= nf('k : msg * msg <- read 'KeyPair, 
+                        return fst 'k, 
+                        'k :: emptyQidList)   
+     )
+    ) *** end new, leave here 
+    .
+    
+  op addPvtMsg : -> Protocol .
+  eq addPvtMsg = 
+     new 'ChoiceEnc : bool in
+     new 'Flip : bool in
+     new 'Key0 : msg in
+     new 'Key1 : msg in 
+     new 'MsgEnc0 : msg in 
+     new 'MsgEnc1 : msg in 
+     new 'PvtMsg : msg in
+     new 'SharedKey : msg in 
+     ( *** new starts here
+     ('ChoiceEnc ::= nf(('c : bool <- read 'Choice) 
+                        ('f : bool <- read 'Flip), 
+                         if 'f then if 'c then return False else return True
+                               else if 'c then return True else return False, 
+                        'f :: 'c :: emptyQidList)
+     ) || 
+     ('Flip ::= samp flip) 
+     || 
+     ('Key0 ::= samp ('mu_msg < () >)) 
+     ||
+     ('Key1 ::= samp ('mu_msg < () >)) 
+     || 
+     ('LeakChoiceEnc_rec_adv ::= nf('choiceEnc : bool <- read 'ChoiceEnc, 
+                                    return 'choiceEnc, 
+                                    'choiceEnc :: emptyQidList)
+     ) || 
+     ('LeakChoice_rec_adv ::= nf('choice : bool <- read 'Choice, 
+                                 return 'choice, 
+                                 'choice :: emptyQidList)
+     ) || 
+     ('LeakFlip_rec_adv ::= nf('flip : bool <- read 'Flip, 
+                               return 'flip, 
+                               'flip :: emptyQidList)
+     ) || 
+     ('LeakMsgEnc0_rec_adv ::= nf('msgEnc0 : msg <- read 'MsgEnc0, 
+                                  return 'msgEnc0, 
+                                  'msgEnc0 :: emptyQidList)
+     ) || 
+     ('LeakMsgEnc1_rec_adv ::= nf('msgEnc1 : msg <- read 'MsgEnc1,
+                                  return 'msgEnc1, 
+                                  'msgEnc1 :: emptyQidList)
+     ) || 
+     ('LeakOut_rec_adv ::= nf('out : msg <- read 'Out, 
+                              return 'out, 
+                              'out ::  emptyQidList)
+     ) || 
+     ('LeakSharedKey_rec_adv ::= nf('sharedKey : msg <- read 'SharedKey, 
+                                    return 'sharedKey, 
+                                    'sharedKey :: emptyQidList)
+     ) || 
+     ('MsgEnc0 ::= nf(('c : bool <- read 'Choice) 
+                      ('k0 : msg <- read 'Key0) 
+                      ('m0 : msg <- read 'In0) 
+                      ('m1 : msg <- read 'In1)
+                      ('p : msg <- read 'PvtMsg), 
+                      if 'c then return 'p
+                            else return (ap 'xor pair('m0, 'k0)), 
+                      'm0 :: 'm1 :: 'k0 :: 'p :: 'c :: emptyQidList)
+     ) || 
+     ('MsgEnc1 ::= nf(('c : bool <- read 'Choice) 
+                      ('k0 : msg <- read 'Key0) 
+                      ('m0 : msg <- read 'In0) 
+                      ('m1 : msg <- read 'In1)
+                      ('p : msg <- read 'PvtMsg), 
+                      if 'c then return (ap 'xor pair('m1, 'k0))
+                            else return 'p, 
+                      'm0 :: 'm1 :: 'k0 :: 'p :: 'c :: emptyQidList)
+     ) || 
+     ( 'PvtMsg ::= nf(('c : bool <- read 'Choice) 
+                      ('k1 : msg <- read 'Key1) 
+                      ('m0 : msg <- read 'In0) 
+                      ('m1 : msg <- read 'In1), 
+                      if 'c then return (ap 'xor pair('m0, 'k1)) 
+                            else return (ap 'xor pair('m1, 'k1)), 
+                      'm0 :: 'm1 :: 'k1 :: 'c :: emptyQidList)
+     )||
+     ('Out ::= nf(('c : bool <- read 'Choice) 
+                  ('m0 : msg <- read 'In0) 
+                  ('m1 : msg <- read 'In1),
+                  if 'c then return 'm1 else return 'm0, 
+                  'm0 :: 'm1 :: 'c :: emptyQidList)
+     ) || 
+     ('SharedKey ::= nf(('k0 : msg <- read 'Key0) 
+                        ('k1 : msg <- read 'Key1), 
+                        return 'k0,
+                        'k0 :: 'k1 :: emptyQidList)  
+     )
+    ) *** end new, leave here 
+    . 
+    
+    
+  op addKey1 : -> Protocol .
+  eq addKey1 = 
+    new 'ChoiceEnc : bool in
+    new 'Flip : bool in 
+    new 'Key0 : msg in 
+    new 'Key1 : msg in 
+    new 'MsgEnc0 : msg in 
+    new 'MsgEnc1 : msg in 
+    new 'PvtMsg : msg in 
+    new 'SharedKey : msg in 
+    ( *** new starts here
+    ('ChoiceEnc ::= nf(('c : bool <- read 'Choice) 'f : bool <- read 'Flip, 
+                        if 'f then if 'c then return False else return True
+                              else if 'c then return True else return False, 
+                       'f :: 'c :: emptyQidList)
+    ) || 
+    ('Flip ::= samp flip) || 
+    ('Key0 ::= samp ('mu_msg < () >)) || 
+    ('Key1 ::= samp ('mu_msg < () >)) || 
+    ('LeakChoiceEnc_rec_adv ::= nf('choiceEnc : bool <- read 'ChoiceEnc, 
+                                   return 'choiceEnc, 
+                                   'choiceEnc :: emptyQidList)
+    ) || 
+    ('LeakChoice_rec_adv ::= nf('choice : bool <- read 'Choice, 
+                                return 'choice, 'choice :: emptyQidList)
+    ) || 
+    ('LeakFlip_rec_adv ::= nf('flip : bool <- read 'Flip, 
+                              return 'flip, 
+                              'flip :: emptyQidList)
+    ) || 
+    ('LeakMsgEnc0_rec_adv ::= nf('msgEnc0 : msg <- read 'MsgEnc0, 
+                                 return 'msgEnc0, 'msgEnc0 :: emptyQidList)
+    ) || 
+    ('LeakMsgEnc1_rec_adv ::= nf('msgEnc1 : msg <- read 'MsgEnc1, 
+                                 return 'msgEnc1, 'msgEnc1 :: emptyQidList)
+    ) || 
+    ('LeakOut_rec_adv ::= nf('out : msg <- read 'Out, 
+                             return 'out,  'out :: emptyQidList)
+    ) || 
+    ('LeakSharedKey_rec_adv ::= nf('sharedKey : msg <- read 'SharedKey, 
+                                   return 'sharedKey, 'sharedKey :: emptyQidList)
+    ) || 
+    ('MsgEnc0 ::= nf(('c : bool <- read 'Choice) 
+                     ('k0 : msg <- read 'Key0) 
+                     ('m0 : msg <- read 'In0) 
+                     ('m1 : msg <- read 'In1) 
+                     ('p : msg <- read 'PvtMsg), 
+                     if 'c then return 'p else return (ap 'xor pair('m0, 'k0)), 
+                     'm0 :: 'm1 :: 'k0 :: 'p :: 'c :: emptyQidList)
+    ) || 
+    ('MsgEnc1 ::= nf(('c : bool <- read 'Choice) 
+                     ('k0 : msg <- read 'Key0) 
+                     ('m0 : msg <- read 'In0) 
+                     ('m1 : msg <- read 'In1) 
+                     ('p : msg <- read 'PvtMsg), 
+                     if 'c then return (ap 'xor pair('m1, 'k0)) else return 'p, 
+                     'm0 :: 'm1 :: 'k0 :: 'p :: 'c :: emptyQidList)
+    ) || 
+    ('Out ::= nf(('c : bool <- read 'Choice) 
+                 ('m0 : msg <- read 'In0) 
+                 ('m1 : msg <- read 'In1), 
+                 if 'c then return 'm1 else return 'm0, 
+                 'm0 :: 'm1 :: 'c :: emptyQidList)
+    ) || 
+    ('PvtMsg ::= nf(('c : bool <- read 'Choice) 
+                       ('m0 : msg <- read 'In0) 
+                       ('m1 : msg <- read 'In1)
+                       ('k1 : msg <- read 'Key1), return 'k1, 
+                       'm1 :: 'm0 :: 'c :: emptyQidList)
+    ) || 
+    ('SharedKey ::= nf(('k0 : msg <- read 'Key0) 
+                       ('k1 : msg <- read 'Key1), 
+                       return 'k0, 'k0 :: 'k1 :: emptyQidList)
+    )                  
+    ) *** end new                    
+    .  
+    
 endm
 
 smod EXECUTE is
@@ -166,145 +579,281 @@ smod EXECUTE is
  var Delta : ChannelContext .
  var Gamma : VarContext .
  vars i1 i2 X Y Z : ChannelName .  
- vars x y z : Qid .
+ vars x y x1 x2 Q Q1 Q2 Q3 : Qid .
  var I O : Set{CName} .
  
- crl [ass-1] : rConfig(Sigma ('xor : msg * msg ~> msg), Delta (i1 :: msg) (i2 :: msg), Gamma,
-                      x : msg <- read i1 ;
-                      y : msg <- read i2 ;
-                      return (ap 'xor pair(x, ap 'xor pair(x, y))), I, msg)
-              => 
-              rConfig(Sigma ('xor : msg * msg ~> msg), Delta (i1 :: msg) (i2 :: msg), Gamma,
-                      x : msg <- read i1 ;
-                      y : msg <- read i2 ;
-                      return y, I, msg) 
-    if i1 in I /\ i2 in I .
-
- crl [ass-2] : rConfig(Sigma ('xor : msg * msg ~> msg), Delta (i1 :: msg) (i2 :: msg), Gamma,
-                      x : msg <- read i1 ;
-                      y : msg <- read i2 ;
-                      return (ap 'xor pair(ap 'xor pair(x, y), y)), I, msg)
-              => 
-              rConfig(Sigma ('xor : msg * msg ~> msg), Delta (i1 :: msg) (i2 :: msg), Gamma,
-                      x : msg <- read i1 ;
-                      y : msg <- read i2 ;
-                      return x, I, msg) 
-    if i1 in I /\ i2 in I .                  
+ eq ap 'xor pair(ap 'xor pair(x1, x2), x2) = x1 .
+ eq ap 'xor pair(x1, ap 'xor pair(x1, x2)) = x2 .  
                        
- crl [uniform-dist-invar-xor] : rConfig(Sigma muMsgSym, Delta (X :: msg), Gamma,
+ crl [uniform-dist-invar-xor] : rConfig(Sigma, Delta (X :: msg), Gamma,
             x : msg <- read X ; 
             y : msg <- samp ('mu_msg < () >) ;
             return (ap 'xor pair(x, y)), I, msg
             )
             => 
-            rConfig(Sigma muMsgSym, Delta (X :: msg), Gamma,
+            rConfig(Sigma, Delta (X :: msg), Gamma,
             x : msg <- read X ; 
             samp ('mu_msg < () >), I, msg
-            ) if X in I .   
+            ) if X in I . 
+            
+ var pConf : ProtocolConfig .
+            
+ strat applyAssTwice : ChannelName @ ProtocolConfig .
+ sd applyAssTwice(X) :=      
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{applyAssTwice(X)} 
+     : CONG-COMP-RIGHT-nocheck{CONG-REACT[o:ChannelName <- X]
+        {cong-pre-nf{
+          cong-branch-refl{
+              exchange 
+            ; cong-bind{idle, uniform-dist-invar-xor}
+            ; exchange
+            , cong-bind{idle, uniform-dist-invar-xor}       
+          } ;
+          same-reaction-if
+                    } ;
+          (bind2R-pre-reverse !) ;
+          cong-pre-nf{bind-ret-2[x:Qid <- 'k1]}
+        }
+       }
+    .            
          
 endsm
 
-
 ***(
-A proof using the strategies available so far could be written as below.
-Maude can execute this, but writing the proof is not optimal, 
-as we have to manually transform the protocol such that rules can be applied. 
-This should be automated, translating also to an increase in performance.
+set trace whole off .
+set trace body off .
+set trace builtin off .
+set trace on .
+)
+
+*** set profile on .
+
+*** first proof step from real
+*** works, commented out so we don't re-run it
 
 
 srew [1] pConfig(muMsgSym xorF, 
                  ('In0 :: msg) ('In1 :: msg) 
-                 ('MsgEnc0 :: msg) ('MsgEnc1 :: msg) 
                  ('Choice :: bool) 
-                 ('LeakMsgEnc0_rec_adv :: msg)
                  ('Out :: msg)
-                 ('LeakSharedKey_rec_adv :: msg), 
+                 ('LeakMsgEnc0_rec_adv :: msg)
+                 ('LeakMsgEnc1_rec_adv :: msg)
+                 ('LeakOut_rec_adv :: msg)
+                 ('LeakFlip_rec_adv :: bool)
+                 ('LeakSharedKey_rec_adv :: msg)
+                 ('LeakChoiceEnc_rec_adv :: bool)
+                 ('LeakChoice_rec_adv :: bool), 
                  real,  
-                 singleton 'In0 cup (singleton 'In1 cup 
-                                     singleton 'Choice
-                                     ), 
-                 'LeakMsgEnc0_rec_adv ,, 
-                  ('LeakSharedKey_rec_adv ,, 
-                   ('MsgEnc0 ,, 
-                   ('MsgEnc1 ,, ('Out ,, emptySet)))) )                    
-                 
-        using
-         using *** substitute ChoiceEnc in MsgEnc0
-              nTimesMoveFirst('ce0, 'MsgEnc0)  ;
-              nTimesSubstSampFree('ChoiceEnc, 'MsgEnc0) ;
-              liftInnerBindsPr('MsgEnc0) ;
-              nTimesIfOverBind('MsgEnc0) ;
-              nTimesIfOverBindBranch('MsgEnc0)  ;
-              nTimesBindRetBranchTwiceIOB('MsgEnc0)  ;
-              moveBinds('MsgEnc0) ;
-              moveBindsOne('MsgEnc0) ;
-              *** here we do the same for 'MsgEnc1
-              nTimesMoveFirst('ce1, 'MsgEnc1) ;
-              nTimesSubstSampFree('ChoiceEnc, 'MsgEnc1) ;
-              liftInnerBindsPr('MsgEnc1) ;
-              nTimesIfOverBind('MsgEnc1) ;
-              nTimesIfOverBindBranch('MsgEnc1) ;
-              nTimesBindRetBranchTwiceIOB('MsgEnc1) ;
-              moveBinds('MsgEnc1) ;
-              moveBindsOne('MsgEnc1) ;
-              *** substitute SharedKey in Out
-              nTimesMoveFirst('ok, 'Out) ;
-              nTimesSubstSampFree('SharedKey, 'Out) ;
-              liftInnerBindsPr('Out) ;
-              moveCertainBindLastProtocol('ok, 'Out) ;
-              nTimesIfOverBind('Out) ;
-              nTimesBindRetBranch('Out) ;
-              *** substitute MsgEnc0 and MsgEnc1 in Out
-                  *** it might be more efficient to take steps than do them at once
-              nTimesMoveFirst('om0,'Out) ;
-              nTimesSubstSampFree('MsgEnc0, 'Out) ;
-              *** liftInnerBindsPr('Out)  *** if we first lift we can't move 'om1
-              nTimesMoveFirst('om1, 'Out) ;
-              nTimesSubstSampFree('MsgEnc1, 'Out) ;
-              liftInnerBindsPr('Out) ;
-              moveCertainBindLastProtocol('om1, 'Out)   ;
-              recReadDet('Out, 6) ; *** this step is not efficient and should be improved
-                                    *** such that the next two aren't needed anymore
-              moveCertainBindLastProtocol('om0, 'Out)  ;
-              moveCertainBindLastProtocol('om1, 'Out)   ;
-              ifBindSame2Pr('Out) ;
-              ifBindSame2Pr('Out) ;
-              nTimesBindRetBranchTwice('Out) ;
-              nTimesBindRetBranchTwice('Out) ;
-              *** apply the assumption
-              moveInsideIf('k11, 'Out)  ;
-              applyReadOverInnerIf('k11, 'Out) ;
-              moveInsideIf('k01, 'Out)  ;
-              applyReadOverInnerIf('k01, 'Out) ;
-              moveInsideIf('m01, 'Out) ;
-              applyReadOverInnerIf('mo1, 'Out) ;
-              moveInsideIf('m11, 'Out) ;
-              applyReadOverInnerIf('m11, 'Out)  ;
-              applyAss1Under2If('Out, 'k01, 'k11, 'm01) ;
-              readOutsideIf2('Out) ; 
-              sameReactionIf('Out)  ;
-              *** simplifications 
-              moveCertainBindLastProtocol('cce, 'Out) ;
-              removeUnused('Flip, 'Out) ;
-              removeUnused('Key0, 'Out) ; 
-              removeUnused('Key1, 'Out) ;
-              addNewChannel(new 'KeyPair : msg * msg in
-                             'KeyPair ::= 'k0p : msg <- read 'Key0 ;
-                                         'k1p : msg <- read 'Key1 ;
-                                         'fp : bool <- read 'Flip ;
-                                         if 'fp then return pair('k1p, 'k0p)
-                                                else return pair('k0p, 'k1p) ) ;
-              applyAlphaPr('SharedKey, 
-                              << 'k0s , 'k0p >> 
-                              (<< 'k1s , 'k1p >> 
-                               (<< 'fs , 'fp >> emptyQidPairList))) ;
-              applySymOverIf('SharedKey, 
-                             'k : msg * msg <- ('k0p : msg <- read 'Key0 ; 
-                                                'k1p : msg <- read 'Key1 ; 
-                                                'fp : bool <- read 'Flip ; 
-                                                if 'fp then return pair('k1p, 'k0p) 
-                                                      else return pair('k0p, 'k1p)) ; 
-                             return (fst 'k), 'k1p, 'k0p) ;
-             nTimesSubst2SampFree('KeyPair, 'SharedKey) . 
+                 insert('In0, insert('In1,'Choice )),
+                 *** getOutputs(real)
+                 insert('LeakChoiceEnc_rec_adv, 
+                  insert('LeakChoice_rec_adv, 
+                  insert('LeakFlip_rec_adv, 
+                  insert('LeakMsgEnc0_rec_adv, 
+                  insert('LeakMsgEnc1_rec_adv,
+                  insert('LeakOut_rec_adv, 
+                  insert('LeakSharedKey_rec_adv, 
+                  'Out)))))))
+                  )
+          using  
+                  substNF('ChoiceEnc, 'MsgEnc0)  
+                ; substNF('ChoiceEnc, 'MsgEnc1) 
+                ; substNF('SharedKey, 'Out) 
+                ; substNF('MsgEnc0, 'Out)
+                ; substNF('MsgEnc1, 'Out) 
+                ; nTimesUnusedNF('Flip, 'Out) 
+                *** TODO: strategy that applies this 
+                ***       for 'Out as many times as possible
+                ; nTimesUnusedNF('Key0, 'Out)
+                ; nTimesUnusedNF('Key1, 'Out)
+                ; SYM[P1:Protocol <- addSharedKey] 
+                    { substNF('KeyPair, 'SharedKey) 
+                    ; substNF('KeyPair, 'MsgEnc0) 
+                    ; substNF('KeyPair, 'MsgEnc1)
+                    ; absorbChannel('KeyPair)
+                    } 
+                .               
+                
+*** second step from addSharedKey
+***( works, commented out so we don't re-run it
+srew [1] pConfig(muMsgSym xorF, 
+                 ('In0 :: msg) ('In1 :: msg) 
+                 ('Choice :: bool) 
+                 ('Out :: msg)
+                 ('LeakMsgEnc0_rec_adv :: msg)
+                 ('LeakMsgEnc1_rec_adv :: msg)
+                 ('LeakOut_rec_adv :: msg)
+                 ('LeakFlip_rec_adv :: bool)
+                 ('LeakSharedKey_rec_adv :: msg)
+                 ('LeakChoiceEnc_rec_adv :: bool)
+                 ('LeakChoice_rec_adv :: bool), 
+                 addSharedKey,  
+                 insert('In0, insert('In1,'Choice )),
+                 insert('LeakChoiceEnc_rec_adv, 
+                  insert('LeakChoice_rec_adv, 
+                  insert('LeakFlip_rec_adv, 
+                  insert('LeakMsgEnc0_rec_adv, 
+                  insert('LeakMsgEnc1_rec_adv,
+                  insert('LeakOut_rec_adv, 
+                  insert('LeakSharedKey_rec_adv, 
+                  'Out)))))))
+                  )
+          using   foldNF('Key1, 'KeyPair)
+                ; foldNF('Key0, 'KeyPair) 
+                ; localProof('KeyPair)
+                ; nTimesUnusedPreNF('Flip, 'KeyPair)
+                ; SYM[P1:Protocol <- addKey0Key1]
+                   {foldNF('Key1, 'KeyPair) ;
+                    foldNF('Key0, 'KeyPair)
+                   }
+                . 
+)   
+
+*** step 3 from addKey0Key1
+***( works, commented out so we don't re-run it
+
+srew [1] pConfig(muMsgSym xorF, 
+                 ('In0 :: msg) ('In1 :: msg) 
+                 ('Choice :: bool) 
+                 ('Out :: msg)
+                 ('LeakMsgEnc0_rec_adv :: msg)
+                 ('LeakMsgEnc1_rec_adv :: msg)
+                 ('LeakOut_rec_adv :: msg)
+                 ('LeakFlip_rec_adv :: bool)
+                 ('LeakSharedKey_rec_adv :: msg)
+                 ('LeakChoiceEnc_rec_adv :: bool)
+                 ('LeakChoice_rec_adv :: bool), 
+                 addKey0Key1,  
+                 insert('In0, insert('In1,'Choice )),
+                 insert('LeakChoiceEnc_rec_adv, 
+                  insert('LeakChoice_rec_adv, 
+                  insert('LeakFlip_rec_adv, 
+                  insert('LeakMsgEnc0_rec_adv, 
+                  insert('LeakMsgEnc1_rec_adv,
+                  insert('LeakOut_rec_adv, 
+                  insert('LeakSharedKey_rec_adv, 
+                  'Out)))))))
+                  )
+          using   substNF('KeyPair, 'SharedKey) 
+                ; substNF('KeyPair, 'MsgEnc0) 
+                ; substNF('KeyPair, 'MsgEnc1)
+                ; absorbChannel('KeyPair)
+                ; SYM[P1:Protocol <- addPvtMsg]
+                   { substNF('PvtMsg, 'MsgEnc0) 
+                   ; substNF('PvtMsg, 'MsgEnc1)
+                   ; absorbChannel('PvtMsg)
+                   ; changeOrder('MsgEnc0, 'm0 :: 'm1 :: 'k0 :: 'k1 :: 'c :: emptyQidList)
+                   ; changeOrder('MsgEnc1, 'm0 :: 'm1 :: 'k0 :: 'k1 :: 'c :: emptyQidList)
+                   } 
+               .                              
+
 )
 
+*** step 4 from addPvtMsg
+***( works, commented out so we don't re-run it
+
+srew [1] pConfig(muMsgSym xorF, 
+                 ('In0 :: msg) ('In1 :: msg) 
+                 ('Choice :: bool) 
+                 ('Out :: msg)
+                 ('LeakMsgEnc0_rec_adv :: msg)
+                 ('LeakMsgEnc1_rec_adv :: msg)
+                 ('LeakOut_rec_adv :: msg)
+                 ('LeakFlip_rec_adv :: bool)
+                 ('LeakSharedKey_rec_adv :: msg)
+                 ('LeakChoiceEnc_rec_adv :: bool)
+                 ('LeakChoice_rec_adv :: bool), 
+                 addPvtMsg,  
+                 insert('In0, insert('In1,'Choice )),
+                 insert('LeakChoiceEnc_rec_adv, 
+                  insert('LeakChoice_rec_adv, 
+                  insert('LeakFlip_rec_adv, 
+                  insert('LeakMsgEnc0_rec_adv, 
+                  insert('LeakMsgEnc1_rec_adv,
+                  insert('LeakOut_rec_adv, 
+                  insert('LeakSharedKey_rec_adv, 
+                  'Out)))))))
+                  )
+          using  foldNF('Key1, 'PvtMsg)
+               ; moveBindInPre('PvtMsg, 'm1) 
+               ; nTimesReadInsideIfPre('PvtMsg)
+               ; moveBindInPre('PvtMsg, 'm0)
+               ; nTimesReadInsideIfPre('PvtMsg)
+               ; applyAssTwice('PvtMsg)
+               ; SYM[P1:Protocol <- addKey1]
+                  { nf2PreNF('PvtMsg, 'k1)
+                  ; foldNFPre('Key1, 'PvtMsg)
+                  }
+               . 
+
+)
+
+*** step 5 from addKey1
+***( works, commented out so we don't re-run it
+
+srew [1] pConfig(muMsgSym xorF, 
+                 ('In0 :: msg) ('In1 :: msg) 
+                 ('Choice :: bool) 
+                 ('Out :: msg)
+                 ('LeakMsgEnc0_rec_adv :: msg)
+                 ('LeakMsgEnc1_rec_adv :: msg)
+                 ('LeakOut_rec_adv :: msg)
+                 ('LeakFlip_rec_adv :: bool)
+                 ('LeakSharedKey_rec_adv :: msg)
+                 ('LeakChoiceEnc_rec_adv :: bool)
+                 ('LeakChoice_rec_adv :: bool), 
+                 addKey1,  
+                 insert('In0, insert('In1,'Choice )),
+                 insert('LeakChoiceEnc_rec_adv, 
+                  insert('LeakChoice_rec_adv, 
+                  insert('LeakFlip_rec_adv, 
+                  insert('LeakMsgEnc0_rec_adv, 
+                  insert('LeakMsgEnc1_rec_adv,
+                  insert('LeakOut_rec_adv, 
+                  insert('LeakSharedKey_rec_adv, 
+                  'Out)))))))
+                  )
+          using   substNF('PvtMsg, 'MsgEnc0) 
+                ; substNF('PvtMsg, 'MsgEnc1) 
+                ; absorbChannel('PvtMsg)
+                .
+)
+
+***( Ideal + sim
+
+srew [1] pConfig(muMsgSym xorF, 
+                 ('In0 :: msg) ('In1 :: msg) 
+                 ('Choice :: bool) 
+                 ('Out :: msg)
+                 ('LeakMsgEnc0_rec_adv :: msg)
+                 ('LeakMsgEnc1_rec_adv :: msg)
+                 ('LeakOut_rec_adv :: msg)
+                 ('LeakFlip_rec_adv :: bool)
+                 ('LeakSharedKey_rec_adv :: msg)
+                 ('LeakChoiceEnc_rec_adv :: bool)
+                 ('LeakChoice_rec_adv :: bool), 
+                 idealPlusSim ,  
+                 insert('In0, insert('In1,'Choice )),
+                 *** getOutputs(real)
+                 insert('LeakChoiceEnc_rec_adv, 
+                  insert('LeakChoice_rec_adv, 
+                  insert('LeakFlip_rec_adv, 
+                  insert('LeakMsgEnc0_rec_adv, 
+                  insert('LeakMsgEnc1_rec_adv,
+                  insert('LeakOut_rec_adv, 
+                  insert('LeakSharedKey_rec_adv, 
+                  'Out)))))))
+                  )
+          using      
+                  substNF('LeakOut_id_adv, 'LeakOut_rec_adv)
+                ; substNF('LeakChoice_id_adv, 'LeakChoice_rec_adv)
+                ; substNF('LeakChoice_id_adv, 'ChoiceEnc)
+                ; substNF('LeakChoice_id_adv, 'MsgEnc0)
+                ; substNF('LeakOut_id_adv, 'MsgEnc0)  
+                ; substNF('LeakChoice_id_adv, 'MsgEnc1)
+                ; substNF('LeakOut_id_adv, 'MsgEnc1)  
+                ; absorbChannel('LeakOut_id_adv)
+                ; absorbChannel('LeakChoice_id_adv)
+                . 
+)

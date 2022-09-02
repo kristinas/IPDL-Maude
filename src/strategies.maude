@@ -1,7 +1,7 @@
 ***( IPDL
 
   Copyright : (C) 2022, Kristina Sojakova
-  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
   Authors   : Mihai Codescu <mscodescu@gmail.com>
               Kristina Sojakova <sojakova.kristina@gmail.com>
 
@@ -86,7 +86,11 @@ smod STRATS is
  sd nTimesSubst := 
     match pConf s.t. startsWithNew pConf
     ? CONG-NEW{nTimesSubst}
-    : CONG-COMP-RIGHT{(SUBST [x2:Qid <- 'x2]{read-det})} .
+    : CONG-COMP-RIGHT{(SUBST [x2:Qid <- 'x2]{read-det})} . 
+    *** P || Q1 => P || Q2 if Q1 => Q2
+    *** subst (C, D) 
+     *** Q1 : C ::= RC || D ::= RD
+     *** P : the rest
    
  strat nTimesBindRet @ ProtocolConfig .
  sd nTimesBindRet := 
@@ -171,6 +175,180 @@ smod STRATS is
    ? CONG-NEW{nTimesMoveFirst(Q, C)}
    : moveFirst(Q, C) .
    
+ strat absorbChannel : ChannelName @ ProtocolConfig .
+ sd absorbChannel(C) := 
+    sugar-newNF ;
+    absorb-new-nf[c:ChannelName <- C] ;  
+    desugar-newNF 
+ .   
+   
+ strat foldNF : ChannelName ChannelName @ ProtocolConfig .
+ sd foldNF(C1, C2) := 
+                 sugar-newNF ;
+                 (fold-bind-new-nf[c:ChannelName <- C1] 
+                  or-else 
+                  fold-bind-new-prenf[c:ChannelName <- C1] );
+                 desugar-newNF  *** TODO these last 2 steps should be reusable from subst!
+                 ; liftInnerBindsNF(C2) 
+                 ; handleRNF(C2) 
+                 .
+                 
+ strat foldNFPre : ChannelName ChannelName @ ProtocolConfig .  
+ sd foldNFPre(C1, C2) := 
+                 sugar-newNF ;
+                 fold-bind-new-prenf[c:ChannelName <- C1] ;
+                 desugar-newNF ;
+                 liftInnerBindsNF(C2) ;
+                 handleRpreNF(C2) 
+                 .  
+                 
+ var ql : QidList .                
+                           
+ strat changeOrder : ChannelName QidList @ ProtocolConfig .
+ sd changeOrder(C, ql) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{changeOrder(C, ql)} 
+     : CONG-COMP-RIGHT-nocheck{
+         CONG-REACT[o:ChannelName <- C]
+         {change-order[QL':QidList <- ql]}
+       } .
+
+   
+ strat nTimesSubstNF : ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesSubstNF(C1, C2) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesSubstNF(C1, C2)} 
+     : CONG-COMP-RIGHT-nocheck{
+          SUBST-nf[o1:ChannelName <- C1, 
+                   o2:ChannelName <- C2]
+                   } .
+                   
+ strat nTimesSubstNFProtocol : Protocol ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesSubstNFProtocol(P, C1, C2) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesSubstNFProtocol(P, C1, C2)} 
+     : CONG-COMP-RIGHT-nocheck[P1:Protocol <- P]{
+          SUBST-nf[o1:ChannelName <- C1, 
+                   o2:ChannelName <- C2]
+                   } .                  
+                                
+ strat nTimesSubstNFRead : ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesSubstNFRead(C1, C2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesSubstNFRead(C1, C2)} 
+     : CONG-COMP-RIGHT-nocheck{
+         SUBST-nf-read[o1:ChannelName <- C1, 
+                       o2:ChannelName <- C2] } . 
+                       
+ strat nTimesUnusedNF : ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesUnusedNF(C1, C2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesUnusedNF(C1, C2)} 
+     : CONG-COMP-RIGHT-nocheck{
+         UNUSED-nf[o1:ChannelName <- C1, 
+                   o2:ChannelName <- C2] } . 
+                   
+ strat nTimesUnusedPreNF : ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesUnusedPreNF(C1, C2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesUnusedPreNF(C1, C2)} 
+     : CONG-COMP-RIGHT-nocheck{
+         UNUSED-pre-nf[o1:ChannelName <- C1, 
+                   o2:ChannelName <- C2] } .                                            
+                         
+                                
+ strat liftInnerBindsNF : ChannelName @ ProtocolConfig .
+ sd liftInnerBindsNF(C1) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{liftInnerBindsNF(C1)} 
+     : CONG-COMP-RIGHT-nocheck{
+         CONG-REACT[o:ChannelName <- C1]
+          {(bind-bind-pre ; (read-det-pre !)) or-else idle}
+       } . *** as third step was ; merge-pre
+                   
+ strat removeDuplicateReadsNF : ChannelName @ ProtocolConfig .
+ sd removeDuplicateReadsNF(C1) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{removeDuplicateReadsNF(C1)} 
+     : CONG-COMP-RIGHT{
+         CONG-REACT[o:ChannelName <- C1]{read-det-pre !}
+       } . 
+       
+ strat handleRNF : ChannelName @ ProtocolConfig .  
+ sd handleRNF(C1) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{handleRNF(C1)} 
+     : CONG-COMP-RIGHT-nocheck{
+         CONG-REACT[o:ChannelName <- C1]
+                   {(samp-over-if or-else 
+                     (read2Binds or-else
+                      (bind-ret-2-pre
+                        or-else (merge-pre ; cong-pre-nf{bindFreeS})
+                      )
+                     )
+                    ) ;
+                     simplifyNF
+                   }
+       } .  
+       
+ strat handleRpreNF : ChannelName @ ProtocolConfig .  
+ sd handleRpreNF(C1) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{handleRpreNF(C1)} 
+     : CONG-COMP-RIGHT-nocheck{
+         CONG-REACT[o:ChannelName <- C1]
+                   {merge-pre}
+       } .        
+       
+ strat simplifyNF @ ReactionConfig .
+ sd simplifyNF :=  
+   cong-pre-nf{same-reaction-if} or-else idle 
+ .      
+       
+ strat substNF : ChannelName ChannelName @ ProtocolConfig .
+ sd substNF(C1, C2) :=  
+     nTimesSubstNF(C1, C2) 
+   ; liftInnerBindsNF(C2)
+   ; handleRNF(C2)
+   ; (pre2Nf or-else idle) 
+   .   
+   
+ strat substNFProtocol : Protocol ChannelName ChannelName @ ProtocolConfig .
+ sd substNFProtocol(P, C1, C2) :=  
+     nTimesSubstNFProtocol(P, C1, C2) 
+   ; liftInnerBindsNF(C2)
+   ; handleRNF(C2)
+   ; pre2Nf 
+   .  
+   
+ strat smart-subst-nf : ChannelName ChannelName @ ProtocolConfig . 
+ sd smart-subst-nf(C1, C2) :=                        
+   nTimesSubstNFRead(C1, C2)
+   ? idle
+   : substNF(C1, C2) 
+   . 
+                            
+ strat bindFreeS @ ReactionConfig .
+ sd bindFreeS := 
+     ((smart-ret-bind ; (if-left ? idle : (if-right ? idle : idle)) ) or-else
+       (if-over-bind  
+        ; cong-branch-refl{bindFreeS, bindFreeS}
+       )
+       ) or-else idle .
+       
+  strat smart-ret-bind @ ReactionConfig .
+  sd smart-ret-bind :=
+     if-over-bind-same-2 
+     ? (cong-branch-refl
+        {cong-branch-refl{ret-bind , ret-bind},
+         cong-branch-refl{ret-bind , ret-bind}} 
+        ? idle
+        : fail)  
+     : (if-over-bind-same 
+       ? (cong-branch-refl{ret-bind, ret-bind} ? idle : idle) 
+       : ret-bind) 
+       .         
+
  strat nTimesSubstSampFree : ChannelName ChannelName @ ProtocolConfig .
  sd nTimesSubstSampFree(C1, C2) := 
      match pConf s.t. startsWithNew pConf
@@ -185,7 +363,57 @@ smod STRATS is
      ? CONG-NEW{nTimesSubst2SampFree(C1, C2)} 
      : CONG-COMP-RIGHT{SUBST-2[x2:Qid <- 'x2, 
                                o1:ChannelName <- C1, 
-                               o2:ChannelName <- C2]{samp-free}} .    
+                               o2:ChannelName <- C2]{samp-free}} .   
+                               
+              
+ *** this handles a particular proof that isn't part of a strategy                              
+ strat localProof : ChannelName @ ProtocolConfig .
+ sd localProof(C) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{localProof(C)} 
+     : CONG-COMP-RIGHT{ 
+         CONG-REACT[o:ChannelName <- C]
+          {cong-pre-nf{
+            cong-branch-refl{exchange ; 
+                              alpha[x:Qid <- 'k1 , y:Qid <- 't] ;
+                              exchange ; 
+                              alpha[x:Qid <- 'k0 , y:Qid <- 'k1] ;
+                              exchange ; 
+                              alpha[x:Qid <- 't , y:Qid <- 'k0] , 
+                             idle} ;
+            same-reaction-if                 
+           }
+          }
+         } .
+         
+ var c' : Qid .        
+         
+ *** turn a nf to prenf 
+ strat nf2PreNF : ChannelName Qid @ ProtocolConfig .
+ sd nf2PreNF(C, c') := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nf2PreNF(C, c')} 
+     : CONG-COMP-RIGHT-nocheck{CONG-REACT[o:ChannelName <- C]{nf2Pre[c:Qid <- c']}} 
+ .      
+         
+ strat moveBindInPre : ChannelName Qid @ ProtocolConfig .
+ sd moveBindInPre(C, Q) :=      
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{moveBindInPre(C, Q)} 
+     : CONG-COMP-RIGHT-nocheck{CONG-REACT[o:ChannelName <- C]{bind2R-pre[x:Qid <- Q] }}
+    .
+    
+ strat nTimesReadInsideIfPre : ChannelName @ ProtocolConfig .
+ sd nTimesReadInsideIfPre(C) :=      
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{nTimesReadInsideIfPre(C)} 
+     : CONG-COMP-RIGHT-nocheck{CONG-REACT[o:ChannelName <- C]
+        {cong-pre-nf{read-inside-if
+                    } 
+         *** ; read-inside-if
+        }
+       }
+    .    
      
  strat ifOverBindAfterBinds @ ReactionConfig .
  sd ifOverBindAfterBinds :=  
@@ -420,19 +648,23 @@ smod STRATS is
      : ABSORB-LEFT-2[P2:Protocol <- P] ; COMP-NEW .  
      
  var Msg1 Msg2 : Message .    
-     
+ 
+***(     
  strat applyCongRetBranch : Message Message @ ReactionConfig .
  sd applyCongRetBranch(Msg1, Msg2) :=
     match rConf s.t. rBindRead(rConf) 
     ? cong-bind{idle, applyCongRetBranch(Msg1, Msg2)}
     : cong-branch-refl{cong-ret[M2 <- Msg1],
                       cong-ret[M2 <- Msg2]} .
+   
                      
  strat applyCongRetBranchPr : ChannelName Message Message @ ProtocolConfig .
  sd applyCongRetBranchPr(C, M1, M2) := 
      match pConf s.t. startsWithNew pConf
      ? CONG-NEW{applyCongRetBranchPr(C, M1, M2)} 
      : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{applyCongRetBranch(M1, M2)}} .  
+     
+)
      
  var q1 q2 : Qid .  
  sort QidPair .
@@ -482,8 +714,9 @@ smod STRATS is
     sym[R1:Reaction <- R]
       {liftAllInnerBinds ; 
        ifOverBindAfterBinds ;
-       bindRetInBranch ;
-       applyCongRetBranch(Msg1, Msg2)} .   
+       bindRetInBranch ; idle
+       *** applyCongRetBranch(Msg1, Msg2)
+       } .   
        
  strat applySymOverIf : ChannelName Reaction Message Message @ ProtocolConfig .      
  sd applySymOverIf(C, R, Msg1, Msg2) := 
@@ -492,3 +725,4 @@ smod STRATS is
      : CONG-COMP-RIGHT{CONG-REACT[o:ChannelName <- C]{symOverIf(R, Msg1, Msg2)}} .
             
 endsm
+
