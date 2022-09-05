@@ -261,12 +261,12 @@ srew [1] pConfig(secSig,
                  real,  
                  insert('In, 'OkCtxt_adv_net),
                  getOutputs(idealPlusSim))
-         using  smart-subst-nf('Recv, 'Out)  ;   
+         using  smart-subst-nf('Recv, 'Out) ;   
                 SYM[P1:Protocol <- addEncDec] 
                     {foldNF('Enc, 'Send) ;
                      foldNF('Dec, 'Out)
                     } ;
-                absorbChannel('Recv) ;
+                 absorbChannel('Recv) ;
                 smart-subst-nf('Send, 'LeakCtxt_net_adv) ;
                 smart-subst-nf('Send, 'Dec) ;
                 absorbChannel('Send) ;
@@ -274,8 +274,8 @@ srew [1] pConfig(secSig,
                 applyCPA('Key, 'Enc);
                 foldNF('Enc, 'LeakCtxt_net_adv) ;
                 foldNF('Dec, 'Out)
-                
-                .       
+                . 
+                               
             
   srew [1] pConfig(secSig, 
                  ('In :: msg) ('Out :: msg) ('OkCtxt_adv_net :: ctxt)

@@ -597,12 +597,16 @@ smod EXECUTE is
             ) if X in I . 
             
  var pConf : ProtocolConfig .
+ 
+ var P : Protocol .
             
  strat applyAssTwice : ChannelName @ ProtocolConfig .
  sd applyAssTwice(X) :=      
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW{applyAssTwice(X)} 
-     : CONG-COMP-RIGHT-nocheck{CONG-REACT[o:ChannelName <- X]
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P X, 
+                             P1:Protocol <- keepOne P X]{CONG-REACT[o:ChannelName <- X]
         {cong-pre-nf{
           cong-branch-refl{
               exchange 
@@ -630,8 +634,7 @@ set trace on .
 *** set profile on .
 
 *** first proof step from real
-*** works, commented out so we don't re-run it
-
+***( works, commented out so we don't re-run it
 
 srew [1] pConfig(muMsgSym xorF, 
                  ('In0 :: msg) ('In1 :: msg) 
@@ -657,26 +660,26 @@ srew [1] pConfig(muMsgSym xorF,
                   'Out)))))))
                   )
           using  
-                  substNF('ChoiceEnc, 'MsgEnc0)  
+                  substNF('ChoiceEnc, 'MsgEnc0) 
                 ; substNF('ChoiceEnc, 'MsgEnc1) 
                 ; substNF('SharedKey, 'Out) 
                 ; substNF('MsgEnc0, 'Out)
                 ; substNF('MsgEnc1, 'Out) 
-                ; nTimesUnusedNF('Flip, 'Out) 
+                ; nTimesUnusedNF('Flip, 'Out)  
                 *** TODO: strategy that applies this 
                 ***       for 'Out as many times as possible
                 ; nTimesUnusedNF('Key0, 'Out)
-                ; nTimesUnusedNF('Key1, 'Out)
+                ; nTimesUnusedNF('Key1, 'Out) 
                 ; SYM[P1:Protocol <- addSharedKey] 
                     { substNF('KeyPair, 'SharedKey) 
                     ; substNF('KeyPair, 'MsgEnc0) 
                     ; substNF('KeyPair, 'MsgEnc1)
                     ; absorbChannel('KeyPair)
-                    } 
+                    }
                 .               
-                
+               
 *** second step from addSharedKey
-***( works, commented out so we don't re-run it
+*** works, commented out so we don't re-run it
 srew [1] pConfig(muMsgSym xorF, 
                  ('In0 :: msg) ('In1 :: msg) 
                  ('Choice :: bool) 
@@ -708,10 +711,9 @@ srew [1] pConfig(muMsgSym xorF,
                     foldNF('Key0, 'KeyPair)
                    }
                 . 
-)   
 
 *** step 3 from addKey0Key1
-***( works, commented out so we don't re-run it
+*** works, commented out so we don't re-run it
 
 srew [1] pConfig(muMsgSym xorF, 
                  ('In0 :: msg) ('In1 :: msg) 
@@ -749,9 +751,8 @@ srew [1] pConfig(muMsgSym xorF,
                .                              
 
 )
-
 *** step 4 from addPvtMsg
-***( works, commented out so we don't re-run it
+*** works, commented out so we don't re-run it
 
 srew [1] pConfig(muMsgSym xorF, 
                  ('In0 :: msg) ('In1 :: msg) 
@@ -775,19 +776,18 @@ srew [1] pConfig(muMsgSym xorF,
                   insert('LeakSharedKey_rec_adv, 
                   'Out)))))))
                   )
-          using  foldNF('Key1, 'PvtMsg)
-               ; moveBindInPre('PvtMsg, 'm1) 
-               ; nTimesReadInsideIfPre('PvtMsg)
-               ; moveBindInPre('PvtMsg, 'm0)
-               ; nTimesReadInsideIfPre('PvtMsg)
-               ; applyAssTwice('PvtMsg)
-               ; SYM[P1:Protocol <- addKey1]
-                  { nf2PreNF('PvtMsg, 'k1)
-                  ; foldNFPre('Key1, 'PvtMsg)
-                  }
+          using  foldNF('Key1, 'PvtMsg) 
+               *** ; moveBindInPre('PvtMsg, 'm1) 
+               *** ; nTimesReadInsideIfPre('PvtMsg) 
+               *** ; moveBindInPre('PvtMsg, 'm0)
+               *** ; nTimesReadInsideIfPre('PvtMsg)
+               *** ; applyAssTwice('PvtMsg)
+               *** ; SYM[P1:Protocol <- addKey1]
+               ***   { nf2PreNF('PvtMsg, 'k1)
+               ***   ; foldNFPre('Key1, 'PvtMsg)
+               ***   } 
                . 
-
-)
+               
 
 *** step 5 from addKey1
 ***( works, commented out so we don't re-run it
@@ -856,4 +856,4 @@ srew [1] pConfig(muMsgSym xorF,
                 ; absorbChannel('LeakOut_id_adv)
                 ; absorbChannel('LeakChoice_id_adv)
                 . 
-)
+                )

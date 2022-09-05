@@ -527,7 +527,7 @@ fmod REACTION-TYPING is
  ceq typeOf(Sigma, Delta, Gamma, I, nf(BRL, R, QL)) = 
        typeOf(Sigma, Delta, addDeclarations BRL Gamma, I, R) 
      if validForCtx(BRL, Delta) .
- eq typeOf(Sigma, Delta, Gamma, I, preNF(BL, R, QL, x)) = 
+ eq typeOf(Sigma, Delta, Gamma, I, preNF(BL, R, QL, x)) =
        typeOf(Sigma, Delta, addDeclarations BL Gamma, I, R) .    
 
 endfm
@@ -1130,6 +1130,25 @@ fmod PROTOCOL is
       if x <= n2 .     
  ceq valCase1 C q x (case q is ((index <= n2 --> R) ;; cl)) = valCase1 C q x (case q is cl)
       if x > n2 . 
+      
+ vars C1 C2 : ChannelName .
+ vars R1 R2 : Reaction .     
+      
+ op keepTwo___ : Protocol ChannelName ChannelName -> Protocol .
+ eq keepTwo ((C1 ::= R1) || (C2 ::= R2) || P) C1 C2 =  (C1 ::= R1) || (C2 ::= R2) .  
+ eq keepTwo (new C : T in P) C1 C2 = keepTwo P C1 C2 .
+ 
+ op removeTwo___ : Protocol ChannelName ChannelName -> Protocol .
+ eq removeTwo ((C1 ::= R1) || (C2 ::= R2) || P) C1 C2 =  P . 
+ eq removeTwo (new C : T in P) C1 C2 = removeTwo P C1 C2 .
+ 
+ op keepOne__ : Protocol ChannelName -> Protocol .
+ eq keepOne ((C1 ::= R1) || P) C1 =  (C1 ::= R1) .  
+ eq keepOne (new C : T in P) C1 = keepOne P C1 .
+ 
+ op removeOne__ : Protocol ChannelName -> Protocol .
+ eq removeOne ((C1 ::= R1) || P) C1 =  P . 
+ eq removeOne (new C : T in P) C1 = removeOne P C1  .
                          
 endfm
 
@@ -1151,7 +1170,7 @@ eq chansInList (< c : T > ltq) = insert(c, chansInList ltq) .
 
  eq getOutputs(emptyProtocol) = empty .
  eq getOutputs(c ::= R) = c [label getOutputsAssign] .
- eq getOutputs((c ::= R) || P2) = union(c, getOutputs(P2)) [label getOutputsParallel].
+ eq getOutputs((c ::= R) || P2) = union(c, getOutputs(P2)) [label getOutputsParallel] .
  eq getOutputs(P1 || P2) = union(getOutputs(P1), getOutputs(P2)) [owise] .
  eq getOutputs(new c : T in P) = getOutputs(P) \  c [label getOutputsNew] .
  eq getOutputs(newNF(ltq, P)) = getOutputs(P) \ (chansInList ltq) [label getOutputsNewNF] .
@@ -1197,7 +1216,7 @@ fmod PROTOCOL-TYPING is
      not occurs c Delta 
      and
      typeOf(Sigma, Delta (c :: T), I, P) 
-     .
+     [label typeOfNew] .
      
  var ltq : TypedCNameList .    
      
@@ -1278,12 +1297,12 @@ mod PROTOCOL-EQUALITY is
     newfamily C lq n : T in P =>
     nf2p(newfamily C lq n : T in P) .  
 
- crl [desugar-newNF] :
+ rl [desugar-newNF] :
      pConfig(Sigma, Delta, newNF(ltq, P1), I, O)
      =>
      pConfig(Sigma, Delta, newNF2New(newNF(ltq, P1)), I, O) 
-     if
-     typeOf(Sigma, Delta, I, newNF(ltq, P1))
+     *** if
+     *** typeOf(Sigma, Delta, I, newNF(ltq, P1)) *** TODO!
      . 
      
  rl [sugar-newNF] :
