@@ -64,7 +64,7 @@ mod SECURE is
             ('okMsg : ctxt <- read 'OkMsg_adv_id)
             ('in : msg <- read 'In),
             return 'in,
-            'okMsgs :: 'in :: emptyQidList ) 
+            'okMsg :: 'in :: emptyQidList ) 
     ) 
     ) . *** end of new, leave here
     
@@ -78,10 +78,10 @@ mod SECURE is
     ) 
     || 
     ('Send ::= nf(
-            ('m : msg <- read 'In )
+            ('in : msg <- read 'In )
             ('k : key <- read 'Key) ,
-            samp ('enc < pair('m, 'k) >),
-            'm :: 'k :: emptyQidList
+            samp ('enc < pair('in, 'k) >),
+            'in :: 'k :: emptyQidList
             )
     )    
     ||
@@ -138,9 +138,9 @@ mod SECURE is
   ('Send ::= nf(('e : ctxt <- read 'Enc), return 'e, 'e :: emptyQidList)) 
   ||
   ('Enc ::= nf(('k : key <- read 'Key) 
-                ('m : msg <- read 'In), 
-                samp ('enc < pair('m, 'k) >), 
-                'm :: 'k :: emptyQidList) ) 
+                ('in : msg <- read 'In), 
+                samp ('enc < pair('in, 'k) >), 
+                'in :: 'k :: emptyQidList) ) 
    ) *** end of new, leave here!
    .
   
@@ -254,28 +254,51 @@ smod EXECUTE is
        } .
     
 endsm
-       
+ 
 srew [1] pConfig(secSig, 
                  ('In :: msg) ('Out :: msg) ('OkCtxt_adv_net :: ctxt)
                  ('LeakCtxt_net_adv :: ctxt), 
                  real,  
                  insert('In, 'OkCtxt_adv_net),
                  getOutputs(idealPlusSim))
-         using  smart-subst-nf('Recv, 'Out) ;   
+         using  smart-subst-nf('Recv, 'Out)  ;   
                 SYM[P1:Protocol <- addEncDec] 
                     {foldNF('Enc, 'Send) ;
                      foldNF('Dec, 'Out)
                     } ;
-                 absorbChannel('Recv) ;
+                absorbChannel('Recv) ;
                 smart-subst-nf('Send, 'LeakCtxt_net_adv) ;
                 smart-subst-nf('Send, 'Dec) ;
                 absorbChannel('Send) ;
                 applyEDC('In, 'Key, 'Enc, 'Dec) ;
                 applyCPA('Key, 'Enc);
                 foldNF('Enc, 'LeakCtxt_net_adv) ;
-                foldNF('Dec, 'Out)
-                . 
-                               
+                foldNF('Dec, 'Out) ;
+                SYM[P1:Protocol <- idealPlusSim]
+                 {
+                    smart-subst-nf('OkMsg_adv_id, 'Out)
+                  ; smart-subst-nf('LeakMsgRcvd_id_adv, 'LeakCtxt_net_adv)
+                  ; absorbChannel('LeakMsgRcvd_id_adv)
+                  ; absorbChannel('OkMsg_adv_id)
+                 }
+                .   
+                
+srew [1] pConfig(secSig, 
+                 ('In :: msg) ('Out :: msg) ('OkCtxt_adv_net :: ctxt)
+                 ('LeakCtxt_net_adv :: ctxt), 
+                 real,  
+                 insert('In, 'OkCtxt_adv_net),
+                 getOutputs(idealPlusSim))
+         using  smart-subst-nf('Recv, 'Out)  ;   
+                SYM[P1:Protocol <- addEncDec] 
+                    {foldNF('Enc, 'Send) ;
+                     foldNF('Dec, 'Out)
+                    } ;
+                absorbChannel('Recv) ;
+                substAll('Send)
+                .                                  
+   
+***(       
             
   srew [1] pConfig(secSig, 
                  ('In :: msg) ('Out :: msg) ('OkCtxt_adv_net :: ctxt)
@@ -284,10 +307,10 @@ srew [1] pConfig(secSig,
                  insert('In, 'OkCtxt_adv_net),
                  getOutputs(idealPlusSim))
          using        
-               smart-subst-nf('OkMsg_adv_id, 'Out) ;
-               smart-subst-nf('LeakMsgRcvd_id_adv, 'LeakCtxt_net_adv) ;
-               absorbChannel('LeakMsgRcvd_id_adv) ;
-               absorbChannel('OkMsg_adv_id)
+                 smart-subst-nf('OkMsg_adv_id, 'Out)
+               ; smart-subst-nf('LeakMsgRcvd_id_adv, 'LeakCtxt_net_adv)
+               ; absorbChannel('LeakMsgRcvd_id_adv)
+               ; absorbChannel('OkMsg_adv_id)
                .   
-               
+)              
         

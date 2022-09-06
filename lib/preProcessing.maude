@@ -483,10 +483,9 @@ mod PREPROCESSING is
                   if 'c then return 'm1 else return 'm0, 
                   'm0 :: 'm1 :: 'c :: emptyQidList)
      ) || 
-     ('SharedKey ::= nf(('k0 : msg <- read 'Key0) 
-                        ('k1 : msg <- read 'Key1), 
+     ('SharedKey ::= nf(('k0 : msg <- read 'Key0), 
                         return 'k0,
-                        'k0 :: 'k1 :: emptyQidList)  
+                        'k0 :: emptyQidList)  
      )
     ) *** end new, leave here 
     . 
@@ -562,9 +561,8 @@ mod PREPROCESSING is
                        ('k1 : msg <- read 'Key1), return 'k1, 
                        'm1 :: 'm0 :: 'c :: emptyQidList)
     ) || 
-    ('SharedKey ::= nf(('k0 : msg <- read 'Key0) 
-                       ('k1 : msg <- read 'Key1), 
-                       return 'k0, 'k0 :: 'k1 :: emptyQidList)
+    ('SharedKey ::= nf(('k0 : msg <- read 'Key0), 
+                       return 'k0, 'k0 :: emptyQidList)
     )                  
     ) *** end new                    
     .  
@@ -633,8 +631,92 @@ set trace on .
 
 *** set profile on .
 
+****************************************************
+
+*** whole proof
+
+srew [1] pConfig(muMsgSym xorF, 
+                 ('In0 :: msg) ('In1 :: msg) 
+                 ('Choice :: bool) 
+                 ('Out :: msg)
+                 ('LeakMsgEnc0_rec_adv :: msg)
+                 ('LeakMsgEnc1_rec_adv :: msg)
+                 ('LeakOut_rec_adv :: msg)
+                 ('LeakFlip_rec_adv :: bool)
+                 ('LeakSharedKey_rec_adv :: msg)
+                 ('LeakChoiceEnc_rec_adv :: bool)
+                 ('LeakChoice_rec_adv :: bool), 
+                 real,  
+                 insert('In0, insert('In1,'Choice )),
+                 *** getOutputs(real)
+                 insert('LeakChoiceEnc_rec_adv, 
+                  insert('LeakChoice_rec_adv, 
+                  insert('LeakFlip_rec_adv, 
+                  insert('LeakMsgEnc0_rec_adv, 
+                  insert('LeakMsgEnc1_rec_adv,
+                  insert('LeakOut_rec_adv, 
+                  insert('LeakSharedKey_rec_adv, 
+                  'Out)))))))
+                  )
+          using  
+                  substNF('ChoiceEnc, 'MsgEnc0) 
+                ; substNF('ChoiceEnc, 'MsgEnc1) 
+                ; substNF('SharedKey, 'Out) 
+                ; substNF('MsgEnc0, 'Out)
+                ; substNF('MsgEnc1, 'Out) 
+                ; nTimesUnusedNF('Flip, 'Out)  
+                *** TODO: strategy that applies this 
+                ***       for 'Out as many times as possible
+                ; nTimesUnusedNF('Key0, 'Out)
+                ; nTimesUnusedNF('Key1, 'Out) 
+                ; SYM[P1:Protocol <- addSharedKey] 
+                    { substNF('KeyPair, 'SharedKey) 
+                    ; substNF('KeyPair, 'MsgEnc0) 
+                    ; substNF('KeyPair, 'MsgEnc1)
+                    ; absorbChannel('KeyPair)
+                    }
+                ; foldNF('Key1, 'KeyPair)
+                ; foldNF('Key0, 'KeyPair) 
+                ; localProof('KeyPair)
+                ; nTimesUnusedPreNF('Flip, 'KeyPair)
+                ; SYM[P1:Protocol <- addKey0Key1]
+                   {foldNF('Key1, 'KeyPair) ;
+                    foldNF('Key0, 'KeyPair)
+                   }
+                ; substNF('KeyPair, 'SharedKey) 
+                ; substNF('KeyPair, 'MsgEnc0) 
+                ; substNF('KeyPair, 'MsgEnc1)
+                ; absorbChannel('KeyPair)
+                ; nTimesUnusedNF('Key1, 'SharedKey)
+                ; SYM[P1:Protocol <- addPvtMsg]
+                   { substNF('PvtMsg, 'MsgEnc0) 
+                   ; substNF('PvtMsg, 'MsgEnc1)
+                   ; absorbChannel('PvtMsg)
+                   ; changeOrder('MsgEnc0, 'm0 :: 'm1 :: 'k0 :: 'k1 :: 'c :: emptyQidList)
+                   ; changeOrder('MsgEnc1, 'm0 :: 'm1 :: 'k0 :: 'k1 :: 'c :: emptyQidList)
+                   } 
+               ; foldNF('Key1, 'PvtMsg) 
+               ; moveBindInPre('PvtMsg, 'm1) 
+               ; nTimesReadInsideIfPre('PvtMsg) 
+               ; moveBindInPre('PvtMsg, 'm0)
+               ; nTimesReadInsideIfPre('PvtMsg)
+               ; applyAssTwice('PvtMsg)
+               ; SYM[P1:Protocol <- addKey1]
+                  { nf2PreNF('PvtMsg, 'k1)
+                  ; foldNFPre('Key1, 'PvtMsg)
+                  }  
+               ; substNF('PvtMsg, 'MsgEnc0) 
+               ; substNF('PvtMsg, 'MsgEnc1) 
+               ; absorbChannel('PvtMsg)
+               .
+                
+                          
+
+****************************************************
+***(
+
 *** first proof step from real
-***( works, commented out so we don't re-run it
+*** works, commented out so we don't re-run it
 
 srew [1] pConfig(muMsgSym xorF, 
                  ('In0 :: msg) ('In1 :: msg) 
@@ -741,7 +823,8 @@ srew [1] pConfig(muMsgSym xorF,
                 ; substNF('KeyPair, 'MsgEnc0) 
                 ; substNF('KeyPair, 'MsgEnc1)
                 ; absorbChannel('KeyPair)
-                ; SYM[P1:Protocol <- addPvtMsg]
+                ; nTimesUnusedNF('Key1, 'SharedKey)
+                   ; SYM[P1:Protocol <- addPvtMsg]
                    { substNF('PvtMsg, 'MsgEnc0) 
                    ; substNF('PvtMsg, 'MsgEnc1)
                    ; absorbChannel('PvtMsg)
@@ -750,10 +833,9 @@ srew [1] pConfig(muMsgSym xorF,
                    } 
                .                              
 
-)
 *** step 4 from addPvtMsg
 *** works, commented out so we don't re-run it
-
+***
 srew [1] pConfig(muMsgSym xorF, 
                  ('In0 :: msg) ('In1 :: msg) 
                  ('Choice :: bool) 
@@ -777,20 +859,20 @@ srew [1] pConfig(muMsgSym xorF,
                   'Out)))))))
                   )
           using  foldNF('Key1, 'PvtMsg) 
-               *** ; moveBindInPre('PvtMsg, 'm1) 
-               *** ; nTimesReadInsideIfPre('PvtMsg) 
-               *** ; moveBindInPre('PvtMsg, 'm0)
-               *** ; nTimesReadInsideIfPre('PvtMsg)
-               *** ; applyAssTwice('PvtMsg)
-               *** ; SYM[P1:Protocol <- addKey1]
-               ***   { nf2PreNF('PvtMsg, 'k1)
-               ***   ; foldNFPre('Key1, 'PvtMsg)
-               ***   } 
+               ; moveBindInPre('PvtMsg, 'm1) 
+               ; nTimesReadInsideIfPre('PvtMsg) 
+               ; moveBindInPre('PvtMsg, 'm0)
+               ; nTimesReadInsideIfPre('PvtMsg)
+               ; applyAssTwice('PvtMsg)
+               ; SYM[P1:Protocol <- addKey1]
+                  { nf2PreNF('PvtMsg, 'k1)
+                  ; foldNFPre('Key1, 'PvtMsg)
+                  }
                . 
-               
+                 
 
 *** step 5 from addKey1
-***( works, commented out so we don't re-run it
+*** works, commented out so we don't re-run it
 
 srew [1] pConfig(muMsgSym xorF, 
                  ('In0 :: msg) ('In1 :: msg) 
@@ -818,9 +900,9 @@ srew [1] pConfig(muMsgSym xorF,
                 ; substNF('PvtMsg, 'MsgEnc1) 
                 ; absorbChannel('PvtMsg)
                 .
-)
+   )
 
-***( Ideal + sim
+*** Ideal + sim
 
 srew [1] pConfig(muMsgSym xorF, 
                  ('In0 :: msg) ('In1 :: msg) 
@@ -845,7 +927,12 @@ srew [1] pConfig(muMsgSym xorF,
                   insert('LeakSharedKey_rec_adv, 
                   'Out)))))))
                   )
-          using      
+          using ***(
+                  substAllAndAbsorb('LeakOut_id_adv)
+                ; substAllAndAbsorb('LeakChoice_id_adv)
+                . )
+                  
+                ***  This abbreviates all these steps:
                   substNF('LeakOut_id_adv, 'LeakOut_rec_adv)
                 ; substNF('LeakChoice_id_adv, 'LeakChoice_rec_adv)
                 ; substNF('LeakChoice_id_adv, 'ChoiceEnc)
@@ -855,5 +942,6 @@ srew [1] pConfig(muMsgSym xorF,
                 ; substNF('LeakOut_id_adv, 'MsgEnc1)  
                 ; absorbChannel('LeakOut_id_adv)
                 ; absorbChannel('LeakChoice_id_adv)
-                . 
-                )
+                .
+                
+             

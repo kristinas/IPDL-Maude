@@ -373,6 +373,11 @@ fmod REACTION is
  eq emptyQidList ++ ql = ql .
  eq (q :: ql') ++ ql = q :: (ql' ++ ql) .
  
+ op replace___ : Qid Qid QidList -> QidList .
+ eq replace q q' emptyQidList = emptyQidList .
+ eq replace q q' (x :: ql) = if x == q then q' :: ql
+                                       else x :: (replace q q' ql) fi . 
+ 
  op del__ : Qid QidList -> QidList .
  eq del q ql = delAux q ql emptyQidList .
  
@@ -1730,7 +1735,7 @@ mod PROTOCOL-EQUALITY is
      => 
      pConfig(Sigma, Delta (o1 :: T1) (o2 :: T2) (C :: T1),
              (o1 ::= nf((x2 : T1 <- read C), return x2, x2 :: emptyQidList )) || 
-             (o2 ::= nf((x1 : T1 <- read C) BRL , R2, QL)),
+             (o2 ::= nf((x2 : T1 <- read C) BRL , R2 [x1 / x2], replace x1 x2 QL)),
              I, O) 
      if
      C in I /\
