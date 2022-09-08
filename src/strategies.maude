@@ -230,6 +230,17 @@ smod STRATS is
          CONG-REACT[o:ChannelName <- C]
          {change-order[QL':QidList <- ql]}
        } .
+       
+ strat changeOrderPre : ChannelName QidList @ ProtocolConfig .
+ sd changeOrderPre(C, ql) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW{changeOrderPre(C, ql)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]{
+         CONG-REACT[o:ChannelName <- C]
+         {change-order-pre[QL':QidList <- ql]}
+       } .      
 
    
  strat nTimesSubstNF : ChannelName ChannelName @ ProtocolConfig .
@@ -870,6 +881,20 @@ smod STRATS is
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
              {CONG-REACT[o:ChannelName <- C]{symOverIf(R, Msg1, Msg2)}} .
+             
+ strat addChannelP : ChannelName Type Reaction @ ProtocolConfig .
+ sd addChannelP(C, T, R) := 
+    sugar-newNF ;
+    (matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
+       using rewrite-protocol[P2:Protocol <- addChannel C T R P] ) ;
+    desugar-newNF .
+       
+ strat replaceChannelP : ChannelName Reaction @ ProtocolConfig .
+ sd replaceChannelP(C, R) := 
+    sugar-newNF ;
+    ( matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
+       using rewrite-protocol[P2:Protocol <- alterChannel C R P] ) ;
+    desugar-newNF .                  
             
 endsm
 

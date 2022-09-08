@@ -834,6 +834,13 @@ mod REACTION-EQUALITY is
      rConfig(Sigma, Delta, Gamma, nf(BRL, R, QL'), I, T) 
      [nonexec] . 
      *** TODO: check that QL' has same vars as QL?
+     
+    rl [change-order-pre] :
+     rConfig(Sigma, Delta, Gamma, preNF(BRL, R, QL, c), I, T)
+     =>
+     rConfig(Sigma, Delta, Gamma, preNF(BRL, R, QL', c), I, T) 
+     [nonexec] . 
+     *** TODO: check that QL' has same vars as QL?   
  
   rl [same-reaction-if] : 
      rConfig(Sigma, Delta, Gamma, if M then R else R, I, T)
@@ -981,7 +988,7 @@ fmod PROTOCOL is
 
  var q q2 i : Qid .
  var n x y n2 : Nat .
- var R : Reaction .
+ var R R' : Reaction .
  var T : Type .
  
  op checkHonest : Nat -> Bool .
@@ -1025,6 +1032,18 @@ fmod PROTOCOL is
  var cval : CaseValue .
  var ltq : TypedCNameList .
  var cn : ChannelName .
+ 
+ *** given a protocol in new-normal-form, 
+ *** add a new internal channel C : T
+ *** with C ::= R
+ op addChannel____ : ChannelName Type Reaction Protocol -> Protocol .
+ eq addChannel cn T R (newNF(ltq, P)) = newNF( < cn : T > ltq, P || (cn ::= R)) .
+ 
+ *** or alter it if cn already exists
+ op alterChannel___ : ChannelName Reaction Protocol -> Protocol .
+ eq alterChannel cn R (newNF(< cn : T > ltq, P || (cn ::= R'))) = 
+    newNF( < cn : T > ltq, P || (cn ::= R)) .
+ 
 
  op newNF2New : Protocol -> Protocol .
  eq newNF2New(newNF(emptyTypedCNameList, P)) = P .
@@ -1269,6 +1288,11 @@ mod PROTOCOL-EQUALITY is
 
  sort ProtocolConfig . 
  op pConfig : Signature ChannelContext Protocol Set{CName} Set{CName} -> ProtocolConfig [ctor] .
+ 
+ rl [rewrite-protocol] : 
+    pConfig(Sigma, Delta, P1, I, O)
+    =>
+    pConfig(Sigma, Delta, P2, I, O) [nonexec] .
 
  *** helpers
  
