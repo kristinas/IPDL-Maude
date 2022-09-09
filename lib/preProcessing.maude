@@ -317,11 +317,11 @@ mod PREPROCESSING is
       
   op addKey0Key1 : -> Protocol .
   eq addKey0Key1 = 
+     new 'KeyPair : msg * msg in 
      new 'ChoiceEnc : bool in
      new 'Flip : bool in
      new 'Key0 : msg in
      new 'Key1 : msg in 
-     new 'KeyPair : msg * msg in 
      new 'MsgEnc0 : msg in 
      new 'MsgEnc1 : msg in 
      new 'SharedKey : msg in 
@@ -759,7 +759,7 @@ srew [1] pConfig(muMsgSym xorF,
                 ; foldNF('Key1, 'KeyPair)
                 ; foldNF('Key0, 'KeyPair) 
                 ; localProof('KeyPair)
-                ; nTimesUnusedPreNF('Flip, 'KeyPair) 
+                ; nTimesUnusedPreNF('Flip, 'KeyPair)
                 ; SYM[P1:Protocol <- addKey0Key1]
                    {foldNF('Key1, 'KeyPair) ;
                     foldNF('Key0, 'KeyPair)
@@ -768,14 +768,14 @@ srew [1] pConfig(muMsgSym xorF,
                 ; substNF('KeyPair, 'MsgEnc0) 
                 ; substNF('KeyPair, 'MsgEnc1)
                 ; absorbChannel('KeyPair)
-                ; nTimesUnusedNF('Key1, 'SharedKey) 
+                ; nTimesUnusedNF('Key1, 'SharedKey)
                 ; SYM[P1:Protocol <- addPvtMsg]
                    { substNF('PvtMsg, 'MsgEnc0) 
                    ; substNF('PvtMsg, 'MsgEnc1)
                    ; absorbChannel('PvtMsg)
                    ; changeOrder('MsgEnc0, 'm0 :: 'm1 :: 'k0 :: 'k1 :: 'c :: emptyQidList)
                    ; changeOrder('MsgEnc1, 'm0 :: 'm1 :: 'k0 :: 'k1 :: 'c :: emptyQidList)
-                   } 
+                   }   
                ; foldNF('Key1, 'PvtMsg) 
                ; moveBindInPre('PvtMsg, 'm1) 
                ; nTimesReadInsideIfPre('PvtMsg) 

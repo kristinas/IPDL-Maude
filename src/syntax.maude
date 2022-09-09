@@ -984,12 +984,13 @@ fmod PROTOCOL is
  op newfamily___:_in_ : Qid List{NatTerm} Nat Type Protocol -> Protocol [ctor] . 
  op family___:=_ : Qid List{NatTerm} Nat CaseOf -> Protocol [ctor] .
  
- op newNF : TypedCNameList Protocol -> Protocol [ctor] .
+ op newNF : TypedCNameList Protocol QidList -> Protocol [ctor] .
 
  var q q2 i : Qid .
  var n x y n2 : Nat .
  var R R' : Reaction .
  var T : Type .
+ var ql : QidList .
  
  op checkHonest : Nat -> Bool .
 
@@ -1033,7 +1034,7 @@ fmod PROTOCOL is
  var ltq : TypedCNameList .
  var cn : ChannelName .
  
- *** given a protocol in new-normal-form, 
+ ***( given a protocol in new-normal-form, 
  *** add a new internal channel C : T
  *** with C ::= R
  op addChannel____ : ChannelName Type Reaction Protocol -> Protocol .
@@ -1043,23 +1044,25 @@ fmod PROTOCOL is
  op alterChannel___ : ChannelName Reaction Protocol -> Protocol .
  eq alterChannel cn R (newNF(< cn : T > ltq, P || (cn ::= R'))) = 
     newNF( < cn : T > ltq, P || (cn ::= R)) .
- 
+ )
 
  op newNF2New : Protocol -> Protocol .
- eq newNF2New(newNF(emptyTypedCNameList, P)) = P .
- eq newNF2New(newNF(< cn : T > ltq, P)) = new cn : T in (newNF2New(newNF(ltq, P))) .
+ eq newNF2New(newNF(emptyTypedCNameList, P, ql)) = P .
+ eq newNF2New(newNF(< cn : T > ltq, P, cn :: ql)) = 
+                  new cn : T in (newNF2New(newNF(ltq, P, ql))) .
  eq newNF2New(P) = P [owise] .
 
  op new2NF : Protocol -> Protocol .
- eq new2NF(P) = dropEmpty(new2NFAux P newNF(emptyTypedCNameList, emptyProtocol)) .
+ eq new2NF(P) = dropEmpty(new2NFAux P newNF(emptyTypedCNameList, emptyProtocol, emptyQidList)) .
 
  op dropEmpty : Protocol -> Protocol .
- eq dropEmpty(newNF(emptyTypedCNameList, P)) = P .
+ eq dropEmpty(newNF(emptyTypedCNameList, P, ql)) = P .
  eq dropEmpty(P) = P [owise] .
 
  op new2NFAux__ : Protocol Protocol -> Protocol .
- eq new2NFAux (new cn : T in P) newNF(ltq, P') = new2NFAux P newNF( < cn : T > ltq, P') .
- eq new2NFAux P newNF(ltq, P') = newNF(ltq, P) [owise] .
+ eq new2NFAux (new cn : T in P) newNF(ltq, P', ql) = 
+      new2NFAux P newNF( < cn : T > ltq, P', ql ++ (cn :: emptyQidList)) .
+ eq new2NFAux P newNF(ltq, P', ql) = newNF(ltq, P, ql) [owise] .
 
  
  op nf2p : Protocol -> Protocol .
@@ -1187,6 +1190,7 @@ fmod PROTOCOL-IO is
  var T : Type .
  vars R : Reaction . 
  var ltq : TypedCNameList .
+ var ql : QidList .
 
 op chansInList_ : TypedCNameList -> Set{CName} .
 eq chansInList emptyTypedCNameList = empty .
@@ -1197,7 +1201,7 @@ eq chansInList (< c : T > ltq) = insert(c, chansInList ltq) .
  eq getOutputs((c ::= R) || P2) = union(c, getOutputs(P2)) [label getOutputsParallel] .
  eq getOutputs(P1 || P2) = union(getOutputs(P1), getOutputs(P2)) [owise] .
  eq getOutputs(new c : T in P) = getOutputs(P) \  c [label getOutputsNew] .
- eq getOutputs(newNF(ltq, P)) = getOutputs(P) \ (chansInList ltq) [label getOutputsNewNF] .
+ eq getOutputs(newNF(ltq, P, ql)) = getOutputs(P) \ (chansInList ltq) [label getOutputsNewNF] .
    
 endfm
 
@@ -1242,15 +1246,16 @@ fmod PROTOCOL-TYPING is
      typeOf(Sigma, Delta (c :: T), I, P) 
      [label typeOfNew] .
      
- var ltq : TypedCNameList .    
+ var ltq : TypedCNameList .   
+ var ql : QidList . 
      
- eq typeOf(Sigma, Delta, I, newNF(ltq, P)) = ***(
+ eq typeOf(Sigma, Delta, I, newNF(ltq, P, ql)) = ***(
     validChanSet I Delta 
     and
     allNew ltq Delta
     and
     typeOf(Sigma, addChannels ltq Delta, I, P) )
-    typeOf(Sigma, Delta, I, newNF2New(newNF(ltq, P)))
+    typeOf(Sigma, Delta, I, newNF2New(newNF(ltq, P, ql)))
     .
     
  op allNew__ : TypedCNameList ChannelContext -> Bool .
@@ -1305,15 +1310,16 @@ mod PROTOCOL-EQUALITY is
 
  var C : Qid .
  var cOf : CaseOf .
+ var ql : QidList .
  
  ***(
  rl [read-read-new] : 
     pConfig(Sigma, Delta, 
-            newNF(< c : T > ltq, P || (c ::= read x) || (y ::= read c)), 
+            newNF(< c : T > ltq, P || (c ::= read x) || (y ::= read c), ql), 
             I, O)
     => 
     pConfig(Sigma, Delta, 
-            newNF(ltq, P || (y ::= read x)), 
+            newNF(ltq, P || (y ::= read x), del c ql), 
             I, O)
     .
  )
@@ -1327,11 +1333,11 @@ mod PROTOCOL-EQUALITY is
     nf2p(newfamily C lq n : T in P) .  
 
  rl [desugar-newNF] :
-     pConfig(Sigma, Delta, newNF(ltq, P1), I, O)
+     pConfig(Sigma, Delta, newNF(ltq, P1, ql), I, O)
      =>
-     pConfig(Sigma, Delta, newNF2New(newNF(ltq, P1)), I, O) 
+     pConfig(Sigma, Delta, newNF2New(newNF(ltq, P1, ql)), I, O) 
      *** if
-     *** typeOf(Sigma, Delta, I, newNF(ltq, P1)) *** TODO!
+     *** typeOf(Sigma, Delta, I, newNF(ltq, P1, ql)) *** TODO!
      . 
      
  rl [sugar-newNF] :
@@ -1340,34 +1346,34 @@ mod PROTOCOL-EQUALITY is
     pConfig(Sigma, Delta, new2NF(P), I, O) .
     
  crl [CONG-NEW-NF] :
-    pConfig(Sigma, Delta, newNF(ltq, P1), I, O) 
+    pConfig(Sigma, Delta, newNF(ltq, P1, ql), I, O) 
     => 
-    pConfig(Sigma, Delta, newNF(ltq, P2), I, O)
+    pConfig(Sigma, Delta, newNF(ltq, P2, ql), I, O)
     if
     pConfig(Sigma, Delta, P1, I, O)
     =>
     pConfig(Sigma, Delta, P2, I, O) 
     /\
-    typeOf(Sigma, Delta, I, newNF(ltq, P1)) 
+    typeOf(Sigma, Delta, I, newNF(ltq, P1, ql)) 
     .
     
  crl [absorb-new-nf] : 
-     pConfig(Sigma, Delta, newNF(< c : T > ltq, P || (c ::= R)), I, O) 
+     pConfig(Sigma, Delta, newNF(< c : T > ltq, P || (c ::= R), ql), I, O) 
      => 
-     pConfig(Sigma, Delta, newNF(ltq, P), I, O) 
+     pConfig(Sigma, Delta, newNF(ltq, P, del c ql), I, O) 
      if
      typeOf(Sigma, addChannels ltq (Delta (c :: T)), emptyVarContext, 
             insert(c, union(I, getOutputs(P))), R) == T 
      /\
      typeOf(Sigma, addChannels ltq Delta, I, P)       
      /\ 
-     getOutputs(newNF2New(newNF(ltq, P))) == O
+     getOutputs(newNF2New(newNF(ltq, P, ql))) == O
      .
      
  crl [comp-new-nf-left] : 
-     pConfig(Sigma, Delta, newNF(< c : T > ltq, P || (c ::= R)), I, O) 
+     pConfig(Sigma, Delta, newNF(< c : T > ltq, P || (c ::= R), ql), I, O) 
     => 
-     pConfig(Sigma, Delta, newNF(ltq, P || new c : T in (c ::= R)), I, O) 
+     pConfig(Sigma, Delta, newNF(ltq, P || new c : T in (c ::= R), del c ql), I, O) 
     if
      typeOf(Sigma, addChannels ltq Delta, I, P) 
      /\
@@ -1375,10 +1381,10 @@ mod PROTOCOL-EQUALITY is
             insert(c, union(I, getOutputs(P))), R) == T 
     . 
    
- crl [comp-new-nf-right] :   
-    pConfig(Sigma, Delta, newNF(ltq, P || new c : T in Q), I, O)
+ crl [comp-new-nf-right] :   *** TODO! where we add c
+    pConfig(Sigma, Delta, newNF(ltq, P || new c : T in Q, ql), I, O)
     =>
-    pConfig(Sigma, Delta, newNF(< c : T > ltq, P || Q), I, O) 
+    pConfig(Sigma, Delta, newNF(< c : T > ltq, P || Q, c :: ql), I, O) 
     if
      typeOf(Sigma, addChannels ltq Delta, union(I, getOutputs(Q)), P) 
      /\
@@ -1387,11 +1393,11 @@ mod PROTOCOL-EQUALITY is
     
  crl [fold-bind-new] :
     pConfig(Sigma, Delta, 
-             newNF(< c : T > ltq, P || (c ::= R) || (o ::= x : T <- read c ; S)),
+             newNF(< c : T > ltq, P || (c ::= R) || (o ::= x : T <- read c ; S), ql),
             I, O)
     => 
     pConfig(Sigma, Delta, 
-             newNF(ltq, P || (o ::= x : T <- R ; S)),
+             newNF(ltq, P || (o ::= x : T <- R ; S), del c ql),
             I, O) 
     if 
     typeOf(Sigma, addChannels ltq (Delta (c :: T)), emptyVarContext, 
@@ -1400,11 +1406,12 @@ mod PROTOCOL-EQUALITY is
   crl [fold-bind-new-nf] :
     pConfig(Sigma, Delta, 
              newNF(< c : T > ltq, P || (c ::= R) || 
-                                 (o ::= nf((x : T <- read c) BRL, S, QL))),
+                                 (o ::= nf((x : T <- read c) BRL, S, QL)), 
+                   ql),
             I, O)
     => 
     pConfig(Sigma, Delta, 
-             newNF(ltq, P || (o ::= preNF((x : T <~ R) BRL, S, QL, x))),
+             newNF(ltq, P || (o ::= preNF((x : T <~ R) BRL, S, QL, x)), del c ql),
             I, O) 
     if typeOf(Sigma, addChannels ltq (Delta (c :: T)), addDeclarations BRL emptyVarContext, 
             insert(o, insert(c, union(I, getOutputs(P)))), R) == T .  
@@ -1412,11 +1419,11 @@ mod PROTOCOL-EQUALITY is
   crl [fold-bind-new-prenf] :
     pConfig(Sigma, Delta, 
              newNF(< c : T > ltq, P || (c ::= R) || 
-                                 (o ::= preNF((x : T <- read c) BRL, S, QL, x1))),
+                                 (o ::= preNF((x : T <- read c) BRL, S, QL, x1)), ql),
             I, O)
     => 
     pConfig(Sigma, Delta, 
-             newNF(ltq, P || (o ::= preNF((x : T <~ R) BRL, S, QL, x1))),
+             newNF(ltq, P || (o ::= preNF((x : T <~ R) BRL, S, QL, x1)), del c ql),
             I, O) 
     if        
     typeOf(Sigma, addChannels ltq (Delta (c :: T)), emptyVarContext, 

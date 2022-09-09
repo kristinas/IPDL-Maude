@@ -362,6 +362,7 @@ smod STRATS is
  
  var BRL : BRList . 
  var ltq : TypedCNameList .
+ var ql' : QidList .
  
  strat substAll : ChannelName @ ProtocolConfig .
  sd substAll(C) := substNFOne(C) ! .
@@ -374,11 +375,13 @@ smod STRATS is
     sugar-newNF ; 
     (
      matchrew pConf 
-         s.t. pConfig(Sigma, Delta, 
+         s.t. pConfig(Sigma, Delta,   
                       newNF(ltq,
-                       P || (C1 ::= R1) || 
-                       (C2 ::= nf( (x1 : T1 <- read C1) BRL , R2 , ql))
-                      ), I, O) := pConf 
+                             P || (C1 ::= R1) || 
+                                  (C2 ::= nf( (x1 : T1 <- read C1) BRL , R2, ql
+                                            )
+                                  ),
+                       ql'), I, O) := pConf 
          by pConf 
        using (desugar-newNF ; substNF(C1, C2))
     )   
@@ -881,7 +884,8 @@ smod STRATS is
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
              {CONG-REACT[o:ChannelName <- C]{symOverIf(R, Msg1, Msg2)}} .
-             
+  
+***(             
  strat addChannelP : ChannelName Type Reaction @ ProtocolConfig .
  sd addChannelP(C, T, R) := 
     sugar-newNF ;
@@ -895,6 +899,6 @@ smod STRATS is
     ( matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using rewrite-protocol[P2:Protocol <- alterChannel C R P] ) ;
     desugar-newNF .                  
-            
+)            
 endsm
 

@@ -107,11 +107,11 @@ mod SECURE is
   
   op addEncDec : -> Protocol .
   eq addEncDec =  
-  new 'Key : key in 
-  new 'Send : ctxt in 
-  new 'Recv : ctxt in 
-  new 'Enc : ctxt in
   new 'Dec : msg in
+  new 'Enc : ctxt in
+  new 'Key : key in 
+  new 'Recv : ctxt in 
+  new 'Send : ctxt in 
   (
   ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)) 
   || 
@@ -255,34 +255,39 @@ smod EXECUTE is
     
 endsm
  
+*** whole proof 
+ 
 srew [1] pConfig(secSig, 
                  ('In :: msg) ('Out :: msg) ('OkCtxt_adv_net :: ctxt)
                  ('LeakCtxt_net_adv :: ctxt), 
                  real,  
                  insert('In, 'OkCtxt_adv_net),
                  getOutputs(idealPlusSim))
-         using  smart-subst-nf('Recv, 'Out)  ;   
-                SYM[P1:Protocol <- addEncDec] 
+         using   smart-subst-nf('Recv, 'Out)
+               ; SYM[P1:Protocol <- addEncDec] 
                     {foldNF('Enc, 'Send) ;
                      foldNF('Dec, 'Out)
-                    } ;
-                absorbChannel('Recv) ;
-                smart-subst-nf('Send, 'LeakCtxt_net_adv) ;
-                smart-subst-nf('Send, 'Dec) ;
-                absorbChannel('Send) ;
-                applyEDC('In, 'Key, 'Enc, 'Dec) ;
-                applyCPA('Key, 'Enc);
-                foldNF('Enc, 'LeakCtxt_net_adv) ;
-                foldNF('Dec, 'Out) ;
-                SYM[P1:Protocol <- idealPlusSim]
+                    }
+               ; absorbChannel('Recv) 
+               ; smart-subst-nf('Send, 'LeakCtxt_net_adv) 
+               ; smart-subst-nf('Send, 'Dec)
+               ; absorbChannel('Send)
+               ; applyEDC('In, 'Key, 'Enc, 'Dec)
+               ; applyCPA('Key, 'Enc)
+               ; foldNF('Enc, 'LeakCtxt_net_adv) 
+               ; foldNF('Dec, 'Out)      
+               ; SYM[P1:Protocol <- idealPlusSim]
                  {
                     smart-subst-nf('OkMsg_adv_id, 'Out)
                   ; smart-subst-nf('LeakMsgRcvd_id_adv, 'LeakCtxt_net_adv)
                   ; absorbChannel('LeakMsgRcvd_id_adv)
                   ; absorbChannel('OkMsg_adv_id)
-                 }
+                 }     
                 .   
                 
+*******************************************                
+                
+ ***(                
 srew [1] pConfig(secSig, 
                  ('In :: msg) ('Out :: msg) ('OkCtxt_adv_net :: ctxt)
                  ('LeakCtxt_net_adv :: ctxt), 
@@ -298,7 +303,7 @@ srew [1] pConfig(secSig,
                 substAll('Send)
                 .                                  
    
-***(       
+      
             
   srew [1] pConfig(secSig, 
                  ('In :: msg) ('Out :: msg) ('OkCtxt_adv_net :: ctxt)
