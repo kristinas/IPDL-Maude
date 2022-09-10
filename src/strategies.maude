@@ -260,20 +260,20 @@ smod STRATS is
          SUBST-nf-read[o1:ChannelName <- C1, 
                        o2:ChannelName <- C2] } . 
                        
- strat nTimesUnusedNF : ChannelName ChannelName @ ProtocolConfig .
- sd nTimesUnusedNF(C1, C2) := 
+ strat applyUnusedNF : ChannelName ChannelName @ ProtocolConfig .
+ sd applyUnusedNF(C1, C2) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesUnusedNF(C1, C2)} 
+     ? CONG-NEW{applyUnusedNF(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]{
          UNUSED-nf[o1:ChannelName <- C1, 
                    o2:ChannelName <- C2] } . 
                    
- strat nTimesUnusedPreNF : ChannelName ChannelName @ ProtocolConfig .
- sd nTimesUnusedPreNF(C1, C2) := 
+ strat applyUnusedPreNF : ChannelName ChannelName @ ProtocolConfig .
+ sd applyUnusedPreNF(C1, C2) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesUnusedPreNF(C1, C2)} 
+     ? CONG-NEW{applyUnusedPreNF(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]{
@@ -479,10 +479,10 @@ smod STRATS is
              {CONG-REACT[o:ChannelName <- C]{bind2R-pre[x:Qid <- Q] }}
     .
     
- strat nTimesReadInsideIfPre : ChannelName @ ProtocolConfig .
- sd nTimesReadInsideIfPre(C) :=      
+ strat applyReadInsideIfPre : ChannelName @ ProtocolConfig .
+ sd applyReadInsideIfPre(C) :=      
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesReadInsideIfPre(C)} 
+     ? CONG-NEW{applyReadInsideIfPre(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
