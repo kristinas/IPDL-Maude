@@ -90,11 +90,7 @@ smod STRATS is
     match pConf s.t. startsWithNew pConf
     ? CONG-NEW{nTimesSubst}
     : CONG-COMP-RIGHT{(SUBST [x2:Qid <- 'x2]{read-det})} . 
-    *** P || Q1 => P || Q2 if Q1 => Q2
-    *** subst (C, D) 
-     *** Q1 : C ::= RC || D ::= RD
-     *** P : the rest
-   
+    
  strat nTimesBindRet @ ProtocolConfig .
  sd nTimesBindRet := 
     match pConf s.t. startsWithNew pConf
@@ -253,15 +249,6 @@ smod STRATS is
           SUBST-nf[o1:ChannelName <- C1, 
                    o2:ChannelName <- C2]
                    } .
-                   
- strat nTimesSubstNFProtocol : Protocol ChannelName ChannelName @ ProtocolConfig .
- sd nTimesSubstNFProtocol(P, C1, C2) := 
-     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesSubstNFProtocol(P, C1, C2)} 
-     : CONG-COMP-RIGHT-nocheck[P1:Protocol <- P]{
-          SUBST-nf[o1:ChannelName <- C1, 
-                   o2:ChannelName <- C2]
-                   } .                  
                                 
  strat nTimesSubstNFRead : ChannelName ChannelName @ ProtocolConfig .
  sd nTimesSubstNFRead(C1, C2) := 
@@ -394,15 +381,7 @@ smod STRATS is
    ; handleRNF(C2)
    ; (pre2Nf or-else idle) 
    .   
-   
- strat substNFProtocol : Protocol ChannelName ChannelName @ ProtocolConfig .
- sd substNFProtocol(P, C1, C2) :=  
-     nTimesSubstNFProtocol(P, C1, C2) 
-   ; liftInnerBindsNF(C2)
-   ; handleRNF(C2)
-   ; pre2Nf 
-   .  
-   
+  
  strat smart-subst-nf : ChannelName ChannelName @ ProtocolConfig . 
  sd smart-subst-nf(C1, C2) :=                        
    nTimesSubstNFRead(C1, C2)
@@ -510,7 +489,6 @@ smod STRATS is
        {CONG-REACT[o:ChannelName <- C]
         {cong-pre-nf{read-inside-if
                     } 
-         *** ; read-inside-if
         }
        }
     .    
@@ -797,27 +775,7 @@ smod STRATS is
      : ABSORB-LEFT-2[P2:Protocol <- P] ; COMP-NEW .  
      
  var Msg1 Msg2 : Message .    
- 
-***(     
- strat applyCongRetBranch : Message Message @ ReactionConfig .
- sd applyCongRetBranch(Msg1, Msg2) :=
-    match rConf s.t. rBindRead(rConf) 
-    ? cong-bind{idle, applyCongRetBranch(Msg1, Msg2)}
-    : cong-branch-refl{cong-ret[M2 <- Msg1],
-                      cong-ret[M2 <- Msg2]} .
-   
-                     
- strat applyCongRetBranchPr : ChannelName Message Message @ ProtocolConfig .
- sd applyCongRetBranchPr(C, M1, M2) := 
-     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{applyCongRetBranchPr(C, M1, M2)} 
-     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
-                             P1:Protocol <- keepOne P C]
-             {CONG-REACT[o:ChannelName <- C]{applyCongRetBranch(M1, M2)}} .  
-     
-)
-     
+      
  var q1 q2 : Qid .  
  sort QidPair .
  op <<_,_>> : Qid Qid -> QidPair [ctor] .
@@ -884,21 +842,6 @@ smod STRATS is
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
              {CONG-REACT[o:ChannelName <- C]{symOverIf(R, Msg1, Msg2)}} .
-  
-***(             
- strat addChannelP : ChannelName Type Reaction @ ProtocolConfig .
- sd addChannelP(C, T, R) := 
-    sugar-newNF ;
-    (matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
-       using rewrite-protocol[P2:Protocol <- addChannel C T R P] ) ;
-    desugar-newNF .
-       
- strat replaceChannelP : ChannelName Reaction @ ProtocolConfig .
- sd replaceChannelP(C, R) := 
-    sugar-newNF ;
-    ( matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
-       using rewrite-protocol[P2:Protocol <- alterChannel C R P] ) ;
-    desugar-newNF .                  
-)            
+              
 endsm
 

@@ -1350,11 +1350,11 @@ mod PROTOCOL-EQUALITY is
     => 
     pConfig(Sigma, Delta, newNF(ltq, P2, ql), I, O)
     if
-    pConfig(Sigma, Delta, P1, I, O)
+    pConfig(Sigma, addChannels ltq Delta, P1, I, union(getOutputs(P1), O))
     =>
-    pConfig(Sigma, Delta, P2, I, O) 
+    pConfig(Sigma, addChannels ltq Delta, P2, I, O') 
     /\
-    typeOf(Sigma, Delta, I, newNF(ltq, P1, ql)) 
+    O' == union(getOutputs(P1), O)
     .
     
  crl [absorb-new-nf] : 
@@ -1448,17 +1448,6 @@ mod PROTOCOL-EQUALITY is
      rConfig(Sigma, Delta (o :: T), emptyVarContext, R', I', T) 
      /\ I' == insert(o, I)  .
      *** /\ R =/= R' .
-     
- rl [CONG-REACT-nocheck] : 
-     pConfig(Sigma, Delta (o :: T), o ::= R, I, o ) 
-     =>
-     pConfig(Sigma, Delta (o :: T), o ::= return True, I, o ) .
-     ***( if
-     rConfig(Sigma, Delta (o :: T), emptyVarContext, R, insert(o, I), T)
-     =>
-     rConfig(Sigma, Delta (o :: T), emptyVarContext, R', I', T) 
-     /\ I' == insert(o, I)  .
-     )   
 
  crl [CONG-COMP-LEFT] :
      pConfig(Sigma, Delta, P1 || Q, I, O) 
@@ -1475,15 +1464,6 @@ mod PROTOCOL-EQUALITY is
      /\
      O == union(getOutputs(P1), getOutputs(Q)) .
      *** /\ P1 =/= P2 .
-      
- crl [CONG-COMP-RIGHT-nocheck] :
-     pConfig(Sigma, Delta, Q || P1, I, O) 
-     => 
-     pConfig(Sigma, Delta, Q || P2, I, O)
-     if
-     pConfig(Sigma, Delta, P1, union(I, getOutputs(Q)), getOutputs(P1))
-     => 
-     pConfig(Sigma, Delta, P2, I1, O1) [nonexec].
 
   crl [CONG-COMP-RIGHT] :
      pConfig(Sigma, Delta, Q || P1, I, O) 
@@ -1508,17 +1488,7 @@ mod PROTOCOL-EQUALITY is
      => 
      pConfig(Sigma, Delta (o :: T),  P2, I, O') 
      /\ O' == insert(o, O) [nonexec] .
-     *** /\ P1 =/= P2 .
-     
-  crl [CONG-NEW-nocheck] : 
-     pConfig(Sigma, Delta, new o : T in P1, I, O)
-     => 
-     pConfig(Sigma, Delta, new o : T in P2, I, O)
-     if
-     pConfig(Sigma, Delta (o :: T),  P1, I, O')
-     => 
-     pConfig(Sigma, Delta (o :: T),  P2, I, O') /\ O' == insert(o, O)
-     [nonexec] .    
+     *** /\ P1 =/= P2 .   
 
   *** COMP-COMM and COMP-ASSOC are out, || has these attributes
   *** AXIOM don't requires a new rule, one is added for each axiom

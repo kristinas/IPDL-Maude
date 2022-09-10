@@ -284,38 +284,4 @@ srew [1] pConfig(secSig,
                   ; absorbChannel('OkMsg_adv_id)
                  }     
                 .   
-                
-*******************************************                
-                
- ***(                
-srew [1] pConfig(secSig, 
-                 ('In :: msg) ('Out :: msg) ('OkCtxt_adv_net :: ctxt)
-                 ('LeakCtxt_net_adv :: ctxt), 
-                 real,  
-                 insert('In, 'OkCtxt_adv_net),
-                 getOutputs(idealPlusSim))
-         using  smart-subst-nf('Recv, 'Out)  ;   
-                SYM[P1:Protocol <- addEncDec] 
-                    {foldNF('Enc, 'Send) ;
-                     foldNF('Dec, 'Out)
-                    } ;
-                absorbChannel('Recv) ;
-                substAll('Send)
-                .                                  
-   
-      
-            
-  srew [1] pConfig(secSig, 
-                 ('In :: msg) ('Out :: msg) ('OkCtxt_adv_net :: ctxt)
-                 ('LeakCtxt_net_adv :: ctxt), 
-                 idealPlusSim,  
-                 insert('In, 'OkCtxt_adv_net),
-                 getOutputs(idealPlusSim))
-         using        
-                 smart-subst-nf('OkMsg_adv_id, 'Out)
-               ; smart-subst-nf('LeakMsgRcvd_id_adv, 'LeakCtxt_net_adv)
-               ; absorbChannel('LeakMsgRcvd_id_adv)
-               ; absorbChannel('OkMsg_adv_id)
-               .   
-)              
-        
+    
