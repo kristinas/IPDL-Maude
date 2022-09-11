@@ -188,30 +188,25 @@ smod STRATS is
    
  strat absorbChannel : ChannelName @ ProtocolConfig .
  sd absorbChannel(C) := 
-    *** sugar-newNF ;
     absorb-new-nf[c:ChannelName <- C]  
-    *** desugar-newNF 
  .   
    
  strat foldNF : ChannelName ChannelName @ ProtocolConfig .
  sd foldNF(C1, C2) := 
-                 *** sugar-newNF ;
                  (fold-bind-new-nf[c:ChannelName <- C1,
                                    o:ChannelName <- C2] 
                   or-else 
                   fold-bind-new-prenf[c:ChannelName <- C1,
                                       o:ChannelName <- C2] )
-                 *** ; desugar-newNF  *** TODO these last 2 steps should be reusable from subst!
+                 *** TODO these last 2 steps should be reusable from subst!
                  ; liftInnerBindsNF(C2) 
                  ; handleRNF(C2) 
                  .
                  
  strat foldNFPre : ChannelName ChannelName @ ProtocolConfig .  
  sd foldNFPre(C1, C2) := 
-                 *** sugar-newNF ;
                  fold-bind-new-prenf[c:ChannelName <- C1,
                                      o:ChannelName <- C2] ;
-                 *** desugar-newNF ;
                  liftInnerBindsNF(C2) ;
                  handleRpreNF(C2) 
                  .  
@@ -361,8 +356,6 @@ smod STRATS is
       
  strat substNFOne : ChannelName @ ProtocolConfig .
  sd substNFOne(C1) := 
-    *** sugar-newNF ; 
-    (
      matchrew pConf 
          s.t. pConfig(Sigma, Delta,   
                       newNF(ltq,
@@ -372,9 +365,7 @@ smod STRATS is
                                   ),
                        ql'), I, O) := pConf 
          by pConf 
-       using (*** desugar-newNF ; 
-              substNF(C1, C2))
-    )   
+       using substNF(C1, C2)
  .         
       
  strat substNF : ChannelName ChannelName @ ProtocolConfig .
