@@ -53,8 +53,8 @@ smod STRATS is
  sd moveToLast(Q) := match pConf s.t. (foundQ pConf Q) 
                        ? (match pConf s.t. (isLastNew pConf Q true) 
                          ? idle 
-                         : (NEW-EXCH ; CONG-NEW{moveToLast(Q)})) 
-                       : CONG-NEW{moveToLast(Q)} .
+                         : (NEW-EXCH ; CONG-NEW-NF{moveToLast(Q)})) 
+                       : CONG-NEW-NF{moveToLast(Q)} .
                         
  var N : Nat .
  
@@ -63,23 +63,25 @@ smod STRATS is
  eq startsWithNew pConfig(S, D, P1 || P2, I, O) = false .
  eq startsWithNew pConfig(S, D, C ::= R, I, O) = false .
  eq startsWithNew pConfig(S, D, new Q : T in P, I, O) = true .
+ eq startsWithNew pConfig(S, D, newNF(ltq, P, ql), I, O) = true . 
 
  op startsWithNewC__ : ProtocolConfig ChannelName -> Bool .
  eq startsWithNewC pConfig(S, D, emptyProtocol, I, O) C = false .
  eq startsWithNewC pConfig(S, D, P1 || P2, I, O) C = false .
  eq startsWithNewC pConfig(S, D, C ::= R, I, O) C = false .
  eq startsWithNewC pConfig(S, D, new Q : T in P, I, O) C = (Q == C) .
+ eq startsWithNewC pConfig(S, D, newNF(ltq, P, Q :: ql), I, O) C = (Q == C) .
  
  strat nTimesCong : ChannelName @ ProtocolConfig .
  sd nTimesCong(C) := 
       match pConf s.t. startsWithNewC pConf C
       ? COMP-NEW-2 ; ABSORB-RIGHT 
-      : CONG-NEW{nTimesCong(C)} .
+      : CONG-NEW-NF{nTimesCong(C)} .
  
  strat nTimesBindRet2 : ChannelName @ ProtocolConfig .
  sd nTimesBindRet2(C) := 
   match pConf s.t. startsWithNew pConf
-  ? CONG-NEW{nTimesBindRet2(C)}
+  ? CONG-NEW-NF{nTimesBindRet2(C)}
   : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -88,13 +90,13 @@ smod STRATS is
  strat nTimesSubst @ ProtocolConfig .
  sd nTimesSubst := 
     match pConf s.t. startsWithNew pConf
-    ? CONG-NEW{nTimesSubst}
+    ? CONG-NEW-NF{nTimesSubst}
     : CONG-COMP-RIGHT{(SUBST [x2:Qid <- 'x2]{read-det})} . 
     
  strat nTimesBindRet @ ProtocolConfig .
  sd nTimesBindRet := 
     match pConf s.t. startsWithNew pConf
-    ? CONG-NEW{nTimesBindRet} 
+    ? CONG-NEW-NF{nTimesBindRet} 
     : CONG-COMP-RIGHT{CONG-REACT{bind-ret}} .
  
  var rConf : ReactionConfig .
@@ -136,7 +138,7 @@ smod STRATS is
  strat liftInnerBindsPr : ChannelName @ ProtocolConfig .
  sd liftInnerBindsPr(C) := 
   match pConf s.t. startsWithNew pConf 
-  ? CONG-NEW{liftInnerBindsPr(C)}
+  ? CONG-NEW-NF{liftInnerBindsPr(C)}
   : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -165,7 +167,7 @@ smod STRATS is
  strat moveCertainBindLastProtocol : Qid ChannelName @ ProtocolConfig .
  sd moveCertainBindLastProtocol(Q, C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{moveCertainBindLastProtocol(Q, C)}
+     ? CONG-NEW-NF{moveCertainBindLastProtocol(Q, C)}
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -181,35 +183,35 @@ smod STRATS is
  strat nTimesMoveFirst : Qid ChannelName @ ProtocolConfig .
  sd nTimesMoveFirst(Q, C) := 
    match pConf s.t. startsWithNew pConf
-   ? CONG-NEW{nTimesMoveFirst(Q, C)}
+   ? CONG-NEW-NF{nTimesMoveFirst(Q, C)}
    : moveFirst(Q, C) .
    
  strat absorbChannel : ChannelName @ ProtocolConfig .
  sd absorbChannel(C) := 
-    sugar-newNF ;
-    absorb-new-nf[c:ChannelName <- C] ;  
-    desugar-newNF 
+    *** sugar-newNF ;
+    absorb-new-nf[c:ChannelName <- C]  
+    *** desugar-newNF 
  .   
    
  strat foldNF : ChannelName ChannelName @ ProtocolConfig .
  sd foldNF(C1, C2) := 
-                 sugar-newNF ;
+                 *** sugar-newNF ;
                  (fold-bind-new-nf[c:ChannelName <- C1,
                                    o:ChannelName <- C2] 
                   or-else 
                   fold-bind-new-prenf[c:ChannelName <- C1,
                                       o:ChannelName <- C2] )
-                 ; desugar-newNF  *** TODO these last 2 steps should be reusable from subst!
+                 *** ; desugar-newNF  *** TODO these last 2 steps should be reusable from subst!
                  ; liftInnerBindsNF(C2) 
                  ; handleRNF(C2) 
                  .
                  
  strat foldNFPre : ChannelName ChannelName @ ProtocolConfig .  
  sd foldNFPre(C1, C2) := 
-                 sugar-newNF ;
+                 *** sugar-newNF ;
                  fold-bind-new-prenf[c:ChannelName <- C1,
                                      o:ChannelName <- C2] ;
-                 desugar-newNF ;
+                 *** desugar-newNF ;
                  liftInnerBindsNF(C2) ;
                  handleRpreNF(C2) 
                  .  
@@ -219,7 +221,7 @@ smod STRATS is
  strat changeOrder : ChannelName QidList @ ProtocolConfig .
  sd changeOrder(C, ql) :=
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{changeOrder(C, ql)} 
+     ? CONG-NEW-NF{changeOrder(C, ql)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]{
@@ -230,7 +232,7 @@ smod STRATS is
  strat changeOrderPre : ChannelName QidList @ ProtocolConfig .
  sd changeOrderPre(C, ql) :=
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{changeOrderPre(C, ql)} 
+     ? CONG-NEW-NF{changeOrderPre(C, ql)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]{
@@ -242,7 +244,7 @@ smod STRATS is
  strat nTimesSubstNF : ChannelName ChannelName @ ProtocolConfig .
  sd nTimesSubstNF(C1, C2) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesSubstNF(C1, C2)} 
+     ? CONG-NEW-NF{nTimesSubstNF(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]{
@@ -253,7 +255,7 @@ smod STRATS is
  strat nTimesSubstNFRead : ChannelName ChannelName @ ProtocolConfig .
  sd nTimesSubstNFRead(C1, C2) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesSubstNFRead(C1, C2)} 
+     ? CONG-NEW-NF{nTimesSubstNFRead(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]{
@@ -263,7 +265,7 @@ smod STRATS is
  strat applyUnusedNF : ChannelName ChannelName @ ProtocolConfig .
  sd applyUnusedNF(C1, C2) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{applyUnusedNF(C1, C2)} 
+     ? CONG-NEW-NF{applyUnusedNF(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]{
@@ -273,7 +275,7 @@ smod STRATS is
  strat applyUnusedPreNF : ChannelName ChannelName @ ProtocolConfig .
  sd applyUnusedPreNF(C1, C2) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{applyUnusedPreNF(C1, C2)} 
+     ? CONG-NEW-NF{applyUnusedPreNF(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]{
@@ -286,7 +288,7 @@ smod STRATS is
  strat liftInnerBindsNF : ChannelName @ ProtocolConfig .
  sd liftInnerBindsNF(X) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{liftInnerBindsNF(X)} 
+     ? CONG-NEW-NF{liftInnerBindsNF(X)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using
         CONG-COMP-RIGHT[Q:Protocol  <- removeOne P X, 
@@ -303,7 +305,7 @@ smod STRATS is
  strat removeDuplicateReadsNF : ChannelName @ ProtocolConfig .
  sd removeDuplicateReadsNF(C1) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{removeDuplicateReadsNF(C1)} 
+     ? CONG-NEW-NF{removeDuplicateReadsNF(C1)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using
         CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C1, 
@@ -314,7 +316,7 @@ smod STRATS is
  strat handleRNF : ChannelName @ ProtocolConfig .  
  sd handleRNF(C1) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{handleRNF(C1)} 
+     ? CONG-NEW-NF{handleRNF(C1)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C1, 
                              P1:Protocol <- keepOne P C1]{
@@ -333,7 +335,7 @@ smod STRATS is
  strat handleRpreNF : ChannelName @ ProtocolConfig .  
  sd handleRpreNF(C1) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{handleRpreNF(C1)} 
+     ? CONG-NEW-NF{handleRpreNF(C1)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using
         CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C1, 
@@ -359,7 +361,7 @@ smod STRATS is
       
  strat substNFOne : ChannelName @ ProtocolConfig .
  sd substNFOne(C1) := 
-    sugar-newNF ; 
+    *** sugar-newNF ; 
     (
      matchrew pConf 
          s.t. pConfig(Sigma, Delta,   
@@ -370,7 +372,8 @@ smod STRATS is
                                   ),
                        ql'), I, O) := pConf 
          by pConf 
-       using (desugar-newNF ; substNF(C1, C2))
+       using (*** desugar-newNF ; 
+              substNF(C1, C2))
     )   
  .         
       
@@ -413,7 +416,7 @@ smod STRATS is
  strat nTimesSubstSampFree : ChannelName ChannelName @ ProtocolConfig .
  sd nTimesSubstSampFree(C1, C2) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesSubstSampFree(C1, C2)} 
+     ? CONG-NEW-NF{nTimesSubstSampFree(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]
@@ -424,7 +427,7 @@ smod STRATS is
  strat nTimesSubst2SampFree : ChannelName ChannelName @ ProtocolConfig .
  sd nTimesSubst2SampFree(C1, C2) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesSubst2SampFree(C1, C2)} 
+     ? CONG-NEW-NF{nTimesSubst2SampFree(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]
@@ -437,7 +440,7 @@ smod STRATS is
  strat localProof : ChannelName @ ProtocolConfig .
  sd localProof(C) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{localProof(C)} 
+     ? CONG-NEW-NF{localProof(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]{ 
@@ -461,7 +464,7 @@ smod STRATS is
  strat nf2PreNF : ChannelName Qid @ ProtocolConfig .
  sd nf2PreNF(C, c') := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nf2PreNF(C, c')} 
+     ? CONG-NEW-NF{nf2PreNF(C, c')} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using
         CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
@@ -472,7 +475,7 @@ smod STRATS is
  strat moveBindInPre : ChannelName Qid @ ProtocolConfig .
  sd moveBindInPre(C, Q) :=      
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{moveBindInPre(C, Q)} 
+     ? CONG-NEW-NF{moveBindInPre(C, Q)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -482,7 +485,7 @@ smod STRATS is
  strat applyReadInsideIfPre : ChannelName @ ProtocolConfig .
  sd applyReadInsideIfPre(C) :=      
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{applyReadInsideIfPre(C)} 
+     ? CONG-NEW-NF{applyReadInsideIfPre(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -502,7 +505,7 @@ smod STRATS is
  strat nTimesIfOverBind : ChannelName @ ProtocolConfig .
  sd nTimesIfOverBind(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesIfOverBind(C)} 
+     ? CONG-NEW-NF{nTimesIfOverBind(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -536,7 +539,7 @@ smod STRATS is
  strat nTimesIfOverBindBranch : ChannelName @ ProtocolConfig .
  sd nTimesIfOverBindBranch(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesIfOverBindBranch(C)} 
+     ? CONG-NEW-NF{nTimesIfOverBindBranch(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -545,7 +548,7 @@ smod STRATS is
  strat nTimesIfOverBindBranch2 : ChannelName @ ProtocolConfig .
  sd nTimesIfOverBindBranch2(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesIfOverBindBranch2(C)} 
+     ? CONG-NEW-NF{nTimesIfOverBindBranch2(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -575,7 +578,7 @@ smod STRATS is
  strat applyReadOverInnerIf : Qid ChannelName @ ProtocolConfig .
  sd applyReadOverInnerIf(Q, C) :=
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{applyReadOverInnerIf(Q, C)} 
+     ? CONG-NEW-NF{applyReadOverInnerIf(Q, C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -586,7 +589,7 @@ smod STRATS is
  strat applyReadOverIf : Qid ChannelName @ ProtocolConfig .
  sd applyReadOverIf(Q, C) :=
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{applyReadOverIf(Q, C)} 
+     ? CONG-NEW-NF{applyReadOverIf(Q, C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -615,7 +618,7 @@ smod STRATS is
  strat nTimesBindRetBranch : ChannelName @ ProtocolConfig .
  sd nTimesBindRetBranch(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesBindRetBranch(C)} 
+     ? CONG-NEW-NF{nTimesBindRetBranch(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -625,7 +628,7 @@ smod STRATS is
  strat nTimesBindRetBranchTwiceIOB : ChannelName @ ProtocolConfig .
  sd nTimesBindRetBranchTwiceIOB(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesBindRetBranchTwiceIOB(C)} 
+     ? CONG-NEW-NF{nTimesBindRetBranchTwiceIOB(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -634,7 +637,7 @@ smod STRATS is
  strat nTimesBindRetBranchTwice : ChannelName @ ProtocolConfig .
  sd nTimesBindRetBranchTwice(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{nTimesBindRetBranchTwice(C)} 
+     ? CONG-NEW-NF{nTimesBindRetBranchTwice(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -658,7 +661,7 @@ smod STRATS is
  strat moveBinds : ChannelName @ ProtocolConfig .
  sd moveBinds(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{moveBinds(C)} 
+     ? CONG-NEW-NF{moveBinds(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -667,7 +670,7 @@ smod STRATS is
  strat moveBindsOne : ChannelName @ ProtocolConfig .
  sd moveBindsOne(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{moveBindsOne(C)} 
+     ? CONG-NEW-NF{moveBindsOne(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -701,7 +704,7 @@ smod STRATS is
  strat ifBindSamePr : ChannelName @ ProtocolConfig .
  sd ifBindSamePr(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{ifBindSamePr(C)} 
+     ? CONG-NEW-NF{ifBindSamePr(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -710,7 +713,7 @@ smod STRATS is
  strat ifBindSame2Pr : ChannelName @ ProtocolConfig .
  sd ifBindSame2Pr(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{ifBindSame2Pr(C)} 
+     ? CONG-NEW-NF{ifBindSame2Pr(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -728,7 +731,7 @@ smod STRATS is
  sd recReadDet(C, 0) := idle .
  sd recReadDet(C, s(N)) :=
      (match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{recReadDet(C, s(N))} 
+     ? CONG-NEW-NF{recReadDet(C, s(N))} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -737,7 +740,7 @@ smod STRATS is
  strat readOutsideIf2 : ChannelName @ ProtocolConfig .
  sd readOutsideIf2(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{readOutsideIf2(C)} 
+     ? CONG-NEW-NF{readOutsideIf2(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -753,7 +756,7 @@ smod STRATS is
  strat sameReactionIf : ChannelName @ ProtocolConfig .
  sd sameReactionIf(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{sameReactionIf(C)} 
+     ? CONG-NEW-NF{sameReactionIf(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -762,7 +765,7 @@ smod STRATS is
  strat removeUnused : ChannelName ChannelName @ ProtocolConfig .
  sd removeUnused(C1, C2) := 
  match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{removeUnused(C1, C2)} 
+     ? CONG-NEW-NF{removeUnused(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]
@@ -771,7 +774,7 @@ smod STRATS is
  strat addNewChannel : Protocol @ ProtocolConfig .
  sd addNewChannel(P) :=
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{addNewChannel(P)}
+     ? CONG-NEW-NF{addNewChannel(P)}
      : ABSORB-LEFT-2[P2:Protocol <- P] ; COMP-NEW .  
      
  var Msg1 Msg2 : Message .    
@@ -800,7 +803,7 @@ smod STRATS is
  strat applyAlphaPr : ChannelName QidPairList @ ProtocolConfig .
  sd applyAlphaPr(C, QL) :=                                 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{applyAlphaPr(C, QL) } 
+     ? CONG-NEW-NF{applyAlphaPr(C, QL) } 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -819,7 +822,7 @@ smod STRATS is
  strat applyRetBind2OverIf : ChannelName Type Message Message Reaction Qid @ ProtocolConfig .
  sd applyRetBind2OverIf(C, T, M1, M2, R, x) :=                                 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{applyRetBind2OverIf(C, T, M1, M2, R, x) } 
+     ? CONG-NEW-NF{applyRetBind2OverIf(C, T, M1, M2, R, x) } 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
@@ -837,7 +840,7 @@ smod STRATS is
  strat applySymOverIf : ChannelName Reaction Message Message @ ProtocolConfig .      
  sd applySymOverIf(C, R, Msg1, Msg2) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW{applySymOverIf(C, R, Msg1, Msg2) } 
+     ? CONG-NEW-NF{applySymOverIf(C, R, Msg1, Msg2) } 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]

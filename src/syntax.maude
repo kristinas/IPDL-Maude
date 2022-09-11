@@ -1273,7 +1273,7 @@ mod PROTOCOL-EQUALITY is
  protecting REACTION-EQUALITY .
 
  var Sigma : Signature .
- vars Delta D : ChannelContext .
+ vars Delta D Delta' : ChannelContext .
  vars R R' R1 R2 R3 R4 S1 S2 S : Reaction .
  vars T T0 T1 T2 T3 : Type .
  vars M M1 M2 : Message .
@@ -1344,18 +1344,23 @@ mod PROTOCOL-EQUALITY is
     pConfig(Sigma, Delta, P, I, O)
     => 
     pConfig(Sigma, Delta, new2NF(P), I, O) .
-    
- crl [CONG-NEW-NF] :
+       
+ crl [CONG-NEW-NF] : 
     pConfig(Sigma, Delta, newNF(ltq, P1, ql), I, O) 
     => 
     pConfig(Sigma, Delta, newNF(ltq, P2, ql), I, O)
     if
-    pConfig(Sigma, addChannels ltq Delta, P1, I, union(getOutputs(P1), O))
+    pConfig(Sigma, addChannels ltq Delta, P1, I, union(chansInList ltq, O))
     =>
-    pConfig(Sigma, addChannels ltq Delta, P2, I, O') 
+    pConfig(Sigma, Delta', P2, I, O') 
     /\
-    O' == union(getOutputs(P1), O)
-    .
+    Delta' == addChannels ltq Delta
+    /\
+    O' == union(chansInList ltq, O)
+    *** /\
+    *** typeOf(Sigma, Delta, I, newNF(ltq, P1, ql))
+
+    .   
     
  crl [absorb-new-nf] : 
      pConfig(Sigma, Delta, newNF(< c : T > ltq, P || (c ::= R), ql), I, O) 
