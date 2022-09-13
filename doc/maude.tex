@@ -1,0 +1,40 @@
+\subsection{Normal Forms}
+We work with protocols that start with a list of declarations of 
+internal channels, using $\mathsf{new}$, followed by a parallel compositions of channel assignments. The reactions in these
+assignments can be transformed into a list of binds of the form
+$x : \tau \leftarrow read(c)$, called
+bind-read reactions, followed by a reaction without binds.
+The list of binds can be regarded as commutative, 
+as two reactions with the same list of binds in different order
+are equivalent due to the reaction equivalence rule \textsc{exch}.
+Similarly, different order of declarations of internal channels gives
+equivalent protocols, by using the protocol equivalence rule
+\textsc{new-exch}. When writing equivalence proofs, we do not want to 
+make the use of these rules explicit. Therefore, we introduce
+normal forms of reactions and protocols. The normal form of
+a reaction 
+$\nf(L, R, O)$
+consists of a commutative list $L$ of bind-read reactions,
+a bind-free reaction $R$ 
+and a chosen order $O$ of the names of the variables occuring in
+the binds in $L$.
+The latter will be used to determine how to turn the normal form 
+of a reaction into a regular reaction. 
+During equivalence proofs, we may obtain either arbitrary binds in
+$L$ or reactions $R$ that are not bind-free.
+This will be represented as a pre-normal-form, 
+written $\preNf(L, R, O)$, which is a normal
+form without restrictions on the occuring reactions. The general
+strategy will be to transform pre-normal-forms to normal 
+forms by rule applications.
+The normal form of a 
+protocol 
+$\newNf(L, P, O)$
+consists of a commutative list $L$ of declarations of internal
+channels, a protocol $P$ that does not start with internal channel declarations
+and again a designated order $O$ 
+for the names of internal channels occuring in the declarations in $L$.
+Since in both cases the lists are commutative, we can write
+equivalence rules for normal forms where we assume that an
+internal channel declaration or a bind-read reaction are first in the 
+lists.
