@@ -1,0 +1,201 @@
+\newcommand{\key}{\mathsf{key}}
+\newcommand{\msg}{\mathsf{msg}}
+\newcommand{\ctxt}{\mathsf{ctxt}}
+\newcommand{\zeros}{\mathsf{zeros}}
+\newcommand{\unif}{\mathsf{unif}}
+\newcommand{\enc}{\mathsf{enc}}
+\newcommand{\dec}{\mathsf{dec}}
+\newcommand{\id}{\mathsf{id}}
+\newcommand{\adv}{\mathsf{adv}}
+\newcommand{\net}{\mathsf{net}}
+\newcommand{\In}{\mathsf{In}}
+\newcommand{\Out}{\mathsf{Out}}
+\newcommand{\Key}{\mathsf{Key}}
+\newcommand{\Send}{\mathsf{Send}}
+\newcommand{\Recv}{\mathsf{Recv}}
+\newcommand{\Enc}{\mathsf{Enc}}
+\newcommand{\Dec}{\mathsf{Dec}}
+\newcommand{\LeakMsgRcvd}{\mathsf{LeakMsgRcvd}}
+\newcommand{\OkMsg}{\mathsf{OkMsg}}
+\newcommand{\LeakCtxt}{\mathsf{LeakCtxt}}
+\newcommand{\OkCtxt}{\mathsf{OkCtxt}}
+
+Alice wants to communicate $q$ messages to Bob using an authenticated channel. The authenticated channel is not secure: it leaks each message to Eve, and waits to receive an $\mathsf{ok}$ message back from her before delivering the in-flight message. Thus, Eve cannot modify any of the messages but can read and delay them for any amount of time. To transmit information securely, Alice sends encryptions of her messages, which Bob decrypts using a shared key not known to Eve.
+
+Formally, we assume types $\key, \msg, \ctxt$ of keys, messages, and ciphertexts, respectively; a chosen message $\zeros : \one \rightarrow \msg$; a distribution $\unif_\key : \one \twoheadrightarrow \key$ on keys; an encode algorithm
+\[\enc : \msg \times \key \twoheadrightarrow \ctxt\]
+that takes a message and a key, and returns a distribution on ciphertexts; and a decode algorithm
+\[\dec : \ctxt \times \key \rightarrow \msg\]
+that takes a ciphertext and a key, and returns a message.
+
+\subsection{The Assumptions}
+The \emph{decryption-correctness} assumption states that encoding and decoding a single message yields the original message. We express this as a protocol-level axiom: in the channel context $\In : \msg, \Key : \key, \Enc : \ctxt, \Dec : \msg$ the protocol
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\Enc \coloneqq m \leftarrow \In; \ k \leftarrow \Key; \ \samp{\enc \ (m,k)}$
+\item $\Dec \coloneqq c \leftarrow \Enc; \ k \leftarrow \Key; \ \ret{\dec \ (c,k)}$
+\end{itemize}
+with input $\In$ and outputs $\Key, \Enc, \Dec$ rewrites strictly to
+\begin{itemize}
+\item $\Key \coloneqq \samp \ \unif_\key$
+\item $\Enc \coloneqq m \leftarrow \In; \ k \leftarrow \Key; \ \samp{\enc \ (m,k)}$
+\item $\Dec \coloneqq \read{{\color{red} \In}}$
+\end{itemize}
+
+The \emph{indistinguishability under chosen plaintext attack (IND-CPA)} cryptographic assumption states that if the key is secret, encoding $q \in \nat$ arbitrary messages is computationally indistinguishable from encoding the chosen message $q$ times: in the channel context $\{\In(i) : \msg\}_i, \Key : \key, \{\Enc(i) : \ctxt\}_i$ where $i \coloneqq 1,\dots,q$, the protocol
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\Enc(i) \coloneqq m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc \ (m,k)}$ for $0 \leq i < q$
+\end{itemize}
+with inputs $\In(-)$, outputs $\Enc(-)$, and an internal channel $\Key$ rewrites approximately to
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\Enc(i) \coloneqq m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc \ {\color{red} (\zeros, k)}}$ for $0 \leq i < q$
+\end{itemize}
+
+\subsection{The Ideal Functionality}
+The ideal functionality reads the input message, leaks a confirmation to the adversary to signal that the message has been received, and, upon the okay from the adversary, outputs the message:
+\begin{itemize}
+\item $\LeakMsgRcvd^\id_\adv(i) \coloneqq m \leftarrow \In(i); \ \ret{\checkmark}$
+\item $\Out(i) \coloneqq \_ \leftarrow \OkMsg^\adv_\id(i); \ \read{\In(i)}$
+\end{itemize}
+
+\subsection{The Real Protocol}
+The real-world protocol consists of Alice, Bob, the key-generating functionality, and the authenticated channel. The functionality samples a key from the key distribution:
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\end{itemize}
+Alice encodes each input with the provided key, samples a ciphertext from the resulting distribution, and sends it to the authenticated channel: 
+\begin{itemize}
+\item $\Send(i) \coloneqq m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc \ (m,k)}$
+\end{itemize}
+The authenticated channel leaks each ciphertext received from Alice to the adversary, and, upon receiving the okay from the adversary, forwards the ciphertext to Bob:
+\begin{itemize}
+\item $\LeakCtxt^\net_\adv(i) \coloneqq \read{\Send(i)}$
+\item $\Recv(i) \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \read{\Send(i)}$
+\end{itemize}
+Bob decodes each ciphertext with the shared key and outputs the result:
+\begin{itemize}
+\item $\Out(i) \coloneqq c \leftarrow \Recv(i); \ k \leftarrow \Key; \ \ret{\dec \ (c,k)}$
+\end{itemize}
+Composing all of this together and hiding the internal communication yields the real-world protocol.
+
+\subsection{The Simulator}
+The simulator turns the adversarial inputs and outputs of the real world protocol into the adversarial inputs and outputs of the ideal functionality, thereby converting any adversary for the real-world protocol into an adversary for the ideal functionality. This means that channels $\LeakMsgRcvd^\id_\adv(-), \OkCtxt^\adv_\net(-)$ are inputs to the simulator and channels $\LeakCtxt^\net_\adv(-), \OkMsg^\adv_\id(-)$ are the outputs. Hence, upon receiving the empty message from the ideal functionality to indicate that a message has been received, the simulator must conjure up a ciphertext to leak to the adversary. This is accomplished by generating a random key and encoding the chosen message:
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\LeakCtxt^\net_\adv(i) \coloneqq \_ \leftarrow \LeakMsgRcvd^\id_\adv(i); \ k \leftarrow \Key; \ \samp{\enc \ (\zeros,k)}$ for $0 \leq i < q$
+\end{itemize}
+Upon receiving the okay from the adversary for the generated ciphertext, the simulator gives the okay to the functionality to output the message:
+\begin{itemize}
+\item $\OkMsg^\adv_\id(i) \coloneqq \read{\OkCtxt^\adv_\net(i)}$ for $0 \leq i < q$
+\end{itemize}
+Putting this all together yields the following code for the simulator:
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\LeakCtxt^\net_\adv(i) \coloneqq \_ \leftarrow \LeakMsgRcvd^\id_\adv(i); \ k \leftarrow \Key; \ \samp{\enc \ (\zeros,k)}$ for $0 \leq i < q$
+\item $\OkMsg^\adv_\id(i) \coloneqq \read{\OkCtxt^\adv_\net(i)}$ for $0 \leq i < q$
+\end{itemize}
+
+\subsection{Real $\approx$ Ideal + Simulator}
+Plugging in the simulator into the ideal functionality and hiding the internal communication yields the following:
+
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\LeakCtxt^\net_\adv(i) \coloneqq \_ \leftarrow \LeakMsgRcvd^\id_\adv(i); \ k \leftarrow \Key; \ \samp{\enc \ (\zeros,k)}$ for $0 \leq i < q$
+\item $\OkMsg^\adv_\id(i) \coloneqq \read{\OkCtxt^\adv_\net(i)}$ for $0 \leq i < q$
+\item $\LeakMsgRcvd^\id_\adv(i) \coloneqq m \leftarrow \In(i); \ \ret{\checkmark}$ for $0 \leq i < q$
+\item $\Out(i) \coloneqq \_ \leftarrow \OkMsg^\adv_\id(i); \ \read{\In(i)}$ for $0 \leq i < q$
+\end{itemize}
+
+\noindent The internal channels $\LeakMsgRcvd^\id_\adv(-)$ and $\OkMsg^\adv_\id(-)$ that originally served as a line of communication for the adversary can now be substituted away:
+
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\LeakCtxt^\net_\adv(i) \coloneqq {\color{red} m \leftarrow \In(i);} \ k \leftarrow \Key; \ \samp{\enc \ (\zeros,k)}$ for $0 \leq i < q$
+\item $\Out(i) \coloneqq {\color{red} \_ \leftarrow \OkCtxt^\adv_\net(i);} \ \read{\In(i)}$ for $0 \leq i < q$
+\end{itemize}
+
+\noindent Next we move on to simplifying the real protocol.  Explicitly, we have the code below:
+
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\Send(i) \coloneqq m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc \ (m,k)}$ for $0 \leq i < q$
+\item $\LeakCtxt^\net_\adv(i) \coloneqq \read{\Send(i)}$ for $0 \leq i < q$
+\item $\Recv(i) \coloneqq \_ \leftarrow \OkCtxt^\adv_\net(i); \ \read{\Send(i)}$ for $0 \leq i < q$
+\item $\Out(i) \coloneqq c \leftarrow \Recv(i); \ k \leftarrow \Key; \ \ret{\dec \ (c,k)}$ for $0 \leq i < q$
+\end{itemize}
+
+\noindent We first substitute the hidden channels $\Recv(-)$ away:
+
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\Send(i) \coloneqq m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc \ (m,k)}$ for $0 \leq i < q$
+\item $\LeakCtxt^\net_\adv(i) \coloneqq \read{\Send(i)}$ for $0 \leq i < q$
+\item $\Out(i) \coloneqq {\color{red} \_ \leftarrow \OkCtxt^\adv_\net(i); \ c \leftarrow \Send(i);} \ k \leftarrow \Key; \ \ret{\dec \ (c,k)}$ for $0 \leq i < q$
+\end{itemize}
+
+\noindent Next we conceptually separate the encryption and decryption actions from the message-passing in the real-world by introducing new internal channels $\Enc(-)$ and $\Dec(-)$:
+
+\begin{itemize}
+\item $\Key \coloneqq \samp \ \unif_\key$
+\item {\color{red} $\Enc(i) \coloneqq m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc \ (m,k)}$ for $0 \leq i < q$}
+\item $\Send(i) \coloneqq {\color{red} \read{\Enc(i)}}$ for $0 \leq i < q$
+\item $\LeakCtxt^\net_\adv(i) \coloneqq \read{\Send(i)}$ for $0 \leq i < q$
+\item {\color{red} $\Dec(i) \coloneqq c \leftarrow \Send(i); \ k \leftarrow \Key; \ \ret{\dec \ (c,k)}$ for $0 \leq i < q$}
+\item $\Out(i) \coloneqq \_ \leftarrow \OkCtxt^\adv_\net(i); \ {\color{red} \read{\Dec(i)}}$ for $0 \leq i < q$
+\end{itemize}
+
+\noindent We can now substitute away the internal channels $\Send(-)$ as well:
+
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\Enc(i) \coloneqq m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc \ (m,k)}$ for $0 \leq i < q$
+\item $\LeakCtxt^\net_\adv(i) \coloneqq {\color{red} \read{\Enc(i)}}$ for $0 \leq i < q$
+\item $\Dec(i) \coloneqq {\color{red} c \leftarrow \Enc(i)}; \ k \leftarrow \Key; \ \ret{\dec \ (c,k)}$ for $0 \leq i < q$
+\item $\Out(i) \coloneqq \_ \leftarrow \OkCtxt^\adv_\net(i); \ \read{\Dec(i)}$ for $0 \leq i < q$
+\end{itemize}
+
+\noindent The assumption of encyption-decryption correctness applied $q$ times allows us to strictly rewrite the above protocol to the following one:
+
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\Enc(i) \coloneqq m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc \ (m,k)}$ for $0 \leq i < q$
+\item $\LeakCtxt^\net_\adv(i) \coloneqq \read{\Enc(i)}$ for $0 \leq i < q$
+\item $\Dec(i) \coloneqq {\color{red} \read{\In(i)}}$ for $0 \leq i < q$
+\item $\Out(i) \coloneqq \_ \leftarrow \OkCtxt^\adv_\net(i); \ \read{\Dec(i)}$ for $0 \leq i < q$
+\end{itemize}
+
+\noindent Since the channel $\Key$ is only used in the channels $\Enc(-)$, we can extract the following subprotocol, where $\Key$ is hidden:
+
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\Enc(i) \coloneqq m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc \ (m,k)}$ for $0 \leq i < q$
+\end{itemize}
+
+\noindent The cryptographic IND-CPA assumption allows us to approximately rewrite the above protocol snippet to
+
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\Enc(i) \coloneqq m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc \ {\color{red} (\zeros,k)}}$ for $0 \leq i < q$
+\end{itemize}
+
+\noindent Plugging this into the original protocol yields the following:
+
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\Enc(i) \coloneqq m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc \ (\zeros,k)}$ for $0 \leq i < q$
+\item $\LeakCtxt^\net_\adv(i) \coloneqq \read{\Enc(i)}$ for $0 \leq i < q$
+\item $\Dec(i) \coloneqq \read{\In(i)}$ for $0 \leq i < q$
+\item $\Out(i) \coloneqq \_ \leftarrow \OkCtxt^\adv_\net(i); \ \read{\Dec(i)}$ for $0 \leq i < q$
+\end{itemize}
+
+\noindent Finally, we can fold away the internal channels $\Enc(-)$ and $\Dec(-)$:
+
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\LeakCtxt^\net_\adv(i) \coloneqq {\color{red} m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc \ (\zeros,k)}}$ for $0 \leq i < q$
+\item $\Out(i) \coloneqq \_ \leftarrow \OkCtxt^\adv_\net(i); \ {\color{red} \read{\In(i)}}$ for $0 \leq i < q$
+\end{itemize}
+
+\noindent This is precisely the simplified composition of the ideal functionality and the simulator from the beginning of this section.
