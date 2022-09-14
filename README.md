@@ -19,4 +19,8 @@ To load one of the examples, call
  `Maude> load lib/FILENAME.maude`
 where FILENAME is one of multipartyCoinToss, secure, preProcessing.
 
+**Acknowledgement**
+
+This project was funded through the NGI Assure Fund, a fund established by NLnet with financial support from the European Commission's Next Generation Internet programme, under the aegis of DG Communications Networks, Content and Technology under grant agreement No 957073.
+
 
