@@ -36,56 +36,85 @@ mod SECURE is
  op idealPlusSim : -> Protocol .
  eq idealPlusSim = 
     new 'Key : key in
-    newfamily 'LeakMsgRcvd_id_adv ('i) n : unit in
-    newfamily 'OkMsg_adv_id ('i) n : msg in     
+    newfamily 'LeakMsgRcvd_id_adv 'i (bound n) : unit in
+    newfamily 'OkMsg_adv_id 'i (bound n) : ctxt in     
     (
-    ('Key ::= samp ('mu_key < () >)) 
+    ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList) )
     ||
-    (family 'LeakCtxt_net_adv 'i n ::= 
-                'x : unit <- read ('LeakMsgRcvd_id_adv ['i]) ;
-                'k : key <- read 'Key ;
-                samp ('enc < pair(ap 'zeros (), 'k) >)  
+    (family 'LeakCtxt_net_adv 'i (bound n) ::= 
+                nf(
+                 ('x : unit <- read ('LeakMsgRcvd_id_adv['i]))
+                 ('k : key <- read 'Key ),
+                 samp ('enc < pair(ap 'zeros (), 'k) >),
+                 'x :: 'k :: emptyCNameList
                 ) 
+    )  
     ||
-    (family 'OkMsg_adv_id 'i n ::= read ('OkCtxt_adv_net ['i]))   
+    (family 'OkMsg_adv_id 'i (bound n) ::= nf('okCtxt : ctxt <- read ('OkCtxt_adv_net['i]), 
+                          return 'okCtxt , 
+                          'okCtxt :: emptyCNameList )
+    )   
     ||
-    (family 'LeakMsgRcvd_id_adv 'i n ::= 
-            'x : msg <- read ('In ['i]) ;
-            return ())
+    (family 'LeakMsgRcvd_id_adv 'i (bound n) ::= 
+          nf(
+            'in : msg <- read ('In['i]) ,
+            return (),
+            'in :: emptyCNameList
+            )
+    )
     ||
-    (family 'Out 'i n ::= 
-            'x : msg <- read ('OkMsg_adv_id ['i]) ;
-            read ('In ['i])) 
+    (family 'Out 'i (bound n) ::= 
+          nf(
+            ('okMsg : ctxt <- read ('OkMsg_adv_id['i]))
+            ('in : msg <- read ('In['i])),
+            return 'in,
+            'okMsg :: 'in :: emptyCNameList
+            )
+    ) 
     ) . *** end of new, leave here
     
  op real : -> Protocol .
  eq real = 
     new 'Key : key in
-    newfamily 'Send ('i) n : ctxt in
-    newfamily 'Recv ('i) n : ctxt in
+    newfamily 'Recv 'i (bound n) : ctxt in
+    newfamily 'Send 'i (bound n) : ctxt in
     ( 
-    ('Key ::= samp ('mu_key < () >))
+    ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList))
     || 
-    (family 'Send ('i) n ::= 
-            'm : msg <- read ('In ['i]) ;
-            'k : key <- read 'Key ;
-            samp ('enc < pair('m, 'k) >)
+    (family 'Send 'i (bound n) ::= 
+          nf(
+            ('in : msg <- read ('In ['i]) )
+            ('k : key <- read 'Key) ,
+            samp ('enc < pair('in, 'k) >),
+            'in :: 'k :: emptyCNameList
+            )
     )    
     ||
-    (family 'LeakCtxt_net_adv ('i) n ::= read ('Send [ 'i ]) )
+    (family 'LeakCtxt_net_adv 'i (bound n) ::= 
+      nf('send : ctxt <- read ('Send['i]), return 'send, 'send :: emptyCNameList)
+    )
     || 
-    (family 'Recv ('i) n ::= 
-            'x : msg <- read ('OkCtxt_adv_net [ 'i ]) ;
-            read ('Send [ 'i ])
+    (family 'Recv 'i (bound n) ::= 
+            nf(
+            ('okCtxt : ctxt <- read ('OkCtxt_adv_net [ 'i ]) )
+            ('send : ctxt <- read ('Send [ 'i ])), 
+                return 'send,
+                'okCtxt :: 'send :: emptyCNameList
+            )
     ) 
     ||
-    (family 'Out ('i) n ::=
-            'c : ctxt <- read ('Recv [ 'i ]) ;
-            'k : key <- read 'Key ;
-            return (ap 'dec pair('c, 'k))
-            ) 
+    (family 'Out 'i (bound n) ::=
+            nf(
+            ('c : ctxt <- read ('Recv['i]) )
+            ('k : key <- read 'Key ),
+            return (ap 'dec pair('c, 'k)),
+            'c :: 'k :: emptyCNameList
+            )
+            
+    ) 
     ) . *** end of new, leave here
-   
+  
+  
 endm
 
 smod EXECUTE is
@@ -95,101 +124,103 @@ smod EXECUTE is
  var Sigma : Signature .
  var Delta : ChannelContext .
  var Gamma : VarContext .
- vars i1 i2 X Y Z In : ChannelName .  
+ vars i1 i2 X Y Z In cn1 cn2 cn3 cn4 keyN inN encN decN : ChannelName .  
  vars m x y z k c Enc Dec Key i : Qid .
- var I O : Set{CName} .
+ var I O : Set{CNameBound} .
  var li : List{NatTerm} .
- var cOf : CaseOf .
+ var A : Set{BoolTerm} .
+ var n1 n2 n3 n4 : Nat .
  
- crl [enc-dec-correctness] :
-  pConfig(Sigma, Delta (In :: msg) (Key :: key) (Enc :: ctxt) (Dec :: msg), 
-          (Key ::= samp ('mu_key < () >))
-          || 
-          (Enc ::= m : msg <- read In ;
-                   k : key <- read Key ;
-                   samp ('enc < pair('m, 'k) >))
-          ||
-          (Dec ::= c : msg <- read Enc ;
-                   k : key <- read Key ;
-                   return (ap 'dec pair('c, 'k)))  , I, O)
+  crl [enc-dec-correctness] :
+  pConfig(Sigma, Delta, 
+           (keyN ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)
+           ) 
+           || 
+           (encN ::= nf((m : msg <- read inN)
+                       (k : key <- read keyN),
+                    samp ('enc < pair(m, k) >),
+                    m :: k :: emptyCNameList
+                    )
+           )
+           ||
+           (decN ::= nf ((c : ctxt <- read encN)
+                    (k : key <- read keyN) ,
+                    return (ap 'dec pair(c, k)),
+                    c :: k :: emptyCNameList
+                    )
+           )  
+          , I, O, A)
   => 
-  pConfig(Sigma, Delta (In :: msg) (Key :: key) (Enc :: ctxt) (Dec :: msg), 
-          (Key ::= samp ('mu_key < () >))
-          || 
-          (Enc ::= m : msg <- read In ;
-                   k : key <- read Key ;
-                   samp ('enc < pair('m, 'k) >))
-          ||
-          (Dec ::= read In)
-                     , I, O) 
-  if In in I . 
+  pConfig(Sigma, Delta, 
+          (keyN ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)
+           ) 
+           || 
+           (encN ::= nf((m : msg <- read inN)
+                       (k : key <- read keyN),
+                    samp ('enc < pair(m, k) >),
+                    m :: k :: emptyCNameList
+                    )
+           )
+           ||
+           (decN ::= nf (i : msg <- read inN ,
+                    return i,
+                    i :: emptyCNameList
+                    )
+           )  
+                     , I, O, A) 
+  if inN @ nil in I  [nonexec]. 
   
-  var bound : Nat .
- 
+ var in key enc dec : ChannelName . 
+ var pConf : ProtocolConfig .
   
-  rl [enc-dec-correctness-fam] :
-  pConfig(Sigma ('mu_key : unit ~>> key) ('enc : (msg * key) ~>> ctxt), Delta, 
-          (Key ::= samp ('mu_key < () >))
-          || 
-          (family Enc (i) bound ::= 
-                   m : msg <- read (In [i]) ; 
-                   k : key <- read Key ;
-                   samp ('enc < pair(m, k) >)
-          )
-          ||
-          (family Dec (i) bound ::= 
-                   c : msg <- read (Enc [i]) ; 
-                   k : key <- read Key ;
-                   return (ap 'dec pair(c, k))) 
-         , I, O) 
-  => 
-  pConfig(Sigma ('mu_key : unit ~>> key) ('enc : (msg * key) ~>> ctxt), Delta, 
-          (Key ::= samp ('mu_key < () >))
-          || 
-          (family Enc (i) bound ::= 
-                   m : msg <- read (In [i]) ; 
-                   k : key <- read Key ;
-                   samp ('enc < pair(m, k) >))
-          ||
-          (family Dec (i) bound ::= read (In [i]) 
-          ) 
-          , I, O) 
-  .  *** In should be in I and all channels  in Delta
+ strat applyEDC : ChannelName ChannelName ChannelName ChannelName @ ProtocolConfig .  
+ sd applyEDC(in, key, enc, dec) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyEDC(in, key, enc, dec)} 
+     : CONG-COMP-RIGHT{
+         enc-dec-correctness[inN:ChannelName <- in, 
+                             keyN:ChannelName <- key,
+                             encN:ChannelName <- enc,
+                             decN:ChannelName <- dec,
+                             i:Qid <- 'in]
+       } .
   
   rl [ind-cpa] :
-    pConfig(Sigma ('mu_key : unit ~>> key) , Delta, 
-          (Key ::= samp ('mu_key < () >))
+    pConfig(Sigma, Delta, 
+          (keyN ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)
+           ) 
           || 
-          (family Enc i bound  ::= 
-                   m : msg <- read (In [i]) ;
-                   k : key <- read Key ;
-                   samp ('enc < pair(m, k) >))
-          , I, O) 
+          (encN ::= nf(
+                   (m : msg <- read inN)
+                   (k : key <- read keyN),
+                   samp ('enc < pair(m, k) >),
+                   m :: k :: emptyCNameList
+                   )
+          )
+          , I, O, A) 
           =>
              pConfig(Sigma, Delta, 
-          (Key ::= samp ('mu_key < () >))
+          (keyN ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)
+           )
           || 
-          (family Enc i bound ::= 
-                   m : msg <- read (In [i]) ;
-                   k : key <- read Key ;
-                   samp ('enc < pair('zeros(()), k) >))
-          , I, O) 
-  . *** if In in I .  *** and all channels  in Delta
+          (encN ::= nf(
+                   (m : msg <- read inN)
+                   (k : key <- read keyN),
+                   samp ('enc < pair(ap 'zeros (), k) >),
+                   m :: k :: emptyCNameList
+                   )
+          )         
+          , I, O, A) 
+  . 
   
+ strat applyCPA : ChannelName ChannelName @ ProtocolConfig .  
+ sd applyCPA(key, enc) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyCPA(key, enc)} 
+     : CONG-COMP-RIGHT{
+         ind-cpa[ keyN:ChannelName <- key,
+                  encN:ChannelName <- enc
+                ]
+       } .
   
 endsm
-
-srew pConfig(secSig, emptyChannelCtx, 
-          ('Key ::= samp ('mu_key < () >))
-          || 
-          (family 'Enc ('i) 5 ::= 
-                   'm : msg <- read ('In ['i]) ; 
-                   'k : key <- read 'Key ;
-                   samp ('enc < pair('m, 'k) >)
-          )
-          ||
-          (family 'Dec ('i) 5 ::= 
-                   'c : msg <- read ('Enc ['i]) ; 
-                   'k : key <- read 'Key ;
-                   return (ap 'dec pair('c, 'k))) 
-         , empty, empty) using enc-dec-correctness-fam .

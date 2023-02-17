@@ -16,6 +16,9 @@ mod COIN-TOSS is
  op key  : -> Type .
  op ctxt : -> Type .
  
+ op xorF : -> SigElem .
+ eq xorF = 'xor : (bool * bool) ~> bool .
+ 
  op zerosF : -> SigElem .
  eq zerosF = 'zeros : unit ~> msg .
  
@@ -29,129 +32,1617 @@ mod COIN-TOSS is
  eq muKeySym = 'mu_key : unit ~>> key .
  
  op secSig : -> Signature .
- eq secSig = muKeySym encF decF zerosF .
+ eq secSig = muKeySym encF decF zerosF xorF .
  
  op n : -> Nat .
    
  op idealPlusSim : -> Protocol .
  eq idealPlusSim = 
-    ('Flip ::= samp flip)
+    newfamily 'AllOpen 'i (bound (n + 2)) : unit in
+    newfamily 'Commit 'i (bound n) : bool in
+    newfamily 'Committed 'i (bound (n + 1)) : unit in
+    new 'Flip : bool in
+    new 'LastCommit : bool in
+    newfamily 'LeakCommitted_comm_adv 'i (bound (n + 1)) : unit in
+    new 'LeakFlip_id_adv : bool in
+    newfamily 'LeakOpened_comm_adv 'i (bound (n + 1)) : bool in
+    new 'Ok_adv_id : unit in
+    newfamily 'Open 'i (bound (n + 1)) : unit in
+    newfamily 'Opened 'i (bound (n + 1)) : bool in
+    newfamily 'SumCommit 'i (bound (n + 2)) : bool in
+   ( *** new starts here 
+    ('Flip ::= nf(emptyBRList, samp flip, emptyCNameList))
     || 
-    ('LeakFlip_id_adv ::= read 'Flip)
+    ('LeakFlip_id_adv ::= nf( 'f : bool <- read 'Flip, return 'f, 'f :: emptyCNameList)
+    )   
     ||
-    (family 'Out 'i (n + 1) ::= case 'i is 
-        (honest --> 'x : unit <- read ('Ok_adv_id) ;
-                    read 'Flip ) ;;
-        (corrupt --> read ('Out ['i]) )
+    (family 'Out 'i (bound (n + 1)) ::= 
+        (when (apply 'honest 'i) --> nf(
+                                      ('y : unit <- read 'Ok_adv_id)
+                                      ('f : bool <- read 'Flip), 
+                                      return 'f, 
+                                      'y :: 'f :: emptyCNameList)
+        ) ;;
+        (otherwise --> nf('out : bool <- read ('Out ['i]), return 'out, 'out :: emptyCNameList)
+        )
     )
     ||
-    (family 'Commit ('i) n ::= case 'i is 
-       (honest --> samp flip) ;;
-       (corrupt --> read ('AdvCommit_adv_real ['i]))
+    ('Ok_adv_id ::= nf(('ao : unit <- read ('AllOpen [ n + 2]))
+                       ('x : bool <- read ('SumCommit [ n + 1])),
+                        return (), 'ao :: 'x :: emptyCNameList)
+    )   
+    ||
+    (family 'Commit 'i (bound n) ::= 
+       (when (apply 'honest 'i)  --> nf(emptyBRList, samp flip, emptyCNameList)) ;;
+       (otherwise --> 
+          nf('advCommit : bool <- read ('AdvCommit_adv_party ['i]), 
+             return 'advCommit, 
+             'advCommit :: emptyCNameList)
+       )
     )
     ||
-    ('LastCommit ::= 'x : bool <- read ('SumCommit [ 'n ++ 1 ]) ;
-                     'f : bool <- read 'LeakFlip_id_adv ;
-                     return (ap 'xor pair('x, 'f)) 
+    ('LastCommit ::= nf( ('x : bool <- read ('SumCommit [ n + 1 ]))
+                         ('f : bool <- read 'LeakFlip_id_adv),
+                         return (ap 'xor pair('x, 'f)),
+                         'x :: 'f :: emptyCNameList 
+                     )
     )
     ||
-    (family 'SumCommit ('i) (n + 2) ::= case 'i is
-        (index =i= 0 --> return False) ;; 
-        (index =i= (n + 2) --> 
-                 'x : bool <- read ('SumCommit [ n + 1 ]) ; 
-                 'y : bool <- read 'LastCommit ;
-                 return (ap 'xor pair('x, 'y)) ) ;;
-        (otherwise --> 'x : bool <- read ('SumCommit ['i -- 1]) ; 
-                     'y : bool <- read ('Commit ['i -- 1]) ;
-                     return (ap 'xor pair('x, 'y))  )                  
+    (family 'SumCommit 'i (bound (n + 2)) ::= 
+        (when ('i =T= 0) --> nf(emptyBRList, return False, emptyCNameList)) ;; 
+        (when ('i =T= (n + 2)) --> 
+               nf( ('x : bool <- read ('SumCommit [ n + 1 ])) 
+                   ('f : bool <- read 'LastCommit) ,
+                   return (ap 'xor pair('x, 'f)) ,
+                   'x :: 'f :: emptyCNameList )
+        )          ;;
+        (otherwise --> nf(('x : bool <- read ('SumCommit ['i -- 1])) 
+                          ('c : bool <- read ('Commit ['i -- 1])),
+                          return (ap 'xor pair('x, 'c)),
+                          'x :: 'c :: emptyCNameList )
+        )                  
     )
     ||
-    (family 'Committed 'i (n + 1) ::= case 'i is
-        (index =i= n + 1 --> return ()) ;;
-        (otherwise --> 'x : bool <- read ('Commit ['i]) ;
-                       return () )
+    (family 'Committed 'i (bound (n + 1)) ::=
+        (when ('i =T= (n + 1)) --> nf(emptyBRList, return (), emptyCNameList)) ;;
+        (otherwise --> nf('x : bool <- read ('Commit ['i]),
+                       return (),
+                       'x :: emptyCNameList )
+        )
     )
     ||
-    (family 'LeakCommitted_real_adv 'i (n + 1) ::= read ('Committed ['i]) 
+    (family 'LeakCommitted_comm_adv 'i (bound (n + 1)) ::= 
+       nf('committed : unit <- read ('Committed ['i]), 
+          return 'committed, 
+          'committed :: emptyCNameList)
     )
     ||
-    (family 'Open 'i (n + 1) ::= case 'i is 
-      (honest --> 'x : bool <- read ('SumCommit [n + 2]) ; return () ) ;;
-      (corrupt --> read ('AdvOpen_adv_real ['i])) )
+    (family 'Open 'i (bound (n + 1)) ::= 
+      (when (apply 'honest 'i)  --> 
+        nf('sc : bool <- read ('SumCommit [n + 2]), return (), 'sc :: emptyCNameList)
+      ) ;;
+      (otherwise --> 
+        nf('advOpen : unit <- read ('AdvOpen_adv_party ['i]) , return 'advOpen, 'advOpen :: emptyCNameList)
+      )
+    )  
     ||
-    (family 'AllOpen 'i (n + 1) ::= case 'i is 
-      (index =i= 0 --> return ()) ;;
-      (otherwise --> 'x : bool <- read ('AllOpen ['i]);
-                   'y : bool <- read ('Open ['i]);
-                   return () )
+    (family 'AllOpen 'i (bound (n + 2)) ::= 
+      (when ('i =T= 0) --> nf(emptyBRList, return (), emptyCNameList)) ;;
+      (otherwise --> nf(('x : unit <- read ('AllOpen ['i -- 1]))
+                        ('y : unit <- read ('Open ['i -- 1])),
+                        return (),
+                        'x :: 'y :: emptyCNameList
+                   )
+      )
     )
     ||
-    (family 'Opened 'i (n + 1) ::= 
-                      'x : bool <- read ('Open ['i]) ;
-                      read ('Commit ['i])
+    (family 'Opened 'i (bound (n + 1)) ::= 
+                      nf (('x : unit <- read ('Open ['i]))
+                          ('commit : bool <- read ('Commit ['i])),
+                          return 'commit,
+                          'x :: 'commit :: emptyCNameList
+                      )
     )
     ||
-    (family 'LeakOpened_real_adv 'i (n + 1) ::= read ('Opened ['i])
+    (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+       nf('opened : bool <- read ('Opened ['i]), return 'opened, 'opened :: emptyCNameList)
     )
-    ||
-    ('Ok_adv_id ::= 'x : unit <- read ('AllOpen [ n + 2]) ;
-                    'y : bool <- read ('SumCommit [ n + 1]) ;
-                    return ()) .
+   ) *** new ends here, leave here
+
+   .
    
- op real : -> Protocol .
- eq real = 
-   (family 'Commit 'i (n + 1) ::= case 'i is 
-       (honest --> samp flip) ;;
-       (corrupt --> read ('AdvCommit_adv_real ['i]) )
-   )       
-   ||
-   (family 'Committed 'i (n + 1) ::= 
-                        'x : bool <- read ('Commit ['i]) ;
-                        return ()
+  op real : -> Protocol .
+ eq real =  
+    newfamily 'Commit 'i (bound (n + 1)) : bool in
+    newfamily 'Committed 'i (bound (n + 1)) : unit in
+    newfamily 'LeakCommitted_comm_adv 'i (bound (n + 1)) : unit in
+    newfamily 'LeakOpened_comm_adv 'i (bound (n + 1)) : bool in
+    newfamily 'Open 'i (bound (n + 1)) : unit in
+    newfamily 'Opened 'i (bound (n + 1)) : bool in   
+  (*** new
+  (
+  family 'Party 'i (bound (n + 1)) ::= 
+    (
+     (when (apply 'honest 'i)  --> 
+     newfamily 'AllCommitted ('i 'j) ((bound (n + 1))(uniformBound (n + 2))) : unit in 
+     newfamily 'SumOpened ('i 'j) ((bound (n + 1))(uniformBound (n + 2))) : bool in
+     ( *** start new
+     (family 'Commit 'i (bound (n + 1))  ::= nf(emptyBRList, samp flip, emptyCNameList)
+     )
+     ||
+     (family 'AllCommitted ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::=
+        (when ('j =T= 0) --> nf(emptyBRList, return (), emptyCNameList))
+        ;;
+        (otherwise -->  nf( ('x : unit <- read ('AllCommitted ['i ('j -- 1)] ))
+                            ('y : unit <- read ('Committed [ 'j -- 1]) ),
+                            return (),  
+                            'x :: 'y :: emptyCNameList
+                      )
+        )
+     )                 
+     ||
+     (family 'Open 'i (bound (n + 1))  ::= 
+                   nf('x : unit  <- read ('AllCommitted ['i (n + 2) ]), 
+                      return (),
+                      'x :: emptyCNameList)
+     )
+     ||
+     (family 'SumOpened ('i 'j) ((bound (n + 1))  (uniformBound (n + 2)))   ::= 
+       (when ('j =T= 0) --> nf(emptyBRList, return False, emptyCNameList)  ) ;;
+       (otherwise --> nf(('x : bool <- read ('SumOpened [ 'i ('j -- 1) ]))
+                         ('y : bool <- read ('Opened ['j -- 1])),
+                         return (ap 'xor pair('x, 'y)),
+                         'x :: 'y :: emptyCNameList)
+       )
+     )
+     ||
+     (
+     family 'Out 'i (bound (n + 1))  ::= 
+        nf('sumOpened : bool <- read ('SumOpened ['i (n + 2)]), 
+           return 'sumOpened,
+           'sumOpened :: emptyCNameList)
+     ) 
+     ) *** end new   
+     ) *** end honest
+     ;;
+     (otherwise --> 
+      ( *** start new
+     (family 'Commit 'i (bound (n + 1))  ::= 
+       nf('advCommit : bool <- read ('AdvCommit_adv_party ['i]),
+          return 'advCommit, 
+          'advCommit :: emptyCNameList)
+     )  
+     ||
+     (family 'Open 'i (bound (n + 1))  ::= 
+       nf('advOpen : unit <- read ('AdvOpen_adv_party ['i]),
+          return 'advOpen, 
+          'advOpen :: emptyCNameList)
+     )
+     ||
+     (family 'Out 'i (bound (n + 1))  ::= 
+       nf('out : bool <- read ('Out ['i]),
+          return 'out, 
+          'out :: emptyCNameList)
+     )
+     ) *** end new    
+     ) *** end corrupt
+    ) *** end party
+  ) *** end family
+  ||  
+  (
+  family 'Commitment 'i (bound (n + 1)) ::= 
+    (family 'Committed 'i (bound (n + 1)) ::= 
+                        nf('x : bool <- read ('Commit ['i]),
+                        return (),
+                        'x :: emptyCNameList)
    )
    ||
-   (family 'LeakCommitted_real_adv 'i (n + 1) ::= read ('Committed ['i]) 
+   (family 'LeakCommitted_comm_adv 'i (bound (n + 1))  ::= 
+     nf( 'committed : unit <- read ('Committed ['i]),
+         return 'committed,
+         'committed :: emptyCNameList
+       )
+   )
+   ||
+   (family 'Opened 'i (bound (n + 1))  ::= 
+        nf(('x : unit <- read ('Open ['i]))
+           ('commit : bool <- read ('Commit ['i])),
+           return 'commit,
+           'x :: 'commit :: emptyCNameList
+          )
     )
     ||
-    (family 'AllCommitted ('i 'j) (n + 1) ::= case 'j is
-       (index =i= 0 --> return ()) ;;
-       (otherwise --> 'x : unit <- read ('AllCommitted ['i ('j -- 1)] ) ;
-                    'y : unit <- read ('Committed [ 'j -- 1]) ;
-                    return () )
-    )              
-    ||
-    (family 'Open 'i (n + 1) ::= case 'i is
-      (honest --> 'x : unit  <- read ('AllCommitted [('i (n + 2)) ]) ; return () ) ;; 
-      (corrupt --> read ('AdvOpen_adv_real ['i]) )
-    ) 
-    ||
-    (family 'Opened 'i (n + 1) ::= 'x : unit <- read ('Open ['i]) ;
-                             read ('Commit ['i])
+    (family 'LeakOpened_comm_adv 'i (bound (n + 1))  ::= 
+      nf('opened : bool <- read ('Opened ['i]),
+         return 'opened,
+         'opened :: emptyCNameList
+        )
     )
-    ||
-    (family 'LeakOpened_real_adv 'i (n + 1) ::= read ('Opened ['i]))
-    ||
-    (family 'SumOpened ('i 'j) (n + 1) ::= case 'j is
-        (index =i= 0 --> return False) ;;
-        (otherwise --> 'x : bool <- read ('SumOpened [ 'i ('j -- 1) ]) ; 
-                     'y : bool <- read ('Opened ['j]) ;
-                     return (ap 'xor pair('x, 'y)) )
-    )
-    ||
-    (family 'Out 'i (n + 1) ::= case 'i is
-       (honest --> read ('SumOpened ['i (n + 2)]) ) ;;
-       (corrupt --> read ('Out ['i]) )
-    ) .
-                      
-endm
+  ) *** end commitment
+  ) *** end new
+  .
 
-
+ endm 
+ 
+ 
 smod EXECUTE is
  pr STRATS .
  pr COIN-TOSS .
  
- *** no assumptions, we work only with Booleans
+ var x y x1 x2 : Qid .
+ var Sigma : Signature .
+ var Delta : ChannelContext .
+ var Gamma : VarContext .
+ var I O : Set{CNameBound} .
+ var A : Set{BoolTerm} .
+ var cn : ChannelName .
+ var pConf : ProtocolConfig .
+ var P : Protocol .
+ 
+ *******************************
+ *** assumptions
+ *******************************
+ 
+ eq ap 'xor pair(ap 'xor pair(x1, x2), x2) = x1 .
+ eq ap 'xor pair(x1, ap 'xor pair(x1, x2)) = x2 .  
+ 
+ rl [flip-invar-xor-r] : rConfig(Sigma, Delta, Gamma (x : bool),
+            y : bool <- samp flip ; 
+            return (ap 'xor pair(x, y)), I, A, bool
+            )
+            => 
+            rConfig(Sigma, Delta , Gamma (x : bool),
+            samp flip, I, A, bool) .  
+            
+ rl [flip-invar-xor-l] : rConfig(Sigma, Delta, Gamma (y : bool),
+            x : bool <- samp flip ; 
+            return (ap 'xor pair(x, y)), I, A, bool
+            )
+            => 
+            rConfig(Sigma, Delta , Gamma (y : bool),
+            samp flip, I, A, bool) .  
+ 
+ *********************************
+ *** strategies for assumptions
+ *********************************
+            
+ strat applyAR : ChannelName @ Protocol .
+ sd applyAR(cn) := 
+      match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyAR(cn)}
+    : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P cn, 
+                             P1:Protocol <- keepOne P cn]
+             {CONG-REACT[o:ChannelName <- cn]
+                { cong-pre-nf{flip-invar-xor-r}
+                ; try (pre2Nf)
+                }
+             } .            
+  
+  **********************************
+  *** auxiliary protocols for real
+  **********************************
+  
+     
+  op r1 : -> Protocol .
+  eq r1 = 
+          (
+    (family 'AllCommitted1 'i (bound (n + 2)) ::= 
+        (when (0 =T= 'i) --> nf(emptyBRList, return (), emptyCNameList)) 
+        ;;
+        ( otherwise --> nf(('x : unit <- read ('AllCommitted1['i -- 1])) 
+                           ('y : unit <- read ('Committed['i -- 1])), 
+                           return (), 'x :: 'y :: emptyCNameList)
+        )                   
+     ) 
+     || 
+     (family 'Committed 'i (bound (n + 1)) ::= 
+        nf('x : bool <- read ('Commit['i]), return (), 'x :: emptyCNameList)) 
+     || 
+     (family 'LeakCommitted_comm_adv 'i  (bound (n + 1)) ::= 
+        nf('committed : unit <- read ('Committed['i]), 
+           return 'committed, 
+           'committed :: emptyCNameList)) 
+     || 
+     (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+        nf('opened : bool <- read ('Opened['i]), return 'opened, 'opened :: emptyCNameList)) 
+     || 
+     (family 'Opened 'i (bound (n + 1)) ::= 
+        nf( ('commit : bool <- read ('Commit['i])) 
+            ('x : unit <- read ('Open['i])), 
+            return 'commit, 
+            'x :: 'commit :: emptyCNameList)
+     ) 
+     )
+     ||
+    newNF(
+          {'AllCommitted ('i 'j) (bound (n + 1) uniformBound (n + 2)) : unit} 
+          {'SumOpened ('i 'j) (bound (n + 1) uniformBound (n + 2)) : bool}
+     ,		 
+ (family 'AllCommitted ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+       nf('x : unit <- read ('AllCommitted1['j]), return 'x, 'x :: emptyCNameList)   
+     ) *** end family 
+     || 
+     (family 'Commit 'i (bound (n + 1)) ::= 
+        nf( emptyBRList, samp flip, emptyCNameList)) 
+     || 
+     
+     (family 'Open 'i (bound (n + 1)) ::= 
+        nf('x : unit <- read ('AllCommitted['i (n + 2)]), return (), 'x :: emptyCNameList)) 
+     || 
+
+     (family 'Out 'i (bound (n + 1)) ::= 
+        nf('sumOpened : bool <- read ('SumOpened['i (n + 2)]), 
+            return 'sumOpened, 
+            'sumOpened :: emptyCNameList)
+     ) 
+     || 
+     family 'SumOpened ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+       (when (0 =T= 'j) --> nf(emptyBRList, return False, emptyCNameList)) 
+       ;; 
+       (otherwise --> nf(('x : bool <- read ('SumOpened['i ('j -- 1)])) 
+                         ('y : bool <- read ('Opened['j -- 1])), 
+                         return (ap 'xor pair('x, 'y)), 
+                         'x :: 'y :: emptyCNameList)
+       )                  
+     , 
+     'AllCommitted :: 'SumOpened :: emptyCNameList
+     ) .                   
+ 
+  op r2 : -> Protocol .
+  eq r2 = 
+     (
+    (family 'AllCommitted1 'i (bound (n + 2)) ::= 
+        (when (0 =T= 'i) --> nf(emptyBRList, return (), emptyCNameList)) 
+        ;;
+        ( otherwise --> nf(('x : unit <- read ('AllCommitted1['i -- 1])) 
+                           ('y : unit <- read ('Committed['i -- 1])), 
+                           return (), 'x :: 'y :: emptyCNameList)
+        )                   
+     ) 
+     || 
+     (family 'Committed 'i (bound (n + 1)) ::= 
+        nf('x : bool <- read ('Commit['i]), return (), 'x :: emptyCNameList)) 
+     || 
+     (family 'LeakCommitted_comm_adv 'i  (bound (n + 1)) ::= 
+        nf('committed : unit <- read ('Committed['i]), 
+           return 'committed, 
+           'committed :: emptyCNameList)) 
+     || 
+     (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+        nf('opened : bool <- read ('Opened['i]), return 'opened, 'opened :: emptyCNameList)) 
+     || 
+     (family 'Opened 'i (bound (n + 1)) ::= 
+        nf( ('commit : bool <- read ('Commit['i])) 
+            ('x : unit <- read ('Open['i])), 
+            return 'commit, 
+            'x :: 'commit :: emptyCNameList)
+     ) 
+     )
+     ||
+    newNF(
+          {'AllCommitted ('i 'j) (bound (n + 1) uniformBound (n + 2)) : unit} 
+          {'SumOpened ('i 'j) (bound (n + 1) uniformBound (n + 2)) : bool}
+     ,		 
+ (family 'AllCommitted ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+       nf('x : unit <- read ('AllCommitted1['j]), return 'x, 'x :: emptyCNameList)   
+     ) *** end family 
+     || 
+     (family 'Commit 'i (bound (n + 1)) ::= 
+        nf( emptyBRList, samp flip, emptyCNameList)) 
+     || 
+     
+     (family 'Open 'i (bound (n + 1)) ::= 
+        nf('x : unit <- read ('AllCommitted1[n + 2]), return (), 'x :: emptyCNameList)) 
+     || 
+
+     (family 'Out 'i (bound (n + 1)) ::= 
+        nf('sumOpened : bool <- read ('SumOpened['i (n + 2)]), 
+            return 'sumOpened, 
+            'sumOpened :: emptyCNameList)
+     ) 
+     || 
+     family 'SumOpened ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+       (when (0 =T= 'j) --> nf(emptyBRList, return False, emptyCNameList)) 
+       ;; 
+       (otherwise --> nf(('x : bool <- read ('SumOpened['i ('j -- 1)])) 
+                         ('y : bool <- read ('Opened['j -- 1])), 
+                         return (ap 'xor pair('x, 'y)), 
+                         'x :: 'y :: emptyCNameList)
+       )                  
+     , 
+     'AllCommitted :: 'SumOpened :: emptyCNameList
+     )
+       .  
+    
+  op r3 : -> Protocol .
+  eq r3 = 
+     (
+    (family 'AllCommitted1 'i (bound (n + 2)) ::= 
+        (when (0 =T= 'i) --> nf(emptyBRList, return (), emptyCNameList)) 
+        ;;
+        ( otherwise --> nf(('x : unit <- read ('AllCommitted1['i -- 1])) 
+                           ('y : unit <- read ('Committed['i -- 1])), 
+                           return (), 'x :: 'y :: emptyCNameList)
+        )                   
+     ) 
+     || 
+     (family 'Committed 'i (bound (n + 1)) ::= 
+        nf('x : bool <- read ('Commit['i]), return (), 'x :: emptyCNameList)) 
+     || 
+     (family 'LeakCommitted_comm_adv 'i  (bound (n + 1)) ::= 
+        nf('committed : unit <- read ('Committed['i]), 
+           return 'committed, 
+           'committed :: emptyCNameList)) 
+     || 
+     (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+        nf('opened : bool <- read ('Opened['i]), return 'opened, 'opened :: emptyCNameList)) 
+     || 
+     (family 'Opened 'i (bound (n + 1)) ::= 
+        nf( ('commit : bool <- read ('Commit['i])) 
+            ('x : unit <- read ('Open['i])), 
+            return 'commit, 
+            'x :: 'commit :: emptyCNameList)
+     ) 
+     )
+     ||
+    newNF(
+        {'SumOpened ('i 'j) (bound (n + 1) uniformBound (n + 2)) : bool}
+     ,		 
+     
+     (family 'Commit 'i (bound (n + 1)) ::= 
+        nf( emptyBRList, samp flip, emptyCNameList)) 
+     || 
+     
+     (family 'Open 'i (bound (n + 1)) ::= 
+        nf('x : unit <- read ('AllCommitted1[n + 2]), return (), 'x :: emptyCNameList)) 
+     || 
+
+     (family 'Out 'i (bound (n + 1)) ::= 
+        nf('sumOpened : bool <- read ('SumOpened['i (n + 2)]), 
+            return 'sumOpened, 
+            'sumOpened :: emptyCNameList)
+     ) 
+     || 
+     family 'SumOpened ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+       (when (0 =T= 'j) --> nf(emptyBRList, return False, emptyCNameList)) 
+       ;; 
+       (otherwise --> nf(('x : bool <- read ('SumOpened['i ('j -- 1)])) 
+                         ('y : bool <- read ('Opened['j -- 1])), 
+                         return (ap 'xor pair('x, 'y)), 
+                         'x :: 'y :: emptyCNameList)
+       )                  
+     , 
+     'SumOpened :: emptyCNameList
+     )
+       .      
    
+   
+  op r4 : -> Protocol .
+  eq r4 = 
+         (
+    (family 'AllCommitted1 'i (bound (n + 2)) ::= 
+        (when (0 =T= 'i) --> nf(emptyBRList, return (), emptyCNameList)) 
+        ;;
+        ( otherwise --> nf(('x : unit <- read ('AllCommitted1['i -- 1])) 
+                           ('y : unit <- read ('Committed['i -- 1])), 
+                           return (), 'x :: 'y :: emptyCNameList)
+        )                   
+     ) 
+     || 
+     (family 'Committed 'i (bound (n + 1)) ::= 
+        nf('x : bool <- read ('Commit['i]), return (), 'x :: emptyCNameList)) 
+     || 
+     (family 'LeakCommitted_comm_adv 'i  (bound (n + 1)) ::= 
+        nf('committed : unit <- read ('Committed['i]), 
+           return 'committed, 
+           'committed :: emptyCNameList)) 
+     || 
+     (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+        nf('opened : bool <- read ('Opened['i]), return 'opened, 'opened :: emptyCNameList)) 
+     || 
+     (family 'Opened 'i (bound (n + 1)) ::= 
+        nf( ('commit : bool <- read ('Commit['i])) 
+            ('x : unit <- read ('Open['i])), 
+            return 'commit, 
+            'x :: 'commit :: emptyCNameList)
+     ) 
+     ||
+     (family 'SumOpened1 'j (bound (n + 2)) ::= 
+       (when (0 =T= 'j) --> nf(emptyBRList, return False, emptyCNameList)) 
+       ;; 
+       (otherwise --> nf(('x : bool <- read ('SumOpened1['j -- 1])) 
+                         ('y : bool <- read ('Opened['j -- 1])), 
+                         return (ap 'xor pair('x, 'y)), 
+                         'x :: 'y :: emptyCNameList)
+       )            )
+     )
+     ||
+    newNF(
+         {'SumOpened ('i 'j) (bound (n + 1) uniformBound (n + 2)) : bool}
+     ,		 
+     (family 'Commit 'i (bound (n + 1)) ::= 
+        nf( emptyBRList, samp flip, emptyCNameList)) 
+     || 
+     
+     (family 'Open 'i (bound (n + 1)) ::= 
+        nf('x : unit <- read ('AllCommitted1[n + 2]), return (), 'x :: emptyCNameList)) 
+     || 
+
+     (family 'Out 'i (bound (n + 1)) ::= 
+        nf('sumOpened : bool <- read ('SumOpened['i (n + 2)]), 
+            return 'sumOpened, 
+            'sumOpened :: emptyCNameList)
+     ) 
+     || 
+     family 'SumOpened ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+       nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x :: emptyCNameList)                 
+     , 
+     'SumOpened :: emptyCNameList
+     )
+  .  
+    
+  op r5 : -> Protocol .
+  eq r5 = 
+           (
+    (family 'AllCommitted1 'i (bound (n + 2)) ::= 
+        (when (0 =T= 'i) --> nf(emptyBRList, return (), emptyCNameList)) 
+        ;;
+        ( otherwise --> nf(('x : unit <- read ('AllCommitted1['i -- 1])) 
+                           ('y : unit <- read ('Committed['i -- 1])), 
+                           return (), 'x :: 'y :: emptyCNameList)
+        )                   
+     ) 
+     || 
+     (family 'Committed 'i (bound (n + 1)) ::= 
+        nf('x : bool <- read ('Commit['i]), return (), 'x :: emptyCNameList)) 
+     || 
+     (family 'LeakCommitted_comm_adv 'i  (bound (n + 1)) ::= 
+        nf('committed : unit <- read ('Committed['i]), 
+           return 'committed, 
+           'committed :: emptyCNameList)) 
+     || 
+     (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+        nf('opened : bool <- read ('Opened['i]), return 'opened, 'opened :: emptyCNameList)) 
+     || 
+     (family 'Opened 'i (bound (n + 1)) ::= 
+        nf( ('commit : bool <- read ('Commit['i])) 
+            ('x : unit <- read ('Open['i])), 
+            return 'commit, 
+            'x :: 'commit :: emptyCNameList)
+     ) 
+     ||
+     (family 'SumOpened1 'j (bound (n + 2)) ::= 
+       (when (0 =T= 'j) --> nf(emptyBRList, return False, emptyCNameList)) 
+       ;; 
+       (otherwise --> nf(('x : bool <- read ('SumOpened1['j -- 1])) 
+                         ('y : bool <- read ('Opened['j -- 1])), 
+                         return (ap 'xor pair('x, 'y)), 
+                         'x :: 'y :: emptyCNameList)
+       )            )
+     )
+     ||
+    newNF(
+         {'SumOpened ('i 'j) (bound (n + 1) uniformBound (n + 2)) : bool}
+     ,		 
+     (family 'Commit 'i (bound (n + 1)) ::= 
+        nf( emptyBRList, samp flip, emptyCNameList)) 
+     || 
+     
+     (family 'Open 'i (bound (n + 1)) ::= 
+        nf('x : unit <- read ('AllCommitted1[n + 2]), return (), 'x :: emptyCNameList)) 
+     || 
+
+     (family 'Out 'i (bound (n + 1)) ::= 
+        nf('x : bool <- read ('SumOpened1[n + 2]), 
+            return 'x, 
+            'x :: emptyCNameList)
+     ) 
+     || 
+     family 'SumOpened ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+       nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x :: emptyCNameList)                 
+     , 
+     'SumOpened :: emptyCNameList
+     )
+  .  
+    
+  op r6 : -> Protocol .
+  eq r6 = 
+       (
+    (family 'AllCommitted1 'i (bound (n + 2)) ::= 
+        (when (0 =T= 'i) --> nf(emptyBRList, return (), emptyCNameList)) 
+        ;;
+        ( otherwise --> nf(('x : unit <- read ('AllCommitted1['i -- 1])) 
+                           ('y : unit <- read ('Committed['i -- 1])), 
+                           return (), 'x :: 'y :: emptyCNameList)
+        )                   
+     ) 
+     || 
+     (family 'Committed 'i (bound (n + 1)) ::= 
+        nf('x : bool <- read ('Commit['i]), return (), 'x :: emptyCNameList)) 
+     || 
+     (family 'LeakCommitted_comm_adv 'i  (bound (n + 1)) ::= 
+        nf('committed : unit <- read ('Committed['i]), 
+           return 'committed, 
+           'committed :: emptyCNameList)) 
+     || 
+     (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+        nf('opened : bool <- read ('Opened['i]), return 'opened, 'opened :: emptyCNameList)) 
+     || 
+     (family 'Opened 'i (bound (n + 1)) ::= 
+        nf( ('commit : bool <- read ('Commit['i])) 
+            ('x : unit <- read ('Open['i])), 
+            return 'commit, 
+            'x :: 'commit :: emptyCNameList)
+     ) 
+     ||
+     (family 'SumOpened1 'j (bound (n + 2)) ::= 
+       (when (0 =T= 'j) --> nf(emptyBRList, return False, emptyCNameList)) 
+       ;; 
+       (otherwise --> nf(('x : bool <- read ('SumOpened1['j -- 1])) 
+                         ('y : bool <- read ('Opened['j -- 1])), 
+                         return (ap 'xor pair('x, 'y)), 
+                         'x :: 'y :: emptyCNameList)
+       )            )
+     )
+     ||
+    newNF(
+         emptyTypedCNameList
+     ,		 
+     (family 'Commit 'i (bound (n + 1)) ::= 
+        nf( emptyBRList, samp flip, emptyCNameList)) 
+     || 
+     
+     (family 'Open 'i (bound (n + 1)) ::= 
+        nf('x : unit <- read ('AllCommitted1[n + 2]), return (), 'x :: emptyCNameList)) 
+     || 
+
+     (family 'Out 'i (bound (n + 1)) ::= 
+        nf('x : bool <- read ('SumOpened1[n + 2]), 
+            return 'x, 
+            'x :: emptyCNameList)
+     )              
+     , 
+     emptyCNameList
+     ) . 
+     
+          
+     op r7 : -> Protocol .
+     eq r7  = 
+      
+          (family 'LeakCommitted_comm_adv 'i (bound (n + 1)) ::= 
+             nf('committed : unit <- read ('Committed['i]), 
+             return 'committed, 
+             'committed :: emptyCNameList)
+          ) 
+          || 
+          (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+            nf('opened : bool <- read ('Opened['i]), 
+               return 'opened, 'opened :: emptyCNameList)
+           ) 
+           || 
+           (family 'Open 'i (bound (n + 1)) ::= 
+             (when (apply 'honest 'i) --> 
+                nf('x : unit <- read ('AllCommitted1[n + 2]), 
+                   return (), 
+                   'x :: emptyCNameList)
+             ) 
+             ;;
+             otherwise --> nf('advOpen : unit <- read ('AdvOpen_adv_party['i]), 
+                               return 'advOpen, 'advOpen :: emptyCNameList)
+           ) || 
+           (family 'Opened 'i (bound (n + 1)) ::= 
+              nf(('commit : bool <- read ('Commit['i])) 
+                  'x : unit <- read ('Open['i]), 
+                  return 'commit, 
+                  'x :: 'commit :: emptyCNameList)
+           ) 
+           || 
+           ( family 'Out 'i (bound (n + 1)) ::= 
+               (when (apply 'honest 'i) --> 
+                  nf('x : bool <- read ('SumOpened1[n + 2]), 
+                     return 'x, 
+                     'x :: emptyCNameList)
+               ) ;;
+               otherwise --> 
+                   nf('out : bool <- read ('Out['i]), return 'out, 'out :: emptyCNameList)
+           ) 
+           ||
+      (family 'SumCommit 'i (bound (n + 2)) ::= 
+              (when (0 =T= 'i) --> nf(emptyBRList, return False, emptyCNameList)) 
+              ;; 
+              otherwise --> nf(('cj : bool <- read ('Commit['i -- 1])) 
+                                'xj : bool <- read ('SumCommit['i -- 1]), 
+                                return (ap 'xor pair('xj, 'cj)),
+                                'xj :: 'cj :: emptyCNameList)
+          )
+          ||
+           (family 'Committed 'i (bound (n + 1)) ::= 
+             nf('x : bool <- read ('Commit['i]), 
+                return (), 
+                'x :: emptyCNameList)
+          ) 
+          ||
+          (family 'Commit 'i (bound (n + 1)) ::= 
+             (when (apply 'honest 'i) --> nf(emptyBRList, samp flip, emptyCNameList)) 
+             ;; 
+             otherwise --> nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
+                              return 'advCommit, 'advCommit :: emptyCNameList)
+          ) 
+          ||
+     ('AllCommitted1[0] ::= 
+        nf('sc : bool <- read ('SumCommit[0]), 
+           return (), 
+           'sc :: emptyCNameList)
+     ) 
+     || 
+           family 'SumOpened1 'i (bound (n + 2)) ::= 
+              (when (0 =T= 'i) --> nf(emptyBRList, return False, emptyCNameList)) 
+               ;; 
+               otherwise --> nf(('x : bool <- read ('SumOpened1['i -- 1])) 
+                                 'y : bool <- read ('Opened['i -- 1]), 
+                                 return (ap 'xor pair('x, 'y)), 
+                                 'x :: 'y :: emptyCNameList)
+     . 
+    
+     op r8 : -> Protocol .
+     eq r8  = 
+      
+          (family 'LeakCommitted_comm_adv 'i (bound (n + 1)) ::= 
+             nf('committed : unit <- read ('Committed['i]), 
+             return 'committed, 
+             'committed :: emptyCNameList)
+          ) 
+          || 
+          (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+            nf('opened : bool <- read ('Opened['i]), 
+               return 'opened, 'opened :: emptyCNameList)
+           ) 
+           || 
+           (family 'Open 'i (bound (n + 1)) ::= 
+             (when (apply 'honest 'i) --> 
+                nf('x : unit <- read ('AllCommitted1[n + 2]), 
+                   return (), 
+                   'x :: emptyCNameList)
+             ) 
+             ;;
+             otherwise --> nf('advOpen : unit <- read ('AdvOpen_adv_party['i]), 
+                               return 'advOpen, 'advOpen :: emptyCNameList)
+           ) || 
+           (family 'Opened 'i (bound (n + 1)) ::= 
+              nf(('commit : bool <- read ('Commit['i])) 
+                  'x : unit <- read ('Open['i]), 
+                  return 'commit, 
+                  'x :: 'commit :: emptyCNameList)
+           ) 
+           || 
+           ( family 'Out 'i (bound (n + 1)) ::= 
+               (when (apply 'honest 'i) --> 
+                  nf('x : bool <- read ('SumOpened1[n + 2]), 
+                     return 'x, 
+                     'x :: emptyCNameList)
+               ) ;;
+               otherwise --> 
+                   nf('out : bool <- read ('Out['i]), return 'out, 'out :: emptyCNameList)
+           ) 
+           ||
+      (family 'SumCommit 'i (bound (n + 2)) ::= 
+              (when (0 =T= 'i) --> nf(emptyBRList, return False, emptyCNameList)) 
+              ;; 
+              otherwise --> nf(('cj : bool <- read ('Commit['i -- 1])) 
+                                'xj : bool <- read ('SumCommit['i -- 1]), 
+                                return (ap 'xor pair('xj, 'cj)),
+                                'xj :: 'cj :: emptyCNameList)
+          )
+          ||
+           (family 'Committed 'i (bound (n + 1)) ::= 
+             nf('x : bool <- read ('Commit['i]), 
+                return (), 
+                'x :: emptyCNameList)
+          ) 
+          ||
+          (family 'Commit 'i (bound (n + 1)) ::= 
+             (when (apply 'honest 'i) --> nf(emptyBRList, samp flip, emptyCNameList)) 
+             ;; 
+             otherwise --> nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
+                              return 'advCommit, 'advCommit :: emptyCNameList)
+          ) 
+          ||
+   
+         (family 'AllCommitted1 'i (bound 'k) ::= 
+        nf('sc : bool <- read ('SumCommit['i]), 
+           return (), 
+           'sc :: emptyCNameList)
+    )
+    ||
+    (
+    'AllCommitted1['k ++ 1] ::= nf('sc : bool <- read ('SumCommit['k ++ 1]), 
+           return (), 
+           'sc :: emptyCNameList)) 
+     || 
+           family 'SumOpened1 'i (bound (n + 2)) ::= 
+              (when (0 =T= 'i) --> nf(emptyBRList, return False, emptyCNameList)) 
+               ;; 
+               otherwise --> nf(('x : bool <- read ('SumOpened1['i -- 1])) 
+                                 'y : bool <- read ('Opened['i -- 1]), 
+                                 return (ap 'xor pair('x, 'y)), 
+                                 'x :: 'y :: emptyCNameList)
+           .
+
+
+  op r9 : -> Protocol .
+   eq r9 = 
+     
+     ('SumOpened1[0] ::= nf(('ao : unit <- read ('AllOpen[0])) 
+                          ('sc : bool <- read ('SumCommit[0])),
+                          return 'sc,
+                          'ao :: 'sc :: emptyCNameList )
+     )
+     ||      
+       (family 'SumCommit 'i (bound (n + 2)) ::= 
+              (when (0 =T= 'i) --> nf(emptyBRList, return False, emptyCNameList)) 
+              ;; 
+              otherwise --> nf(('cj : bool <- read ('Commit['i -- 1])) 
+                                'xj : bool <- read ('SumCommit['i -- 1]), 
+                                return (ap 'xor pair('xj, 'cj)),
+                                'xj :: 'cj :: emptyCNameList)
+          )
+           || (family 'AllOpen 'i (bound(n + 2)) ::=
+                   (when ('i =T= 0) --> nf(emptyBRList, return (), emptyCNameList))
+                   ;;
+                   (otherwise --> 
+                      nf(('x : unit <- read ('AllOpen['i -- 1]))
+                         ('y : unit <- read ('Open['i -- 1])),
+                         return (),
+                      'x :: 'y :: emptyCNameList)
+                   )
+         )       
+     || 
+     (family 'Commit 'i (bound (n + 1)) ::= 
+             (when (apply 'honest 'i) --> nf(emptyBRList, samp flip, emptyCNameList)) 
+             ;; 
+             otherwise --> nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
+                              return 'advCommit, 'advCommit :: emptyCNameList)
+          ) 
+     || 
+     (family 'Committed 'i (bound (n + 1)) ::= 
+             nf('x : bool <- read ('Commit['i]), 
+                return (), 
+                'x :: emptyCNameList)
+          ) 
+     ||  
+     (family 'LeakCommitted_comm_adv 'i  (bound (n + 1)) ::= 
+        nf('committed : unit <- read ('Committed['i]), 
+           return 'committed, 
+           'committed :: emptyCNameList)) 
+     ||
+     (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+        nf('opened : bool <- read ('Opened['i]), return 'opened, 'opened :: emptyCNameList)) 
+     ||     
+     (family 'Open 'i (bound (n + 1)) ::= 
+             (when (apply 'honest 'i) --> 
+                nf('sc : bool <- read ('SumCommit[n + 2]), 
+                   return (), 
+                   'sc :: emptyCNameList)
+             ) 
+             ;;
+             otherwise --> nf('advOpen : unit <- read ('AdvOpen_adv_party['i]), 
+                               return 'advOpen, 'advOpen :: emptyCNameList)
+           ) 
+     || 
+     (family 'Opened 'i (bound (n + 1)) ::= 
+        nf( ('commit : bool <- read ('Commit['i])) 
+            ('x : unit <- read ('Open['i])), 
+            return 'commit, 
+            'x :: 'commit :: emptyCNameList)
+     ) 
+     || 
+     ( family 'Out 'i (bound (n + 1)) ::= 
+               (when (apply 'honest 'i) --> 
+                  nf('x : bool <- read ('SumOpened1[n + 2]), 
+                     return 'x, 
+                     'x :: emptyCNameList)
+               ) ;;
+               otherwise --> 
+                   nf('out : bool <- read ('Out['i]), return 'out, 'out :: emptyCNameList)
+           ) 
+                  
+     .  
+     
+   op r10 : -> Protocol .
+   eq r10 =
+      
+     (family 'SumOpened1 'i (bound 'k) ::= 
+                       nf(('ao : unit <- read ('AllOpen['i])) 
+                          ('sc : bool <- read ('SumCommit['i])),
+                          return 'sc,
+                          'ao :: 'sc :: emptyCNameList )
+     )
+     || 
+     ('SumOpened1['k ++ 1] ::= nf(('ao : unit <- read ('AllOpen['k ++ 1])) 
+                          ('sc : bool <- read ('SumCommit['k ++ 1])),
+                          return 'sc,
+                          'ao :: 'sc :: emptyCNameList )
+     )
+     ||      
+       (family 'SumCommit 'i (bound (n + 2)) ::= 
+              (when (0 =T= 'i) --> nf(emptyBRList, return False, emptyCNameList)) 
+              ;; 
+              otherwise --> nf(('cj : bool <- read ('Commit['i -- 1])) 
+                                'xj : bool <- read ('SumCommit['i -- 1]), 
+                                return (ap 'xor pair('xj, 'cj)),
+                                'xj :: 'cj :: emptyCNameList)
+          )
+           || (family 'AllOpen 'i (bound(n + 2)) ::=
+                   (when ('i =T= 0) --> nf(emptyBRList, return (), emptyCNameList))
+                   ;;
+                   (otherwise --> 
+                      nf(('x : unit <- read ('AllOpen['i -- 1]))
+                         ('y : unit <- read ('Open['i -- 1])),
+                         return (),
+                      'x :: 'y :: emptyCNameList)
+                   )
+         )       
+     || 
+     (family 'Commit 'i (bound (n + 1)) ::= 
+             (when (apply 'honest 'i) --> nf(emptyBRList, samp flip, emptyCNameList)) 
+             ;; 
+             otherwise --> nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
+                              return 'advCommit, 'advCommit :: emptyCNameList)
+          ) 
+     || 
+     (family 'Committed 'i (bound (n + 1)) ::= 
+             nf('x : bool <- read ('Commit['i]), 
+                return (), 
+                'x :: emptyCNameList)
+          ) 
+     ||  
+     (family 'LeakCommitted_comm_adv 'i  (bound (n + 1)) ::= 
+        nf('committed : unit <- read ('Committed['i]), 
+           return 'committed, 
+           'committed :: emptyCNameList)) 
+     ||
+     (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+        nf('opened : bool <- read ('Opened['i]), return 'opened, 'opened :: emptyCNameList)) 
+     ||     
+     (family 'Open 'i (bound (n + 1)) ::= 
+             (when (apply 'honest 'i) --> 
+                nf('sc : bool <- read ('SumCommit[n + 2]), 
+                   return (), 
+                   'sc :: emptyCNameList)
+             ) 
+             ;;
+             otherwise --> nf('advOpen : unit <- read ('AdvOpen_adv_party['i]), 
+                               return 'advOpen, 'advOpen :: emptyCNameList)
+           ) 
+     || 
+     (family 'Opened 'i (bound (n + 1)) ::= 
+        nf( ('commit : bool <- read ('Commit['i])) 
+            ('x : unit <- read ('Open['i])), 
+            return 'commit, 
+            'x :: 'commit :: emptyCNameList)
+     ) 
+     || 
+     ( family 'Out 'i (bound (n + 1)) ::= 
+               (when (apply 'honest 'i) --> 
+                  nf('x : bool <- read ('SumOpened1[n + 2]), 
+                     return 'x, 
+                     'x :: emptyCNameList)
+               ) ;;
+               otherwise --> 
+                   nf('out : bool <- read ('Out['i]), return 'out, 'out :: emptyCNameList)
+           ) 
+      .  
+      
+ ******************************************
+ *** auxiliary protocols for idealPlusSim
+ ******************************************     
+      
+ op i1 : -> Protocol .
+ eq i1 = newfamily 'AllOpen 'i (bound (n + 2)) : unit in
+    newfamily 'Commit 'i (bound n) : bool in
+    newfamily 'Committed 'i (bound (n + 1)) : unit in
+    new 'Flip : bool in
+    new 'LastCommit : bool in
+    newfamily 'LeakCommitted_comm_adv 'i (bound (n + 1)) : unit in
+    newfamily 'LeakOpened_comm_adv 'i (bound (n + 1)) : bool in
+    newfamily 'Open 'i (bound (n + 1)) : unit in
+    newfamily 'Opened 'i (bound (n + 1)) : bool in
+    newfamily 'SumCommit 'i (bound (n + 2)) : bool in
+ ( *** new starts here
+     ('Flip ::= nf(emptyBRList, samp flip, emptyCNameList)) 
+     || 
+     ('LastCommit ::= nf(('f : bool <- read 'Flip) 
+                          'x : bool <- read ('SumCommit[n + 1]), 
+                          return (ap 'xor pair('x, 'f)), 
+                          'x :: 'f :: emptyCNameList)) 
+     || 
+     (family 'AllOpen 'i (bound (n + 2)) ::= 
+       (when (0 =T= 'i) --> nf(emptyBRList, return (), emptyCNameList))
+       ;; 
+       otherwise --> nf(('x : unit <- read ('AllOpen['i -- 1])) 
+                         'y : unit <- read ('Open['i -- 1]),
+                          return (), 'x :: 'y :: emptyCNameList)) 
+     || 
+     (family 'Commit 'i (bound n) ::= 
+        (when (apply 'honest 'i) --> 
+          nf(emptyBRList, samp flip, emptyCNameList)) 
+        ;; 
+        otherwise --> 
+          nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
+             return 'advCommit, 'advCommit :: emptyCNameList)) 
+     || 
+     (family 'Committed 'i (bound (n + 1)) ::= 
+        (when ('i =T= n + 1) --> nf(emptyBRList, return (), emptyCNameList)) 
+        ;;
+        otherwise --> nf('x : bool <- read ('Commit['i]), return (), 'x :: emptyCNameList)) 
+     || 
+     (family 'LeakCommitted_comm_adv 'i (bound (n + 1)) ::= 
+        nf('committed : unit <- read ('Committed['i]), return 'committed, 'committed :: emptyCNameList)) 
+     || 
+     (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+        nf('opened : bool <- read ('Opened['i]), return 'opened, 'opened :: emptyCNameList)) 
+     || 
+     ( family 'Open 'i (bound (n + 1)) ::=  
+        (when (apply 'honest 'i) --> 
+          nf('sc : bool <- read ('SumCommit[n + 2]), return (), 'sc :: emptyCNameList)
+        ) 
+        ;; 
+        otherwise --> 
+          nf('advOpen : unit <- read ('AdvOpen_adv_party['i]), return 'advOpen, 'advOpen :: emptyCNameList)) 
+     || 
+     (family 'Opened 'i (bound (n + 1)) ::= 
+        nf(('commit : bool <- read ('Commit['i])) 
+            'x : unit <- read ('Open['i]), 
+            return 'commit, 'x :: 'commit :: emptyCNameList)) 
+     || 
+     (family 'Out 'i (bound (n + 1)) ::= 
+       (when (apply 'honest 'i) --> 
+          preNF(('ao : unit <- read ('AllOpen[n + 2])) 
+                 'sc : bool <- read ('SumCommit[n + 2]),
+                  return 'sc, 'sc :: 'ao :: emptyCNameList, 'sc)) 
+          ;; 
+          otherwise --> nf('out : bool <- read ('Out['i]), return 'out, 'out :: emptyCNameList)) 
+     || 
+      family 'SumCommit 'i (bound (n + 2)) ::= 
+       (when (0 =T= 'i) --> nf(emptyBRList, return False, emptyCNameList)) ;;
+       (when ('i =T= (n + 2)) --> 
+               nf( ('x : bool <- read ('SumCommit [ n + 1 ])) 
+                   ('f : bool <- read 'LastCommit) ,
+                   return (ap 'xor pair('x, 'f)) ,
+                   'x :: 'f :: emptyCNameList )
+        )
+       ;; otherwise --> nf(('x : bool <- read ('SumCommit['i -- 1])) 
+                            'c : bool <- read ('Commit['i -- 1]), 
+                            return (ap 'xor pair('x, 'c)), 'x :: 'c :: emptyCNameList)
+ ) *** new ends here 
+ .
+
+
+ op i2 : -> Protocol .
+ eq i2 = 
+  newNF(< 'LastCommit : bool >
+      < 'Commit[n + 1] : bool >  
+      {'AllOpen 'i (bound (n + 2)) : unit} 
+      {'Commit 'i (bound n) : bool} 
+      {'Committed 'i (bound (n + 1)) : unit} 
+      {'LeakCommitted_comm_adv 'i (bound (n + 1)) : unit} 
+      {'LeakOpened_comm_adv 'i (bound (n + 1)) : bool} 
+      {'Open 'i (bound (n + 1)) : unit} 
+      {'Opened 'i (bound (n + 1)) : bool} 
+      {'SumCommit 'i (bound (n + 2)) : bool}, 
+
+      ('LastCommit ::= nf(('x : bool <- read ('SumCommit[n + 1])) 
+                          ('c : bool <- read ('Commit[n + 1])),
+                          return 'c, 'x :: 'c :: emptyCNameList)) 
+      || 
+      ('Commit[n + 1] ::= nf(emptyBRList, samp flip, emptyCNameList))
+      || 
+      (family 'AllOpen 'i (bound (n + 2)) ::=  
+        (when (0 =T= 'i) --> nf(emptyBRList, return (), emptyCNameList)) 
+        ;; 
+        otherwise --> nf(('x : unit <- read ('AllOpen['i -- 1]))
+                          'y : unit <- read ('Open['i -- 1]), 
+                          return (), 'x :: 'y :: emptyCNameList)
+     )
+     || 
+     (family 'Commit 'i (bound n) ::= 
+       (when (apply 'honest 'i) --> nf(emptyBRList, samp flip, emptyCNameList)) 
+       ;; 
+       otherwise --> 
+         nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
+             return 'advCommit, 'advCommit :: emptyCNameList)) 
+     || 
+     (family 'Committed 'i (bound (n + 1)) ::= 
+       (when ('i =T= n + 1) --> nf(emptyBRList, return (), emptyCNameList)) 
+       ;; 
+       otherwise --> nf('x : bool <- read ('Commit['i]), return (), 'x :: emptyCNameList)
+     ) 
+     || 
+     (family 'LeakCommitted_comm_adv 'i (bound (n + 1)) ::= 
+        nf('committed : unit <- read ('Committed['i]), return 'committed, 'committed :: emptyCNameList)
+     )
+    || 
+    (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+      nf('opened : bool <- read ('Opened['i]), return 'opened, 'opened :: emptyCNameList)
+    ) 
+    || 
+    (family 'Open 'i (bound (n + 1)) ::= 
+      (when (apply 'honest 'i) --> 
+        nf('sc : bool <- read ('SumCommit[n + 2]), return (), 'sc :: emptyCNameList)) 
+      ;;
+      otherwise --> 
+        nf('advOpen : unit <- read ('AdvOpen_adv_party['i]), 
+            return 'advOpen, 'advOpen :: emptyCNameList)
+    ) 
+    || 
+    (family 'Opened 'i (bound (n + 1)) ::= 
+       nf(('commit : bool <- read ('Commit['i])) 
+           'x : unit <- read ('Open['i]), 
+           return 'commit, 
+           'x :: 'commit :: emptyCNameList)
+    ) 
+    || 
+    (family 'Out 'i (bound (n + 1)) ::= 
+       (when (apply 'honest 'i) --> 
+          nf(('ao : unit <- read ('AllOpen[n + 2])) 
+              'sc : bool <- read ('SumCommit[n + 2]), 
+              return 'sc, 'sc :: 'ao :: emptyCNameList)
+       ) 
+       ;; 
+       otherwise -->  nf('out : bool <- read ('Out['i]), return 'out, 'out :: emptyCNameList)
+    ) 
+    || 
+    family 'SumCommit 'i (bound (n + 2)) ::= 
+       (when (0 =T= 'i) --> nf(emptyBRList, return False, emptyCNameList)) 
+       ;; 
+       (when ('i =T= n + 2) --> 
+           nf(('f : bool <- read 'LastCommit) 
+               'x : bool <- read ('SumCommit[n + 1]), 
+               return (ap 'xor pair('x, 'f)), 
+               'x :: 'f :: emptyCNameList)
+       ) 
+       ;; 
+       otherwise --> nf(('x : bool <- read ('SumCommit['i -- 1])) 
+                         'c : bool <- read ('Commit['i -- 1]), 
+                         return (ap 'xor pair('x, 'c)), 'x :: 'c :: emptyCNameList), 
+      'AllOpen :: 'Commit :: 'Commit[n + 1] :: 'Committed :: 'LastCommit :: 'LeakCommitted_comm_adv ::
+      'LeakOpened_comm_adv :: 'Open :: 'Opened :: 'SumCommit :: emptyCNameList )
+ .
+ 
+ op i3 : -> Protocol .
+ eq i3 = 
+   newNF({'AllOpen 'i (bound (n + 2)) : unit} 
+      {'Commit 'i (bound (n + 1)) : bool} 
+      {'Committed 'i (bound (n + 1)) : unit} 
+      {'LeakCommitted_comm_adv 'i (bound (n + 1)) : unit} 
+      {'LeakOpened_comm_adv 'i (bound (n + 1)) : bool} 
+      {'Open 'i (bound (n + 1)) : unit} 
+      {'Opened 'i (bound (n + 1)) : bool} 
+      {'SumCommit 'i (bound (n + 2)) : bool}, 
+      
+      (family 'AllOpen 'i (bound (n + 2)) ::= 
+        (when (0 =T= 'i) --> nf(emptyBRList, return (), emptyCNameList)) 
+        ;; 
+        otherwise --> nf(('x : unit <- read ('AllOpen['i -- 1])) 
+                          'y : unit <- read ('Open['i -- 1]), 
+                          return (), 'x :: 'y :: emptyCNameList)
+      ) 
+      || 
+      (family 'Commit 'i (bound (n + 1)) ::= 
+        (when (apply 'honest 'i) --> nf(emptyBRList, samp flip, emptyCNameList)) 
+        ;; 
+        otherwise --> 
+         nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
+            return 'advCommit, 'advCommit :: emptyCNameList)
+      ) 
+      || 
+      (family 'Committed 'i (bound (n + 1)) ::= 
+         nf('x : bool <- read ('Commit['i]), return (), 'x :: emptyCNameList)
+      ) 
+      || 
+      (family 'LeakCommitted_comm_adv 'i (bound (n + 1)) ::= 
+         nf('committed : unit <- read ('Committed['i]), return 'committed, 'committed :: emptyCNameList)
+      )
+     || 
+     (family 'LeakOpened_comm_adv 'i (bound (n + 1)) ::= 
+        nf('opened : bool <- read ('Opened['i]), return 'opened, 'opened :: emptyCNameList)
+     ) 
+     || 
+     (family 'Open 'i (bound (n + 1)) ::= 
+       (when (apply 'honest 'i) --> 
+          nf('sc : bool <- read ('SumCommit[n + 2]), return (), 'sc :: emptyCNameList)) 
+       ;;
+       otherwise --> 
+         nf('advOpen : unit <- read ('AdvOpen_adv_party['i]), 
+             return 'advOpen, 'advOpen :: emptyCNameList)
+     ) 
+     || 
+     (family 'Opened 'i (bound (n + 1)) ::= 
+        nf(('commit : bool <- read ('Commit['i])) 
+            'x : unit <- read ('Open['i]), 
+            return 'commit, 'x :: 'commit :: emptyCNameList)
+     ) 
+     || 
+     (family 'Out 'i (bound (n + 1)) ::= 
+        (when (apply 'honest 'i) --> 
+          nf(('ao : unit <- read ('AllOpen[n + 2])) 
+              'sc : bool <- read ('SumCommit[n + 2]), 
+              return 'sc, 'sc :: 'ao :: emptyCNameList)
+        ) 
+        ;; 
+        otherwise --> nf('out : bool <- read ('Out['i]), return 'out, 'out :: emptyCNameList)
+     ) 
+     || 
+     family 'SumCommit 'i (bound (n + 2)) ::= 
+       (when (0 =T= 'i) --> nf(emptyBRList, return False, emptyCNameList)) 
+       ;; 
+       (when ('i =T= n + 2) -->
+          nf(('c : bool <- read ('Commit[n + 1])) 
+              'x : bool <- read ('SumCommit[n + 1]),
+              return (ap 'xor pair('x, 'c)), 'x :: 'c :: emptyCNameList)
+       ) ;; 
+       otherwise --> nf(('x : bool <- read ('SumCommit['i -- 1])) 
+                         'c : bool <- read ('Commit['i -- 1]), 
+                         return (ap 'xor pair('x, 'c)),
+                         'x :: 'c :: emptyCNameList), 
+                         
+       'AllOpen :: 'Commit :: 'Committed :: 'LeakCommitted_comm_adv ::
+       'LeakOpened_comm_adv :: 'Open :: 'Opened :: 'SumCommit :: emptyCNameList
+)
+ .
+    
+    
+ ***************************************
+ *** induction proofs
+ *************************************** 
+ 
+ var q1 q2 q3 Q : Qid .
+ var pr : Protocol .
+  
+ var pr7 pr8 : Protocol .
+  
+ var pr9 pr10 : Protocol .  
+ 
+ *** induction proof 1
+ 
+ strat applyCaseDistInd : Qid Qid Qid Protocol @ ProtocolConfig .
+ sd applyCaseDistInd(q1, q2, q3, pr) := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyCaseDistInd(q1, q2, q3, pr)}
+    : CASE-DISTINCTION-one[aQid:Qid <- q1]
+         { use-family-p[C:Qid <- q2]
+             {  COMP-NEW-newNF
+              ; applyIndStep1('AllCommitted) 
+              ; SYM[P1:Protocol <- pr]{COMP-NEW-newNF}   
+             }
+         , idle
+         } 
+ .
+ 
+ strat applyIndStep1 : Qid @ ProtocolConfig .
+ sd applyIndStep1(Q) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyIndStep1(Q)} 
+     : INDUCTION-when-two[
+         C:Qid <- Q, 
+         cases':Cases <-
+           nf('x : unit <- read ('AllCommitted1['j]), return 'x, 'x :: emptyCNameList)
+        ]
+        {*** ind base:
+          applySubstRevFamily('AllCommitted1, 'AllCommitted ['i 0], unit),
+         *** ind step:
+          nTimesSubstNFReadFamilyTwo('AllCommitted, 'AllCommitted['i ('k ++ 1)]) 
+        ; nTimesSubstFamiliesOne('AllCommitted1, 'AllCommitted['i ('k ++ 1)], 'k ++ 1, unit)
+        }
+ . 
+ 
+ *** induction proof 2
+ 
+ strat applyCaseDistInd2 : Qid Qid Qid Protocol @ ProtocolConfig .
+ sd applyCaseDistInd2(q1, q2, q3, pr) := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyCaseDistInd2(q1, q2, q3, pr)}
+    : CASE-DISTINCTION-one[aQid:Qid <- q1]
+         { use-family-p[C:Qid <- q2]
+             { COMP-NEW-newNF
+        ; applyIndStep2(q3)
+        ; (SYM[P1:Protocol <- pr] {COMP-NEW-newNF})
+             }
+         , idle
+         } .  
+         
+ strat applyIndStep2 : Qid @ ProtocolConfig .
+ sd applyIndStep2(Q) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyIndStep2(Q)} 
+     : INDUCTION-when-two[
+         C:Qid <- Q, 
+         cases':Cases <-
+           nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x :: emptyCNameList)
+        ]
+        {*** ind base:
+          applySubstRevFamily('SumOpened1, 'SumOpened ['i 0], bool),
+         *** ind step:
+         nTimesSubstNFReadFamilyTwo('SumOpened, 'SumOpened['i ('k ++ 1)]) 
+        ; nTimesSubstFamiliesOne('SumOpened1, 'SumOpened['i ('k ++ 1)], 'k ++ 1, bool)
+        } 
+ .
+ 
+ *** induction proof 3
+
+ 
+ strat applyIndStep3 : Qid Protocol Protocol @ ProtocolConfig .
+ sd applyIndStep3(Q, pr7, pr8) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyIndStep3(Q, pr7, pr8)} 
+     : 
+      INDUCTION-when-one[
+         C:Qid <- Q, 
+         cases':Cases <-
+           nf('sc : bool <- read ('SumCommit['i]), 
+              return (), 
+              'sc :: emptyCNameList)
+        ]
+        {*** ind base:
+          SYM[P1:Protocol <- pr7]
+           {substNFFamilyOne('SumCommit, 'AllCommitted1[0], 
+                             nf(emptyBRList, return False, emptyCNameList)
+                             )
+           }  ,
+         *** ind step:
+          substNFFamilyOne('AllCommitted1, 'AllCommitted1['k ++ 1],   
+                           nf('sc : bool <- read ('SumCommit['k]), 
+                              return (), 
+                              'sc :: emptyCNameList)
+          )
+     ; substNFFamilyOne('Committed, 'AllCommitted1['k ++ 1], 
+         nf('x : bool <- read ('Commit['k]), return (), 'x :: emptyCNameList)
+      )
+     ; applyAlphaNFPr('AllCommitted1['k ++ 1], << 'sc,'xj >> << 'x,'cj >> emptyQidPairList)
+     ; SYM[P1:Protocol <- pr8]
+     {substNFFamilyOne('SumCommit, 'AllCommitted1['k ++ 1], 
+      nf(('xj : bool <- read ('SumCommit['k]))
+                           ('cj : bool <- read ('Commit['k])),
+                           return (ap 'xor pair('xj, 'cj)),
+                           'xj :: 'cj :: emptyCNameList
+                        )
+      ) }
+        } 
+ .  
+ 
+ *** induction proof 4
+      
+         
+ strat applyIndStep4 : Qid Protocol Protocol @ ProtocolConfig .
+ sd applyIndStep4(Q, pr9, pr10) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyIndStep4(Q, pr9, pr10)} 
+     : 
+      INDUCTION-when-one[
+         C:Qid <- Q, 
+         cases':Cases <-
+           nf(('ao : unit <- read ('AllOpen['i])) 
+                          ('sc : bool <- read ('SumCommit['i])),
+                          return 'sc,
+                          'ao :: 'sc :: emptyCNameList )
+        ]
+        {*** ind base:
+          SYM[P1:Protocol <- pr9] 
+      {
+       substNFFamilyOne('AllOpen, 'SumOpened1[0], 
+                             nf(emptyBRList, return (), emptyCNameList)
+                             )
+     ; substNFFamilyOne('SumCommit, 'SumOpened1[0], 
+                             nf(emptyBRList, return False, emptyCNameList)
+                             )          
+                   } 
+          ,
+         *** ind step:
+          substNFFamilyOne('SumOpened1, 'SumOpened1['k ++ 1], 
+                         nf(('ao : unit <- read ('AllOpen['k])) 
+                          ('sc : bool <- read ('SumCommit['k])),
+                          return 'sc,
+                          'ao :: 'sc :: emptyCNameList )
+                             ) 
+ ; substNFFamilyOne('Opened, 'SumOpened1['k ++ 1], 
+                            nf( ('commit : bool <- read ('Commit['k])) 
+            ('x : unit <- read ('Open['k])), 
+            return 'commit, 
+            'x :: 'commit :: emptyCNameList)
+                    )
+  ; SYM[P1:Protocol <- pr10]
+  {
+  substNFFamilyOne('AllOpen, 'SumOpened1['k ++ 1], 
+                         nf(('x : unit <- read ('AllOpen['k]))
+                         ('y : unit <- read ('Open['k])),
+                         return (),
+                      'x :: 'y :: emptyCNameList)
+                             )
+   ; substNFFamilyOne('SumCommit, 'SumOpened1['k ++ 1], 
+                         nf(('cj : bool <- read ('Commit['k])) 
+                                'xj : bool <- read ('SumCommit['k]), 
+                                return (ap 'xor pair('xj, 'cj)),
+                                'xj :: 'cj :: emptyCNameList)
+                             ) 
+   ; applyAlphaNFPr('SumOpened1['k ++ 1],
+         
+        << 'x,'ao >> 
+        << 'cj,'commit >> 
+        << 'y,'x >>
+        << 'xj,'sc >>
+         emptyQidPairList)  
+   ; changeOrder('SumOpened1['k ++ 1], 
+     'ao :: 'sc :: 'x :: 'commit :: emptyCNameList)
+  }                      
+        } 
+ .  
+      
 endsm
 
+*** this is the main proof
+srew [1] pConfig(secSig, 
+                 ('AdvCommit_adv_party @ (n + 1) :: bool) 
+    ('AdvOpen_adv_party @ (n + 1) :: unit) 
+    ('Out @ (n + 1) :: bool),
+                 real,
+                 insert('AdvCommit_adv_party @ (n + 1), 'AdvOpen_adv_party @ (n + 1)), 
+    'Out @ (n + 1),
+                 insert(apply 'honest (n + 1), empty)
+                ) 
+   using sugar-newNF
+         ; addNewFamilyToGroup(newfamily 'AllCommitted1 'i (bound(n + 2)) : unit in 
+              family 'AllCommitted1 'i (bound(n + 2)) ::= 
+                (when ('i =T= 0) --> nf(emptyBRList, return (), emptyCNameList)) ;;
+                (otherwise --> 
+                   nf(('x : unit <- read ('AllCommitted1['i -- 1]))
+                      ('y : unit <- read ('Committed['i -- 1])),
+                      return (),
+                      'x :: 'y :: emptyCNameList
+                     )
+                )
+             , 'Commitment
+             , 'AllCommitted1   
+            )           
+        ; applyCaseDistInd('Party, 'Commitment, 'AllCommitted, r1)    
+        ; applyCaseDistSubst('Party, 'Commitment, 'Open, 'AllCommitted, r2)  
+        ; applyCaseDistAbsorb('Party, 'Commitment, 'AllCommitted, r3)                     
+        ; addNewFamilyToGroup(
+             newfamily 'SumOpened1 'j (bound (n + 2)) : bool in
+              family 'SumOpened1 'j (bound (n + 2)) ::= 
+                (when ('j =T= 0) --> nf(emptyBRList, return False, emptyCNameList)) ;;
+                (otherwise --> 
+                   nf(('x : bool <- read ('SumOpened1['j -- 1]))
+                      ('y : bool <- read ('Opened['j -- 1])),
+                      return (ap 'xor pair('x, 'y)),
+                      'x :: 'y :: emptyCNameList
+                     )
+                ), 'Commitment, 'SumOpened1
+            ) 
+               
+        ; applyCaseDistInd2('Party, 'Commitment, 'SumOpened, r4) 
+  
+        ; applyCaseDistSubst('Party, 'Commitment, 'Out, 'SumOpened, r5)
+
+        ; applyCaseDistAbsorb('Party, 'Commitment, 'SumOpened, r6)  
+                
+        *** these aren't actual proof steps, they massage the protocol to get to 
+        *** the combined form. We could have a strategy that merges them
+        ; applyDeleteEmptyNF('Party)
+        ; applyDropName('Commitment)
+        ; applyCombine('Party)
+
+        *** up to here
+        *** now back to proof 
+        ; absorb-reverse-new-nf-family
+             [q:Qid <- 'SumCommit, 
+              nlist:List{NatTerm} <- 'i,
+              blist:List{Bounds} <- (bound (n + 2)),
+              T:Type <- bool,
+              cases:Cases <- 
+                   (when ('i =T= 0) --> nf(emptyBRList, return False, emptyCNameList))
+                   ;;
+                   (otherwise --> 
+                      nf(('xj : bool <- read ('SumCommit['i -- 1]))
+                         ('cj : bool <- read ('Commit['i -- 1])),
+                         return (ap 'xor pair('xj, 'cj)),
+                      'xj :: 'cj :: emptyCNameList
+                     )
+                   )  
+             ]             
+        ; reorder-newNF[ql2:CNameList <- 
+            'Commit :: 'Committed :: 'LeakCommitted_comm_adv ::
+            'LeakOpened_comm_adv :: 'Open :: 'Opened :: 'AllCommitted1 :: 
+            'SumOpened1 :: 'SumCommit :: emptyCNameList
+          ]  
+        ; alpha-family[C:Qid <- 'SumOpened1, q':Qid <- 'i]  
+          
+         ; applyIndStep3('AllCommitted1, r7, r8)   
+                 
+         ; applySubstCaseDist('Open, 'AllCommitted1, 
+            nf('sc : bool <- read ('SumCommit[n + 2]), return (), 'sc :: emptyCNameList)
+           ) 
+         ; absorbFamily('AllCommitted1)   
+         ; absorb-reverse-new-nf-family
+             [q:Qid <- 'AllOpen, 
+              nlist:List{NatTerm} <- 'i,
+              blist:List{Bounds} <- (bound (n + 2)),
+              T:Type <- unit,
+              cases:Cases <- 
+                   (when ('i =T= 0) --> nf(emptyBRList, return (), emptyCNameList))
+                   ;;
+                   (otherwise --> 
+                      nf(('x : unit <- read ('AllOpen['i -- 1]))
+                         ('y : unit <- read ('Open['i -- 1])),
+                         return (),
+                      'x :: 'y :: emptyCNameList
+                     )
+                      )
+             ] 
+         ; reorder-newNF[ql2:CNameList <- 
+            'Commit :: 'Committed :: 'LeakCommitted_comm_adv ::
+            'LeakOpened_comm_adv :: 'Open :: 'Opened ::
+            'SumOpened1 :: 'SumCommit :: 'AllOpen :: emptyCNameList
+          ]     
+       ; applyIndStep4('SumOpened1, r9, r10) 
+       ; applySubstCaseDist('Out, 'SumOpened1, 
+             nf(('ao : unit <- read ('AllOpen[n + 2])) 
+                 'sc : bool <- read ('SumCommit[n + 2]), 
+                 return 'sc, 'ao :: 'sc :: emptyCNameList)
+         ) 
+       ; absorbFamily('SumOpened1)  
+       ; *** quickfix
+          reorder-newNF[ql2:CNameList <- 
+          'AllOpen :: 'Commit :: 'Committed :: 'LeakCommitted_comm_adv ::
+          'LeakOpened_comm_adv :: 'Open :: 'Opened :: 'SumCommit :: emptyCNameList
+          ]
+       ; applyBranch2Alpha('SumCommit, 
+            << 'cj,'c >> 
+            << 'xj,'x >>
+            emptyQidPairList, 
+            nf(('c : bool <- read ('Commit['i -- 1])) 
+                'x : bool <- read ('SumCommit['i -- 1]), 
+                return (ap 'xor pair('x, 'c)), 
+                'x :: 'c :: emptyCNameList)
+          )    
+          ; SYM[P1:Protocol <- idealPlusSim]
+            {
+            sugar-newNF   
+         ; smart-subst-nf('LeakFlip_id_adv, 'LastCommit )
+         ; absorbChannel('LeakFlip_id_adv)
+         ; applySubstChannelBranch('Out, 'Ok_adv_id)
+         ; absorbChannel('Ok_adv_id)
+         ; applyCaseDistBranch2('SumCommit, 'LastCommit)
+         ; applyBranch2MoveReads('Out)
+         ; applyBranch2SubstRev('Out, 'SumCommit, n + 2, 'sc, bool,
+             nf( ('f : bool <- read 'Flip) 
+                 ('x : bool <- read ('SumCommit [ n + 1 ])) ,
+                   return 'f ,
+                   'x :: 'f :: emptyCNameList )
+                   )         
+         ; SYM[P1:Protocol <- i1]{
+             sugar-newNF
+           ; applyCaseDistBranch2('SumCommit, 'LastCommit) 
+         }  
+         ; sugar-newNF
+                 
+         ; foldNF('Flip, 'LastCommit) 
+         ; applyAR('LastCommit)
+         ; SYM[P1:Protocol <- i2]{
+            foldNF('Commit[n + 1], 'LastCommit) 
+         } 
+         ; wrap-channel-family
+         ; applyCaseDistBranch2('SumCommit, 'LastCommit)
+         ; absorbChannel('LastCommit)
+         ; SYM[P1:Protocol <- i3]{
+             unwrap-channel-family[C:Qid <- 'Commit]
+      ; unwrap-channel-family[C:Qid <- 'Committed]
+      ; applyUnusedNF('Commit[n + 1], 'Committed[n + 1])
+      ; wrap-channel-family[C:Qid <- 'Commit]
+      ; wrap-channel-family-new-R[C:Qid <- 'Committed]
+         }
+         ; merge-cases[C:Qid <- 'SumCommit]
+         ; applyReorderNF('Out, 'ao :: 'sc :: emptyCNameList)
+            }
+.
 

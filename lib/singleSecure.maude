@@ -39,32 +39,32 @@ mod SECURE is
     new 'LeakMsgRcvd_id_adv : unit in
     new 'OkMsg_adv_id : ctxt in     
     (
-    ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)
+    ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)
     ) 
     ||
     ('LeakCtxt_net_adv ::= nf(
                 ('x : unit <- read 'LeakMsgRcvd_id_adv)
                 ('k : key <- read 'Key ),
                 samp ('enc < pair(ap 'zeros (), 'k) >),
-                'x :: 'k :: emptyQidList
+                'x :: 'k :: emptyCNameList
                 ) 
     )            
     ||
     ('OkMsg_adv_id ::= nf('okCtxt : ctxt <- read 'OkCtxt_adv_net, 
                           return 'okCtxt , 
-                          'okCtxt :: emptyQidList ))   
+                          'okCtxt :: emptyCNameList ))   
     ||
     ('LeakMsgRcvd_id_adv ::= nf(
             'in : msg <- read 'In ,
             return (),
-            'in :: emptyQidList)
+            'in :: emptyCNameList)
     )        
     ||
     ('Out ::= nf(
             ('okMsg : ctxt <- read 'OkMsg_adv_id)
             ('in : msg <- read 'In),
             return 'in,
-            'okMsg :: 'in :: emptyQidList ) 
+            'okMsg :: 'in :: emptyCNameList ) 
     ) 
     ) . *** end of new, leave here
     
@@ -74,24 +74,24 @@ mod SECURE is
     new 'Recv : ctxt in
     new 'Send : ctxt in
     ( 
-    ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)
+    ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)
     ) 
     || 
     ('Send ::= nf(
             ('in : msg <- read 'In )
             ('k : key <- read 'Key) ,
             samp ('enc < pair('in, 'k) >),
-            'in :: 'k :: emptyQidList
+            'in :: 'k :: emptyCNameList
             )
     )    
     ||
-    ('LeakCtxt_net_adv ::= nf('send : ctxt <- read 'Send, return 'send, 'send :: emptyQidList)) 
+    ('LeakCtxt_net_adv ::= nf('send : ctxt <- read 'Send, return 'send, 'send :: emptyCNameList)) 
     || 
     ('Recv ::= nf(
             ('okCtxt : ctxt <- read 'OkCtxt_adv_net )
             ('send : ctxt <- read 'Send), 
                 return 'send,
-                'okCtxt :: 'send :: emptyQidList
+                'okCtxt :: 'send :: emptyCNameList
             )
     ) 
     ||
@@ -99,7 +99,7 @@ mod SECURE is
             ('c : ctxt <- read 'Recv )
             ('k : key <- read 'Key ),
             return (ap 'dec pair('c, 'k)),
-            'c :: 'k :: emptyQidList
+            'c :: 'k :: emptyCNameList
             )
     ) 
     ) . *** end of new, leave here
@@ -110,22 +110,22 @@ mod SECURE is
            ('Dec ::= nf(('k : key <- read 'Key) 
                          'send : ctxt <- read 'Send, 
                          return (ap 'dec pair('send, 'k)), 
-                         'send :: 'k :: emptyQidList)) 
+                         'send :: 'k :: emptyCNameList)) 
         || ('Enc ::= nf(('in : msg <- read 'In) 
                          'k : key <- read 'Key, 
                          samp ('enc < pair('in, 'k) >), 
-                         'in :: 'k :: emptyQidList)) 
-        || ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)) 
+                         'in :: 'k :: emptyCNameList)) 
+        || ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)) 
         || ('LeakCtxt_net_adv ::= nf('send : ctxt <- read 'Send, 
-                                      return 'send, 'send :: emptyQidList)) 
+                                      return 'send, 'send :: emptyCNameList)) 
         || ('Out ::= nf(('d : msg <- read 'Dec) 
                          'okCtxt : ctxt <- read 'OkCtxt_adv_net, 
-                         return 'd, 'okCtxt :: 'd :: emptyQidList)) 
+                         return 'd, 'okCtxt :: 'd :: emptyCNameList)) 
         || ('Recv ::= nf(('okCtxt : ctxt <- read 'OkCtxt_adv_net) 
                           'send : ctxt <- read 'Send, 
-                          return 'send, 'okCtxt :: 'send :: emptyQidList)) 
-        || 'Send ::= nf('e : ctxt <- read 'Enc, return 'e, 'e :: emptyQidList), 
-        'Dec :: 'Enc :: 'Key :: 'Recv :: 'Send :: emptyQidList)
+                          return 'send, 'okCtxt :: 'send :: emptyCNameList)) 
+        || 'Send ::= nf('e : ctxt <- read 'Enc, return 'e, 'e :: emptyCNameList), 
+        'Dec :: 'Enc :: 'Key :: 'Recv :: 'Send :: emptyCNameList)
   .  
 endm
 
@@ -138,48 +138,48 @@ smod EXECUTE is
  var Gamma : VarContext .
  vars i1 i2 X Y Z In : ChannelName .  
  vars m x y z k c Enc Dec Key i : Qid .
- var I O : Set{CName} .
+ var I O : Set{CNameBound} .
  var li : List{NatTerm} .
- var cOf : CaseOf .
+ var A : Set{BoolTerm} .
  
  crl [enc-dec-correctness] :
-  pConfig(Sigma, Delta (In :: msg) (Key :: key) (Enc :: ctxt) (Dec :: msg), 
-           (Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)
+  pConfig(Sigma, Delta (In @ nil :: msg) (Key @ nil :: key) (Enc @ nil :: ctxt) (Dec @ nil :: msg), 
+           (Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)
            ) 
            || 
            (Enc ::= nf((m : msg <- read In)
                        (k : key <- read Key),
                     samp ('enc < pair(m, k) >),
-                    m :: k :: emptyQidList
+                    m :: k :: emptyCNameList
                     )
            )
            ||
            (Dec ::= nf ((c : ctxt <- read Enc)
                     (k : key <- read Key) ,
                     return (ap 'dec pair(c, k)),
-                    c :: k :: emptyQidList
+                    c :: k :: emptyCNameList
                     )
            )  
-          , I, O)
+          , I, O, A)
   => 
-  pConfig(Sigma, Delta (In :: msg) (Key :: key) (Enc :: ctxt) (Dec :: msg), 
-          (Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)
+  pConfig(Sigma, Delta (In @ nil :: msg) (Key @ nil :: key) (Enc @ nil :: ctxt) (Dec @ nil :: msg), 
+          (Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)
            ) 
            || 
            (Enc ::= nf((m : msg <- read In)
                        (k : key <- read Key),
                     samp ('enc < pair(m, k) >),
-                    m :: k :: emptyQidList
+                    m :: k :: emptyCNameList
                     )
            )
            ||
            (Dec ::= nf (i : msg <- read In ,
                     return i,
-                    i :: emptyQidList
+                    i :: emptyCNameList
                     )
            )  
-                     , I, O) 
-  if In in I [nonexec]. 
+                     , I, O, A) 
+  if In @ nil in I [nonexec]. 
   
  var in key enc dec : ChannelName . 
  var pConf : ProtocolConfig .
@@ -200,30 +200,30 @@ smod EXECUTE is
  
   rl [ind-cpa] :
     pConfig(Sigma, Delta, 
-          (Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)
+          (Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)
            ) 
           || 
           (Enc ::= nf(
                    (m : msg <- read In)
                    (k : key <- read Key),
                    samp ('enc < pair(m, k) >),
-                   m :: k :: emptyQidList
+                   m :: k :: emptyCNameList
                    )
           )
-          , I, O) 
+          , I, O, A) 
           =>
              pConfig(Sigma, Delta, 
-          (Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyQidList)
+          (Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)
            )
           || 
           (Enc ::= nf(
                    (m : msg <- read In)
                    (k : key <- read Key),
                    samp ('enc < pair(ap 'zeros (), k) >),
-                   m :: k :: emptyQidList
+                   m :: k :: emptyCNameList
                    )
           )         
-          , I, O) 
+          , I, O, A) 
   . 
   
  strat applyCPA : ChannelName ChannelName @ ProtocolConfig .  
@@ -243,18 +243,20 @@ endsm
 *** set profile on .
  
 srew [1] pConfig(secSig, 
-                 ('In :: msg) ('Out :: msg) ('OkCtxt_adv_net :: ctxt)
-                 ('LeakCtxt_net_adv :: ctxt), 
+                 ('In @ nil :: msg) ('Out @ nil :: msg) ('OkCtxt_adv_net @ nil :: ctxt)
+                 ('LeakCtxt_net_adv @ nil :: ctxt), 
                  real,  
-                 insert('In, 'OkCtxt_adv_net),
-                 getOutputs(idealPlusSim))
-         using   sugar-newNF  ; 
-                 smart-subst-nf('Recv, 'Out) 
+                 insert('In @ nil, 'OkCtxt_adv_net @ nil),
+                 getOutputs(idealPlusSim),
+                 empty)
+         using   sugar-newNF 
+               
+               ; smart-subst-nf('Recv, 'Out) 
                ; SYM[P1:Protocol <- addEncDec] 
                     { *** sugar-newNF ;
                      foldNF('Enc, 'Send) ;
                      foldNF('Dec, 'Out)
-                    } 
+                    }
                ; absorbChannel('Recv) 
                ; smart-subst-nf('Send, 'LeakCtxt_net_adv) 
                ; smart-subst-nf('Send, 'Dec)
@@ -269,8 +271,8 @@ srew [1] pConfig(secSig,
                   ; smart-subst-nf('LeakMsgRcvd_id_adv, 'LeakCtxt_net_adv)
                   ; absorbChannel('LeakMsgRcvd_id_adv)
                   ; absorbChannel('OkMsg_adv_id)
-                 } 
+                 }
                 .  
-                
+               
 *** show profile .                
 
