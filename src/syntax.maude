@@ -3649,7 +3649,7 @@ mod APPROX-EQUALITY is
   eq | samp flip | = 1 .
   eq | samp (q < M > ) | = 1 + | M | . 
   eq | read cn | = 1 . 
-  eq | if M then R1 else R2 | = | M | + max( | R1 |, | R2 | ) . 
+  eq | if M then R1 else R2 | = | M | + defMax( | R1 |, | R2 | ) . 
   eq | x : T <- R1 ; R2 | = | R1 | + | R2 | .
   
   eq | x : T <~ R | = | R | .
@@ -3723,7 +3723,7 @@ mod APPROX-EQUALITY is
  crl [TRANS] :
   aConfig(Sigma, Delta, P, I, O, A, width nw, length nl)
   => 
-  aConfig(Sigma, Delta, P2, I, O, A, width (nw + nw1 + nw2), length (nl + max(nl1, nl2)))
+  aConfig(Sigma, Delta, P2, I, O, A, width (nw + nw1 + nw2), length (nl + defMax(nl1, nl2)))
  if
   aConfig(Sigma, Delta, P, I, O, A, width 0, length 0)
   => 
@@ -3770,6 +3770,11 @@ mod APPROX-EQUALITY is
   /\ O' == union(chansInList ltq, O)
   /\ Delta' == addChannels ltq Delta
  .  
+      
+ op defMax : Nat Nat -> Nat .
+ eq defMax(n, 0) = n .
+ eq defMax(0, n) = n .
+ eq defMax(n1, n2) = max(n1, n2) [owise] .     
       
 endm
 
