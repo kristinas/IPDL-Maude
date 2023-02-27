@@ -118,7 +118,7 @@ mod SECURE is
         || ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)) 
         || ('LeakCtxt_net_adv ::= nf('send : ctxt <- read 'Send, 
                                       return 'send, 'send :: emptyCNameList)) 
-        || ('Out ::= nf(('d : msg <- read 'Dec) 
+        || ('Out ::= nf(('d : msg <- read 'Dec)
                          'okCtxt : ctxt <- read 'OkCtxt_adv_net, 
                          return 'd, 'okCtxt :: 'd :: emptyCNameList)) 
         || ('Recv ::= nf(('okCtxt : ctxt <- read 'OkCtxt_adv_net) 
@@ -274,5 +274,32 @@ srew [1] pConfig(secSig,
                  }
                 .  
                
-*** show profile .                
+*** show profile .
+
+srew [1]
+pConfig(secSig, ('In @ nil :: msg) ('LeakCtxt_net_adv @ n :: ctxt) 
+        ('OkCtxt_adv_net @ n :: ctxt) ('Out @ n :: msg)
+        ('Key @ nil :: key) ('Dec @ nil :: msg) ('Enc @ nil :: ctxt),
+        ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)) 
+         ||
+         ('Dec ::= nf(('e : ctxt <- read 'Enc) 
+                          'k : key <- read 'Key, 
+                          return (ap 'dec pair('e, 'k)), 'e :: 'k :: emptyCNameList)
+         ) 
+         || 
+         ('Enc ::= nf(('in : msg <- read 'In) 
+                          'k : key <- read 'Key, 
+                          samp ('enc < pair('in, 'k) >), 
+                          'in :: 'k :: emptyCNameList)
+         ), 
+        insert('In @ nil, 'OkCtxt_adv_net @ n), 
+        insert('Key @ nil, insert('Dec @ nil, 'Enc @ nil)), empty)
+  
+ using        
+    enc-dec-correctness[inN:Qid <- 'In, 
+                             keyN:Qid <- 'Key,
+                             encN:Qid <- 'Enc,
+                             decN:Qid <- 'Dec,
+                             i:Qid <- 'in]
+.                
 

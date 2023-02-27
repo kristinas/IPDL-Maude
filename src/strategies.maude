@@ -10,7 +10,7 @@
 in ../src/syntax
 
 smod STRATS is
- pr PROTOCOL-EQUALITY .
+ pr APPROX-EQUALITY .
  
  strat moveToLast : Qid @ ProtocolConfig .
  
@@ -57,10 +57,14 @@ smod STRATS is
                          : (NEW-EXCH ; CONG-NEW-NF{moveToLast(Q)})) 
                        : CONG-NEW-NF{moveToLast(Q)} .
                         
- var N : Nat .
+ var N w l : Nat .
  var nlist : List{NatTerm} .
  var blist : List{Bounds} .
  
+ op aConfStartsWithNew_ : ApproxEqConfig -> Bool .
+ eq aConfStartsWithNew aConfig(S, D, P, I, O, A, width w, length l) =
+    startsWithNew pConfig(S, D, P, I, O, A) .
+      
  op startsWithNew_ : ProtocolConfig -> Bool .
  eq startsWithNew pConfig(S, D, emptyProtocol, I, O, A) = false .
  eq startsWithNew pConfig(S, D, P1 || P2, I, O, A) = false .
@@ -216,6 +220,17 @@ smod STRATS is
                  ; handleRNF(C2) 
                  ; try (pre2Nf)
                  .
+                 
+ strat foldNFFamily : Qid Qid @ ProtocolConfig .
+ sd foldNFFamily(Q1, Q2) := 
+                 (fold-bind-new-nf-families[C:Qid  <- Q1,
+                                            C':Qid <- Q2] 
+                 )
+                 *** TODO these last 2 steps should be reusable from subst!
+                 ; liftInnerBindsNFFamily(Q2) 
+                 ; handleRNFFamily(Q2) 
+                 ; try (pre2Nf)
+                 .                 
                  
  strat foldNFPre : ChannelName ChannelName @ ProtocolConfig .  
  sd foldNFPre(C1, C2) := 
@@ -475,7 +490,7 @@ smod STRATS is
  strat nTimesSubstNFFamiliesOne :  Qid Qid Reaction @ ProtocolConfig .
  sd nTimesSubstNFFamiliesOne(Q1, Q2, R) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{nTimesSubstNFFamilyOne(Q1, Q2, R)} 
+     ? CONG-NEW-NF{nTimesSubstNFFamiliesOne(Q1, Q2, R)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q1 Q2, 
                              P1:Protocol <- keepTwo P Q1 Q2]{
@@ -1344,6 +1359,20 @@ smod STRATS is
          {   applySubstNfRevFamiliesOne(q1, q2, nt, x, T, R)
            , idle
          } . 
-                                                                        
+         
+ strat applyGroupFamilies : Qid Qid @ ProtocolConfig .
+ sd applyGroupFamilies(Q1, Q2) :=
+   match pConf s.t. startsWithNew pConf
+   ? CONG-NEW-NF{applyGroupFamilies(Q1, Q2)}
+   : group-families[C:Qid <- Q1, C':Qid <- Q2]
+ .       
+ 
+ strat applyUngroupFamilies : Qid Qid @ ProtocolConfig .
+ sd applyUngroupFamilies(Q1, Q2) :=
+   match pConf s.t. startsWithNew pConf
+   ? CONG-NEW-NF{applyUngroupFamilies(Q1, Q2)}
+   : ungroup-families[C:Qid <- Q1, C':Qid <- Q2]
+ .       
+                                                                   
 endsm
 

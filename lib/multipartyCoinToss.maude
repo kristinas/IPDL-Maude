@@ -1628,9 +1628,7 @@ srew [1] pConfig(secSig,
                  
          ; foldNF('Flip, 'LastCommit) 
          ; applyAR('LastCommit)
-         ; SYM[P1:Protocol <- i2]{
-            foldNF('Commit[n + 1], 'LastCommit) 
-         } 
+         ; SYM[P1:Protocol <- i2]{foldNF('Commit[n + 1], 'LastCommit)} 
          ; wrap-channel-family
          ; applyCaseDistBranch2('SumCommit, 'LastCommit)
          ; absorbChannel('LastCommit)
