@@ -164,24 +164,6 @@ smod EXECUTE is
  var li : List{NatTerm} .
  var A : Set{BoolTerm} .
  var n1 n2 n3 n4 : Nat .
- 
-  op p0 : -> Protocol .
-  eq p0 = ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)) 
-         ||
-         ('Dec[0] ::= nf(('e : ctxt <- read ('Enc[0])) 
-                          'k : key <- read 'Key, 
-                          return (ap 'dec pair('e, 'k)), 'e :: 'k :: emptyCNameList)
-         ) 
-         || 
-         ('Enc[0] ::= nf(('in : msg <- read ('In[0])) 
-                          'k : key <- read 'Key, 
-                          samp ('enc < pair('in, 'k) >), 
-                          'in :: 'k :: emptyCNameList)
-         )
-         || 
-    emptyProtocol
-         
-  .
   
   crl [enc-dec-correctness] :
   pConfig(Sigma, Delta, 
@@ -310,8 +292,8 @@ smod EXECUTE is
       } 
     .
 
- op p2 : -> Protocol .
- eq p2 = 
+ op p : -> Protocol .
+ eq p = 
   newNF( 
          {'Dec 'i (bound n) : msg} 
          {'Enc 'i (bound n) : ctxt}, 
@@ -384,7 +366,7 @@ using
       *** here we must do the induction proof 
       ; applyIndStep
       ; applyUngroupFamilies('Dec, 'Enc)
-      ; SYM[P1:Protocol <- p2]{
+      ; SYM[P1:Protocol <- p]{
               moveProtocolUnderNewNF
             ; lift-inner-new-nf
       }
