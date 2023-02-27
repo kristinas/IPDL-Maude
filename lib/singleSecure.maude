@@ -275,7 +275,7 @@ srew [1] pConfig(secSig,
                 .  
                
 *** show profile .
-
+***(
 srew [1]
 pConfig(secSig, ('In @ nil :: msg) ('LeakCtxt_net_adv @ n :: ctxt) 
         ('OkCtxt_adv_net @ n :: ctxt) ('Out @ n :: msg)
@@ -302,4 +302,4 @@ pConfig(secSig, ('In @ nil :: msg) ('LeakCtxt_net_adv @ n :: ctxt)
                              decN:Qid <- 'Dec,
                              i:Qid <- 'in]
 .                
-
+)
