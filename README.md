@@ -29,6 +29,8 @@ To run the examples, call
 `Maude> load lib/FILENAME`
 in the main folder of the repository, where FILENAME is the name of one of the files in the lib folder.
 
+Our [core logic paper](https://dl.acm.org/doi/10.1145/3571223) on IPDL has been accepted at a premier venue in programming languages research.
+
 **Acknowledgement**
 
 This project was funded through the [NGI Assure Fund](https://nlnet.nl/assure), a fund established by [NLnet](https://nlnet.nl/) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu/) programme, under the aegis of DG Communications Networks, Content and Technology under grant agreement No 957073.
