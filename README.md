@@ -29,7 +29,7 @@ To run the examples, call
 `Maude> load lib/FILENAME`
 in the main folder of the repository, where FILENAME is the name of one of the files in the lib folder.
 
-Our [core logic paper](https://dl.acm.org/doi/10.1145/3571223) on IPDL has been accepted at a premier venue in programming languages research.
+Our [core logic paper](https://dl.acm.org/doi/10.1145/3571223) on IPDL has been accepted at a premier venue in programming languages research, the Symposium on the Principles of Programming Languages (POPL 2023) in Boston, USA.
 
 **Acknowledgement**
 
