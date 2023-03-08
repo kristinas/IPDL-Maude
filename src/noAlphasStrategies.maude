@@ -1,0 +1,1359 @@
+***( IPDL
+
+  Copyright : (C) 2022, Kristina Sojakova
+  License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+)
+
+in ../src/noAlphasSyntax
+
+smod STRATS is
+ pr PROTOCOL-EQUALITY .
+ 
+ strat moveToLast : Qid @ ProtocolConfig .
+ 
+ op isLastNew___ : ProtocolConfig Qid Bool -> Bool .
+ 
+ var S Sigma : Signature .
+ var D Delta : ChannelContext .
+ var G : VarContext .
+ var P P1 P2 : Protocol .
+ var R R1 R2 R3 R4 : Reaction .
+ *** var Q Q' C Q1 Q2 x1 x2 y x : Qid .
+ var I O : Set{CNameBound} .
+ var T T' T1 : Type .
+ var flag : Bool .
+ var M M1 M2 : Message .
+ var Dis : Distribution .
+ var C C1 C2 : ChannelName .
+ var Q Q' x1 : Qid .
+ var A : Set{BoolTerm} .
+ 
+ eq isLastNew pConfig(S, D, emptyProtocol, I, O, A) Q flag = not flag .
+ eq isLastNew pConfig(S, D, P1 || P2, I, O, A) Q flag = not flag .
+ eq isLastNew pConfig(S, D, C ::= R, I, O, A) Q flag = not flag .
+ eq isLastNew pConfig(S, D, new Q : T in P, I, O, A) Q false = false .
+ eq isLastNew pConfig(S, D, new Q : T in P, I, O, A) Q true = 
+    isLastNew pConfig(S, D, P, I, O, A) Q false .
+ ceq isLastNew pConfig(S, D, new Q' : T in P, I, O, A) Q true = 
+     isLastNew pConfig(S, D, P, I, O, A) Q true if Q =/= Q' .
+ ceq isLastNew pConfig(S, D, new Q' : T in P, I, O, A) Q false = 
+     false if Q =/= Q' .    
+     
+ op foundQ__  : ProtocolConfig Qid -> Bool .
+ eq foundQ pConfig(S, D, emptyProtocol, I, O, A) Q = false .
+ eq foundQ pConfig(S, D, P1 || P2, I, O, A) Q = false .
+ eq foundQ pConfig(S, D, C ::= R, I, O, A) Q = false .
+ eq foundQ pConfig(S, D, new Q : T in P, I, O, A) Q = true .
+ ceq foundQ pConfig(S, D, new Q' : T in P, I, O, A) Q = false if Q' =/= Q .   
+ 
+ var pConf : ProtocolConfig .
+ 
+ sd moveToLast(Q) := match pConf s.t. (foundQ pConf Q) 
+                       ? (match pConf s.t. (isLastNew pConf Q true) 
+                         ? idle 
+                         : (NEW-EXCH ; CONG-NEW-NF{moveToLast(Q)})) 
+                       : CONG-NEW-NF{moveToLast(Q)} .
+                        
+ var N : Nat .
+ var nlist : List{NatTerm} .
+ var blist : List{Bounds} .
+ 
+ op startsWithNew_ : ProtocolConfig -> Bool .
+ eq startsWithNew pConfig(S, D, emptyProtocol, I, O, A) = false .
+ eq startsWithNew pConfig(S, D, P1 || P2, I, O, A) = false .
+ eq startsWithNew pConfig(S, D, C ::= R, I, O, A) = false .
+ eq startsWithNew pConfig(S, D, new Q : T in P, I, O, A) = true .
+ eq startsWithNew pConfig(S, D, newNF(ltq, P, ql), I, O, A) = true .
+ eq startsWithNew pConfig(S, D, family Q nlist blist ::= P, I, O, A) = false .
+
+ op startsWithNewC__ : ProtocolConfig ChannelName -> Bool .
+ eq startsWithNewC pConfig(S, D, emptyProtocol, I, O, A) C = false .
+ eq startsWithNewC pConfig(S, D, P1 || P2, I, O, A) C = false .
+ eq startsWithNewC pConfig(S, D, C ::= R, I, O, A) C = false .
+ eq startsWithNewC pConfig(S, D, new Q : T in P, I, O, A) C = (Q == C) .
+ eq startsWithNewC pConfig(S, D, newNF(ltq, P, Q :: ql), I, O, A) C = (Q == C) .
+ 
+ strat nTimesCong : ChannelName @ ProtocolConfig .
+ sd nTimesCong(C) := 
+      match pConf s.t. startsWithNewC pConf C
+      ? COMP-NEW-2 ; ABSORB-RIGHT 
+      : CONG-NEW-NF{nTimesCong(C)} .
+ 
+ strat nTimesBindRet2 : ChannelName @ ProtocolConfig .
+ sd nTimesBindRet2(C) := 
+  match pConf s.t. startsWithNew pConf
+  ? CONG-NEW-NF{nTimesBindRet2(C)}
+  : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{bind-ret-2[x:Qid <- 'x]}} .
+ 
+ strat nTimesSubst @ ProtocolConfig .
+ sd nTimesSubst := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{nTimesSubst}
+    : CONG-COMP-RIGHT{(SUBST [x2:Qid <- 'x2]{read-det})} . 
+    
+ strat nTimesBindRet @ ProtocolConfig .
+ sd nTimesBindRet := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{nTimesBindRet} 
+    : CONG-COMP-RIGHT{CONG-REACT{bind-ret}} .
+ 
+ var rConf : ReactionConfig .
+ 
+ op startsWithBind : Reaction -> Bool .
+ eq startsWithBind(return M) = false .
+ eq startsWithBind(samp Dis) = false .
+ eq startsWithBind(read M) = false .
+ eq startsWithBind(if M then R1 else R2) = false .
+ eq startsWithBind(Q : T <- R1 ; R2) = true .
+ 
+ op startsWithBindRead : Reaction -> Bool .
+ eq startsWithBindRead(Q : T <- read M ; R2) = true .
+ eq startsWithBindRead(R) = false [owise] .
+ 
+ op startsWithIfRead : ReactionConfig -> Bool .
+ eq startsWithIfRead(rConfig(S, D, G, if M then x1 : T1 <- R1 ; R2 else 
+                                                x1 : T1 <- R1 ; R3, I, A, T)) = true . 
+ eq startsWithIfRead(rConfig(S, D, G, R, I, A, T)) = false [owise] .
+ 
+ op rBindRead : ReactionConfig -> Bool .
+ eq rBindRead(rConfig(S, D, G, R, I, A, T)) = startsWithBindRead(R) .
+ 
+ op firstBind : ReactionConfig -> Qid .
+ eq firstBind(rConfig(S, D, G, Q : T <- R1 ; R2, I, A, T')) = Q .
+ 
+ op rBind : ReactionConfig -> Bool .
+ eq rBind(rConfig(S, D, G, R, I, A, T)) = startsWithBind(R) .
+ 
+ strat liftInnerBinds @ ReactionConfig .
+ sd liftInnerBinds := bind-bind ? cong-bind{idle, liftInnerBinds} : idle .
+ 
+ strat liftAllInnerBinds @ ReactionConfig .
+ sd liftAllInnerBinds := 
+      match rConf s.t. rBind(rConf) 
+       ? (liftInnerBinds ; cong-bind{idle, liftAllInnerBinds})
+       : idle .  
+ 
+ strat liftInnerBindsPr : ChannelName @ ProtocolConfig .
+ sd liftInnerBindsPr(C) := 
+  match pConf s.t. startsWithNew pConf 
+  ? CONG-NEW-NF{liftInnerBindsPr(C)}
+  : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{liftAllInnerBinds}} .
+
+
+ strat moveBindToLast @ ReactionConfig .
+ sd moveBindToLast := exchange ? cong-bind{idle, moveBindToLast} : idle . 
+ 
+ strat moveCertainBindToLast : Qid @ ReactionConfig .
+ sd moveCertainBindToLast(Q) :=
+    match rConf s.t. Q =/= firstBind(rConf)
+    ? cong-bind{idle, moveCertainBindToLast(Q)}
+    : moveBindToLast . 
+  
+ strat moveBindToFirst : Qid @ ReactionConfig .
+ sd moveBindToFirst(Q) := 
+   match rConf s.t. Q =/= firstBind(rConf)
+     ? moveBindToLast ; moveBindToFirst(Q)
+     : idle .
+     
+ strat moveBindProtocol : Qid ChannelName @ ProtocolConfig .
+ sd moveBindProtocol(Q, C) := CONG-REACT[o:ChannelName <- C]{moveBindToFirst(Q)} . 
+ 
+ 
+ strat moveCertainBindLastProtocol : Qid ChannelName @ ProtocolConfig .
+ sd moveCertainBindLastProtocol(Q, C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{moveCertainBindLastProtocol(Q, C)}
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{moveCertainBindToLast(Q)}} .   
+
+ strat moveFirst : Qid ChannelName @ ProtocolConfig .
+ sd moveFirst(Q, C) := 
+     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{moveBindToFirst(Q)}} .
+        
+ strat nTimesMoveFirst : Qid ChannelName @ ProtocolConfig .
+ sd nTimesMoveFirst(Q, C) := 
+   match pConf s.t. startsWithNew pConf
+   ? CONG-NEW-NF{nTimesMoveFirst(Q, C)}
+   : moveFirst(Q, C) .
+   
+ strat absorbChannel : ChannelName @ ProtocolConfig .
+ sd absorbChannel(C) := 
+    absorb-new-nf[c:ChannelName <- C] 
+ . 
+ 
+ strat absorbFamily : Qid @ ProtocolConfig .
+ sd absorbFamily(Q) := 
+    
+    absorb-new-nf-family-one[C:Qid <- Q] 
+    or-else
+    absorb-new-nf-family-two[C:Qid <- Q]
+    
+ .   
+   
+ strat foldNF : ChannelName ChannelName @ ProtocolConfig .
+ sd foldNF(C1, C2) := 
+                 (fold-bind-new-nf[c:ChannelName <- C1,
+                                   o:ChannelName <- C2] 
+                  or-else 
+                  fold-bind-new-prenf[c:ChannelName <- C1,
+                                      o:ChannelName <- C2] )
+                 *** TODO these last 2 steps should be reusable from subst!
+                 ; liftInnerBindsNF(C2) 
+                 ; handleRNF(C2) 
+                 ; try (pre2Nf)
+                 .
+                 
+ strat foldNFPre : ChannelName ChannelName @ ProtocolConfig .  
+ sd foldNFPre(C1, C2) := 
+                 fold-bind-new-prenf[c:ChannelName <- C1,
+                                     o:ChannelName <- C2] ;
+                 liftInnerBindsNF(C2) ;
+                 handleRpreNF(C2) 
+                 .  
+                 
+ var ql : CNameList .                
+                           
+ strat changeOrder : ChannelName CNameList @ ProtocolConfig .
+ sd changeOrder(C, ql) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{changeOrder(C, ql)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]{
+         CONG-REACT[o:ChannelName <- C]
+         {change-order[QL':CNameList <- ql]}
+       } .
+       
+ strat changeOrderPre : ChannelName CNameList @ ProtocolConfig .
+ sd changeOrderPre(C, ql) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{changeOrderPre(C, ql)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]{
+         CONG-REACT[o:ChannelName <- C]
+         {change-order-pre[QL':CNameList <- ql]}
+       } .      
+
+   
+ strat nTimesSubstNF : ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesSubstNF(C1, C2) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubstNF(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{
+          SUBST-nf[o1:ChannelName <- C1, 
+                   o2:ChannelName <- C2]
+                   } .
+                   
+ strat nTimesSubstNFFamilyOne : ChannelName ChannelName Reaction @ ProtocolConfig .
+ sd nTimesSubstNFFamilyOne(C1, C2, R) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubstNFFamilyOne(C1, C2, R)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{
+          subst-families-one[
+                   C:ChannelName <- C1, 
+                   cn2:ChannelName <- C2,
+                   R2:Reaction <- R
+                ]
+                   } .
+                                     
+***(                   
+ strat nTimesSubstNF-cname : ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesSubstNF-cname(C1, C2) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubstNF-cname(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{
+          SUBST-nf-cname[o1:ChannelName <- C1, 
+                         o2:ChannelName <- C2]
+                   } .                  
+)
+                                
+ strat nTimesSubstNFRead : ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesSubstNFRead(C1, C2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubstNFRead(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{
+         SUBST-nf-read[o1:ChannelName <- C1, 
+                       o2:ChannelName <- C2] } . 
+                       
+ strat applyUnusedNF : ChannelName ChannelName @ ProtocolConfig .
+ sd applyUnusedNF(C1, C2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyUnusedNF(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{
+         UNUSED-nf[o1:ChannelName <- C1, 
+                   o2:ChannelName <- C2] 
+         or-else
+         UNUSED-nf-copy[o1:ChannelName <- C1, 
+                   o2:ChannelName <- C2]           } . 
+                   
+ strat applyUnusedPreNF : ChannelName ChannelName @ ProtocolConfig .
+ sd applyUnusedPreNF(C1, C2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyUnusedPreNF(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{
+         UNUSED-pre-nf[o1:ChannelName <- C1, 
+                   o2:ChannelName <- C2] } .                                            
+                         
+                           
+ var X : ChannelName .   
+ 
+ strat liftInnerBindsNFFamily : Qid @ ProtocolConfig .
+ sd liftInnerBindsNFFamily(Q) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{liftInnerBindsNFFamily(Q)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using
+        CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+                        P1:Protocol <- keepOne P Q]{
+         CONG-FAMILY-R[C:Qid <- Q]
+         { (  bind-bind-pre 
+          ; (read-det-pre !)
+           )
+           or-else idle
+         }
+        } 
+       .                       
+                                
+ strat liftInnerBindsNF : ChannelName @ ProtocolConfig .
+ sd liftInnerBindsNF(X) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{liftInnerBindsNF(X)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using
+        CONG-COMP-RIGHT[Q:Protocol  <- removeOne P X, 
+                        P1:Protocol <- keepOne P X]{
+         CONG-REACT[cn:ChannelName <- X]
+         { (  bind-bind-pre 
+          ; (read-det-pre !)
+           )
+           or-else idle
+         }
+        } 
+       . *** as third step was ; merge-pre
+                   
+ strat removeDuplicateReadsNF : ChannelName @ ProtocolConfig .
+ sd removeDuplicateReadsNF(C1) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{removeDuplicateReadsNF(C1)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using
+        CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C1, 
+                        P1:Protocol <- keepOne P C1]{
+         CONG-REACT[o:ChannelName <- C1]{read-det-pre !}
+       } . 
+       
+ strat handleRNF : ChannelName @ ProtocolConfig .  
+ sd handleRNF(C1) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{handleRNF(C1)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C1, 
+                             P1:Protocol <- keepOne P C1]{
+         CONG-REACT[cn:ChannelName <- C1]
+                   {(ret-bind-pre or-else
+                    (samp-over-if or-else 
+                     (read2Binds or-else
+                      (bind-ret-2-pre
+                        or-else (merge-pre ; cong-pre-nf{bindFreeS})
+                      )
+                     )
+                    )
+                    ) 
+                    ; simplifyNF
+                   }
+       } .  
+       
+ strat handleRNFFamily : Qid @ ProtocolConfig .  
+ sd handleRNFFamily(Q) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{handleRNFFamily(Q)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+                             P1:Protocol <- keepOne P Q]{
+         CONG-FAMILY-R[C:Qid <- Q]
+                   {(ret-bind-pre or-else
+                    (samp-over-if or-else 
+                     (read2Binds or-else
+                      (bind-ret-2-pre
+                        or-else (merge-pre ; cong-pre-nf{bindFreeS})
+                      )
+                     )
+                    )
+                    ) 
+                    ; simplifyNF
+                   }
+       } .      
+       
+ strat handleRpreNF : ChannelName @ ProtocolConfig .  
+ sd handleRpreNF(C1) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{handleRpreNF(C1)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using
+        CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C1, 
+                        P1:Protocol <- keepOne P C1]{
+         CONG-REACT[o:ChannelName <- C1]
+                   {merge-pre}
+       } .        
+       
+ strat simplifyNF @ ReactionConfig .
+ sd simplifyNF :=  
+   cong-pre-nf{same-reaction-if} or-else idle 
+ .  
+ 
+ var BRL : BRList . 
+ var ltq : TypedCNameList .
+ var ql' : CNameList .
+ 
+ strat substAll : ChannelName @ ProtocolConfig .
+ sd substAll(C) := substNFOne(C) ! .
+ 
+ strat substAllAndAbsorb : ChannelName @ ProtocolConfig .
+ sd substAllAndAbsorb(C) := substAll(C) ; absorbChannel(C) .
+      
+ strat substNFOne : ChannelName @ ProtocolConfig .
+ sd substNFOne(C1) := 
+     matchrew pConf 
+         s.t. pConfig(Sigma, Delta,   
+                      newNF(ltq,
+                             P || (C1 ::= R1) || 
+                                  (C2 ::= nf( (x1 : T1 <- read C1) BRL , R2, ql
+                                            )
+                                  ),
+                       ql'), I, O, A) := pConf 
+         by pConf 
+       using substNF(C1, C2)
+ .         
+      
+ strat substNF : ChannelName ChannelName @ ProtocolConfig .
+ sd substNF(C1, C2) :=  
+     nTimesSubstNF(C1, C2) 
+   ; liftInnerBindsNF(C2)
+   ; handleRNF(C2)
+   ; (pre2Nf or-else idle) 
+   .   
+
+ 
+ var Q1 Q2 : Qid .
+   
+ strat substNFFamilyOne : ChannelName ChannelName Reaction @ ProtocolConfig .
+ sd substNFFamilyOne(C1, C2, R) :=
+     nTimesSubstNFFamilyOne(C1, C2, R)
+  ; liftInnerBindsNF(C2)
+  ; handleRNF(C2)
+  ; (pre2Nf or-else idle)  
+ .
+ 
+ strat nTimesSubstNFFamiliesOne :  Qid Qid Reaction @ ProtocolConfig .
+ sd nTimesSubstNFFamiliesOne(Q1, Q2, R) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubstNFFamilyOne(Q1, Q2, R)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q1 Q2, 
+                             P1:Protocol <- keepTwo P Q1 Q2]{
+          subst-families-one-family[
+                   C:Qid <- Q1, 
+                   C1:Qid <- Q2,
+                   R2:Reaction <- R
+                ]
+                   } .
+                   
+ strat nTimesSubstChannelFamilyOne :  ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesSubstChannelFamilyOne(C1, C2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubstChannelFamilyOne(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{                  
+                   subst-channel-one-family}
+ .                  
+ 
+ strat substNFFamiliesOne : ChannelName ChannelName Reaction @ ProtocolConfig .
+ sd substNFFamiliesOne(C1, C2, R) :=
+     nTimesSubstNFFamiliesOne(C1, C2, R)
+  ; liftInnerBindsNFFamily(C2)
+  ; handleRNFFamily(C2)
+  ; (pre2Nf or-else idle)  
+ .
+ 
+ 
+ strat substChannelFamilyOne : ChannelName ChannelName @ ProtocolConfig .
+ sd substChannelFamilyOne(C1, C2) :=
+    nTimesSubstChannelFamilyOne(C1, C2)
+  ; liftInnerBindsNFFamily(C2)
+  ; handleRNFFamily(C2)
+  ; (pre2Nf or-else idle)  
+ .  
+ 
+ var cnl : CNameList .
+ 
+ strat moveReadsToR : ChannelName CNameList @ ProtocolConfig .
+ sd moveReadsToR(C, emptyCNameList) := idle .
+ sd moveReadsToR(C, x :: cnl) := 
+   match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{moveReadsToR(C, x :: cnl)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]{
+                              moveReadInnerNf[x:ChannelName <- x]
+                              or-else
+                              moveReadInnerPreNf[x:ChannelName <- x] 
+                             }
+             ; moveReadsToR(C, cnl)                
+ .
+ 
+ strat moveReadsToRFamily : ChannelName CNameList @ ProtocolConfig .
+ sd moveReadsToRFamily(C, emptyCNameList) := idle .
+ sd moveReadsToRFamily(C, x :: cnl) := 
+   match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{moveReadsToRFamily(C, x :: cnl)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]{
+                              moveReadInnerNfFamily[x:ChannelName <- x]
+                              or-else
+                              moveReadInnerPreNfFamily[x:ChannelName <- x] 
+                             }
+             ; moveReadsToRFamily(C, cnl)                
+ .
+ 
+ 
+ strat applySubstNfRev : ChannelName ChannelName Qid @ ProtocolConfig .
+ sd applySubstNfRev(C1, C2, x) := 
+  match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubstNfRev(C1, C2, x)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{                  
+                   SUBST-nf-rev[x:ChannelName <- x]}
+ .
+ 
+ strat applySubstNfRevFamily : ChannelName ChannelName Qid @ ProtocolConfig .
+ sd applySubstNfRevFamily(C1, C2, x) := 
+  match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubstNfRevFamily(C1, C2, x)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{                  
+                   SUBST-nf-rev[x:ChannelName <- x]}
+ .
+ 
+ 
+ strat applySubstNfRevFamiliesOne : ChannelName ChannelName NatTerm Qid Type Reaction @ ProtocolConfig .
+ sd applySubstNfRevFamiliesOne(C1, C2, nt, x, T, R) := 
+  match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubstNfRevFamiliesOne(C1, C2, nt, x, T, R)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{                  
+                    SUBST-nf-rev-families-one[
+                      x1:ChannelName <- x, 
+                      nj:NatTerm <- nt,
+                      R2:Reaction <- R,
+                      T1:Type <- T]
+                     }
+ .
+
+  
+ strat smart-subst-nf : ChannelName ChannelName @ ProtocolConfig . 
+ sd smart-subst-nf(C1, C2) :=                        
+   nTimesSubstNFRead(C1, C2)
+   ? idle
+   : substNF(C1, C2) 
+   . 
+                            
+ strat bindFreeS @ ReactionConfig .
+ sd bindFreeS := 
+     ((smart-ret-bind ; (if-left ? idle : (if-right ? idle : idle)) ) or-else
+       (if-over-bind  
+        ; cong-branch-refl{bindFreeS, bindFreeS}
+       )
+       ) or-else idle .
+       
+  strat smart-ret-bind @ ReactionConfig .
+  sd smart-ret-bind :=
+     if-over-bind-same-2 
+     ? (cong-branch-refl
+        {cong-branch-refl{ret-bind , ret-bind},
+         cong-branch-refl{ret-bind , ret-bind}} 
+        ? idle
+        : fail)  
+     : (if-over-bind-same 
+       ? (cong-branch-refl{ret-bind, ret-bind} ? idle : idle) 
+       : ret-bind) 
+       .         
+
+ strat nTimesSubstSampFree : ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesSubstSampFree(C1, C2) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubstSampFree(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]
+                             {SUBST[x2:Qid <- 'x2, 
+                             o1:ChannelName <- C1, 
+                             o2:ChannelName <- C2]{samp-free}} .
+     
+ strat nTimesSubst2SampFree : ChannelName ChannelName @ ProtocolConfig .
+ sd nTimesSubst2SampFree(C1, C2) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubst2SampFree(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]
+                             {SUBST-2[x2:Qid <- 'x2, 
+                               o1:ChannelName <- C1, 
+                               o2:ChannelName <- C2]{samp-free}} .   
+                               
+              
+ *** this handles a particular proof that isn't part of a strategy  
+ *** this should be moved in the EXECUTE module of the particular example! 
+ 
+ var vx vy : Qid .
+                            
+ strat localProof : ChannelName @ ProtocolConfig .
+ sd localProof(C) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{localProof(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]{ 
+         CONG-REACT[o:ChannelName <- C]
+          {cong-pre-nf{
+            cong-branch-refl{exchange ; 
+                              alpha[vx:Qid <- 'k1 , vy:Qid <- 't] ;
+                              exchange ; 
+                              alpha[vx:Qid <- 'k0 , vy:Qid <- 'k1] ;
+                              exchange ; 
+                              alpha[vx:Qid <- 't , vy:Qid <- 'k0] , 
+                             idle} ;
+            same-reaction-if                 
+           }
+          }
+         } .
+         
+ var c' : Qid .        
+         
+ *** turn a nf to prenf 
+ strat nf2PreNF : ChannelName ChannelName @ ProtocolConfig .
+ sd nf2PreNF(C, c') := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nf2PreNF(C, c')} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using
+        CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                        P1:Protocol <- keepOne P C]
+        {CONG-REACT[o:ChannelName <- C]{nf2Pre[c:ChannelName <- c']}} 
+ .      
+         
+ strat moveBindInPre : ChannelName Qid @ ProtocolConfig .
+ sd moveBindInPre(C, Q) :=      
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{moveBindInPre(C, Q)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{bind2R-pre[x:Qid <- Q] }}
+    .
+    
+ strat applyReadInsideIfPre : ChannelName @ ProtocolConfig .
+ sd applyReadInsideIfPre(C) :=      
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyReadInsideIfPre(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+       {CONG-REACT[o:ChannelName <- C]
+        {cong-pre-nf{read-inside-if
+                    } 
+        }
+       }
+    .    
+     
+ strat ifOverBindAfterBinds @ ReactionConfig .
+ sd ifOverBindAfterBinds :=  
+     match rConf s.t. rBindRead(rConf) 
+      ? cong-bind{idle, ifOverBindAfterBinds}
+      : if-over-bind .  
+ 
+ strat nTimesIfOverBind : ChannelName @ ProtocolConfig .
+ sd nTimesIfOverBind(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesIfOverBind(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{ifOverBindAfterBinds}} .
+     
+ strat ifOverBindInBranch @ ReactionConfig .  
+ sd ifOverBindInBranch :=  
+     match rConf s.t. rBindRead(rConf) 
+      ? cong-bind{idle, ifOverBindInBranch}
+      : cong-branch-refl{if-over-bind, if-over-bind} . 
+      
+ strat ifOverBindInBranch2 @ ReactionConfig .  
+ sd ifOverBindInBranch2 :=  
+     match rConf s.t. rBindRead(rConf) 
+      ? cong-bind{idle, ifOverBindInBranch2}
+      : cong-branch-refl{ifOverBindInBranch, ifOverBindInBranch} . 
+     
+      
+ strat ifLeftOverBind @ ReactionConfig .
+ sd ifLeftOverBind := 
+    match rConf s.t. rBind(rConf) 
+    ? cong-bind{idle, ifLeftOverBind}
+    : if-left .
+    
+ strat ifRightOverBind @ ReactionConfig .
+ sd ifRightOverBind := 
+    match rConf s.t. rBind(rConf) 
+    ? cong-bind{idle, ifRightOverBind}
+    : if-right .   
+     
+ strat nTimesIfOverBindBranch : ChannelName @ ProtocolConfig .
+ sd nTimesIfOverBindBranch(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesIfOverBindBranch(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{ifOverBindInBranch}} .    
+     
+ strat nTimesIfOverBindBranch2 : ChannelName @ ProtocolConfig .
+ sd nTimesIfOverBindBranch2(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesIfOverBindBranch2(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{ifOverBindInBranch2}} .    
+     
+ strat bindRetInBranchTwiceIOB @ ReactionConfig .
+ sd bindRetInBranchTwiceIOB := 
+    match rConf s.t. rBindRead(rConf)
+    ? cong-bind{idle, bindRetInBranchTwiceIOB}
+    : cong-branch-refl
+        {cong-branch-refl{ret-bind ; ifRightOverBind, ret-bind ; ifLeftOverBind},
+         cong-branch-refl{ret-bind ; ifLeftOverBind, ret-bind ; ifRightOverBind}} .
+ 
+ strat bindRetInBranchTwice @ ReactionConfig .
+ sd bindRetInBranchTwice := 
+    match rConf s.t. rBindRead(rConf)
+    ? cong-bind{idle, bindRetInBranchTwice}
+    : cong-branch-refl
+        {cong-branch-refl{ret-bind , ret-bind},
+         cong-branch-refl{ret-bind , ret-bind}} .
+         
+ strat moveInsideIf : Qid ChannelName @ ProtocolConfig .
+ sd moveInsideIf(Q, C) :=  *** first what var and then the channel
+    moveCertainBindLastProtocol(Q, C) ;
+    applyReadOverIf(Q, C) .
+        
+ strat applyReadOverInnerIf : Qid ChannelName @ ProtocolConfig .
+ sd applyReadOverInnerIf(Q, C) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyReadOverInnerIf(Q, C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]
+              {moveLastBindInsideInnerIf(Q)}
+             } .
+ 
+ strat applyReadOverIf : Qid ChannelName @ ProtocolConfig .
+ sd applyReadOverIf(Q, C) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyReadOverIf(Q, C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{moveLastBindInsideIf(Q)}} .
+
+ 
+ strat moveLastBindInsideIf : Qid @ ReactionConfig .
+ sd moveLastBindInsideIf(Q) :=
+    match rConf s.t. Q =/= firstBind(rConf)
+    ? cong-bind{idle, moveLastBindInsideIf(Q)}
+    : read-inside-if . 
+    
+ strat moveLastBindInsideInnerIf : Qid @ ReactionConfig .
+ sd moveLastBindInsideInnerIf(Q) :=
+    match rConf s.t. rBind(rConf)
+    ? cong-bind{idle, moveLastBindInsideInnerIf(Q)}
+    : cong-branch-refl{read-inside-if, read-inside-if} .   
+           
+         
+ strat bindRetInBranch @ ReactionConfig .
+ sd bindRetInBranch :=  
+     match rConf s.t. rBindRead(rConf) *** TODO: allow any bind?
+    ? cong-bind{idle, bindRetInBranch}
+    : cong-branch-refl{ret-bind , ret-bind} . 
+    
+ strat nTimesBindRetBranch : ChannelName @ ProtocolConfig .
+ sd nTimesBindRetBranch(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesBindRetBranch(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{bindRetInBranch}} . 
+         
+ 
+ strat nTimesBindRetBranchTwiceIOB : ChannelName @ ProtocolConfig .
+ sd nTimesBindRetBranchTwiceIOB(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesBindRetBranchTwiceIOB(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{bindRetInBranchTwiceIOB}} . 
+   
+ strat nTimesBindRetBranchTwice : ChannelName @ ProtocolConfig .
+ sd nTimesBindRetBranchTwice(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesBindRetBranchTwice(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{bindRetInBranchTwice}} . 
+  
+     
+ strat moveAllBindsToFrontIf @ ReactionConfig .
+ sd moveAllBindsToFrontIf :=
+     match rConf s.t. rBind(rConf)
+     ? cong-bind{idle, moveAllBindsToFrontIf}
+     : match rConf s.t. startsWithIfRead(rConf) 
+       ? if-over-read ; moveAllBindsToFrontIf
+       : idle .
+        
+ strat moveAllBindsTwoIfs @ ReactionConfig .
+ sd moveAllBindsTwoIfs := 
+    match rConf s.t. rBind(rConf)
+     ? cong-bind{idle, moveAllBindsTwoIfs}
+     : cong-branch-refl{ moveAllBindsToFrontIf, moveAllBindsToFrontIf} .
+    
+ strat moveBinds : ChannelName @ ProtocolConfig .
+ sd moveBinds(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{moveBinds(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{moveAllBindsTwoIfs}} . 
+
+ strat moveBindsOne : ChannelName @ ProtocolConfig .
+ sd moveBindsOne(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{moveBindsOne(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{moveAllBindsToFrontIf}} .
+   
+    
+ op canApplyIfBindSame : Reaction -> Bool .
+ eq canApplyIfBindSame(x1 : T1 <- if M then R1 else R2 ; if M then R3 else R4) = true .
+ eq canApplyIfBindSame(R) = false [owise] .  
+ 
+
+ op canApplyIfBindSameC : ReactionConfig -> Bool .
+ eq canApplyIfBindSameC(rConfig(S, D, G, R, I, A, T)) = canApplyIfBindSame(R) .
+ 
+ strat ifBindSame @ ReactionConfig .
+ sd ifBindSame :=
+  match rConf s.t. canApplyIfBindSameC(rConf) 
+  ? if-over-bind-same
+  : match rConf s.t. rBind(rConf)
+     ? cong-bind{idle, ifBindSame}
+     : idle .
+     
+ strat ifBindSame2 @ ReactionConfig .
+ sd ifBindSame2 :=
+  match rConf s.t. canApplyIfBindSameC(rConf) 
+  ? if-over-bind-same-2
+  : match rConf s.t. rBind(rConf)
+     ? cong-bind{idle, ifBindSame2}
+     : idle .    
+     
+ strat ifBindSamePr : ChannelName @ ProtocolConfig .
+ sd ifBindSamePr(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{ifBindSamePr(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{ifBindSame}} .
+    
+ strat ifBindSame2Pr : ChannelName @ ProtocolConfig .
+ sd ifBindSame2Pr(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{ifBindSame2Pr(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{ifBindSame2}} .
+     
+ strat recursiveReadDet @ ReactionConfig .
+ sd recursiveReadDet := 
+   match rConf s.t. rBindRead(rConf)
+     ? (read-det
+          ? recursiveReadDet
+          : (exchange ? cong-bind{idle, recursiveReadDet} : idle)) 
+     : idle . 
+  
+ strat recReadDet : ChannelName Nat @ ProtocolConfig .
+ sd recReadDet(C, 0) := idle .
+ sd recReadDet(C, s(N)) :=
+     (match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{recReadDet(C, s(N))} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{recursiveReadDet}}) ; recReadDet(C, N) .
+    
+ strat readOutsideIf2 : ChannelName @ ProtocolConfig .
+ sd readOutsideIf2(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{readOutsideIf2(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]
+                       {moveAllBindsTwoIfs ; moveAllBindsToFrontIf}} .
+ 
+ strat sameReactionIfAfterBinds @ ReactionConfig .
+ sd sameReactionIfAfterBinds := 
+   match rConf s.t. rBindRead(rConf)
+     ? cong-bind{idle, sameReactionIfAfterBinds} 
+     : same-reaction-if .
+ 
+ strat sameReactionIf : ChannelName @ ProtocolConfig .
+ sd sameReactionIf(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{sameReactionIf(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{sameReactionIfAfterBinds}} .
+     
+ strat removeUnused : ChannelName ChannelName @ ProtocolConfig .
+ sd removeUnused(C1, C2) := 
+ match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{removeUnused(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]
+             {UNUSED[o1:ChannelName <- C1, o2:ChannelName <- C2]{samp-pure}} .
+            
+ strat addNewChannel : Protocol @ ProtocolConfig .
+ sd addNewChannel(P) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{addNewChannel(P)}
+     : ABSORB-LEFT-2[P2:Protocol <- P] ; COMP-NEW .  
+     
+ var Msg1 Msg2 : Message .    
+      
+ var q1 q2 : Qid .  
+ sort QidPair .
+ op <<_,_>> : Qid Qid -> QidPair [ctor] .
+ op getFst : QidPair -> Qid .
+ op getSnd : QidPair -> Qid .
+ eq getFst(<< q1, q2 >>) = q1 .
+ eq getSnd(<< q1, q2 >>) = q2 .
+ 
+ sort QidPairList .
+ subsort QidPair < QidPairList .
+ op emptyQidPairList : -> QidPairList [ctor] .
+ op __ : QidPair QidPairList -> QidPairList [ctor] . 
+ 
+ var QL : QidPairList .
+ var QP : QidPair .
+ 
+ strat alphaNFOverList : QidPairList @ ReactionConfig .
+ sd alphaNFOverList(emptyQidPairList) := idle .
+ sd alphaNFOverList(QP QL) := 
+     alpha-nf [vx:Qid <- getFst(QP), vy:Qid <- getSnd(QP)] 
+   ; alphaNFOverList(QL) 
+ . 
+    
+ strat applyBranch2Alpha : Qid QidPairList Reaction @ ProtocolConfig .
+ sd applyBranch2Alpha(q1, QL, R) := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyBranch2Alpha(q1, QL, R)}
+    : 
+       CASE-DISTINCTION-one-R[aQid:Qid <- q1]
+         {  idle,
+            CASE-DISTINCTION-one-R-end
+                    [C:Qid <- q1
+                    *** , R2:Reaction <- R
+                    ]
+                  {
+                     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+            using
+                    CONG-COMP-RIGHT[Q:Protocol  <- removeOne P q1, 
+                                    P1:Protocol <- keepOne P q1]{
+                       CONG-FAMILY-R { alphaNFOverList(QL)}
+                     }       
+                  }
+         } 
+         . 
+       
+      
+ strat applyAlphaNFPr : ChannelName QidPairList @ ProtocolConfig .
+ sd applyAlphaNFPr(C, QL) :=                                 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyAlphaNFPr(C, QL) } 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{alphaNFOverList(QL)}} .
+ 
+ strat alphaOverList : QidPairList @ ReactionConfig .
+ sd alphaOverList(emptyQidPairList) := idle .
+ sd alphaOverList(QP QL) := alpha [x:Qid <- getFst(QP), y:Qid <- getSnd(QP)] ; 
+                            cong-bind{idle, alphaOverList(QL)} .     
+     
+ strat applyAlphaPr : ChannelName QidPairList @ ProtocolConfig .
+ sd applyAlphaPr(C, QL) :=                                 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyAlphaPr(C, QL) } 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{alphaOverList(QL)}} .
+     
+ var x : Qid .    
+     
+ strat retBind2OverIf : Type Message Message Reaction Qid @ ReactionConfig .
+ sd retBind2OverIf(T, M1, M2 , R, x) := 
+    match rConf s.t. rBind(rConf) 
+    ? cong-bind{idle, retBind2OverIf(T, M1, M2, R, x) }
+    : cong-branch-refl{
+           ret-bind-2[M1:Message <- M1 , T1:Type <- T, R2:Reaction <- R , x:Qid <- x],
+           ret-bind-2[M1:Message <- M2 , T1:Type <- T, R2:Reaction <- R , x:Qid <- x]} .
+     
+ strat applyRetBind2OverIf : ChannelName Type Message Message Reaction Qid @ ProtocolConfig .
+ sd applyRetBind2OverIf(C, T, M1, M2, R, x) :=                                 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyRetBind2OverIf(C, T, M1, M2, R, x) } 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{retBind2OverIf(T, M1, M2, R, x)}} .
+     
+ strat symOverIf : Reaction Message Message @ ReactionConfig .
+ sd symOverIf(R, Msg1, Msg2) :=
+    sym[R1:Reaction <- R]
+      {liftAllInnerBinds ; 
+       ifOverBindAfterBinds ;
+       bindRetInBranch ; idle
+       *** applyCongRetBranch(Msg1, Msg2)
+       } .   
+       
+ strat applySymOverIf : ChannelName Reaction Message Message @ ProtocolConfig .      
+ sd applySymOverIf(C, R, Msg1, Msg2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySymOverIf(C, R, Msg1, Msg2) } 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             {CONG-REACT[o:ChannelName <- C]{symOverIf(R, Msg1, Msg2)}} .
+             
+ *** strategies for families   
+ 
+ var cases : Cases .
+ var aP : Protocol .
+ 
+ strat absorbReverseFamily : ChannelName Protocol @ ProtocolConfig .
+ sd absorbReverseFamily(C, aP) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{absorbReverseFamily(C, aP)}
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+             { 
+              CONG-FAMILY-P{ 
+                             ABSORB-LEFT-2[P2:Protocol <- aP]  
+                           ; (try (comp-new-families))   
+                           ; (try (COMP-NEW-newNF-newfamily)) 
+                           }
+             }
+ .  
+ 
+ strat absorbReverseNewNF : Protocol @ ProtocolConfig .
+ sd absorbReverseNewNF(aP) :=
+    ABSORB-LEFT-2[P2:Protocol <- aP] ;
+    try (comp-new-families)
+ . 
+  
+ var pr : Protocol . 
+ var q3 : Qid .
+              
+ strat applySubstRevFamily : Qid ChannelName Type Qid @ ProtocolConfig .
+ sd applySubstRevFamily(Q, C2, T, q3) := 
+ match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubstRevFamily(Q, C2, T, q3)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
+                             P1:Protocol <- keepTwo P Q C2]
+             {subst-rev-families[C:Qid <- Q, 
+                    cn2:ChannelName <- C2,
+                    T:Type <- T,
+                    q':Qid <- q3]} . 
+                    
+ strat nTimesSubstNFReadFamilyOne : Qid ChannelName @ ProtocolConfig .
+ sd nTimesSubstNFReadFamilyOne(Q, C2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubstNFReadFamilyOne(Q, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
+                             P1:Protocol <- keepTwo P Q C2]{
+         SUBST-nf-read-family-one
+                      [ q1:ChannelName <-  Q, 
+                       cn2:ChannelName <- C2] } . 
+                       
+ strat nTimesSubstNFReadFamilyTwo : Qid ChannelName @ ProtocolConfig .
+ sd nTimesSubstNFReadFamilyTwo(Q, C2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubstNFReadFamilyTwo(Q, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
+                             P1:Protocol <- keepTwo P Q C2]{
+         SUBST-nf-read-family-two
+                      [ q1:ChannelName <-  Q, 
+                       cn2:ChannelName <- C2] } .   
+
+ var nt : NatTerm . 
+                       
+ strat nTimesSubstFamiliesOne : Qid ChannelName NatTerm Type Qid @ ProtocolConfig .
+ sd nTimesSubstFamiliesOne(Q, C2, nt, T, q3) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubstFamiliesOne(Q, C2, nt, T, q3)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
+                             P1:Protocol <- keepTwo P Q C2]{
+         subst-2-families-one
+                      [ C:Qid <-  Q, 
+                        cn2:ChannelName <- C2,
+                        nj:NatTerm <- nt,
+                        T:Type <- T,
+                        q':Qid <- q3
+                      ]   } .   
+                      
+ strat nTimesExtendBoundTwo : Qid ChannelName @ ProtocolConfig .
+ sd nTimesExtendBoundTwo(Q, C2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesExtendBoundTwo(Q, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
+                             P1:Protocol <- keepTwo P Q C2]
+              {extend-bound-two} .     
+              
+ strat redOwiseTwo : Qid @ ProtocolConfig .
+ sd redOwiseTwo(Q) :=
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{redOwiseTwo(Q)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+                             P1:Protocol <- keepOne P Q]
+             {reduce-otherwise-two}                 
+ .  
+ 
+ strat addOwiseTwo : Qid @ ProtocolConfig .
+ sd addOwiseTwo(Q) :=
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{addOwiseTwo(Q)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+                             P1:Protocol <- keepOne P Q]
+             {add-otherwise-two}                 
+ . 
+ 
+ var q4 : Qid .
+ 
+ strat applyCaseDistSubst : Qid Qid Qid Qid Protocol @ ProtocolConfig .
+ sd applyCaseDistSubst(q1, q2, q3, q4, pr) := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyCaseDistSubst(q1, q2, q3, q4, pr)}
+    : *** matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+      ***  using 
+       *** CASE-DISTINCTION-one{CONG-COMP-RIGHT{rewrite-protocol[P2:Protocol <- emptyProtocol]}, idle} 
+       
+       CASE-DISTINCTION-one[aQid:Qid <- q1]
+         { use-family-p[C:Qid <- q2]
+             { comp-new-families
+             ; applySubstReadFamilyTwoFamily(q3, q4)
+             ; (SYM[P1:Protocol <- pr]{comp-new-families})
+             }
+         , idle
+         } . 
+                                             
+ strat applySubstReadFamilyTwoFamily : Qid Qid @ ProtocolConfig .
+ sd applySubstReadFamilyTwoFamily(q3, q4) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubstReadFamilyTwoFamily(q3, q4)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P q3 q4, 
+                             P1:Protocol <- keepTwo P q3 q4]
+             {SUBST-nf-read-family-two-family}                
+ .     
+ 
+ strat applyCaseDistAbsorb : Qid Qid Qid Protocol @ ProtocolConfig .
+ sd applyCaseDistAbsorb(q1, q2, q3, pr) := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyCaseDistAbsorb(q1, q2, q3, pr)}
+    : *** matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+      ***  using 
+       *** CASE-DISTINCTION-one{CONG-COMP-RIGHT{rewrite-protocol[P2:Protocol <- emptyProtocol]}, idle} 
+       
+       CASE-DISTINCTION-one[aQid:Qid <- q1]
+         { use-family-p[C:Qid <- q2]
+             { comp-new-families
+             ; absorbFamily(q3)
+             ; (SYM[P1:Protocol <- pr]{comp-new-families})
+             }
+         , idle
+         } . 
+         
+ var ql2 : CNameList .    
+       
+ 
+ strat applyDeleteEmptyNF : Qid @ ProtocolConfig .
+ sd applyDeleteEmptyNF(Q) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyDeleteEmptyNF(Q)} 
+     :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+                             P1:Protocol <- keepOne P Q]
+                             {CONG-FAMILY-WHENLIST-P{ delete-empty-newNF }  }
+ .
+ 
+ strat applyReorderNF : Qid CNameList @ ProtocolConfig .
+ sd applyReorderNF(Q, ql2) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyReorderNF(Q, ql2)} 
+     : CASE-DISTINCTION-one-R[aQid:Qid <- Q]
+       { matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+          using  CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+                                 P1:Protocol <- keepOne P Q]
+                  {CONG-FAMILY-R[C:Qid <- Q]{change-order[QL':CNameList <- ql2]}},
+         idle 
+       }  
+ .
+ 
+ strat applyDropName : Qid @ ProtocolConfig .
+ sd applyDropName(Q) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyDropName(Q)} 
+     :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+                             P1:Protocol <- keepOne P Q]
+                             {drop-group-name}
+ .
+ 
+ strat applyCombine : Qid @ ProtocolConfig .
+ sd applyCombine(Q) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyCombine(Q)} 
+     :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+                             P1:Protocol <- keepOne P Q]
+                             {convert-combined}
+ .
+ 
+ strat moveProtocolUnderNewNF @ ProtocolConfig .
+ sd moveProtocolUnderNewNF := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{moveProtocolUnderNewNF} 
+     :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using COMP-NEW-newNF
+ .
+ 
+ 
+ 
+ strat applySubstCaseDist : Qid Qid Reaction @ ProtocolConfig .
+ sd applySubstCaseDist(q1, q2, R) := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applySubstCaseDist(q1, q2, R)}
+    :    
+       CASE-DISTINCTION-one-R[aQid:Qid <- q1]
+         { substNFFamiliesOne(q2, q1, R)
+         , idle
+         } .
+        
+ 
+ strat applyCaseDistBranch2 : Qid Qid @ ProtocolConfig .
+ sd applyCaseDistBranch2(q1, q2) := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyCaseDistBranch2(q1, q2)}
+    :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using  
+       CASE-DISTINCTION-one-R[aQid:Qid <- q1, P:Protocol <- removeOne P q1]
+         { idle
+         , CASE-DISTINCTION-one-R[aQid:Qid <- q1]
+           { substChannelFamilyOne(q2, q1)
+           , idle}
+         } .
+         
+ strat applySubstChannelBranch : Qid Qid @ ProtocolConfig .
+ sd applySubstChannelBranch(q1, q2) := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applySubstChannelBranch(q1, q2)}
+    :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using  
+       CASE-DISTINCTION-one-R[aQid:Qid <- q1, P:Protocol <- removeOne P q1]
+         {  substChannelFamilyOne(q2, q1)
+           , idle
+         } .       
+          
+ strat applyBranch2MoveReads : Qid @ ProtocolConfig .
+ sd applyBranch2MoveReads(q1) := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyBranch2MoveReads(q1)}
+    :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using  
+       CASE-DISTINCTION-one-R[aQid:Qid <- q1, P:Protocol <- removeOne P q1]
+         {   moveReadsToRFamily(q1, 'f :: 'x :: emptyCNameList)
+           , idle
+         } .      
+
+ strat applyBranch2SubstRev : Qid Qid NatTerm Qid Type Reaction @ ProtocolConfig .
+ sd applyBranch2SubstRev(q1, q2, nt, x, T, R) := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyBranch2SubstRev(q1, q2, nt, x, T, R)}
+    :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using  
+       CASE-DISTINCTION-one-R[aQid:Qid <- q1, P:Protocol <- removeOne P q1]
+         {   applySubstNfRevFamiliesOne(q1, q2, nt, x, T, R)
+           , idle
+         } . 
+                                                                        
+endsm
+

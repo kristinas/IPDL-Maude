@@ -12,12 +12,22 @@ add it to the file path and start it in the repository folder.
 
 Alternatively, run `nix-shell -p maude`.
 
-To load the tests, call
- `Maude> load lib/testing.maude`
- 
-To load one of the examples, call
- `Maude> load lib/FILENAME.maude`
-where FILENAME is one of multipartyCoinToss, secure, preProcessing.
+The [src](https://github.com/kristinas/IPDL-Maude/tree/main/src "src") folder contains the implementation of the equality and typing judgements for reactions and protocols, in the file [syntax.maude](https://github.com/kristinas/IPDL-Maude/blob/main/src/syntax.maude "syntax.maude"). Actual proofs are written using the strategies introduced in [strategies.maude](https://github.com/kristinas/IPDL-Maude/blob/main/src/strategies.maude "strategies.maude").
+
+The [doc](https://github.com/kristinas/IPDL-Maude/tree/main/doc) folder contains a [technical report](https://github.com/kristinas/IPDL-Maude/blob/main/doc/tech_report.pdf) describing the theory behind the tool and a detailed presentation of the [case studies](https://github.com/kristinas/IPDL-Maude/blob/main/doc/case_studies.pdf):
+- Authenticated-To-Secure Channel: CPA Security (Sec. 1) for approximate equality of protocols;
+- Oblivious Transfer: 1-Out-Of-2 Pre-Processing (Sec. 2) for exact equality of protocols;
+- Multi-Party Coin Toss (Sec. 3) for induction;
+- Two-Party GMW Protocol (Sec. 4) for induction.
+
+In the [lib](https://github.com/kristinas/IPDL-Maude/tree/main/lib "lib") folder  we have the formalizations of the case studies:
+- `secure.maude` for CPA Security;
+- `preProcessing.maude` for 1-Out-Of-2 Pre-Processing;
+- `multipartyCoinToss.maude` for Multi-Party Coin Toss.
+
+To run the examples, call
+`Maude> load lib/FILENAME`
+in the main folder of the repository, where FILENAME is the name of one of the files in the lib folder.
 
 **Acknowledgement**
 

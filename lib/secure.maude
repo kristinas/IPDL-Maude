@@ -1,9 +1,12 @@
 ***( IPDL
 
-  Copyright : (C) 2022, Kristina Sojakova
+  Copyright : (C) 2022-23, Kristina Sojakova
   License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
   Authors   : Mihai Codescu <mscodescu@gmail.com>
               Kristina Sojakova <sojakova.kristina@gmail.com>
+
+Authenticated-To-Secure Channel: CPA Security.
+See Sec. 1 in doc/case-studies.pdf
 
 )
 
@@ -279,7 +282,7 @@ smod EXECUTE is
   
   var aConf : ApproxEqConfig .
 
- strat applyCPA : ChannelName ChannelName @ ProtocolConfig .  
+ strat applyCPA : ChannelName ChannelName @ ApproxEqConfig .  
  sd applyCPA(key, enc) := 
     match aConf s.t. aConfStartsWithNew aConf
     ? CONG-NEW-NF-APPROX{applyCPA(key, enc)} 

@@ -1,0 +1,181 @@
+***( IPDL
+
+  Copyright : (C) 2022-23, Kristina Sojakova
+  License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+Two-Party GMW Protocol
+See Sec. 4 in doc/case-studies.pdf
+
+)
+
+load ../src/strategies
+
+mod GMW2 is
+ protecting APPROX-EQUALITY .
+
+ op sumF : -> SigElem .
+ eq sumF = 'xor : (bool * bool) ~> bool .
+ 
+ op mulF : -> SigElem .
+ eq mulF = 'and : (bool * bool) ~> bool .
+ 
+ op negF : -> SigElem .
+ eq negF = 'neg : bool ~> bool .
+ 
+ op secSig : -> Signature .
+ eq secSig = sumF mulF negF .
+ 
+ var i l k n : Nat .
+ 
+ sort Gate .
+ 
+ op input-gate : Nat -> Gate [ctor] .
+ op not-gate : Nat -> Gate [ctor] .
+ op xor-gate : Nat Nat -> Gate [ctor] .
+ op and-gate : Nat Nat -> Gate [ctor] .
+ 
+ sort Circuit .
+ subsort Gate < Circuit .
+ op emptyCircuit : -> Circuit [ctor] .
+ op __ : Circuit Circuit -> Circuit [ctor assoc id: emptyCircuit] .
+
+ op wellFormed : Circuit Nat -> Bool .
+ 
+ var circuit : Circuit .
+ 
+ eq wellFormed(emptyCircuit, 0) = true .
+ ceq wellFormed(circuit input-gate(i), s(n)) = true 
+  if wellFormed(circuit, n) .
+ ceq wellFormed(circuit not-gate(k), s(n)) = true
+  if wellFormed(circuit, n) /\ k < n . 
+ ceq wellFormed(circuit and-gate(k, l), s(n)) = true
+  if wellFormed(circuit, n) /\ k < n /\ l < n .
+ ceq wellFormed(circuit xor-gate(k, l), s(n)) = true
+  if wellFormed(circuit, n) /\ k < n /\ l < n .  
+  
+ ops N M K : -> Nat .
+ eq K = M + N .
+ 
+ *** op isOutputWire : Nat -> Bool .
+ op isAliceInput : Nat -> Bool .
+ op isBobInput : Nat -> Bool .
+ 
+ op wires : Circuit Nat -> Protocol .
+ eq wires(emptyCircuit, 0) = emptyProtocol .
+ eq wires(circuit input-gate(i), s(n)) = 
+  if isAliceInput(i) 
+   then wires(circuit, n) || ('Wire[n] ::= read ('In_A[i])) 
+   else wires(circuit, n) || ('Wire[n] ::= read ('In_B[i]))
+  fi  
+ .
+ eq wires(circuit not-gate(k), s(n)) =
+    wires(circuit, n) || 
+    ('Wire[n] ::= 'x : bool <- read ('Wire[k]); return (ap 'neg 'x))
+ .
+ eq wires(circuit and-gate(k, l), s(n)) =
+    wires(circuit, n) || 
+    ('Wire[n] ::= 'x : bool <- read ('Wire[k]);
+                  'y : bool <- read ('Wire[l]);
+                  return (ap 'and pair('x, 'y))
+    )  
+ . 
+ eq wires(circuit xor-gate(k, l), s(n)) =
+    wires(circuit, n) || 
+    ('Wire[n] ::= 'x : bool <- read ('Wire[k]);
+                  'y : bool <- read ('Wire[l]);
+                  return (ap 'xor pair('x, 'y))
+    )  
+ .
+ 
+ op C : -> Circuit . *** the circuit acting as parameter   
+ 
+ op ideal : -> Protocol .
+ eq ideal = 
+   newfamily 'Wire 'i (bound N) : bool in
+   ( *** start new
+   (family 'In_A_id_adv 'i (bound N) ::= read ('In_A['i])) 
+   ||
+   (family 'InRcvd_B_id_adv 'i (bound M) ::= 
+      'x : bool <- read ('In_B['i]) ;
+      return ())
+   || wires(C, K)
+   || 
+   (family 'Out_A 'i (bound K) ::=
+      (when (apply 'isOutputWire 'i) --> read ('Wire['i]))
+      ;;
+      (otherwise --> read ('Out_A['i]))  
+    ) 
+    || 
+   (family 'Out_B 'i (bound K) ::=
+      (when (apply 'isOutputWire 'i) --> read ('Wire['i]))
+      ;;
+      (otherwise --> read ('Out_B['i]))  
+    )
+    ||
+    (family 'Out_A_id_adv 'i (bound K) ::= read ('Out_A['i]))     
+   ) *** end new
+ .   
+
+endm 
+
+smod EXECUTE is
+ pr GMW2 .
+ pr STRATS .
+ 
+ var x y x1 x2 x3 : Qid .
+ var Sigma : Signature .
+ var Delta : ChannelContext .
+ var Gamma : VarContext .
+ var I O : Set{CNameBound} .
+ var A : Set{BoolTerm} .
+ var cn : ChannelName .
+ var pConf : ProtocolConfig .
+ var P : Protocol .
+
+ *******************************
+ *** assumptions
+ *******************************
+
+ *** x1 + x2 * x3 = x1 * x3 + x2 * x3
+ 
+  eq ap 'and pair(ap 'xor pair(x1, x2), x3) =
+     ap 'xor pair(ap 'and pair(x1, x3), ap 'and pair(x2, x3)) .
+     
+ *** x + x = False
+ 
+ eq ap 'xor pair(x, x) = False .  
+ 
+ *** x + False = x
+ 
+  eq ap 'xor pair(x, False) = x . 
+  
+ *** x + True = not x
+ 
+ eq ap 'xor pair(x, True) = ap 'neg x . 
+ 
+ *** x * False = False
+ eq ap 'and pair(x, False) = False .    
+ 
+  *** x * True = False
+ eq ap 'and pair(x, True) = x .
+ 
+ rl [flip-invar-xor-r] : rConfig(Sigma, Delta, Gamma (x : bool),
+            y : bool <- samp flip ; 
+            return (ap 'xor pair(x, y)), I, A, bool
+            )
+            => 
+            rConfig(Sigma, Delta , Gamma (x : bool),
+            samp flip, I, A, bool) .  
+            
+ rl [flip-invar-xor-l] : rConfig(Sigma, Delta, Gamma (y : bool),
+            x : bool <- samp flip ; 
+            return (ap 'xor pair(x, y)), I, A, bool
+            )
+            => 
+            rConfig(Sigma, Delta , Gamma (y : bool),
+            samp flip, I, A, bool) .  
+   
+     
+endsm

@@ -1,9 +1,12 @@
 ***( IPDL
 
-  Copyright : (C) 2022, Kristina Sojakova
+  Copyright : (C) 2022-23, Kristina Sojakova
   License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
   Authors   : Mihai Codescu <mscodescu@gmail.com>
               Kristina Sojakova <sojakova.kristina@gmail.com>
+
+Oblivious Transfer: 1-Out-Of-2 Pre-Processing
+Sec. 2 in doc/case-studies.pdf
 
 )
 
@@ -624,6 +627,30 @@ smod EXECUTE is
         }
        }
     .            
+ 
+ var vx vy : Qid .
+ var C : ChannelName .
+                            
+ strat localProof : ChannelName @ ProtocolConfig .
+ sd localProof(C) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{localProof(C)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]{ 
+         CONG-REACT[o:ChannelName <- C]
+          {cong-pre-nf{
+            cong-branch-refl{exchange ; 
+                              alpha[vx:Qid <- 'k1 , vy:Qid <- 't] ;
+                              exchange ; 
+                              alpha[vx:Qid <- 'k0 , vy:Qid <- 'k1] ;
+                              exchange ; 
+                              alpha[vx:Qid <- 't , vy:Qid <- 'k0] , 
+                             idle} ;
+            same-reaction-if                 
+           }
+          }
+         } .
          
 endsm
 
@@ -710,7 +737,7 @@ srew [1] pConfig(muMsgSym xorF,
                   { 
                     nf2PreNF('PvtMsg, 'k1)
                   ; foldNFPre('Key1, 'PvtMsg)
-                  ; changeOrderPre('PvtMsg, 'm1 :: 'm0 :: 'c :: emptyCNameList)
+                  ; changeOrder('PvtMsg, 'm1 :: 'm0 :: 'c :: emptyCNameList)
                   } 
                   
                ; substNF('PvtMsg, 'MsgEnc0) 
