@@ -1,0 +1,155 @@
+***( IPDL
+
+  Copyright : (C) 2022-23, Kristina Sojakova
+  License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+Hello world-like example
+
+)
+
+load ../src/strategies
+
+mod HELLO-WORLD is
+ protecting APPROX-EQUALITY .
+ 
+ op xorF : -> SigElem .
+ eq xorF = 'xor : (bool * bool) ~> bool .
+ 
+ op sig : -> Signature .
+ eq sig = xorF .
+ 
+ op idealPlusSim : -> Protocol .
+ eq idealPlusSim = 
+    new 'Flip : bool in
+    new 'LeakCtxt_id_adv : bool in
+    (
+    ('LeakCtxt_id_adv ::= 
+       nf(('f : bool <- read 'Flip),
+          return 'f,
+          'f :: emptyCNameList )
+    )  
+    ||
+    ('LeakCtxt_Alice_adv ::= 
+       nf('c : bool <- read 'LeakCtxt_id_adv,
+          return 'c, 
+          'c :: emptyCNameList)
+    )
+    ||
+    ('Flip ::= 
+       nf( 'm : bool <- read 'In,
+           samp flip,
+           'm :: emptyCNameList
+               )
+    )
+    )
+ .
+ 
+  op real : -> Protocol .
+  eq real = 
+    new 'Flip : bool in
+    (
+    ('Flip ::= 
+       nf( 'm : bool <- read 'In,
+           samp flip,
+           'm :: emptyCNameList
+               )
+     )
+     ||
+    ('LeakCtxt_Alice_adv ::= 
+       nf(('m : bool <- read 'In) 
+          'f : bool <- read 'Flip,
+          return (ap 'xor pair('m, 'f)),
+          'm :: 'f :: emptyCNameList )  
+          )
+     )     
+  .
+  
+endm 
+ 
+smod EXECUTE is
+  protecting STRATS .
+  protecting HELLO-WORLD .
+ 
+ var x y : Qid . 
+ var Sigma : Signature .
+ var Delta : ChannelContext .
+ var Gamma : VarContext .
+ var I O : Set{CNameBound} .
+ var A : Set{BoolTerm} .
+ var cn f : ChannelName .
+ var pConf : ProtocolConfig .
+ var P : Protocol .
+  
+  rl [assumption] :
+    rConfig(Sigma, Delta (f @ nil :: bool), Gamma (x : bool),
+            y : bool <- samp flip ; 
+            return (ap 'xor pair(x, y)), I, A, bool
+            )
+     => 
+     rConfig(Sigma, Delta (f @ nil :: bool), Gamma (x : bool),
+             samp flip, I, A, bool)
+  .  
+  
+  strat applyAssumption : ChannelName @ ProtocolConfig .
+  sd applyAssumption(cn) := 
+   match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyAssumption(cn)}
+    : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-REACT[o:ChannelName <- cn]
+                { cong-pre-nf{assumption} ; 
+                  try (pre2Nf)}   
+  .
+   
+ endsm
+ ***(
+ srew [1] 
+ pConfig(sig, 
+         ('In @ nil :: bool) 
+         ('LeakCtxt_Alice_adv @ nil :: bool), 
+         idealPlusSim, 
+         'In @ nil, 
+         getOutputs(idealPlusSim), 
+         empty)
+using 
+     sugar-newNF 
+   ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv)   
+   ; foldNF('Flip, 'LeakCtxt_Alice_adv) 
+.
+ 
+srew [1] 
+ pConfig(sig, 
+         ('In @ nil :: bool) 
+         ('LeakCtxt_Alice_adv @ nil :: bool), 
+         real, 
+         'In @ nil, 
+         getOutputs(real), 
+         empty)
+using 
+   sugar-newNF
+ ; foldNF('Flip, 'LeakCtxt_Alice_adv)   
+ ; applyAssumption('LeakCtxt_Alice_adv)
+.  
+
+)
+
+srew [1] 
+ pConfig(sig, 
+         ('In @ nil :: bool) 
+         ('LeakCtxt_Alice_adv @ nil :: bool), 
+         real, 
+         'In @ nil, 
+         getOutputs(real), 
+         empty)
+using 
+   sugar-newNF
+ ; foldNF('Flip, 'LeakCtxt_Alice_adv)   
+ ; applyAssumption('LeakCtxt_Alice_adv)
+ ; SYM[P1:Protocol <- idealPlusSim]{
+     sugar-newNF 
+   ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv)   
+   ; foldNF('Flip, 'LeakCtxt_Alice_adv)
+   }
+.  
+
