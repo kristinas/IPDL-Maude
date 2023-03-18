@@ -1,40 +1,978 @@
+\subsection{Maude}
+
+Maude \cite{DBLP:conf/maude/2007} is a high-level declarative
+language and 
+a high-performance logical framework supporting both equational and rewriting logic computation for a wide range of applications. 
+Maude features several kinds of modules:
+\begin{itemize}
+\item \emph{functional modules}, which are theories (with an initial
+model semantics) in 
+membership equational logic that allow definitions of 
+data types and operations on them, via multiple sorts, subsort
+relations between them, equations between terms and
+assertions of membership of a term to a sort,
+\item \emph{system modules}, which are theories in rewriting logic
+that extend functional modules with
+definitions of rewrite rules, representing transitions between states,
+\item \emph{strategy modules}, which control 
+the way the rewriting rules are applied, by means of strategy combinators,
+such as concatenation, iterations and others.
+\end{itemize}
+
+We now present the features of the Maude language that we make use of
+in formalizing IPDL.
+Maude functional modules are introduced with the syntax
+\code{fmod NAME is ... endfm}. In a functional module we can declare
+sorts, using the keyword \code{sort}, state that two sorts are
+in the subsort relation, written \code{subsort s1 < s2}, declare
+operations on the sorts, using \code{op f : s1  ...  sk -> s} for 
+an operation \code{f} with argument sorts \code{s1 ... sk} and 
+result sort \code{s}. Moreover, operations
+may have attributes, written in square brackets after their declarations,
+like \code{comm} for commutativity or \code{assoc} for associativity.
+In Maude terms are rewritten to a normal form modulo the declared 
+attributes and the equations of defined operations. 
+We can control which operations will appear in these ground
+forms by adding the attribute \code{ctor} to them. An operation that
+is not a constructor of a sort is regarded as defined. 
+Equations are introduced by the syntax 
+\code{eq t1 = t2}, where \code{t1} and \code{t2} are terms
+of sorts related via subsorting. 
+We can assert sort memberships using the syntax 
+\code{t : s}
+where \code{t} is a term and \code{s} is a sort.
+Conditional equations are written
+\code{ceq t = t' if C1 $\land$ ... $\land$ Cn} 
+where \code{Ci} is either an equation or a membership.
+We may declare variables using the keyword \code{var}.
+Functional modules are assumed to satisfy the executability requirements of confluence,
+termination, and sort-decreasingness, see details
+in \cite{DBLP:conf/maude/2007}.
+The semantics of functional models is given in terms of the initial
+model whose elements are ground equivalence classes of terms modulo
+equations.
+
+Rewriting logic extends equational logic by introducing the notion of rewrites corresponding to transitions between states.
+Unlike equations, rewrites are not symmetric. Maude system modules
+are introduced with the syntax \code{mod NAME is ... endm}. Rules
+are declared with the syntax 
+\code{rl [label] : t1 => t2}. 
+Conditional rules are written with the keyword
+\code{crl [label] : t => t' if C1 $\land$ ... $\land$ Cn} 
+and their conditions
+\code{Ci} may be equations, memberships or rewrites. 
+Rewrites are not expected to be terminating, confluent or deterministic.
+Rewrites denote transitions between the elements of the initial model
+of the functional part of a system module.
+
+Maude strategy modules are introduced with the syntax
+\code{smod NAME is ... endsm}. In addition to declarations allowed in
+system modules, we can have strategy declarations and definitions.
+The main strategy combinators are \code{;} for concatenation of strategy 
+expressions, \code{|} for alternative, \code{*} for iteration of an
+expression zero or more times, \code{idle} for the strategy giving as result its argument, \code{fail} for the strategy that gives no result,
+\code{s1 ? s2 : s3} for the strategy that attempts to run the
+strategy \code{s1} then, if the run is successful, it runs \code{s2},
+otherwise it runs \code{s3}.
+Several other derived constructions are also
+supported, e.g. \code{try s} for \code{s ? idle : idle} and \code{s1 or-else s2} for \code{s1 ? idle : s2}. The match and rewrite operator 
+\code{matchrew} restricts the application of a strategy to a specific
+subterm of the subject term, see details in \cite{DBLP:conf/maude/2007}.
+Strategies are declared as \code{strat NAME : s1 ... sk @ s .},
+where \code{s1 ... sk} are the sorts of the arguments of the strategy
+and \code{s} is the subject sort to which the strategy is applied.
+The syntax for definitions is \code{sd NAME(v1,..., vk) := Exp .} where
+\code{vi} are variables of sort \code{si} and \code{Exp} is a strategy expression.
+
+
+Maude supports module imports, using the keyword \code{protecting},
+which means that no new elements of an imported sorts may be 
+added and 
+no identification between elements of an imported sorts via
+equations are allowed. 
+Two more importation modes are supported, but we do not make use 
+of them.
+
+Maude provides several predefined data types. We will use booleans, natural
+numbers, lists, sets and maps.
+  
+\subsection{Syntax}
+
+We start with a sort \code{Type} for data types, together with 
+constants \code{unit} and \code{bool} of sort \code{Type} and a
+binary product on the sort \code{Type}. Expressions are built over
+signatures, which are implemented as commutative lists of symbols,
+where a function or distribution symbol pairs the symbol name with 
+its arity. Signatures are valid if they don't contain multiple
+occurences of same symbol name. Expressions are then implemented
+as a sort \code{Expression} that includes as a subsort the identifiers,
+which are provided by the default Maude sort \code{Qid},
+such that we can use them for variable names. There are constructors
+for \code{True}, \code{False} and \code{()}. Application is 
+represented as \code{ap f e} where \code{ap} is a constructor, \code{f}
+is an identifier standing for the name of the function symbol and
+\code{e} is an expression. Moreover we have constructors for
+pairs and projections on first and second component of a pair. 
+Type contexts are implemented again as commutative lists of typed
+variables, written \code{x : T}, where \code{x} is an identifier and
+\code{T} is a type. Expression typing is 
+implemented as a predicate 
+\code{typeOf : Signature TypeContext Expression -> Bool}, while
+we let Maude handle expression equality by only adding the expression
+equality rules \textsc{fast-pair}, \textsc{snd-pair} and 
+\textsc{pair-ext} as axioms, e.g.
+\code{eq fst pair(E1, E2) = E1 .} where \code{E1 E2 : Expression}.
+
+Channel sets are simply sets of identifiers, standing for channel
+names. Channel contexts are commutative lists of typed channel
+names, written \code{c :: T}.
+
+Reactions are introduced by the following constructors of the sort
+\code{Reaction}, following the grammar for reactions. If \code{e} is an expression, \code{return e} is a reaction. If \code{d} is an identifier, standing for the name of a
+distribution symbol, and \code{e} is an expression, \code{samp d < e >} 
+is a reaction. If \code{c} is a channel name, \code{read c} is a reaction.
+Moreover, we write \code{if e then R1 else R2} for branching, if \code{e} is an expression and \code{R1, R2} are reactions, and \code{x : T <- R1 ; R2} for binding, when \code{x} is an identifier, \code{T} is a type and 
+\code{R1, R2} are reactions.
+Typing of reactions $\Delta; \ \Gamma \vdash R : I \to \tau$ is given by a function
+\code{typeOf : Signature ChannelContext TypeContext          
+Set\{ChannelName\} Reaction -> Type }, 
+with the meaning that
+we compute the type of a reaction in the context given by a signature, a channel context, a type context and a set of inputs, 
+i.e. $\code{Delta}; \ \code{Gamma} \vdash \code{R} : \code{I} \to \code{T}$ 
+if and only if 
+\code{typeOf(Sigma, Delta, Gamma, I, R) = T}, where \code{Sigma} is 
+current signature. 
+Maude allows us to write the typing
+judgements in a very similar way to their original formulation, e.g. the typing rule for binding is written as
+\begin{lstlisting}
+
+ ceq typeOf(Sigma, Delta, Gamma, I, x : T1 <- R1 ; R2) = 
+     typeOf(Sigma, Delta, Gamma (x : T1), I, R2)
+     if typeOf(Sigma, Delta, Gamma, I, R1) == T1 .
+
+\end{lstlisting}
+
+Protocols also follow the grammar for protocols, using the following
+constructors for the sort \code{Protocol}. For the empty protocol we write
+\code{emptyProtocol}. If \code{c} is a channel name and \code{R} is a 
+reaction, \code{c ::= R} is a protocol. If \code{P1, P2} are protocols,
+so is \code{P1 || P2}. Finally. \code{new c : T in P} is a protocol,
+if \code{c} is a channel name, \code{T} is a type and \code{P} is a protocol. Typing of protocols $\Delta \vdash P : I \to O$ is implemented as a predicate
+\code{typeOf : Signature ChannelContext Set{ChannelName} Protocol -> Bool}, with the meaning that the protocol typechecks 
+in the context given by a signature, a channel context and a set of inputs.
+Note that since the set of outputs can be computed from a protocol, we
+do not add it as a parameter of the type checking predicate, so we will have that
+$\code{Delta} \vdash \code{P} : \code{I} \to \code{getOutputs(P)}$ 
+if and only if
+\code{typeOf(Sigma, Delta, I, P)},
+where \code{Sigma} is the current signature and
+\code{getOutputs} computes the outputs of \code{P}.
+For example, the typing rule for \code{new} checks that 
+all the inputs from \code{I} occur in the channel context
+\code{Delta}, that \code{c} is new and that \code{P} typechecks
+when extending \code{Delta} with the typed channel \code{ c :: T}:
+\begin{lstlisting}
+ eq typeOf(Sigma, Delta, I, new c : T in P) =
+         validChanSet I Delta
+     and not occurs c Delta
+     and typeOf(Sigma, Delta (c :: T), I, P) .   
+\end{lstlisting}
+
+
+\subsection{Exact equality}
+
+
+
+At the reaction level, exact equality is given with axioms of the form
+$\Delta; \ \Gamma \vdash R_1 = R_2 : I \to \tau$. 
+Let us consider the following example
+
+$\code{(A :: bool) (B :: bool)}; \code{empty} \vdash \code{x : bool <- return True  ; if x then read A else read B} = \code{read A} : \code{\{A, B\}} \to \code{bool}$. 
+The proof of this is obtained by applying the \textsc{trans} axiom to
+
+$\code{(A :: bool) (B :: bool)}; \code{empty} \vdash \code{x : bool <- return True  ; if x then read A else read B} = \code{if True then read A else read B} : \code{\{A, B\}} \to \code{bool}$
+
+\noindent that we prove by \textsc{ret-bind} and
+
+$\code{(A :: bool) (B :: bool)}; \code{empty} \vdash \code{if True then read A else read B} = \code{read A} : \code{\{A, B\}} \to \code{bool}$
+
+\noindent that we prove by \textsc{if-left}. 
+
+From a practical point of view, it is inconvenient to write this proof in this way, because we have to make explicit all intermediate steps, 
+and this is tedious and error-prone. Instead, we will work with a
+transition system. Its states are \emph{configurations} containing the context, i.e. the current signature \code{Sigma, Delta, Gamma, I, T},
+and the current reaction: \code{rConfig(Sigma, Delta, Gamma, R, I, T)}.
+The transitions in the system are determined by rewrite rules, 
+which are obtained by orienting the axioms of the exact equality calculus
+from left to right. Since we can apply the \textsc{sym} axiom,
+the choice of direction is not important.
+For example,
+the \textsc{if-left} axiom becomes
+\begin{lstlisting}
+crl [if-left] : 
+     rConfig(Sigma, Delta, Gamma, if True then R1 else R2, I, A, T) 
+     =>  
+     rConfig(Sigma, Delta, Gamma, R1, I, A, T)
+ if
+     typeOf(Sigma, Delta, Gamma, I, A, R1) == T
+     /\
+     typeOf(Sigma, Delta, Gamma, I, A, R2) == T 
+ .
+\end{lstlisting}
+
+We also employ the Maude strategy language to conveniently write 
+application of the \textsc{trans} axiom as rule composition, denoted \code{;}. The proof in the example above becomes
+\begin{lstlisting}
+srew 
+ rConfig(emptySig, (A :: bool) (B :: bool), emptyTypeCtx, 
+         x : bool <- return True  ; if x then read A else read B, 
+         (A, B), bool)
+using ret-bind ; if-left .
+\end{lstlisting}
+\noindent and Maude returns the following result
+\begin{lstlisting}
+Solution 1
+rewrites: 28 in 0ms cpu (0ms real) (~ rewrites/second)
+result ReactionConfig: 
+ rConfig(emptySig, (A :: bool) (B :: bool), emptyTypeCtx, 
+         read A, (A , B), bool)
+\end{lstlisting}
+
+If the condition of a rule is a rewrite, we will need to explicitly
+provide a sub-proof for that step as well.
+For example, the rule \textsc{cong-bind} is
+\begin{lstlisting}
+ crl [cong-bind] :
+     rConfig(Sigma, Delta, Gamma, x : T1 <- R1 ; R2, I , A, T2) 
+     => 
+     rConfig(Sigma, Delta, Gamma, x : T1 <- R3 ; R4, I, A, T2) 
+     if
+     rConfig(Sigma, Delta, Gamma, R1, I, A, T1)  
+     => 
+     rConfig(Sigma, Delta, Gamma, R3, I, A, T1) 
+     /\
+     rConfig(Sigma, Delta, Gamma (x : T1), R2, I, A, T2)
+     => 
+     rConfig(Sigma, Delta, Gamma (x : T1), R4, I, A, T2) .
+\end{lstlisting}
+\noindent and we can apply it to rewrite the reaction
+\code{x : bool <- if True then read A else read B ; return x}
+to
+\code{x : bool <- read A ; return x}
+by writing
+\code{cong-bind\{if-left, idle\}}.
+
+The \textsc{if-ext} axiom has the particularity that 
+it establishes an equality between reactions 
+where a variable has been substituted with a term.
+Maude cannot apply this rule, because it cannot do the matching.
+For this reason, we have omitted this rule and replaced it with
+several rules that we can prove using \textsc{if-ext}. We have also
+introduced an alpha-renaming rule for convenience, as we can also derive it
+from the exact equality axioms.
+
+The same principle is applied for exact equality of protocols.
+This time we rewrite protocol configurations, of the form
+\code{pConfig(Sigma, Delta, P, I, O)}.
+The rules of exact equality for protocols may make use of
+exact equality of reactions. For example, the \textsc{cong-react} rule
+is
+\begin{lstlisting}
+ crl [CONG-REACT] : 
+     pConfig(Sigma, Delta (c :: T), c ::= R, I, c) 
+     =>
+     pConfig(Sigma, Delta (c :: T), c ::= R', I, c)
+     if
+     rConfig(Sigma, Delta (c :: T), emptyTypeCtx, R, 
+             insert(c, I), T)
+     =>
+     rConfig(Sigma, Delta (c :: T), emptyTypeCtx, R', I', T) 
+     /\ I' == insert(c, I)
+     /\ not c in I .
+\end{lstlisting}
+
 \subsection{Normal Forms}
+
 We work with protocols that start with a list of declarations of 
-internal channels, using $\mathsf{new}$, followed by a parallel compositions of channel assignments. The reactions in these
+internal channels, using $\code{new}$, followed by a parallel compositions of channel assignments. The reactions in these
 assignments can be transformed into a list of binds of the form
-$x : \tau \leftarrow read(c)$, called
-bind-read reactions, followed by a reaction without binds.
+\code{x : T <- read c},
+called bind-read reactions, followed by a reaction without binds.
 The list of binds can be regarded as commutative, 
 as two reactions with the same list of binds in different order
 are equivalent due to the reaction equivalence rule \textsc{exch}.
 Similarly, different order of declarations of internal channels gives
 equivalent protocols, by using the protocol equivalence rule
 \textsc{new-exch}. When writing equivalence proofs, we do not want to 
-make the use of these rules explicit. Therefore, we introduce
-normal forms of reactions and protocols. The normal form of
-a reaction 
-$\nf(L, R, O)$
-consists of a commutative list $L$ of bind-read reactions,
-a bind-free reaction $R$ 
-and a chosen order $O$ of the names of the variables occuring in
-the binds in $L$.
+make the use of these rules explicit. Instead, we want to be able to apply
+the rules as though we could freely consider a certain declaration of an 
+internal channel or a certain bind read reaction as the first.
+
+Therefore, we introduce normal forms of reactions and protocols. 
+For reactions, normal forms 
+\code{nf(L, R, O)}
+consist of a commutative list \code{L} of bind-read reactions,
+a bind-free reaction \code{R}
+and a chosen order \code{O} of the names of the variables occuring in
+the binds in \code{L}, given as a list of names.
 The latter will be used to determine how to turn the normal form 
-of a reaction into a regular reaction. 
-During equivalence proofs, we may obtain either arbitrary binds in
-$L$ or reactions $R$ that are not bind-free.
+of a reaction into a regular reaction.
+For example, the normal form of
+\begin{lstlisting}
+ 'd : bool <- read 'ce ;
+ 'm0 : bool <- read 'in0 ; 
+ 'm1 : bool <- read 'in1 ;
+ 'k0 : bool <- read 'key0 ;
+ 'k1 : bool <- read 'key1 ;
+  if 'd then return 'k0 else return 'k1
+\end{lstlisting}
+is
+\begin{lstlisting}
+ nf(
+  ('d : bool <- read 'ce)
+  ('m0 : bool <- read 'in0) 
+  ('m1 : bool <- read 'in1)
+  ('k0 : bool <- read 'key0)
+  ('k1 : bool <- read 'key1),
+  if 'd then return 'k0 else return 'k1,
+  'd :: 'm0 :: 'm1 :: 'k0 :: 'k1
+ )
+\end{lstlisting}
+ 
+During equivalence proofs, we may obtain 
+in a normal form \code{nf(L, R, O)}
+either arbitrary binds in \code{L} 
+(e.g. by substituting a read from a channel with the reaction
+assigned to that channel)
+or reactions \code{R} that are not bind-free.
 This will be represented as a pre-normal-form, 
-written $\preNf(L, R, O)$, which is a normal
-form without restrictions on the occuring reactions. The general
-strategy will be to transform pre-normal-forms to normal 
-forms by rule applications.
-The normal form of a 
-protocol 
-$\newNf(L, P, O)$
-consists of a commutative list $L$ of declarations of internal
-channels, a protocol $P$ that does not start with internal channel declarations
-and again a designated order $O$ 
-for the names of internal channels occuring in the declarations in $L$.
-Since in both cases the lists are commutative, we can write
-equivalence rules for normal forms where we assume that an
-internal channel declaration or a bind-read reaction are first in the 
-lists.
+written 
+\code{preNF(L, R, O)}, 
+which is a normal form without restrictions on the occuring reactions.
+If \code{L} contains a bind that is not a read bind, we will write it
+as \code{x1 : T1 <$\sim$ R1}. 
+The general strategy will be to transform pre-normal-forms 
+\code{preNF(L, R, O)}
+to normal forms using the following steps:
+\begin{itemize}
+\item if \code{x1 : T1 <$\sim$ R1} is in \code{L} and \code{R1} is of the form
+\code{nf(L2, R2, O2)}, move the inner binds from \code{L1} at the level of \code{L}, and simplify the reaction of \code{x1} to \code{R2}.
+\item if  \code{x1 : T1 <$\sim$ R1} is in \code{L} and \code{R1} is bind-free,
+rewrite the entire reaction as 
+\code{preNF(L', x1 : T1 <- R1 ; R, O')}, where \code{L'} and \code{O'}
+are obtained by removing \code{x1 : T1 <$\sim$ R1} and \code{x1} from \code{L} and \code{O}, respectively.
+\item apply reaction-level axioms to \code{R} to bring it in the form
+\code{L' ; R'}, where \code{L'} is a list of bind reads and \code{R'} is
+bind-free, then move \code{L'} at the outer level of \code{L}.
+\end{itemize}    
+
+At the level of protocols, normal forms  
+\code{newNf(L, P, O)}
+consist of a commutative list \code{L} of declarations of internal
+channels, a protocol \code{P} that does not start with internal channel declarations
+and again a designated order \code{O} 
+for the names of internal channels occuring in the declarations in 
+\code{L}.
+For example, the normal form of
+\begin{lstlisting}
+new 'ce : bool in 
+new 'key0 : bool in 
+new 'key1 : bool in 
+new 'flip : bool in 
+new 'choice : bool in
+ (
+ ('ce ::= 'f : bool <- read 'flip ;
+          'c : bool <- read 'choice ;
+          if 'f then 
+           (if 'c then return False else return True)
+          else 
+           (if 'c then return True else return False)
+ )
+ || ('msgenc0 ::= 'd : bool <- read 'ce ;
+                  'm0 : bool <- read 'in0 ; 
+                  'm1 : bool <- read 'in1 ;
+                  'k0 : bool <- read 'key0 ;
+                  'k1 : bool <- read 'key1 ;
+                  if 'd then return 'k0 else return 'k1)
+  || ('key0 ::= return True) 
+  || ('key1 ::= return False)
+  || ('flip ::= return True) 
+  || ('choice ::= return False) 
+)
+\end{lstlisting}
+\noindent is
+\begin{lstlisting}
+newNF(
+ ('ce : bool) ('key0 : bool) ('key1 : bool)
+ ('flip : bool) ('choice : bool),
+ 
+ ('ce ::= 'f : bool <- read 'flip ;
+          'c : bool <- read 'choice ;
+          if 'f then 
+           (if 'c then return False else return True)
+          else 
+           (if 'c then return True else return False)
+ )
+ || ('msgenc0 ::= 'd : bool <- read 'ce ;
+                  'm0 : bool <- read 'in0 ; 
+                  'm1 : bool <- read 'in1 ;
+                  'k0 : bool <- read 'key0 ;
+                  'k1 : bool <- read 'key1 ;
+                  if 'd then return 'k0 else return 'k1)
+  || ('key0 ::= return True) 
+  || ('key1 ::= return False)
+  || ('flip ::= return True) 
+  || ('choice ::= return False),
+  
+  'ce :: 'key0 :: 'key1 :: 'flip :: 'choice
+)
+\end{lstlisting}
+
+\subsection{Families of protocols}
+
+Families of protocols provide a convenient abbreviation for 
+semantically related protocols \code{P[0]...P[n]}, where 
+the value of \code{n} is typically not known. The semantical relation
+translates in the protocols being assigned similar reactions.
+We illustrate the syntax with the help of an example:
+\begin{lstlisting}
+(family 'SumCommit 'i (bound (n + 2)) ::= 
+        (when ('i =T= 0) --> nf(emptyBRList, return False, emptyCNameList)) ;; 
+        (when ('i =T= (n + 2)) --> 
+               nf( ('x : bool <- read ('SumCommit [ n + 1 ])) 
+                   ('f : bool <- read 'LastCommit) ,
+                   return (ap 'xor pair('x, 'f)) ,
+                   'x :: 'f :: emptyCNameList )
+        )          ;;
+        (otherwise --> nf(('x : bool <- read ('SumCommit ['i -- 1])) 
+                          ('c : bool <- read ('Commit ['i -- 1])),
+                          return (ap 'xor pair('x, 'c)),
+                          'x :: 'c :: emptyCNameList )
+        )                  
+    )
+\end{lstlisting}    
+Here \code{'i} is an index 
+variable ranging between \code{0} and \code{n + 2}.
+The reaction assigned to the protocol \code{'SumCommit['i]} is given
+with alternatives. 
+We allow the bound to be a natural number, an identifier denoting a 
+natural number or an expression involving natural numbers and
+identifiers. 
+We represent this as a sort \code{NatTerm} that is a super-sort of
+\code{Qid} and \code{Nat} together with 
+addition, deletion (written \code{--}) and multiplication on that sort,
+extending in the expected way the corresponding operations on natural
+numbers. The conditions occuring in the alternatives are of sort
+\code{BoolTerm}, and can be comparisons between \code{NatTerm}s
+(\code{=T=, <T, <=T}),
+user-defined predicates (\code{apply 'p t}) where \code{'p} is 
+the name of the predicate and \code{t} is a \code{NatTerm} or negation
+of a \code{BoolTerm}.
+
+In this new setting, we may introduce a channel directly or via a family
+of protocols. 
+Channel names, which were identifiers so far, must be extended to
+indexed identifiers. We implement them as a sort
+\code{ChannelName} which includes as a sub-sort the sort of identifiers
+and  has a constructor \code{\_[\_] : Qid List\{NatTerm\} -> ChannelName},
+and thus \code{'c['i 'j]} is an example of a channel name. 
+Taking this into account, we
+have also extended channel sets and channel contexts to keep track of the 
+bound of a family of protocols. Channel sets are implemented as
+sets of bounded channel names, which are written \code{c @ l }, where \code{c} is an identifier and 
+\code{l} is a list of bounds for the family named
+\code{c}. We use an empty list for a regular protocol, with no indices. Channel contexts are commutative lists of 
+typed bounded channel names, written 
+\code{ c @ l :: T}, where \code{T} is a type.
+
+We allow families of protocols with two indices as well. 
+We write \code{family 'F ('i 'j) ((bound m) (uniformBound n))}
+for a family indexed by \code{'i} ranging from \code{0} to
+\code{m} and by \code{'j} ranging from \code{0} to
+\code{n}. We also allow the second bound to vary for each \code{'i},
+but we did not use this in the case studies so far.
+
+The equality calculus must be adapted to the new notation. We
+have introduced rules that apply the core equality rules over the new
+notation, with the meaning that the rules are applied in parallel for
+each index.
+We need to record the assumptions made about indices, so we extend
+the protocol configuration with a new component of sort
+\code{Set\{BoolTerm\}}.
+ Moreover, we have a rule for induction proofs. 
+We present here the variant for one index, 
+as the one for two indices is similar.
+The goal is to rewrite
+\code{ P || family C q (bound nt1) ::= cases} 
+to 
+\code{ P || family C q (bound nt1) ::= cases'} 
+by induction on the index
+\begin{lstlisting}
+crl [INDUCTION-when-one] :
+     pConfig(Sigma, Delta, 
+       P || (family C q (bound nt1) ::= cases), I, O, A)
+     =>
+     pConfig(Sigma, Delta , 
+       P || (family C q (bound nt1) ::= cases'), I, O, A)
+\end{lstlisting} 
+We start with the base case and we must provide a proof that
+if we assign \code{C[0]} its corresponding case from \code{cases}
+with \code{q = 0}, we can rewrite the resulting protocol to the protocol
+that we get by assigning \code{C[0]} its corresponding case from \code{cases'} with \code{q = 0}. We record the assumption \code{q = 0} in
+the set of index assumptions 
+\code{A}. We also need to update the current outputs, by removing the outputs of the family \code{C} and adding \code{C[0]}:
+      
+\begin{lstlisting}
+     if 
+     pConfig(Sigma, Delta , 
+       P || (projectIndex (family C q (bound nt1) ::= cases) 0 A empty ), I, 
+       insert( C[0] @ nil, O \ (C @ nt1)), 
+       insert(q =T= 0, A)
+       ) 
+     => 
+     pConfig(Sigma, Delta , P2 , I, O', A')
+     /\
+     O' == insert( C[0] @ nil, O \ (C @ nt1))
+     /\
+     A' ==  insert(q =T= 0, A) 
+     /\
+     P2 == P || (projectIndex (family C q (bound nt1) ::= cases') 0 A empty)
+\end{lstlisting}
+The induction step assumes that we have successfully proven the 
+property up to index \code{'k}, so now we can
+make use of \code{family C q (bound 'k) ::= cases'} when proving the
+property for index \code{'k + 1}, where \code{'k} is arbitrary.
+We record in A the assumption that \code{'k + 1} must be in bounds. 
+We also need to update the current outputs, by removing the outputs of the family \code{C} and adding \code{C[k + 1]} and the outputs of the family \code{C} with the new bound \code{k}:
+\begin{lstlisting}     
+     /\
+     pConfig(Sigma, Delta , 
+       P || (family C q (bound 'k) ::= cases') || 
+       (projectIndex (family C q (bound nt1) ::= cases) ('k ++ 1) A empty), I, 
+       insert(C @ 'k, insert(C['k ++ 1] @ nil, O \ (C @ nt1))), 
+       insert('k ++ 1 <=T nt1, A)
+       )
+       =>
+     pConfig(Sigma, Delta, P3, I, O'', A'')
+     /\
+     O'' = insert(C @ 'k, insert(C['k ++ 1] @ nil, O \ (C @ nt1)))
+     /\
+     A'' == insert('k ++ 1 <=T nt1, A) 
+     /\
+     P3 == (
+             P || (family C q (bound 'k) ::= cases') ||
+             (projectIndex (family C q (bound nt1) ::= cases') ('k ++ 1) A empty)
+           )
+       [nonexec] . 
+\end{lstlisting}
+
+A strategy will call the induction rule using
+\begin{lstlisting}
+INDUCTION-when-one[
+         C:Qid <- Q, 
+         cases':Cases <- 'the cases that we want to get after the induction proof'
+        ]
+        { 'proof of induction base',
+          'proof of induction step'        
+        }
+\end{lstlisting}
+
+\subsection{A simple example}
+
+In our simplest example, the \ipdl \emph{Hello World} analogue, Alice receives a Boolean message, encodes it by xor-ing it with a randomly generated Boolean, and leaks the encoding to the adversary. We show that this is equal to leaking a randomly generated ciphertext.
+
+Formally, our signature consists of two symbols: $\oplus : \Bool \times \Bool \to \Bool$ for the Boolean sum, and $\flip : \one \twoheadrightarrow \Bool$ for the uniform distribution on Booleans. We write $x \oplus y$ in place of $\oplus \ (x,y)$.
+
+\subsubsection{The Assumptions}
+Our single axiom states that $\flip$ is invariant under xor-ing with a fixed Boolean:
+\begin{itemize}
+\item $\cdot; \ x : \Bool \vdash (y \leftarrow \flip; \ \ret{x \oplus y}) = \samp{\flip} : \emptyset \to \Bool$
+\end{itemize}
+This is indeed the case if (and only if) $\flip$ is uniform.
+
+\subsubsection{The Ideal Functionality}
+Upon receiving the input message, the ideal functionality generates a random ciphertext on an internal channel $\Ctxt$ and leaks its value to the adversary:
+\begin{itemize}
+\item $\Ctxt \coloneqq m \leftarrow \In; \samp{\flip}$ 
+\item $\LeakCtxt^\id_\adv \coloneqq \read{\Ctxt}$
+\end{itemize}
+
+\subsubsection{The Real Protocol}
+In the real protocol, Alice generates a random Boolean key on an internal channel $\Key$, constructs the ciphertext by xor-ing the input message with the key, and leaks the resulting ciphertext to the adversary:
+\begin{itemize}
+\item $\Key \coloneqq \samp{\flip}$
+\item $\Ctxt \coloneqq m \leftarrow \In; \ k \leftarrow \Key; \ \ret{m \oplus k}$
+\item $\LeakCtxt^\Alice_\adv \coloneqq \read{\Ctxt}$
+\end{itemize}
+
+\subsubsection{The Simulator}
+The simulator mediates between the two leakage channels $\LeakCtxt^\id_\adv$ and $\LeakCtxt^\Alice_\adv$ by forwarding the former to the latter:
+\begin{itemize}
+\item $\LeakCtxt^\Alice_\adv \coloneqq \read{\LeakCtxt^\id_\adv}$
+\end{itemize}
+
+\subsubsection{Real = Ideal + Sim}
+On the left-hand side of the above equality we have the real protocol. On the right-hand side, we have the composition of the ideal functionality with the simulator, followed by the hiding of the channel $\LeakCtxt^\id_\adv$. The two protocols now have identical inputs (the channel $\In$) as well as outputs (the channel $\LeakCtxt^\Alice_\adv$).
+
+We now simplify both protocols so that they have the same internal structure. On the left-hand side, we fold the internal channel
+\begin{itemize}
+\item $\Key \coloneqq \samp{\flip}$
+\end{itemize}
+into the channel
+\begin{itemize}
+\item $\Ctxt \coloneqq m \leftarrow \In; \ k \leftarrow \Key; \ \ret{m \oplus k}$,
+\end{itemize}
+yielding
+\begin{itemize}
+\item $\Ctxt \coloneqq m \leftarrow \In; \ k \leftarrow \flip; \ \ret{m \oplus k}$
+\end{itemize}
+and on the right-hand side we fold the internal channel
+\begin{itemize}
+\item $\LeakCtxt^\id_\adv \coloneqq \read{\Ctxt}$
+\end{itemize}
+into the channel
+\begin{itemize}
+\item $\LeakCtxt^\Alice_\adv \coloneqq \read{\LeakCtxt^\id_\adv}$,
+\end{itemize}
+yielding
+\begin{itemize}
+\item $\LeakCtxt^\Alice_\adv \coloneqq \read{\Ctxt}$.
+\end{itemize}
+The two protocols now both have an internal channel $\Ctxt$ and an output channel $\LeakCtxt^\Alice_\adv$.
+
+To finish the proof, we fold the internal channel into the output channel in both protocols, yielding the two single-reaction protocols
+\begin{itemize}
+\item $\LeakCtxt^\Alice_\adv \coloneqq m \leftarrow \In; \ k \leftarrow \flip; \ \ret{m \oplus k}$, and
+\item $\LeakCtxt^\Alice_\adv \coloneqq m \leftarrow \In; \ \samp{\flip}$
+\end{itemize}
+The equality between these two now follows immediately from our axiom, and we are done.
+
+\subsubsection{Maude implementation}
+
+Assume we work in the file \code{helloWorld.maude} placed in the 
+\code{lib} folder of the IPDL-Maude repository. We start by importing
+the strategies and starting a new module that extends \code{APPROX-EQUALITY}, which provides both exact and approximate equality
+\begin{lstlisting}
+load ../src/strategies
+
+mod HELLO-WORLD is
+ protecting APPROX-EQUALITY .
+
+\end{lstlisting}
+
+We have to define the signature.
+Our example works with booleans, 
+so we will not introduce new datatypes. 
+When needed, we define them as new constants of sort \code{Type}.
+
+We must introduce a function symbol for $\oplus$ and 
+a distribution symbol for $\flip$:
+\begin{lstlisting}
+op xorF : -> SigElem .
+eq xorF = 'xor : (bool * bool) ~> bool .
+
+op flipF : -> SigElem .
+eq flipF = 'flip : unit ~>> bool .
+
+op sig : -> Signature .
+eq sig = xorF flipF .
+\end{lstlisting}
+We then write the protocol resulting from composing the ideal functionality
+with the simulator followed by hiding the channel 
+\code{'LeakCtxt\_id\_adv}
+and the protocol \code{real}:
+\begin{lstlisting}
+ op idealPlusSim : -> Protocol .
+ eq idealPlusSim = 
+    new 'Ctxt : bool in
+    new 'LeakCtxt_id_adv : bool in
+    (
+    ('LeakCtxt_id_adv ::= 
+       nf(('c : bool <- read 'Ctxt),
+          return 'c,
+          'c :: emptyCNameList )
+    )  
+    ||
+    ('LeakCtxt_Alice_adv ::= 
+       nf('c : bool <- read 'LeakCtxt_id_adv,
+          return 'c, 
+          'c :: emptyCNameList)
+    )
+    ||
+    ('Ctxt ::= 
+       nf( 'm : bool <- read 'In,
+           samp ('flip < () >),
+           'm :: emptyCNameList)
+    )
+    )
+ .
+ 
+  op real : -> Protocol .
+  eq real = 
+    new 'Key : bool in
+    new 'Ctxt : bool in
+    (
+     ('Key ::= samp ('flip < () >))
+     || 
+     ('Ctxt ::= 
+       nf( ('m : bool <- read 'In)
+            'k : bool <- read 'Key,
+            return (ap 'xor pair('m, 'k)),
+           'm :: 'k :: emptyCNameList
+               )
+     )
+     ||
+     ('LeakCtxt_Alice_adv ::= 
+       nf( 'c : bool <- read 'Ctxt ,
+           return 'c,
+          'c :: emptyCNameList )  
+     )
+    ) 
+         
+  .
+\end{lstlisting}
+
+We then close the \code{HELLO-WORLD} module and
+open a new module, \code{EXECUTE}, importing \code{HELLO-WORLD} and
+\code{STRATEGIES}, where we add the assumptions and typically strategies
+for using them in proofs
+\begin{lstlisting}
+smod EXECUTE is
+  protecting STRATEGIES .
+  protecting HELLO-WORLD .
+\end{lstlisting}
+
+The assumption is introduced at the level of reactions
+\begin{lstlisting}
+rl [assumption] :
+    rConfig(Sigma, Delta, Gamma (x : bool),
+            y : bool <- samp flip ; 
+            return (ap 'xor pair(x, y)), I, A, bool
+            )
+     => 
+     rConfig(Sigma, Delta , Gamma (x : bool),
+             samp flip, I, A, bool)
+  .  
+\end{lstlisting}
+\noindent and we will want to apply it in the 
+main reaction of a pre-normal form, so we need the following strategy:
+\begin{lstlisting}
+strat applyAssumption : ChannelName @ ProtocolConfig .
+  sd applyAssumption(cn) := 
+   match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyAssumption(cn)}
+    : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-REACT[o:ChannelName <- cn]
+                { cong-pre-nf{assumption} ; 
+                  try (pre2Nf)}   
+  .
+\end{lstlisting}
+\noindent which states, read in reverse order, that we apply 
+\textsc{cong-pre-nf} with the assumption as a sub-proof 
+to the reaction \code{R} that is assigned to the channel \code{cn}
+(thus requiring to apply \textsc{cong-react}) 
+that is inside a new normal form, and then we must apply
+\code{cong-new-nf}. Moreover, \code{pre2Nf} converts the
+pre-normal form to a normal form, as now we no longer have binds in the
+reaction of the pre-normal form.
+
+We now get to writing the proof. The initial configuration is
+\begin{lstlisting}
+pConfig(sig, 
+        ('In @ nil :: bool) 
+        ('LeakCtxt_Alice_adv @ nil :: bool), 
+        idealPlusSim, 
+        'In @ nil, 
+        getOutputs(idealPlusSim), 
+        empty)
+\end{lstlisting}
+\noindent where 
+\begin{itemize}
+ \item \code{sig} is the signature defined above,
+ \item the channel context contains the input channel \code{'In}
+       and the output channel \code{'LeakCtxt\_Alice\_adv}. Both are of type
+       \code{bool} and they have no indices,
+ \item the protocol that we want to rewrite,
+ \item the set of its inputs, here we have just one input channel,      
+ \item the set of its outputs, which can be computed, so it is more
+       convenient to call the function \code{getOutputs} than to
+       enumerate all inputs,
+ \item since we have no indices, the set of assumptions about them is empty.      
+\end{itemize}
+
+We first turn the protocol in new normal form, then we do the two folds:
+\begin{lstlisting}
+srew [1] 
+pConfig(sig, 
+         ('In @ nil :: bool) 
+         ('LeakCtxt_Alice_adv @ nil :: bool), 
+         idealPlusSim, 
+         'In @ nil, 
+         getOutputs(idealPlusSim), 
+         empty)
+using 
+       sugar-newNF
+     ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv) 
+     ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)    
+.
+
+\end{lstlisting}
+
+Similarly, for \code{real}, we turn the protocol in new normal form,
+we do the folds and then we apply the assumption:
+\begin{lstlisting}
+srew [1] 
+ pConfig(sig, 
+         ('In @ nil :: bool) 
+         ('LeakCtxt_Alice_adv @ nil :: bool), 
+         real, 
+         'In @ nil, 
+         getOutputs(real), 
+         empty)
+using 
+       sugar-newNF
+     ; foldNF('Key, 'Ctxt)
+     ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)
+     ; applyAssumption('LeakCtxt_Alice_adv)
+. 
+\end{lstlisting}
+
+In both cases we get the same result, so we now can combine the two proofs in one, using \textsc{sym}:
+\begin{lstlisting}
+srew [1] 
+ pConfig(sig, 
+         ('In @ nil :: bool) 
+         ('LeakCtxt_Alice_adv @ nil :: bool), 
+         real, 
+         'In @ nil, 
+         getOutputs(real), 
+         empty)
+using 
+       sugar-newNF
+     ; foldNF('Key, 'Ctxt)
+     ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)
+     ; applyAssumption('LeakCtxt_Alice_adv)
+     ; SYM[P1:Protocol <- idealPlusSim]{
+       sugar-newNF
+     ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv) 
+     ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)  
+     }
+.  
+\end{lstlisting}
+
+When running the proof in Maude, we get \code{idealPlusSim} in the 
+protocol in the resulting \code{pConfig}, as expected. Maude also reports
+on the number of rewrites and the time spent doing the proof:´
+\begin{lstlisting} 
+$  maude lib/helloWorld.maude 
+		     \||||||||||||||||||/
+		   --- Welcome to Maude ---
+		     /||||||||||||||||||\
+	    Maude 3.2.1 built: Feb 21 2022 18:21:17
+	     Copyright 1997-2022 SRI International
+		   Tue Mar 14 04:52:45 2023
+==========================================
+srewrite [1] in EXECUTE : pConfig(sig, ('In @ nil :: bool)
+    'LeakCtxt_Alice_adv @ nil :: bool, real, 'In @ nil, getOutputs(real),
+    empty) using sugar-newNF ; foldNF('Key, 'Ctxt) ; foldNF('Ctxt,
+    'LeakCtxt_Alice_adv) ; applyAssumption('LeakCtxt_Alice_adv) ; SYM[
+    P1:Protocol <- idealPlusSim]{sugar-newNF ; foldNF('LeakCtxt_id_adv,
+    'LeakCtxt_Alice_adv) ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)} .
+
+Solution 1
+rewrites: 516 in 0ms cpu (1ms real) (~ rewrites/second)
+result ProtocolConfig: pConfig(('xor : bool * bool ~> bool) 'flip : unit ~>>
+    bool, ('In @ nil :: bool) 'LeakCtxt_Alice_adv @ nil :: bool, new 'Ctxt :
+    bool in new 'LeakCtxt_id_adv : bool in ('Ctxt ::= nf('m : bool <- read
+    'In, samp ('flip < () >), 'm :: emptyCNameList)) || ('LeakCtxt_Alice_adv
+    ::= nf('c : bool <- read 'LeakCtxt_id_adv, return 'c, 'c ::
+    emptyCNameList)) || 'LeakCtxt_id_adv ::= nf('c : bool <- read 'Ctxt,
+    return 'c, 'c :: emptyCNameList), 'In @ nil, 'LeakCtxt_Alice_adv @ nil,
+    empty)
+
+\end{lstlisting}
+
+\subsection{Approximate equality}
+
+We start by defining wrappers for width and length
+\begin{lstlisting}  
+  sort Width .
+  sort Length .
+  
+  op width_ : Nat -> Width [ctor] .
+  op length_ : Nat -> Length [ctor] .
+\end{lstlisting}  
+\noindent and the measure functions  
+\begin{lstlisting}
+  op |_| : Protocol -> Nat .
+  op |_| : Reaction -> Nat .
+  op |_| : Expression -> Nat .
+\end{lstlisting}
+
+The configurations \code{aConfig(Sigma, Delta, P, I, O, A, w, l)}
+for approximate equality
+extend protocol configurations with fields for width and length.
+The main idea is that we set these at 0 at the start of a proof,
+and we keep track of their modifications with the help of the 
+approximate equality rules.
+The \textsc{strict} rule allows us to apply exact equality calculus
+without modifying the width and the length
+\begin{lstlisting}
+ crl [STRICT] :
+   aConfig(Sigma, Delta, P, I, O, A, w, l) 
+   =>
+   aConfig(Sigma, Delta, Q, I, O, A, w, l)
+ if
+  pConfig(Sigma, Delta, P, I, O, A)
+  => 
+  pConfig(Sigma, Delta, Q, I, O, A)
+ . 
+\end{lstlisting}
+The \textsc{trans} rule
+\begin{lstlisting}
+crl [TRANS] :
+  aConfig(Sigma, Delta, P, I, O, A, width nw, length nl)
+  => 
+  aConfig(Sigma, Delta, P2, I, O, A, width (nw + nw1 + nw2), length (nl + defMax(nl1, nl2)))
+ if
+  aConfig(Sigma, Delta, P, I, O, A, width 0, length 0)
+  => 
+  aConfig(Sigma, Delta, P1, I, O, A, width nw1, length nl1)
+  /\ 
+  aConfig(Sigma, Delta, P1, I, O, A, width 0, length 0)
+  => 
+  aConfig(Sigma, Delta, P2, I, O, A, width nw2, length nl2)
+ . 
+\end{lstlisting}
+\noindent adds to the current value of width the values
+computed in the sub-proofs and to the current value of length
+the maximum of the two lengths computed in the subproofs.
+
+Approximate equality axioms combine the rules \textsc{axiom} and
+\textsc{input-unused}: if we rewrite a \code{aConfig} whose width is 
+\code{w} and whose length is \code{l},
+we get a \code{aConfig} whose width is \code{w + 1} and
+whose length is \code{l + | I \ I'| } where \code{I} is the set of 
+inputs of the configuration and \code{I'} is the set of inputs used 
+by the protocol we want to rewrite with the axiom.
+ 
+Strategies for applying an approximate equality axiom are of the form
+\begin{lstlisting}
+ strat S : Param @ ApproxEqConfig .  
+ sd S(X) := 
+    match aConf s.t. aConfStartsWithNew aConf
+    ? CONG-NEW-NF-APPROX{S(X)} 
+    : matchrew aConf s.t. 
+       aConfig(Sigma, Delta, P, I, O, A, width w, length l) := aConf 
+      by aConf 
+      using
+      CONG-COMP-APPROX{
+         axiom(X)
+      } 
+    .
+\end{lstlisting}
+
+Proofs will typically consist of a composition, using \textsc{trans} rule,
+of several \textsc{strict} steps with a number of applications of the axioms, using their corresponding strategies.
+
+%%%\subsection{Case studies}

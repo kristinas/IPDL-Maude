@@ -70,9 +70,28 @@
 \newtheorem{corollary}{Corollary}	
 \newtheorem{example}{Example}
 
+\newcommand{\flip}{\mathsf{flip}}
+\newcommand{\id}{\mathsf{id}}
+\newcommand{\adv}{\mathsf{adv}}
+\newcommand{\Alice}{\mathsf{Alice}}
+\newcommand{\In}{\mathsf{In}}
+\newcommand{\Ctxt}{\mathsf{Ctxt}}
+\newcommand{\Key}{\mathsf{Key}}
+\newcommand{\LeakCtxt}{\mathsf{LeakCtxt}}
+
+% maude macros
+
+\newcommand{\code}[1]{\texttt{#1}}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  literate={~} {$\sim$}{1}
+}
+
 \begin{document}
 \title{A Core Calculus for Equational Proofs of Distributed Cryptographic Protocols: Technical Report}
-
+\author{Kristina Sojakova \and Mihai Codescu}
+\date{}
 \maketitle
 
 \section*{\small Acknowledgement}
@@ -191,10 +210,18 @@ This project was funded through the NGI Assure Fund, a fund established by NLnet
 %
 %Unlike previous examples, this example is secure in the \emph{malicious} model. We model malicious parties by assigning them a \emph{shell}, which simply forwards all information between the protocol and the adversary.
 %
-%\section{Maude Formalization}
-%\input{maude}
 
-\bibliography{bib} 
+\pagebreak
+\section{Maude Formalization}
+\input{maude}
+
+\bibliography{refs} 
 \bibliographystyle{ieeetr}
+
+%\appendix
+%\input{appendix}
+
+
+
 
 \end{document}
