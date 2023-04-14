@@ -577,6 +577,166 @@ INDUCTION-when-one[
         }
 \end{lstlisting}
 
+\subsection{Strategies}
+
+We now come to the strategies that will appear in proofs. It is possible that some of them will make use of other substrategies, but as these will not be in use, we refrain from including them here. To ease presentation,
+we group strategies by the main core rule that is applied. They may 
+have several forms to be applied in different contexts  
+e.g. channels, families, groups of families, cases.
+
+The rules \textsc{refl}, \textsc{trans}, \textsc{axiom} and
+\textsc{embed} are not explicitly applied, as they are implied by
+the properties of rewrite relation in Maude. 
+The rule \textsc{sym} does not require the use of a strategy, and
+in order to apply it we must specify explicitly the protocol that we 
+rewrite from. More precisely, if the current protocol is \texttt{P}, 
+we write \texttt{SYM[P1:Protocol <- P']\{proof\}} where 
+\texttt{proof} is an
+exact equality proof rewriting \texttt{P'} to \texttt{P}. 
+The rule
+\textsc{input-unused} is embedded in the application of other rules,
+in the way the conditions on inputs are given.
+The rules \textsc{cong-react}, \textsc{cong-new} and \textsc{cong-comp}
+are applied inside the strategy definition, and their usage is not visible
+to the user. The rules \textsc{cong-comm} and
+\textsc{cong-assoc} are not applied explicitly, as
+it suffices to specify the parallel composition in Maude as a commutative
+and associative operation.
+
+\subsubsection{SUBST}
+
+Here we have the largest number of variations, because we need rules for
+substituting a channel in a family, a family in a family taking into 
+account whether they have one or two indices and so on. Since the number
+of parameters varies, we cannot have a meta-strategy that tries all
+possible variants. In the future we plan to generate the extra
+arguments from the context where the rule applies, and thus reduce the arguments of all strategies to the name of the channel/family that gets
+substituted and the the name of the channel/family where the 
+substitution takes place. Thus, we will be able to introduce a
+meta-strategy that greatly simplifies substitutions.
+
+We have the following substitution strategies:
+\begin{itemize}
+ \item  \texttt{substNF(C1, C2)} substitutes the channel \texttt{C1} in \texttt{C2}. Both channels must be in normal form. The strategy also gets the pre-normal form resulting from the substitution to a normal form, as described above.
+   \item  \texttt{substNFRead(C1,C2)} is a simpler particular case of substitution when the channel \texttt{C} that we substitute reads from another channel. Both channels must be in normal form.
+   \item  \texttt{smart-subst-nf(C1, C2)} tries to apply \texttt{substNFRead} and if that fails, applies \texttt{substNF}. 
+In the future we plan to plug all substitution strategies under this
+meta-strategy.
+   \item  \texttt{substNFFamiliesOne(C1, C2, R)} substitutes in the family \texttt{C2} with one index a read from \texttt{C1[i]} for some index \texttt{i} with the corresponding reaction \texttt{R} assigned in the family \texttt{C1} to the index \texttt{i}. The family \texttt{C2} must be in normal form.
+   \item  \texttt{applyCaseDistSubst(q1, q2, q3, q4, pr)} works under the assumption that we have two groups, \texttt{q1, q2}, and \texttt{q1} is defined with cases. The rule does a \texttt{substNFRead} equivalent for the families \texttt{q3, q4} with two indices that come from the first branch of \texttt{q1} and from \texttt{q2}. The protocol \texttt{pr} is then used in a \textsc{sym} proof to redo the grouping.
+   \item  \texttt{substChannelFamilyOne(C1, C2)} substitute a channel in a family with one index.
+   \item  \texttt{applySubstChannelBranch(C1, q2)} substitutes the channel 
+   \texttt{C1} in the family \texttt{C2}, in the first branch of a group defined with cases.
+   \item  \texttt{applyCaseDistBranch2(q1, q2)} substitutes a channel in a family on the left branch of the right branch of a group.
+   \item  \texttt{applyBranch2SubstRev(q1, q2, nt, x, T, R)} applies a reverse substitution on the left branch of a family. The parameters \texttt{nt, x, T, R} are the index, the name of the bind variable, the type and the reaction of the channel that is reversely substituted. 
+   \item  \texttt{applySubstRevFamily(Q, C2, T)} does a reverse substitution on a branch of a family with cases. The parameter \texttt{T} is the type of the reaction that is reversely substituted.
+   \item  \texttt{substNFReadFamilyOneChannel(C1, C2)} is a \texttt{substNFRead} equivalent for a family with one index and a channel.
+   \item  \texttt{substNFReadFamilyTwoChannel(C1, C2)} is a \texttt{substNFRead} equivalent for a  family with two indices and a channel.
+   \item  \texttt{substRevFamilyChannel(Q, C, nt, T)} does the reverse substitution of a family \texttt{Q} in a channel \texttt{C}. The parameters \texttt{nt, T} are the index and the type of the channel that is reversely substituted.
+   \item  \texttt{substNFFamilyOneChannel(C1, C2, R)} is the \texttt{substNF} equivalent for a family with one index and a channel.
+   \item  \texttt{applySubstNFLeft(q1, q2, R)} applies \texttt{substNFFamiliesOne} on the left branch of a family defined with cases.
+\end{itemize}  
+
+\subsubsection{UNUSED}
+
+\begin{itemize}
+\item \texttt{applyUnusedNF(C1, C2)} applies the normal form version of \textsc{unused}.
+\item \texttt{applyUnusedPreNF(C1, C2)} applies the pre-normal form
+version of \textsc{unused}.
+\end{itemize}
+
+\subsubsection{ABSORB}
+
+\begin{itemize}
+\item \texttt{absorbChannel(C)} applies the new-normal-form version of
+\textsc{absorb} for the channel \texttt{C}.
+\item \texttt{absorbFamily(Q)} applies the new-normal-form version
+of \textsc{absorb} for the family \texttt{Q}.
+\item \texttt{applyAbsorbReverse(P)} applies the reverse of the 
+\textsc{absorb} rule for the protocol \texttt{P}.
+\item \texttt{addNewFamilyToGroup(P, Q1, Q2)} adds the family \texttt{Q2},
+introduced by the protocol \texttt{P}, to the group \texttt{Q1}.
+\item \texttt{applyCaseDistAbsorb(q1, q2, q3, pr)} operates
+under the assumption that the current protocol is of the form
+\texttt{family q2 ::= P || family q1 ::= when cond1 --> P1 ;; otherwise --> P2} and applies the \textsc{absorb} rule on the protocol
+\texttt{P || P1} then it reconstructs the original shape of the
+current protocol.
+\end{itemize}
+
+\subsubsection{FOLD}
+
+\begin{itemize}
+\item \texttt{foldNF(C1, C2)} applies the normal form version of the 
+\textsc{fold} rule, when the channel \texttt{C1} gets folded in the 
+channel \texttt{C2}.
+\item \texttt{foldNFPre(C1, C2)} applies the pre-normal form version of the 
+\textsc{fold} rule, when the channel \texttt{C1} gets folded in the 
+channel \texttt{C2}.
+\item \texttt{foldNFFamily(Q1, Q2)} applies the normal form version 
+of the 
+\textsc{fold} rule, when the family \texttt{Q1} gets folded in the 
+family \texttt{Q2}.
+\end{itemize}
+
+\subsubsection{READ-INSIDE-IF}
+
+This is a rule derived from \textsc{if-ext} and allows us to rewrite
+\texttt{x : T1 <- read i ; if M then R1 else R2} to 
+\texttt{if M then x : T1 <- read i ; R1 else x : T1 <- read i ; R2}.
+
+\begin{itemize}
+\item \texttt{applyReadInsideIfPre(C)} applies 
+\textsc{read-inside-if} to a protocol in new-normal-form.
+\end{itemize}
+
+\subsubsection{Purely syntactic transformations}
+
+Under this heading we group a number of strategy that change
+only the shape of a protocol. The rules that apply are
+derivable from the core rules.
+
+\begin{itemize}
+\item \texttt{applyAddToGroup(Q1, Q2)} moves the family 
+\texttt{Q2} inside the group \texttt{Q1}.
+\item \texttt{changeOrder(C, ql)} changes the specified order
+of reads in a normal or pre-normal form. \texttt{C} is the name of 
+the channel that is assigned the (pre-)normal form and
+\texttt{ql} is the new order, given as a list of variable names.
+\item \texttt{applyReorderNF(Q, ql)}: on the first branch of the family
+\texttt{Q}, changes the order in the normal form as specified in 
+\texttt{ql}.
+\item \texttt{nf2PreNF(C)} turn the normal form assigned to the 
+channel \texttt{C} to a pre-normal form
+\item \texttt{applyGroupFamilies(Q1, Q2)} composes the families 
+\texttt{Q1, Q2} to a new family \texttt{'Comp[Q1 Q2]} that assigns to
+each index \texttt{i} the protocol
+\texttt{(Q1[i] ::= R1) || (Q2[i] ::= R2} where \texttt{R1, R2} are
+the reactions assigned to the index \texttt{i} by \texttt{Q1, Q2}.
+This transformation is needed for some induction proofs.
+\item \texttt{applyUngroupFamilies(Q1, Q2)} is the reverse transformation
+of the previous strategy.
+\item \texttt{moveProtocolUnderNewNF} if the current protocol is the parallel composition of a protocol \texttt{P} with a new-normal-form, move
+\texttt{P} inside the new-normal-form.
+\item \texttt{applyDeleteEmptyNF(Q)} if the new-normal-form assigned to the
+group \texttt{Q} has no new declarations, keeps only its protocol.
+\item \texttt{applyDropName(Q)} removes the group name \texttt{Q}.
+\item \texttt{applyCombine(Q)} if the group \texttt{Q} is defined using cases, removes the group name and moves the cases inside the families of the group.
+\item \texttt{applyAlphaNFPr(C, QL)} does an alpha-renaming of the bind
+variables of a normal form assigned to the channel \texttt{C}.
+ \texttt{QL} specifies the
+renaming.
+\item \texttt{applyBranch2Alpha(q1, QL)} does an alpha-renaming on the otherwise branch of a family \texttt{q1}. \texttt{QL} specifies the
+renaming.
+\item \texttt{moveBindInPre(C, Q)} if the channel \texttt{C} is assigned
+a normal form, move the bind assigned to the variable \texttt{Q} in the
+reaction of the normal form, and turn the normal form to a pre-normal form.
+\item \texttt{applyBranch2MoveReads(q1, ql)} moves the reads 
+specified by the list \texttt{ql} from bind list of a normal form to the reaction of the normal form on the left branch of a family 
+\texttt{q1}.
+\item \texttt{moveReadsToRFamily(C,cnl)} move the reads specified in \texttt{cnl} from the bind list of a normal form to the reaction of the normal form assigned to the family \texttt{C}.
+
+\end{itemize}  
+
 \subsection{A simple example}
 
 In our simplest example, the \ipdl \emph{Hello World} analogue, Alice receives a Boolean message, encodes it by xor-ing it with a randomly generated Boolean, and leaks the encoding to the adversary. We show that this is equal to leaking a randomly generated ciphertext.
