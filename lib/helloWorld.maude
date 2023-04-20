@@ -17,18 +17,21 @@ mod HELLO-WORLD is
  op xorF : -> SigElem .
  eq xorF = 'xor : (bool * bool) ~> bool .
  
+ op flipF : -> SigElem .
+ eq flipF = 'flip : unit ~>> bool .
+ 
  op sig : -> Signature .
- eq sig = xorF .
+ eq sig = xorF flipF .
  
  op idealPlusSim : -> Protocol .
  eq idealPlusSim = 
-    new 'Flip : bool in
+    new 'Ctxt : bool in
     new 'LeakCtxt_id_adv : bool in
     (
     ('LeakCtxt_id_adv ::= 
-       nf(('f : bool <- read 'Flip),
-          return 'f,
-          'f :: emptyCNameList )
+       nf(('c : bool <- read 'Ctxt),
+          return 'c,
+          'c :: emptyCNameList )
     )  
     ||
     ('LeakCtxt_Alice_adv ::= 
@@ -37,33 +40,36 @@ mod HELLO-WORLD is
           'c :: emptyCNameList)
     )
     ||
-    ('Flip ::= 
+    ('Ctxt ::= 
        nf( 'm : bool <- read 'In,
-           samp flip,
-           'm :: emptyCNameList
-               )
+           samp ('flip < () >),
+           'm :: emptyCNameList)
     )
     )
  .
  
   op real : -> Protocol .
   eq real = 
-    new 'Flip : bool in
+    new 'Key : bool in
+    new 'Ctxt : bool in
     (
-    ('Flip ::= 
-       nf( 'm : bool <- read 'In,
-           samp flip,
-           'm :: emptyCNameList
+     ('Key ::= samp ('flip < () >))
+     || 
+     ('Ctxt ::= 
+       nf( ('m : bool <- read 'In)
+            'k : bool <- read 'Key,
+            return (ap 'xor pair('m, 'k)),
+           'm :: 'k :: emptyCNameList
                )
      )
      ||
-    ('LeakCtxt_Alice_adv ::= 
-       nf(('m : bool <- read 'In) 
-          'f : bool <- read 'Flip,
-          return (ap 'xor pair('m, 'f)),
-          'm :: 'f :: emptyCNameList )  
-          )
-     )     
+     ('LeakCtxt_Alice_adv ::= 
+       nf( 'c : bool <- read 'Ctxt ,
+           return 'c,
+          'c :: emptyCNameList )  
+     )
+    ) 
+         
   .
   
 endm 
@@ -75,7 +81,7 @@ smod EXECUTE is
  var x y : Qid . 
  var Sigma : Signature .
  var Delta : ChannelContext .
- var Gamma : VarContext .
+ var Gamma : TypeContext .
  var I O : Set{CNameBound} .
  var A : Set{BoolTerm} .
  var cn f : ChannelName .
@@ -84,12 +90,12 @@ smod EXECUTE is
   
   rl [assumption] :
     rConfig(Sigma, Delta (f @ nil :: bool), Gamma (x : bool),
-            y : bool <- samp flip ; 
+            y : bool <- samp ('flip < () >) ; 
             return (ap 'xor pair(x, y)), I, A, bool
             )
      => 
      rConfig(Sigma, Delta (f @ nil :: bool), Gamma (x : bool),
-             samp flip, I, A, bool)
+             samp ('flip < () >), I, A, bool)
   .  
   
   strat applyAssumption : ChannelName @ ProtocolConfig .
@@ -103,9 +109,11 @@ smod EXECUTE is
   .
    
  endsm
- ***(
- srew [1] 
- pConfig(sig, 
+ 
+
+***(
+srew [1] 
+pConfig(sig, 
          ('In @ nil :: bool) 
          ('LeakCtxt_Alice_adv @ nil :: bool), 
          idealPlusSim, 
@@ -113,11 +121,83 @@ smod EXECUTE is
          getOutputs(idealPlusSim), 
          empty)
 using 
-     sugar-newNF 
-   ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv)   
-   ; foldNF('Flip, 'LeakCtxt_Alice_adv) 
+       sugar-newNF
+     ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv) 
+     ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)    
 .
+)
+
+
+srew [1] 
+ pConfig(sig, 
+         ('In @ nil :: bool) 
+         ('LeakCtxt_Alice_adv @ nil :: bool), 
+         real, 
+         'In @ nil, 
+         getOutputs(real), 
+         empty)
+using 
+       sugar-newNF
+     ; foldNF('Key, 'Ctxt)
+     ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)
+     ; applyAssumption('LeakCtxt_Alice_adv)
+     ; SYM[P1:Protocol <- idealPlusSim]{
+       sugar-newNF
+     ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv) 
+     ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)  
+     }
+.  
+
+***(
+srew [1] 
+ pConfig(('xor : bool * bool ~> bool) 'flip : unit ~>>
+    bool, ('In @ nil :: bool) 'LeakCtxt_Alice_adv @ nil :: bool, newNF(<
+    'Ctxt : bool >, ('Ctxt ::= preNF('m : bool <- read 'In, 'k : bool <-
+    samp ('flip < () >) ; return (ap 'xor pair('m, 'k)), 'm ::
+    emptyCNameList)) || 'LeakCtxt_Alice_adv ::= nf('c : bool <- read 'Ctxt,
+    return 'c, 'c :: emptyCNameList), 'Ctxt :: emptyCNameList), 'In @ nil,
+    'LeakCtxt_Alice_adv @ nil, empty)
+using foldNF('Ctxt, 'LeakCtxt_Alice_adv)
+   
+.   
+ )
+***(
+srew [1] 
+ pConfig(('xor : bool * bool ~> bool) 'flip : unit ~>>
+    bool, ('In @ nil :: bool) 'LeakCtxt_Alice_adv @ nil :: bool, 
+     'LeakCtxt_Alice_adv ::= preNF(('m : bool <- read
+    'In) 'c : bool <~ 'k : bool <- samp ('flip < () >) ; return (ap 'xor
+    pair('m, 'k)), return 'c, 'm :: 'c :: emptyCNameList),
+    'In @ nil, 'LeakCtxt_Alice_adv @ nil, empty)
+using CONG-REACT{
+        bind-ret-2-pre
+     }
+.    
+)
  
+***(
+srew [1] 
+ pConfig(('xor : bool * bool ~> bool) 'flip : unit ~>> bool, 
+         ('In @ nil :: bool) 'LeakCtxt_Alice_adv @ nil :: bool, 
+           newNF(emptyTypedCNameList, 
+                 'LeakCtxt_Alice_adv ::= 
+                    preNF('c : bool <~ preNF('m : bool <- read 'In, 
+                                             'k : bool <- samp ('flip < () >) ; 
+                                             return (ap 'xor pair('m, 'k)), 
+                                             'm :: emptyCNameList), 
+                           return 'c, 
+                           'c :: emptyCNameList),
+                  emptyCNameList), 
+          'In @ nil, 
+          'LeakCtxt_Alice_adv @ nil, 
+          empty)
+using liftInnerBindsNF('LeakCtxt_Alice_adv)
+      *** CONG-NEW-NF{CONG-REACT{(bind-bind-pre or-else bind-bind-pre-pre) ; (read-det-pre !)}} 
+.
+)
+ 
+***(
+
 srew [1] 
  pConfig(sig, 
          ('In @ nil :: bool) 
@@ -132,7 +212,6 @@ using
  ; applyAssumption('LeakCtxt_Alice_adv)
 .  
 
-)
 
 srew [1] 
  pConfig(sig, 
@@ -152,4 +231,5 @@ using
    ; foldNF('Flip, 'LeakCtxt_Alice_adv)
    }
 .  
+)
 

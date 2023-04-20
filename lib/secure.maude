@@ -160,7 +160,7 @@ smod EXECUTE is
  
  var Sigma : Signature .
  var Delta Delta' : ChannelContext .
- var Gamma : VarContext .
+ var Gamma : TypeContext .
  vars i1 i2 X Y Z In cn1 cn2 cn3 cn4 keyN inN encN decN : ChannelName .  
  vars m x y z k c Enc Dec Key i inQ : Qid .
  var I O : Set{CNameBound} .

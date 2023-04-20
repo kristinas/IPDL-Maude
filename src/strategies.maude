@@ -22,7 +22,7 @@ smod STRATS is
  var rConf : ReactionConfig .
  var S Sigma : Signature .
  var D Delta : ChannelContext .
- var G : VarContext .
+ var G : TypeContext .
  var P P1 P2 pr : Protocol .
  var R R1 R2 R3 R4 : Reaction .
  *** var Q Q' C Q1 Q2 x1 x2 y x : Qid .
@@ -30,7 +30,7 @@ smod STRATS is
  var I O : Set{CNameBound} .
  var T T' T1 : Type .
  var flag : Bool .
- var M M1 M2 : Message .
+ var M M1 M2 : Expression .
  var Dis : Distribution .
  var C C1 C2 x : ChannelName .
  var Q Q' x1 Q1 Q2 q1 q2 q3 q4 : Qid .
@@ -50,7 +50,7 @@ smod STRATS is
  *** try both channel substitution rules
  strat smart-subst-nf : ChannelName ChannelName @ ProtocolConfig . 
  sd smart-subst-nf(C1, C2) :=                        
-   nTimesSubstNFRead(C1, C2)
+   substNFRead(C1, C2)
    ? idle
    : substNF(C1, C2) 
    . 
@@ -74,22 +74,33 @@ smod STRATS is
      match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{nTimesSubstNF(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
-                             P1:Protocol <- keepTwo P C1 C2]{
-          SUBST-nf[o1:ChannelName <- C1, 
-                   o2:ChannelName <- C2]
-                   } .
+       using (
+         CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                         P1:Protocol <- keepTwo P C1 C2]{
+           SUBST-nf[o1:ChannelName <- C1, 
+                    o2:ChannelName <- C2]
+         }
+         or-else *** deal with the case that Q is empty
+         SUBST-nf[o1:ChannelName <- C1, 
+                    o2:ChannelName <- C2]
+       )            .
                    
- *** similar, but for SUBST-nf-read                                
- strat nTimesSubstNFRead : ChannelName ChannelName @ ProtocolConfig .
- sd nTimesSubstNFRead(C1, C2) := 
+ *** similar, but for SUBST-nf-read                               
+ strat substNFRead : ChannelName ChannelName @ ProtocolConfig .
+ sd substNFRead(C1, C2) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{nTimesSubstNFRead(C1, C2)} 
+     ? CONG-NEW-NF{substNFRead(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
-                             P1:Protocol <- keepTwo P C1 C2]{
+       using (
+         CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                         P1:Protocol <- keepTwo P C1 C2]{
+           SUBST-nf-read[o1:ChannelName <- C1, 
+                         o2:ChannelName <- C2] 
+         }
+         or-else  
          SUBST-nf-read[o1:ChannelName <- C1, 
-                       o2:ChannelName <- C2] } .                   
+                         o2:ChannelName <- C2] 
+       ).                   
  
  *** after subst we got x <~ nf(binds, R, ...)
  *** this strategy moves the binds outside <~
@@ -99,15 +110,22 @@ smod STRATS is
      ? CONG-NEW-NF{liftInnerBindsNF(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using
+        (  
         CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                         P1:Protocol <- keepOne P C]{
          CONG-REACT[cn:ChannelName <- C]
-         { (  bind-bind-pre 
-          ; (read-det-pre !)
-           )
-           or-else idle
+         { try (     (bind-bind-pre or-else bind-bind-pre-pre)
+                   ; (read-det-pre !)
+               )
          }
-        } 
+        }
+        )
+        or-else
+        (CONG-REACT[cn:ChannelName <- C]
+         { try (     (bind-bind-pre or-else bind-bind-pre-pre)
+                   ; (read-det-pre !)
+               )
+         }) 
        .
  
  *** this strategy handles the reaction of a pre-normal form, 
@@ -118,7 +136,9 @@ smod STRATS is
      match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{handleRNF(C1)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C1, 
+       using 
+         (
+         CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C1, 
                              P1:Protocol <- keepOne P C1]{
          CONG-REACT[cn:ChannelName <- C1]
                    {(ret-bind-pre or-else
@@ -132,7 +152,23 @@ smod STRATS is
                     ) 
                     ; simplifyNF
                    }
-       } .
+       }
+       )
+       or-else
+       (
+       CONG-REACT[cn:ChannelName <- C1]
+                   {(ret-bind-pre or-else
+                    (samp-over-if or-else 
+                     (read2Binds or-else
+                      (bind-ret-2-pre
+                        or-else (merge-pre ; cong-pre-nf{bindFreeS})
+                      )
+                     )
+                    )
+                    ) 
+                    ; simplifyNF
+                   }
+       ) .
        
  strat bindFreeS @ ReactionConfig .
  sd bindFreeS := 
@@ -175,7 +211,7 @@ smod STRATS is
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{nTimesSubstNFFamiliesOne(Q1, Q2, R)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q1 Q2, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q1 Q2, 
                              P1:Protocol <- keepTwo P Q1 Q2]{
           subst-families-one-family[
                    C:Qid <- Q1, 
@@ -183,6 +219,13 @@ smod STRATS is
                    R2:Reaction <- R
                 ]
                    } 
+                or-else
+                subst-families-one-family[
+                   C:Qid <- Q1, 
+                   C1:Qid <- Q2,
+                   R2:Reaction <- R
+                ]
+       )
  .
  
  strat liftInnerBindsNFFamily : Qid @ ProtocolConfig .
@@ -191,6 +234,7 @@ smod STRATS is
      ? CONG-NEW-NF{liftInnerBindsNFFamily(Q)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using
+       (
         CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
                         P1:Protocol <- keepOne P Q]{
          CONG-FAMILY-R[C:Qid <- Q]
@@ -199,8 +243,18 @@ smod STRATS is
            )
            or-else idle
          }
-        } 
-       . 
+        }
+        
+        or-else
+        CONG-FAMILY-R[C:Qid <- Q]
+         { (  bind-bind-pre 
+          ; (read-det-pre !)
+           )
+           or-else idle
+         }
+         
+        )
+ . 
       
          
  strat handleRNFFamily : Qid @ ProtocolConfig .  
@@ -208,7 +262,7 @@ smod STRATS is
      match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{handleRNFFamily(Q)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
                              P1:Protocol <- keepOne P Q]{
          CONG-FAMILY-R[C:Qid <- Q]
                    {(ret-bind-pre or-else
@@ -222,7 +276,21 @@ smod STRATS is
                     ) 
                     ; simplifyNF
                    }
-       } .  
+       } 
+       or-else
+       CONG-FAMILY-R[C:Qid <- Q]
+                   {(ret-bind-pre or-else
+                    (samp-over-if or-else 
+                     (read2Binds or-else
+                      (bind-ret-2-pre
+                        or-else (merge-pre ; cong-pre-nf{bindFreeS})
+                      )
+                     )
+                    )
+                    ) 
+                    ; simplifyNF
+                   }
+       ).  
        
  *** under the assumption that the current protocol is of the form
  ***     family q2 ::= P || family q1 ::= when cond1 --> P1 ;; otherwise --> P2
@@ -248,9 +316,12 @@ smod STRATS is
      match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{applySubstReadFamilyTwoFamily(q3, q4)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P q3 q4, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P q3 q4, 
                              P1:Protocol <- keepTwo P q3 q4]
              {SUBST-nf-read-family-two-family}                
+             or-else
+             SUBST-nf-read-family-two-family
+             )
  . 
  
  *** do a subst on the first branch of a family
@@ -280,9 +351,12 @@ smod STRATS is
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{nTimesSubstChannelFamilyOne(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]{                  
                    subst-channel-one-family}
+               or-else    
+               subst-channel-one-family
+             )
  .   
  
  *** on the left branch of the right branch of a family, do a substitution
@@ -317,7 +391,7 @@ smod STRATS is
   match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{applySubstNfRevFamiliesOne(C1, C2, nt, x, T, R)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]{                  
                     SUBST-nf-rev-families-one[
                       x1:ChannelName <- x, 
@@ -325,6 +399,13 @@ smod STRATS is
                       R2:Reaction <- R,
                       T1:Type <- T]
                      }
+                or-else  
+                 SUBST-nf-rev-families-one[
+                      x1:ChannelName <- x, 
+                      nj:NatTerm <- nt,
+                      R2:Reaction <- R,
+                      T1:Type <- T]    
+              )       
  .                     
    
    *** subst-reverse with a case in a family
@@ -333,50 +414,77 @@ smod STRATS is
  match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{applySubstRevFamily(Q, C2, T)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
+       using (
+              CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
                              P1:Protocol <- keepTwo P Q C2]
              {subst-rev-families[C:Qid <- Q, 
                     cn2:ChannelName <- C2,
-                    T:Type <- T]} .   
+                    T:Type <- T]} 
+              or-else    
+              subst-rev-families[C:Qid <- Q, 
+                    cn2:ChannelName <- C2,
+                    T:Type <- T] 
+             )        
+ .   
                     
  *** subst-nf-read for families with one and two indices
- strat nTimesSubstNFReadFamilyOne : Qid ChannelName @ ProtocolConfig .
- sd nTimesSubstNFReadFamilyOne(Q, C2) := 
+ strat substNFReadFamilyOneChannel : Qid ChannelName @ ProtocolConfig .
+ sd substNFReadFamilyOneChannel(Q, C2) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{nTimesSubstNFReadFamilyOne(Q, C2)} 
+     ? CONG-NEW-NF{substNFReadFamilyOneChannel(Q, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
                              P1:Protocol <- keepTwo P Q C2]{
          SUBST-nf-read-family-one
                       [ q1:ChannelName <-  Q, 
-                       cn2:ChannelName <- C2] } . 
+                       cn2:ChannelName <- C2] } 
+               or-else   
+               SUBST-nf-read-family-one
+                      [ q1:ChannelName <-  Q, 
+                       cn2:ChannelName <- C2]     
+                       ) 
+  . 
                        
- strat nTimesSubstNFReadFamilyTwo : Qid ChannelName @ ProtocolConfig .
- sd nTimesSubstNFReadFamilyTwo(Q, C2) := 
+ strat substNFReadFamilyTwoChannel : Qid ChannelName @ ProtocolConfig .
+ sd substNFReadFamilyTwoChannel(Q, C2) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{nTimesSubstNFReadFamilyTwo(Q, C2)} 
+     ? CONG-NEW-NF{substNFReadFamilyTwoChannel(Q, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
                              P1:Protocol <- keepTwo P Q C2]{
          SUBST-nf-read-family-two
                       [ q1:ChannelName <-  Q, 
                        cn2:ChannelName <- C2] } 
+             or-else          
+         SUBST-nf-read-family-two
+                      [ q1:ChannelName <-  Q, 
+                       cn2:ChannelName <- C2]         
+             )
  .
  
  *** subst-reverse for a family and a channel
- strat nTimesSubstFamiliesOne : Qid ChannelName NatTerm Type @ ProtocolConfig .
- sd nTimesSubstFamiliesOne(Q, C2, nt, T) := 
+ strat substRevFamilyChannel : Qid ChannelName NatTerm Type @ ProtocolConfig .
+ sd substRevFamilyChannel(Q, C2, nt, T) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{nTimesSubstFamiliesOne(Q, C2, nt, T)} 
+     ? CONG-NEW-NF{substRevFamilyChannel(Q, C2, nt, T)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q C2, 
                              P1:Protocol <- keepTwo P Q C2]{
          subst-2-families-one
                       [ C:Qid <-  Q, 
                         cn2:ChannelName <- C2,
                         nj:NatTerm <- nt,
                         T:Type <- T
-                      ]   } .   
+                      ]   } 
+              or-else 
+              subst-2-families-one
+                      [ C:Qid <-  Q, 
+                        cn2:ChannelName <- C2,
+                        nj:NatTerm <- nt,
+                        T:Type <- T
+                      ]       
+              )
+  .   
                       
  *** subst-nf for families
  strat substNFFamilyOne : ChannelName ChannelName Reaction @ ProtocolConfig .
@@ -393,20 +501,28 @@ smod STRATS is
      match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{nTimesSubstNFFamilyOne(C1, C2, R)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]{
           subst-families-one[
                    C:ChannelName <- C1, 
                    cn2:ChannelName <- C2,
                    R2:Reaction <- R
                 ]
-                   } .  
+                   } 
+                   or-else
+                   subst-families-one[
+                   C:ChannelName <- C1, 
+                   cn2:ChannelName <- C2,
+                   R2:Reaction <- R
+                ]
+                   )
+ .  
                    
  *** subst on the left branch of a family
- strat applySubstCaseDist : Qid Qid Reaction @ ProtocolConfig .
- sd applySubstCaseDist(q1, q2, R) := 
+ strat applySubstNFLeft : Qid Qid Reaction @ ProtocolConfig .
+ sd applySubstNFLeft(q1, q2, R) := 
     match pConf s.t. startsWithNew pConf
-    ? CONG-NEW-NF{applySubstCaseDist(q1, q2, R)}
+    ? CONG-NEW-NF{applySubstNFLeft(q1, q2, R)}
     :    
        CASE-DISTINCTION-one-R[aQid:Qid <- q1]
          { substNFFamiliesOne(q2, q1, R)
@@ -415,36 +531,50 @@ smod STRATS is
                  
    
    ************************
-   *** unused
+   *** drop
    ************************    
        
-  *** UNUSED-NF
+  *** DROP-NF
   
- strat applyUnusedNF : ChannelName ChannelName @ ProtocolConfig .
- sd applyUnusedNF(C1, C2) := 
+ strat applyDropNF : ChannelName ChannelName @ ProtocolConfig .
+ sd applyDropNF(C1, C2) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applyUnusedNF(C1, C2)} 
+     ? CONG-NEW-NF{applyDropNF(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]{
-         UNUSED-nf[cn1:ChannelName <- C1, 
+         DROP-nf[cn1:ChannelName <- C1, 
                    cn2:ChannelName <- C2] 
          or-else
-         UNUSED-nf-copy[
+         DROP-nf-copy[
                    cn1:ChannelName <- C1, 
-                   cn2:ChannelName <- C2]           } . 
+                   cn2:ChannelName <- C2]           } )
+          or-else
+          (DROP-nf[cn1:ChannelName <- C1, 
+                   cn2:ChannelName <- C2] 
+         or-else
+         DROP-nf-copy[
+                   cn1:ChannelName <- C1, 
+                   cn2:ChannelName <- C2]  )         
+  . 
                    
-  *** unused for pre-normal forms
+  *** drop for pre-normal forms
                     
- strat applyUnusedPreNF : ChannelName ChannelName @ ProtocolConfig .
- sd applyUnusedPreNF(C1, C2) := 
+ strat applyDropPreNF : ChannelName ChannelName @ ProtocolConfig .
+ sd applyDropPreNF(C1, C2) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applyUnusedPreNF(C1, C2)} 
+     ? CONG-NEW-NF{applyDropPreNF(C1, C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]{
-         UNUSED-pre-nf[o1:ChannelName <- C1, 
-                   o2:ChannelName <- C2] } .                        
+         DROP-pre-nf[o1:ChannelName <- C1, 
+                   o2:ChannelName <- C2] } 
+              or-else
+               DROP-pre-nf[o1:ChannelName <- C1, 
+                   o2:ChannelName <- C2]
+              ) 
+                   
+ .                        
   
   *********************
   *** absorb
@@ -481,18 +611,6 @@ smod STRATS is
      :  ABSORB-LEFT-2[P2:Protocol <- new2NF(P)] 
      .  
  
- *** move the family Q2 inside Q1
- strat applyAddToGroup : Qid Qid @ ProtocolConfig .
- sd applyAddToGroup(Q1, Q2) :=
-    match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applyAddToGroup(Q1, Q2)}
-     : matchrew pConf s.t. 
-         pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q1 Q2, 
-                             P1:Protocol <- keepTwo P Q1 Q2]
-             {addToGroup}                
- . 
- 
 
  
  *** under the assumption that the current protocol is of the form
@@ -522,10 +640,14 @@ smod STRATS is
                                    o:ChannelName <- C2] 
                   or-else 
                   fold-bind-new-prenf[c:ChannelName <- C1,
-                                      o:ChannelName <- C2] )
-                 ; liftInnerBindsNF(C2) 
-                 ; handleRNF(C2) 
-                 ; try (pre2Nf)
+                                      o:ChannelName <- C2] 
+                  or-else
+                  fold-bind-new-nf-0[c:ChannelName <- C1,
+                                   o:ChannelName <- C2]                     )
+               ; liftInnerBindsNF(C2) 
+               ; handleRNF(C2) 
+               ; try (pre2Nf)
+               ; try (delete-empty-newNF)
                  .
                  
  *** fold a pre-normal form                
@@ -543,11 +665,15 @@ smod STRATS is
      ? CONG-NEW-NF{handleRpreNF(C1)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using
-        CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C1, 
+        (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C1, 
                         P1:Protocol <- keepOne P C1]{
          CONG-REACT[o:ChannelName <- C1]
-                   {merge-pre}
-       } .   
+                   {merge-pre}}
+          or-else
+          CONG-REACT[o:ChannelName <- C1]
+                   {merge-pre}        
+         )          
+        .   
        
  *** fold a family                
  strat foldNFFamily : Qid Qid @ ProtocolConfig .
@@ -555,15 +681,29 @@ smod STRATS is
                  (fold-bind-new-nf-families[C:Qid  <- Q1,
                                             C':Qid <- Q2] 
                  )
-                 *** TODO these last 2 steps should be reusable from subst!
+                 *** these last 2 steps should be reusable from subst!
                  ; liftInnerBindsNFFamily(Q2) 
                  ; handleRNFFamily(Q2) 
                  ; try (pre2Nf)
                  .                         
  
  ***********************************
- *** pure syntactic transformation
+ *** pure syntactic transformations
  ***********************************
+ 
+  *** move the family Q2 inside the group Q1
+ strat applyAddToGroup : Qid Qid @ ProtocolConfig .
+ sd applyAddToGroup(Q1, Q2) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyAddToGroup(Q1, Q2)}
+     : matchrew pConf s.t. 
+         pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q1 Q2, 
+                             P1:Protocol <- keepTwo P Q1 Q2]
+             {addToGroup}                
+             or-else addToGroup
+             )
+ . 
  
  *** change order of reads in a normal form or a pre-normal form                        
  strat changeOrder : ChannelName CNameList @ ProtocolConfig .
@@ -571,26 +711,36 @@ smod STRATS is
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{changeOrder(C, ql)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]{
          CONG-REACT[o:ChannelName <- C]
          {change-order[QL':CNameList <- ql]
           or-else
           change-order-pre[QL':CNameList <- ql]
          }
-       } 
+       }
+       or-else
+        CONG-REACT[o:ChannelName <- C]
+         {change-order[QL':CNameList <- ql]
+          or-else
+          change-order-pre[QL':CNameList <- ql]
+         }
+       )
  .
  
  *** turn a nf to prenf 
- strat nf2PreNF : ChannelName ChannelName @ ProtocolConfig .
- sd nf2PreNF(C, c') := 
+ strat nf2PreNF : ChannelName @ ProtocolConfig .
+ sd nf2PreNF(C) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{nf2PreNF(C, c')} 
+     ? CONG-NEW-NF{nf2PreNF(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using
-        CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+        (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                         P1:Protocol <- keepOne P C]
-        {CONG-REACT[o:ChannelName <- C]{nf2Pre[c:ChannelName <- c']}} 
+        {CONG-REACT[o:ChannelName <- C]{nf2Pre}} 
+        or-else
+        CONG-REACT[o:ChannelName <- C]{nf2Pre}
+        )
  .  
  
   *** group families 
@@ -623,9 +773,11 @@ smod STRATS is
      match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{applyDeleteEmptyNF(Q)} 
      :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
                              P1:Protocol <- keepOne P Q]
                              {CONG-FAMILY-WHENLIST-P{ delete-empty-newNF }  }
+              or-else   CONG-FAMILY-WHENLIST-P{ delete-empty-newNF }            
+             )
  .
  
  strat applyDropName : Qid @ ProtocolConfig .
@@ -633,9 +785,11 @@ smod STRATS is
      match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{applyDropName(Q)} 
      :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
                              P1:Protocol <- keepOne P Q]
                              {drop-group-name}
+               or-else drop-group-name
+             )
  .
  
  strat applyCombine : Qid @ ProtocolConfig .
@@ -643,22 +797,23 @@ smod STRATS is
      match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{applyCombine(Q)} 
      :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
                              P1:Protocol <- keepOne P Q]
                              {convert-combined}
+             or-else convert-combined                
+             )
  .
   
  *** do an alpha-renaming on the otherwise branch of a family
-  strat applyBranch2Alpha : Qid QidPairList Reaction @ ProtocolConfig .
- sd applyBranch2Alpha(q1, QL, R) := 
+ strat applyBranch2Alpha : Qid QidPairList @ ProtocolConfig .
+ sd applyBranch2Alpha(q1, QL) := 
     match pConf s.t. startsWithNew pConf
-    ? CONG-NEW-NF{applyBranch2Alpha(q1, QL, R)}
+    ? CONG-NEW-NF{applyBranch2Alpha(q1, QL)}
     : 
        CASE-DISTINCTION-one-R[aQid:Qid <- q1]
          {  idle,
             CASE-DISTINCTION-one-R-end
                     [C:Qid <- q1
-                    *** , R2:Reaction <- R
                     ]
                   {
                      matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -700,23 +855,26 @@ smod STRATS is
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{moveBindInPre(C, Q)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
-             {CONG-REACT[o:ChannelName <- C]{bind2R-pre[x:Qid <- Q] }}
-    .
+             {CONG-REACT[o:ChannelName <- C]{bind2R-pre[x:Qid <- Q] or-else bind2R-nf[x:Qid <- Q] }}
+             or-else
+             CONG-REACT[o:ChannelName <- C]{bind2R-pre[x:Qid <- Q] or-else bind2R-nf[x:Qid <- Q] }
+             )
+    .  
  
  *** move reads from bind list of a normal form to the reaction of the normal form
  ***     on the left branch of a family
-  strat applyBranch2MoveReads : Qid @ ProtocolConfig .
- sd applyBranch2MoveReads(q1) := 
+  strat applyBranch2MoveReads : Qid CNameList @ ProtocolConfig .
+ sd applyBranch2MoveReads(q1, cnl) := 
     match pConf s.t. startsWithNew pConf
-    ? CONG-NEW-NF{applyBranch2MoveReads(q1)}
+    ? CONG-NEW-NF{applyBranch2MoveReads(q1, cnl)}
     :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using  
        CASE-DISTINCTION-one-R[aQid:Qid <- q1, P:Protocol <- removeOne P q1]
-         {   moveReadsToRFamily(q1, 'f :: 'x :: emptyCNameList)
+         {   moveReadsToRFamily(q1, cnl)
            , idle
-         } .  
+         } .
          
   *** move reads from bind list of a normal form to the reaction of the normal form
  strat moveReadsToRFamily : ChannelName CNameList @ ProtocolConfig .
@@ -725,12 +883,16 @@ smod STRATS is
    match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{moveReadsToRFamily(C, x :: cnl)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]{
                               moveReadInnerNfFamily[x:ChannelName <- x]
                               or-else
                               moveReadInnerPreNfFamily[x:ChannelName <- x] 
                              }
+               or-else  (moveReadInnerNfFamily[x:ChannelName <- x]
+                              or-else
+                              moveReadInnerPreNfFamily[x:ChannelName <- x] )             
+             )
              ; moveReadsToRFamily(C, cnl)                
  .               
   
@@ -742,9 +904,13 @@ smod STRATS is
      ? CONG-NEW-NF{applyReorderNF(Q, ql2)} 
      : CASE-DISTINCTION-one-R[aQid:Qid <- Q]
        { matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-          using  CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
+          using  (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
                                  P1:Protocol <- keepOne P Q]
-                  {CONG-FAMILY-R[C:Qid <- Q]{change-order[QL':CNameList <- ql2]}},
+                  {CONG-FAMILY-R[C:Qid <- Q]{change-order[QL':CNameList <- ql2]}}
+                   or-else
+                  CONG-FAMILY-R[C:Qid <- Q]{change-order[QL':CNameList <- ql2]}
+                  )
+                  ,
          idle 
        }  
  . 
@@ -755,9 +921,13 @@ smod STRATS is
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{applyAlphaNFPr(C, QL) } 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
-             {CONG-REACT[o:ChannelName <- C]{alphaNFOverList(QL)}} .  
+             {CONG-REACT[o:ChannelName <- C]{alphaNFOverList(QL)}} 
+             or-else
+             CONG-REACT[o:ChannelName <- C]{alphaNFOverList(QL)}
+             )
+  .  
  
  *****************************
  *** read-inside-if
@@ -769,13 +939,19 @@ smod STRATS is
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{applyReadInsideIfPre(C)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
        {CONG-REACT[o:ChannelName <- C]
         {cong-pre-nf{read-inside-if
                     } 
         }
        }
+       or-else
+       CONG-REACT[o:ChannelName <- C]
+        {cong-pre-nf{read-inside-if
+                    } 
+        }
+       )
     .    
  
  ******************************************
@@ -808,14 +984,14 @@ smod UNUSED-STRATS is
  var rConf : ReactionConfig .
  var S Sigma : Signature .
  var D Delta : ChannelContext .
- var G : VarContext .
+ var G : TypeContext .
  var P P1 P2 : Protocol .
  var R R1 R2 R3 R4 : Reaction .
  *** var Q Q' C Q1 Q2 x1 x2 y x : Qid .
  var I O : Set{CNameBound} .
  var T T' T1 : Type .
  var flag : Bool .
- var M M1 M2 : Message .
+ var M M1 M2 : Expression .
  var Dis : Distribution .
  var C C1 C2 : ChannelName .
  var Q Q' x1 : Qid .
@@ -1389,21 +1565,21 @@ smod UNUSED-STRATS is
      : ABSORB-LEFT-2[P2:Protocol <- P] ; COMP-NEW .  
      
      
- var Msg1 Msg2 : Message .    
+ var Msg1 Msg2 : Expression .    
       
  var q1 q2 : Qid .  
 
  var x : Qid .    
      
- strat retBind2OverIf : Type Message Message Reaction Qid @ ReactionConfig .
+ strat retBind2OverIf : Type Expression Expression Reaction Qid @ ReactionConfig .
  sd retBind2OverIf(T, M1, M2 , R, x) := 
     match rConf s.t. rBind(rConf) 
     ? cong-bind{idle, retBind2OverIf(T, M1, M2, R, x) }
     : cong-branch-refl{
-           ret-bind-2[M1:Message <- M1 , T1:Type <- T, R2:Reaction <- R , x:Qid <- x],
-           ret-bind-2[M1:Message <- M2 , T1:Type <- T, R2:Reaction <- R , x:Qid <- x]} .
+           ret-bind-2[M1:Expression <- M1 , T1:Type <- T, R2:Reaction <- R , x:Qid <- x],
+           ret-bind-2[M1:Expression <- M2 , T1:Type <- T, R2:Reaction <- R , x:Qid <- x]} .
      
- strat applyRetBind2OverIf : ChannelName Type Message Message Reaction Qid @ ProtocolConfig .
+ strat applyRetBind2OverIf : ChannelName Type Expression Expression Reaction Qid @ ProtocolConfig .
  sd applyRetBind2OverIf(C, T, M1, M2, R, x) :=                                 
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{applyRetBind2OverIf(C, T, M1, M2, R, x) } 
@@ -1412,7 +1588,7 @@ smod UNUSED-STRATS is
                              P1:Protocol <- keepOne P C]
              {CONG-REACT[o:ChannelName <- C]{retBind2OverIf(T, M1, M2, R, x)}} .
      
- strat symOverIf : Reaction Message Message @ ReactionConfig .
+ strat symOverIf : Reaction Expression Expression @ ReactionConfig .
  sd symOverIf(R, Msg1, Msg2) :=
     sym[R1:Reaction <- R]
       {liftAllInnerBinds ; 
@@ -1421,7 +1597,7 @@ smod UNUSED-STRATS is
        *** applyCongRetBranch(Msg1, Msg2)
        } .   
        
- strat applySymOverIf : ChannelName Reaction Message Message @ ProtocolConfig .      
+ strat applySymOverIf : ChannelName Reaction Expression Expression @ ProtocolConfig .      
  sd applySymOverIf(C, R, Msg1, Msg2) := 
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{applySymOverIf(C, R, Msg1, Msg2) } 

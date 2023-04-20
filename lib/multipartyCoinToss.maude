@@ -33,8 +33,11 @@ mod COIN-TOSS is
  op muKeySym : -> SigElem .
  eq muKeySym = 'mu_key : unit ~>> key .
  
+ op flipF : -> SigElem .
+ eq flipF = 'flip : unit ~>> bool .
+ 
  op secSig : -> Signature .
- eq secSig = muKeySym encF decF zerosF xorF .
+ eq secSig = muKeySym encF decF zerosF xorF flipF .
  
  op n : -> Nat .
    
@@ -53,7 +56,7 @@ mod COIN-TOSS is
     newfamily 'Opened 'i (bound (n + 1)) : bool in
     newfamily 'SumCommit 'i (bound (n + 2)) : bool in
    ( *** new starts here 
-    ('Flip ::= nf(emptyBRList, samp flip, emptyCNameList))
+    ('Flip ::= nf(emptyBRList, samp ('flip < () >), emptyCNameList))
     || 
     ('LeakFlip_id_adv ::= nf( 'f : bool <- read 'Flip, return 'f, 'f :: emptyCNameList)
     )   
@@ -75,7 +78,7 @@ mod COIN-TOSS is
     )   
     ||
     (family 'Commit 'i (bound n) ::= 
-       (when (apply 'honest 'i)  --> nf(emptyBRList, samp flip, emptyCNameList)) ;;
+       (when (apply 'honest 'i)  --> nf(emptyBRList, samp ('flip < () >), emptyCNameList)) ;;
        (otherwise --> 
           nf('advCommit : bool <- read ('AdvCommit_adv_party ['i]), 
              return 'advCommit, 
@@ -169,7 +172,7 @@ mod COIN-TOSS is
      newfamily 'AllCommitted ('i 'j) ((bound (n + 1))(uniformBound (n + 2))) : unit in 
      newfamily 'SumOpened ('i 'j) ((bound (n + 1))(uniformBound (n + 2))) : bool in
      ( *** start new
-     (family 'Commit 'i (bound (n + 1))  ::= nf(emptyBRList, samp flip, emptyCNameList)
+     (family 'Commit 'i (bound (n + 1))  ::= nf(emptyBRList, samp ('flip < () >), emptyCNameList)
      )
      ||
      (family 'AllCommitted ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::=
@@ -274,7 +277,7 @@ smod EXECUTE is
  var x y x1 x2 : Qid .
  var Sigma : Signature .
  var Delta : ChannelContext .
- var Gamma : VarContext .
+ var Gamma : TypeContext .
  var I O : Set{CNameBound} .
  var A : Set{BoolTerm} .
  var cn : ChannelName .
@@ -289,20 +292,20 @@ smod EXECUTE is
  eq ap 'xor pair(x1, ap 'xor pair(x1, x2)) = x2 .  
  
  rl [flip-invar-xor-r] : rConfig(Sigma, Delta, Gamma (x : bool),
-            y : bool <- samp flip ; 
+            y : bool <- samp ('flip < () >) ; 
             return (ap 'xor pair(x, y)), I, A, bool
             )
             => 
             rConfig(Sigma, Delta , Gamma (x : bool),
-            samp flip, I, A, bool) .  
+            samp ('flip < () >), I, A, bool) .  
             
  rl [flip-invar-xor-l] : rConfig(Sigma, Delta, Gamma (y : bool),
-            x : bool <- samp flip ; 
+            x : bool <- samp ('flip < () >) ; 
             return (ap 'xor pair(x, y)), I, A, bool
             )
             => 
             rConfig(Sigma, Delta , Gamma (y : bool),
-            samp flip, I, A, bool) .  
+            samp ('flip < () >), I, A, bool) .  
  
  *********************************
  *** strategies for assumptions
@@ -366,7 +369,7 @@ smod EXECUTE is
      ) *** end family 
      || 
      (family 'Commit 'i (bound (n + 1)) ::= 
-        nf( emptyBRList, samp flip, emptyCNameList)) 
+        nf( emptyBRList, samp ('flip < () >), emptyCNameList)) 
      || 
      
      (family 'Open 'i (bound (n + 1)) ::= 
@@ -431,7 +434,7 @@ smod EXECUTE is
      ) *** end family 
      || 
      (family 'Commit 'i (bound (n + 1)) ::= 
-        nf( emptyBRList, samp flip, emptyCNameList)) 
+        nf( emptyBRList, samp ('flip < () >), emptyCNameList)) 
      || 
      
      (family 'Open 'i (bound (n + 1)) ::= 
@@ -493,7 +496,7 @@ smod EXECUTE is
      ,		 
      
      (family 'Commit 'i (bound (n + 1)) ::= 
-        nf( emptyBRList, samp flip, emptyCNameList)) 
+        nf( emptyBRList, samp ('flip < () >), emptyCNameList)) 
      || 
      
      (family 'Open 'i (bound (n + 1)) ::= 
@@ -564,7 +567,7 @@ smod EXECUTE is
          {'SumOpened ('i 'j) (bound (n + 1) uniformBound (n + 2)) : bool}
      ,		 
      (family 'Commit 'i (bound (n + 1)) ::= 
-        nf( emptyBRList, samp flip, emptyCNameList)) 
+        nf( emptyBRList, samp ('flip < () >), emptyCNameList)) 
      || 
      
      (family 'Open 'i (bound (n + 1)) ::= 
@@ -628,7 +631,7 @@ smod EXECUTE is
          {'SumOpened ('i 'j) (bound (n + 1) uniformBound (n + 2)) : bool}
      ,		 
      (family 'Commit 'i (bound (n + 1)) ::= 
-        nf( emptyBRList, samp flip, emptyCNameList)) 
+        nf( emptyBRList, samp ('flip < () >), emptyCNameList)) 
      || 
      
      (family 'Open 'i (bound (n + 1)) ::= 
@@ -692,7 +695,7 @@ smod EXECUTE is
          emptyTypedCNameList
      ,		 
      (family 'Commit 'i (bound (n + 1)) ::= 
-        nf( emptyBRList, samp flip, emptyCNameList)) 
+        nf( emptyBRList, samp ('flip < () >), emptyCNameList)) 
      || 
      
      (family 'Open 'i (bound (n + 1)) ::= 
@@ -766,7 +769,7 @@ smod EXECUTE is
           ) 
           ||
           (family 'Commit 'i (bound (n + 1)) ::= 
-             (when (apply 'honest 'i) --> nf(emptyBRList, samp flip, emptyCNameList)) 
+             (when (apply 'honest 'i) --> nf(emptyBRList, samp ('flip < () >), emptyCNameList)) 
              ;; 
              otherwise --> nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
                               return 'advCommit, 'advCommit :: emptyCNameList)
@@ -844,7 +847,7 @@ smod EXECUTE is
           ) 
           ||
           (family 'Commit 'i (bound (n + 1)) ::= 
-             (when (apply 'honest 'i) --> nf(emptyBRList, samp flip, emptyCNameList)) 
+             (when (apply 'honest 'i) --> nf(emptyBRList, samp ('flip < () >), emptyCNameList)) 
              ;; 
              otherwise --> nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
                               return 'advCommit, 'advCommit :: emptyCNameList)
@@ -901,7 +904,7 @@ smod EXECUTE is
          )       
      || 
      (family 'Commit 'i (bound (n + 1)) ::= 
-             (when (apply 'honest 'i) --> nf(emptyBRList, samp flip, emptyCNameList)) 
+             (when (apply 'honest 'i) --> nf(emptyBRList, samp ('flip < () >), emptyCNameList)) 
              ;; 
              otherwise --> nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
                               return 'advCommit, 'advCommit :: emptyCNameList)
@@ -987,7 +990,7 @@ smod EXECUTE is
          )       
      || 
      (family 'Commit 'i (bound (n + 1)) ::= 
-             (when (apply 'honest 'i) --> nf(emptyBRList, samp flip, emptyCNameList)) 
+             (when (apply 'honest 'i) --> nf(emptyBRList, samp ('flip < () >), emptyCNameList)) 
              ;; 
              otherwise --> nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
                               return 'advCommit, 'advCommit :: emptyCNameList)
@@ -1052,7 +1055,7 @@ smod EXECUTE is
     newfamily 'Opened 'i (bound (n + 1)) : bool in
     newfamily 'SumCommit 'i (bound (n + 2)) : bool in
  ( *** new starts here
-     ('Flip ::= nf(emptyBRList, samp flip, emptyCNameList)) 
+     ('Flip ::= nf(emptyBRList, samp ('flip < () >), emptyCNameList)) 
      || 
      ('LastCommit ::= nf(('f : bool <- read 'Flip) 
                           'x : bool <- read ('SumCommit[n + 1]), 
@@ -1068,7 +1071,7 @@ smod EXECUTE is
      || 
      (family 'Commit 'i (bound n) ::= 
         (when (apply 'honest 'i) --> 
-          nf(emptyBRList, samp flip, emptyCNameList)) 
+          nf(emptyBRList, samp ('flip < () >), emptyCNameList)) 
         ;; 
         otherwise --> 
           nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
@@ -1102,7 +1105,7 @@ smod EXECUTE is
        (when (apply 'honest 'i) --> 
           preNF(('ao : unit <- read ('AllOpen[n + 2])) 
                  'sc : bool <- read ('SumCommit[n + 2]),
-                  return 'sc, 'sc :: 'ao :: emptyCNameList, 'sc)) 
+                  return 'sc, 'sc :: 'ao :: emptyCNameList)) 
           ;; 
           otherwise --> nf('out : bool <- read ('Out['i]), return 'out, 'out :: emptyCNameList)) 
      || 
@@ -1138,7 +1141,7 @@ smod EXECUTE is
                           ('c : bool <- read ('Commit[n + 1])),
                           return 'c, 'x :: 'c :: emptyCNameList)) 
       || 
-      ('Commit[n + 1] ::= nf(emptyBRList, samp flip, emptyCNameList))
+      ('Commit[n + 1] ::= nf(emptyBRList, samp ('flip < () >), emptyCNameList))
       || 
       (family 'AllOpen 'i (bound (n + 2)) ::=  
         (when (0 =T= 'i) --> nf(emptyBRList, return (), emptyCNameList)) 
@@ -1149,7 +1152,7 @@ smod EXECUTE is
      )
      || 
      (family 'Commit 'i (bound n) ::= 
-       (when (apply 'honest 'i) --> nf(emptyBRList, samp flip, emptyCNameList)) 
+       (when (apply 'honest 'i) --> nf(emptyBRList, samp ('flip < () >), emptyCNameList)) 
        ;; 
        otherwise --> 
          nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
@@ -1232,7 +1235,7 @@ smod EXECUTE is
       ) 
       || 
       (family 'Commit 'i (bound (n + 1)) ::= 
-        (when (apply 'honest 'i) --> nf(emptyBRList, samp flip, emptyCNameList)) 
+        (when (apply 'honest 'i) --> nf(emptyBRList, samp ('flip < () >), emptyCNameList)) 
         ;; 
         otherwise --> 
          nf('advCommit : bool <- read ('AdvCommit_adv_party['i]), 
@@ -1334,8 +1337,8 @@ smod EXECUTE is
         {*** ind base:
           applySubstRevFamily('AllCommitted1, 'AllCommitted ['i 0], unit),
          *** ind step:
-          nTimesSubstNFReadFamilyTwo('AllCommitted, 'AllCommitted['i ('k ++ 1)]) 
-        ; nTimesSubstFamiliesOne('AllCommitted1, 'AllCommitted['i ('k ++ 1)], 'k ++ 1, unit)
+          substNFReadFamilyTwoChannel('AllCommitted, 'AllCommitted['i ('k ++ 1)]) 
+        ; substRevFamilyChannel('AllCommitted1, 'AllCommitted['i ('k ++ 1)], 'k ++ 1, unit)
         }
  . 
  
@@ -1366,8 +1369,8 @@ smod EXECUTE is
         {*** ind base:
           applySubstRevFamily('SumOpened1, 'SumOpened ['i 0], bool),
          *** ind step:
-         nTimesSubstNFReadFamilyTwo('SumOpened, 'SumOpened['i ('k ++ 1)]) 
-        ; nTimesSubstFamiliesOne('SumOpened1, 'SumOpened['i ('k ++ 1)], 'k ++ 1, bool)
+         substNFReadFamilyTwoChannel('SumOpened, 'SumOpened['i ('k ++ 1)]) 
+        ; substRevFamilyChannel('SumOpened1, 'SumOpened['i ('k ++ 1)], 'k ++ 1, bool)
         } 
  .
  
@@ -1561,7 +1564,7 @@ srew [1] pConfig(secSig,
           
          ; applyIndStep3('AllCommitted1, r7, r8)   
                  
-         ; applySubstCaseDist('Open, 'AllCommitted1, 
+         ; applySubstNFLeft('Open, 'AllCommitted1, 
             nf('sc : bool <- read ('SumCommit[n + 2]), return (), 'sc :: emptyCNameList)
            ) 
          ; absorbFamily('AllCommitted1)   
@@ -1587,7 +1590,7 @@ srew [1] pConfig(secSig,
             'SumOpened1 :: 'SumCommit :: 'AllOpen :: emptyCNameList
           ]     
        ; applyIndStep4('SumOpened1, r9, r10) 
-       ; applySubstCaseDist('Out, 'SumOpened1, 
+       ; applySubstNFLeft('Out, 'SumOpened1, 
              nf(('ao : unit <- read ('AllOpen[n + 2])) 
                  'sc : bool <- read ('SumCommit[n + 2]), 
                  return 'sc, 'ao :: 'sc :: emptyCNameList)
@@ -1601,11 +1604,7 @@ srew [1] pConfig(secSig,
        ; applyBranch2Alpha('SumCommit, 
             << 'cj,'c >> 
             << 'xj,'x >>
-            emptyQidPairList, 
-            nf(('c : bool <- read ('Commit['i -- 1])) 
-                'x : bool <- read ('SumCommit['i -- 1]), 
-                return (ap 'xor pair('x, 'c)), 
-                'x :: 'c :: emptyCNameList)
+            emptyQidPairList
           )    
           ; SYM[P1:Protocol <- idealPlusSim]
             {
@@ -1615,7 +1614,7 @@ srew [1] pConfig(secSig,
          ; applySubstChannelBranch('Out, 'Ok_adv_id)
          ; absorbChannel('Ok_adv_id)
          ; applyCaseDistBranch2('SumCommit, 'LastCommit)
-         ; applyBranch2MoveReads('Out)
+         ; applyBranch2MoveReads('Out, 'f :: 'x :: emptyCNameList)
          ; applyBranch2SubstRev('Out, 'SumCommit, n + 2, 'sc, bool,
              nf( ('f : bool <- read 'Flip) 
                  ('x : bool <- read ('SumCommit [ n + 1 ])) ,
@@ -1637,7 +1636,7 @@ srew [1] pConfig(secSig,
          ; SYM[P1:Protocol <- i3]{
              unwrap-channel-family[C:Qid <- 'Commit]
       ; unwrap-channel-family[C:Qid <- 'Committed]
-      ; applyUnusedNF('Commit[n + 1], 'Committed[n + 1])
+      ; applyDropNF('Commit[n + 1], 'Committed[n + 1])
       ; wrap-channel-family[C:Qid <- 'Commit]
       ; wrap-channel-family-new-R[C:Qid <- 'Committed]
          }

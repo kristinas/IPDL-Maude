@@ -19,6 +19,9 @@ mod PREPROCESSING is
 
  op xorF : -> SigElem .
  eq xorF = 'xor : (msg * msg) ~> msg .
+ 
+ op flipF : -> SigElem .
+ eq flipF = 'flip : unit ~>> bool .
 
  op muMsgSym : -> SigElem .
  eq muMsgSym = 'mu_msg : unit ~>> msg .
@@ -55,7 +58,7 @@ mod PREPROCESSING is
     ||
     ('Key1 ::= samp ('mu_msg < () >))
     || 
-    ('Flip ::= samp flip)
+    ('Flip ::= samp ('flip < () >))
     ||
     ('LeakFlip_rec_adv ::= nf(('flip : bool <- read 'Flip), 
                                return 'flip, 
@@ -141,7 +144,7 @@ mod PREPROCESSING is
     ||
     ('Key1 ::= samp ('mu_msg < () >))
     || 
-    ('Flip ::= samp flip)
+    ('Flip ::= samp ('flip < () >))
     ||
     ('LeakFlip_rec_adv ::= nf(('flip : bool <- read 'Flip), 
                                return 'flip, 
@@ -252,7 +255,7 @@ mod PREPROCESSING is
                              else if 'c then return True else return False,
                        'f :: 'c :: emptyCNameList)
    ) || 
-   ('Flip ::= samp flip) || 
+   ('Flip ::= samp ('flip < () >)) || 
    ('Key0 ::= samp ('mu_msg < () >)) || 
    ('Key1 ::= samp ('mu_msg < () >)) || 
    ('KeyPair ::= nf(('f : bool <- read 'Flip) 
@@ -338,7 +341,7 @@ mod PREPROCESSING is
                              else if 'c then return True else return False, 
                        'f :: 'c :: emptyCNameList)
     ) || 
-    ('Flip ::= samp flip) || 
+    ('Flip ::= samp ('flip < () >)) || 
     ('Key0 ::= samp ('mu_msg < () >)) || 
     ('Key1 ::= samp ('mu_msg < () >)) || 
     ('KeyPair ::= nf(('k0 : msg <- read 'Key0) 
@@ -422,7 +425,7 @@ mod PREPROCESSING is
                               else if 'c then return True else return False, 
                         'f :: 'c :: emptyCNameList)
     ) || 
-    ('Flip ::= samp flip) || 
+    ('Flip ::= samp ('flip < () >)) || 
     ('Key0 ::= samp ('mu_msg < () >)) || 
     ('Key1 ::= samp ('mu_msg < () >)) || 
     ('LeakChoiceEnc_rec_adv ::= nf('e : bool <- read 'ChoiceEnc, 
@@ -507,7 +510,7 @@ mod PREPROCESSING is
                               else if 'c then return True else return False, 
                         'f :: 'c :: emptyCNameList)
     ) || 
-    ('Flip ::= samp flip) || 
+    ('Flip ::= samp ('flip < () >)) || 
     ('Key0 ::= samp ('mu_msg < () >)) ||
     ('Key1 ::= samp ('mu_msg < () >)) || 
     ('LeakChoiceEnc_rec_adv ::= nf('e : bool <- read 'ChoiceEnc, 
@@ -582,7 +585,7 @@ smod EXECUTE is
  
  var Sigma : Signature .
  var Delta : ChannelContext .
- var Gamma : VarContext .
+ var Gamma : TypeContext .
  vars i1 i2 X Y Z : ChannelName .  
  vars x y x1 x2 Q Q1 Q2 Q3 : Qid .
  var I O : Set{CNameBound} .
@@ -656,7 +659,7 @@ endsm
 
 
 
-srew [1] pConfig(muMsgSym xorF, 
+srew [1] pConfig(muMsgSym xorF flipF, 
                  ('In0 @ nil :: msg) 
                  ('In1 @ nil :: msg) 
                  ('Choice @ nil :: bool) 
@@ -687,11 +690,11 @@ srew [1] pConfig(muMsgSym xorF,
                 ; substNF('SharedKey, 'Out) 
                 ; substNF('MsgEnc0, 'Out)
                 ; substNF('MsgEnc1, 'Out) 
-                
-                ; applyUnusedNF('Flip, 'Out) 
-                ; applyUnusedNF('Key0, 'Out)
-                ; applyUnusedNF('Key1, 'Out) 
-                
+       
+                ; applyDropNF('Flip, 'Out) 
+                ; applyDropNF('Key0, 'Out)
+                ; applyDropNF('Key1, 'Out) 
+                   
                 ; SYM[P1:Protocol <- addSharedKey] 
                     { 
                       substNF('KeyPair, 'SharedKey) 
@@ -699,13 +702,13 @@ srew [1] pConfig(muMsgSym xorF,
                     ; substNF('KeyPair, 'MsgEnc1)
                     ; absorbChannel('KeyPair)
                     }  
-                    
+                  
                 ; foldNF('Key1, 'KeyPair)
                 ; foldNF('Key0, 'KeyPair) 
-                
+  
                 ; localProof('KeyPair) 
                
-                ; applyUnusedPreNF('Flip, 'KeyPair)
+                ; applyDropPreNF('Flip, 'KeyPair) 
                 ; SYM[P1:Protocol <- addKey0Key1]
                    {
                     foldNF('Key1, 'KeyPair) ;
@@ -715,7 +718,7 @@ srew [1] pConfig(muMsgSym xorF,
                 ; substNF('KeyPair, 'MsgEnc0) 
                 ; substNF('KeyPair, 'MsgEnc1)
                 ; absorbChannel('KeyPair)
-                ; applyUnusedNF('Key1, 'SharedKey)
+                ; applyDropNF('Key1, 'SharedKey)
                  
                 ; SYM[P1:Protocol <- addPvtMsg]
                    { 
@@ -730,12 +733,12 @@ srew [1] pConfig(muMsgSym xorF,
                ; applyReadInsideIfPre('PvtMsg) 
                ; moveBindInPre('PvtMsg, 'm0)
                ; applyReadInsideIfPre('PvtMsg)
-               
+              
                ; localAssumptionProof('PvtMsg) 
-                
+            
                ; SYM[P1:Protocol <- addKey1]
                   { 
-                    nf2PreNF('PvtMsg, 'k1)
+                    nf2PreNF('PvtMsg)
                   ; foldNFPre('Key1, 'PvtMsg)
                   ; changeOrder('PvtMsg, 'm1 :: 'm0 :: 'c :: emptyCNameList)
                   } 
@@ -760,7 +763,6 @@ srew [1] pConfig(muMsgSym xorF,
                 ; changeOrder('MsgEnc0, 'k0 :: 'm0 :: 'm1 :: 'k1 :: 'c :: emptyCNameList)
                 ; changeOrder('MsgEnc1, 'k0 :: 'm0 :: 'm1 :: 'k1 :: 'c :: emptyCNameList)
                   }
-                  
                .
                                     
  

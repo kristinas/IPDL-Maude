@@ -31,7 +31,12 @@ result sort \code{s}. Moreover, operations
 may have attributes, written in square brackets after their declarations,
 like \code{comm} for commutativity or \code{assoc} for associativity.
 In Maude terms are rewritten to a normal form modulo the declared 
-attributes and the equations of defined operations. 
+attributes and the equations of defined operations.
+More precisely, 
+equations are used as equational rules: instances of the left-hand side
+pattern that matches subterms of a term are replaces with the 
+corresponding instances of the right-hand side.
+The process is called term rewriting and the result of simplifying a term by complete application of equational rules is called its normal form. 
 We can control which operations will appear in these ground
 forms by adding the attribute \code{ctor} to them. An operation that
 is not a constructor of a sort is regarded as defined. 
@@ -637,12 +642,12 @@ meta-strategy.
    \item  \texttt{applySubstNFLeft(q1, q2, R)} applies \texttt{substNFFamiliesOne} on the left branch of a family defined with cases.
 \end{itemize}  
 
-\subsubsection{UNUSED}
+\subsubsection{DROP}
 
 \begin{itemize}
-\item \texttt{applyUnusedNF(C1, C2)} applies the normal form version of \textsc{unused}.
-\item \texttt{applyUnusedPreNF(C1, C2)} applies the pre-normal form
-version of \textsc{unused}.
+\item \texttt{applyDropNF(C1, C2)} applies the normal form version of \textsc{drop}.
+\item \texttt{applyDropPreNF(C1, C2)} applies the pre-normal form
+version of \textsc{drop}.
 \end{itemize}
 
 \subsubsection{ABSORB}
