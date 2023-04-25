@@ -1,0 +1,1562 @@
+\section{Derived rules, reaction equivalence}
+
+\begin{lstlisting}
+ *** rules for normal forms: 
+ 
+ 
+ crl [cong-pre-nf] :
+     rConfig(Sigma, Delta, Gamma, preNF(BL , R1 , QL), I, A, T)
+     => 
+     rConfig(Sigma, Delta, Gamma, preNF(BL , R2 , QL), I, A, T)
+     if 
+     rConfig(Sigma, Delta, addDeclarations BL Gamma, R1, I, A, T) 
+     => 
+     rConfig(Sigma, Delta, Gamma', R2, I, A, T) 
+     /\
+     Gamma' == addDeclarations BL Gamma [nonexec] .
+     
+  crl [cong-nf] :
+     rConfig(Sigma, Delta, Gamma, nf(BL , R1 , QL), I, A, T)
+     => 
+     rConfig(Sigma, Delta, Gamma, nf(BL , R2 , QL), I, A, T)
+     if 
+     rConfig(Sigma, Delta, addDeclarations BL Gamma, R1, I, A, T) 
+     => 
+     rConfig(Sigma, Delta, Gamma', R2, I, A, T) 
+     /\  Gamma' == addDeclarations BL Gamma 
+     [nonexec] . 
+     
+ crl [read-det-pre] :
+     rConfig(Sigma, Delta, Gamma, 
+               preNF( (x : T1 <- read i) (y : T1 <- read i) BL , R , QL), I, A, T2) 
+     =>
+     rConfig(Sigma, Delta, Gamma, 
+               preNF( (x : T1 <- read i) BL , R [y / x] , del y QL), I, A, T2) 
+ if isElemB(i, I, A)  /\ elem (toBound i) T1 Delta A
+ /\ typeOf(Sigma, Delta, addDeclarations BL (Gamma (x : T1) (y : T1)), I, A, R) == T2        
+ .
+                
+ crl [bind-ret-2-pre] : 
+     rConfig(Sigma, Delta, Gamma, 
+               preNF( (x : T1 <~ R1) BL , return x , QL), I, A, T1) 
+     =>
+     rConfig(Sigma, Delta, Gamma, 
+               preNF( BL , R1 , del x QL), I, A, T1) 
+ if typeOf(Sigma, Delta, addDeclarations BL Gamma, I, A, R1) == T1 
+  .         
+     
+ crl [read2Binds] : 
+    rConfig(Sigma, Delta, Gamma, preNF(BL (x : T1 <~ read i), R , QL), I, A, T) 
+    =>
+    rConfig(Sigma, Delta, Gamma, preNF(BL (x : T1 <- read i), R , QL), I, A, T) 
+    if isElemB(i, I, A)  and elem (toBound i) T1 Delta A .
+    
+ crl [pre2Nf] : preNF(BRL, R, QL) => nf(BRL, R, QL) if R : BindFreeReaction .
+ 
+ rl [nf2Pre] : nf(BL, R, QL) => preNF(BL, R, QL) .
+      
+ crl [merge-pre] :
+     rConfig(Sigma, Delta, Gamma, preNF(BL (x : T1 <~ R1) , R2 , QL), I, A, T2)
+     =>
+     rConfig(Sigma, Delta, Gamma, preNF(BL , x : T1 <- R1 ; R2 , del x QL), I, A, T2) 
+   if typeOf(Sigma, Delta, addDeclarations BL Gamma, I, A, R1) == T1
+     /\ typeOf(Sigma, Delta, addDeclarations BL (Gamma (x : T1)), I, A, R2) == T2
+ .
+    
+ crl [bind2R-nf] :   
+ rConfig(Sigma, Delta, Gamma, nf(BRL (x : T1 <- R1) , R2 , QL), I, A, T2)
+     =>
+     rConfig(Sigma, Delta, Gamma, preNF(BRL , x : T1 <- R1 ; R2 , del x QL), I, A, T2) 
+ if typeOf(Sigma, Delta, addDeclarations BRL Gamma, I, A, R1) == T1
+ /\ typeOf(Sigma, Delta, addDeclarations BRL (Gamma (x : T1)), I, A, R2) == T2 
+     .
+    
+ crl [bind2R-pre] :
+     rConfig(Sigma, Delta, Gamma, preNF(BL (x : T1 <- R1) , R2 , QL), I, A, T2)
+     =>
+     rConfig(Sigma, Delta, Gamma, preNF(BL , x : T1 <- R1 ; R2 , del x QL), I, A, T2) 
+ if typeOf(Sigma, Delta, addDeclarations BL Gamma, I, A, R1) == T1
+ /\ typeOf(Sigma, Delta, addDeclarations BL (Gamma (x : T1)), I, A, R2) == T2 
+     .
+  
+ crl [bind2R-pre-reverse] :
+     rConfig(Sigma, Delta, Gamma, 
+             preNF(BL , x : T1 <- R1 ; R2 , QL), 
+             I, A, T2)
+     =>
+     rConfig(Sigma, Delta, Gamma, 
+             preNF(BL (x : T1 <- R1) , R2 , x :: QL),
+             I, A, T2) 
+ if typeOf(Sigma, Delta, addDeclarations BL Gamma, I, A, R1) == T1
+ /\ typeOf(Sigma, Delta, addDeclarations BL (Gamma (x : T1)), I, A, R2) == T2
+ .  
+ 
+ crl [ret-bind-pre] :
+     rConfig(Sigma, Delta, Gamma, preNF((x : T1 <~ return M) BL, R , QL), I, A, T2) 
+     =>
+     rConfig(Sigma, Delta, Gamma, preNF(BL, R [x / M] , del x QL), I, A, T2) 
+ if
+     typeOf(Sigma, Gamma, M) == T1 
+     /\  typeOf(Sigma, Delta, addDeclarations BL (Gamma (x : T1)), I, A, R) == T2 
+ .    
+
+ 
+ crl [bind-bind-pre] :
+     rConfig(Sigma, Delta, Gamma, 
+              preNF((x2 : T2 <~ nf(BRL, R2, QL')) BL, R1, QL), I, A, T1)
+     =>  
+     rConfig(Sigma, Delta, Gamma, 
+              preNF(BRL (x2 : T2 <~ R2) BL, 
+                    R1, addListBefore QL' x2 QL), I, A, T1) 
+ if  
+     typeOf(Sigma, Delta, 
+            addDeclarations BRL (addDeclarations BL Gamma), I, A, R2) == T2
+     /\          
+     typeOf(Sigma, Delta, 
+            addDeclarations BL (Gamma (x2 : T2)), I, A, R1) == T1
+ .  
+ 
+  crl [bind-bind-pre-pre] :
+     rConfig(Sigma, Delta, Gamma, 
+              preNF((x2 : T2 <~ preNF(BRL, R2, QL')) BL, R1, QL), I, A, T1)
+     =>  
+     rConfig(Sigma, Delta, Gamma, 
+              preNF(BRL (x2 : T2 <~ R2) BL, 
+                    R1, addListBefore QL' x2 QL), I, A, T1) 
+ if  
+     typeOf(Sigma, Delta, 
+            addDeclarations BRL (addDeclarations BL Gamma), I, A, R2) == T2
+     /\          
+     typeOf(Sigma, Delta, 
+            addDeclarations BL (Gamma (x2 : T2)), I, A, R1) == T1
+ . 
+            
+ *** derived rules:
+  
+  rl [change-order] :
+     rConfig(Sigma, Delta, Gamma, nf(BRL, R, QL), I, A, T)
+     =>
+     rConfig(Sigma, Delta, Gamma, nf(BRL, R, QL'), I, A, T) 
+     [nonexec] . 
+     
+    rl [change-order-pre] :
+     rConfig(Sigma, Delta, Gamma, preNF(BRL, R, QL), I, A, T)
+     =>
+     rConfig(Sigma, Delta, Gamma, preNF(BRL, R, QL'), I, A, T) 
+     [nonexec] . 
+    
+ 
+  crl [same-reaction-if] : 
+     rConfig(Sigma, Delta, Gamma, if M then R else R, I, A, T)
+     => 
+     rConfig(Sigma, Delta, Gamma, R, I, A, T) 
+  if typeOf(Sigma, Delta, Gamma, I, A, R) == T  
+  /\ typeOf(Sigma, Gamma, M) == bool 
+  .
+ 
+  crl [cong-branch-refl] : 
+     rConfig(Sigma, Delta, Gamma, if M then R1 else R2, I, A, T)
+     => 
+     rConfig(Sigma, Delta, Gamma, if M then R3 else R4, I, A, T)
+     if
+     typeOf(Sigma, Gamma, M) == bool 
+     /\
+     rConfig(Sigma, Delta, Gamma, R1, I, A, T) => 
+     rConfig(Sigma, Delta, Gamma, R3, I, A, T)
+     /\
+     rConfig(Sigma, Delta, Gamma, R2, I, A, T) => 
+     rConfig(Sigma, Delta, Gamma, R4, I, A, T) . 
+      
+ crl [read-inside-if] : 
+    rConfig(Sigma, Delta, Gamma, 
+             x : T1 <- read i ; if M then R1 else R2, I, A, T) 
+    => 
+    rConfig(Sigma, Delta, Gamma, 
+             if M then x : T1 <- read i ; R1 
+                  else x : T1 <- read i ; R2, I, A, T) 
+    if isElemB(i, I, A)  /\ elem (toBound i) T1 Delta A .
+   
+ crl [read-outside-if] : 
+    rConfig(Sigma, Delta, Gamma, if M then x : T1 <- read i ; R1 
+                                      else x : T1 <- read i ; R2
+            , I, A, T) 
+    => 
+    rConfig(Sigma, Delta, Gamma, 
+             x : T1 <- read i ; if M then R1 else R2, I, A, T) 
+    if isElemB(i, I, A)  /\ elem (toBound i) T1 Delta A
+    .
+                    
+ rl [if-over-bind-same-2] :
+     rConfig(Sigma, Delta, Gamma, x : T1 <- if M1 
+                                             then if M2 then R1 else R2
+                                             else if M2 then R3 else R4 ;
+                                  if M1 
+                                     then if M2 then S1 else S2
+                                     else if M2 then S3 else S4,
+                                 I, A, T)
+    => 
+    rConfig(Sigma, Delta, Gamma, if M1 
+                                    then if M2 then (x : T1 <- R1 ; S1) 
+                                               else (x : T1 <- R2 ; S2)
+                                    else if M2 then (x : T1 <- R3 ; S3) 
+                                               else (x : T1 <- R4 ; S4),          
+                                 I, A, T) .                             
+           
+ crl [if-over-bind-same] :
+    rConfig(Sigma, Delta, Gamma, 
+              x : T1 <- if M then R1 else R2 ; 
+              if M then R3 else R4, I, A, T)
+    =>
+    rConfig(Sigma, Delta, Gamma, 
+             if M then x : T1 <- R1 ; R3 
+                  else x : T1 <- R2 ; R4 , 
+             I, A, T)                   
+ if typeOf(Sigma, Delta, Gamma, I, A, R1) == T1  /\
+       typeOf(Sigma, Delta, Gamma, I, A, R2) == T1  /\
+       typeOf(Sigma, Delta, Gamma (x : T1), I, A, R3) == T /\
+       typeOf(Sigma, Delta, Gamma (x : T1), I, A, R4) == T /\
+       typeOf(Sigma, Gamma, M) == bool 
+ .
+ 
+ crl [if-over-bind] : 
+    rConfig(Sigma, Delta, Gamma, x : T1 <- if M then R1 else R2 ; R , I, A, T) 
+    =>
+    rConfig(Sigma, Delta, Gamma, if M then x : T1 <- R1 ; R else x : T1 <- R2 ; R , 
+            I, A, T) 
+ if typeOf(Sigma, Delta, Gamma, I, A, R1) == T1  /\
+       typeOf(Sigma, Delta, Gamma, I, A, R2) == T1  /\
+       typeOf(Sigma, Delta, Gamma (x : T1), I, A, R) == T /\
+       typeOf(Sigma, Gamma, M) == bool
+   .
+      
+ crl [if-over-read] : 
+     rConfig(Sigma, Delta, Gamma, if M then x : T1 <- R1 ; R else x : T1 <- R1 ; S, I, A, T)
+     =>        
+     rConfig(Sigma, Delta, Gamma, x : T1 <- R1 ; if M then R else S, I, A, T)
+ if
+     typeOf(Sigma, Delta, Gamma, I, A, R1) == T1 /\
+     typeOf(Sigma, Delta, Gamma (x : T1), I, A, R) == T /\
+     typeOf(Sigma, Delta, Gamma (x : T1), I, A, S) == T /\
+     typeOf(Sigma, Gamma, M) == bool 
+ .
+ 
+ rl [samp-over-if] :
+    rConfig(Sigma, Delta, Gamma, 
+            preNF((x : T1 <~ samp Dist) BL, 
+                  if M then R1 else R2, QL), I, A, T) 
+    => 
+    rConfig(Sigma, Delta, Gamma, 
+            preNF(BL, if M then (x : T1 <- samp Dist ; R1) 
+                           else (x : T1 <- samp Dist ; R2), 
+                           del x QL), 
+            I, A, T) 
+    .
+ 
+ var vx vy : Qid . 
+        
+ crl [alpha] :
+     rConfig(Sigma, Delta, Gamma, vx : T1 <- R1 ; R2 , I, A, T2 )
+     =>
+     rConfig(Sigma, Delta, Gamma, vy : T1 <- R1 ; (R2 [vx / vy]), I, A, T2)
+     if typeOf(Sigma, Delta, Gamma, I, A, R1) == T1 /\
+        typeOf(Sigma, Delta, Gamma (vx : T1), I, A, R2) == T2 [nonexec] .
+        
+ rl [alpha-nf] : 
+    rConfig(Sigma, Delta, Gamma, 
+            nf((vx : T1 <- R1) BRL,
+               R2,
+               QL
+              ),
+            I, A, T2    
+           )
+     => 
+     rConfig(Sigma, Delta, Gamma, 
+            nf((vy : T1 <- R1) BRL,
+               R2 [vx / vy] ,
+               replace vx vy QL
+              ),
+            I, A, T2    
+           )   
+      [nonexec]        
+
+\end{lstlisting}
+
+\section{Derived rules, protocol equivalence}
+\begin{lstlisting}
+********************************************
+ *** derived rules and rules for normal forms
+ ********************************************
+ 
+ rl [desugar-newNF] :
+     pConfig(Sigma, Delta, newNF(ltq, P1, ql), I, O, A)
+     =>
+     pConfig(Sigma, Delta, newNF2New(newNF(ltq, P1, ql)), I, O, A) 
+ .
+     
+ rl [sugar-newNF] :
+    pConfig(Sigma, Delta, P, I, O, A)
+    => 
+    pConfig(Sigma, Delta, new2NF(P), I, O, A) 
+ .
+    
+ rl [delete-empty-newNF] :
+     pConfig(Sigma, Delta, newNF(emptyTypedCNameList, P, emptyCNameList), I, O, A)
+     => 
+     pConfig(Sigma, Delta, P, I, O, A) 
+ . 
+     
+ rl [reorder-newNF] :
+     pConfig(Sigma, Delta, newNF(ltq, P, ql1), I, O, A)
+     =>
+     pConfig(Sigma, Delta, newNF(ltq, P, ql2), I, O, A)
+    [nonexec]
+ . 
+        
+  crl [CONG-NEW-NF] : 
+    pConfig(Sigma, Delta, newNF(ltq, P1, ql), I, O, A) 
+    => 
+    pConfig(Sigma, Delta, newNF(ltq, P2, ql), I, O, A)
+    if
+    pConfig(Sigma, addChannels ltq Delta, P1, I, union(chansInList ltq, O), A)
+    =>
+    pConfig(Sigma, Delta', P2, I, O', A) 
+    /\
+    Delta' == addChannels ltq Delta
+    /\
+    O' == union(chansInList ltq, O)
+  .    
+ 
+ crl [absorb-new-nf] :
+     pConfig(Sigma, Delta, newNF(< c : T > ltq, P || (c ::= R), ql), I, O, A) 
+     => 
+     pConfig(Sigma, Delta, newNF(ltq, P, del c ql), I, O, A) 
+ if
+     typeOf(Sigma, addChannels ltq (Delta (toBound c :: T)), emptyTypeContext, 
+            insert(toBound c, union(I, getOutputs(P))), A, R) == T 
+     /\
+     typeOf(Sigma, addChannels ltq Delta, I, A, P)       
+     /\ 
+     getOutputs(newNF2New(newNF(ltq, P, ql))) == O 
+   .
+   
+ crl [comp-new-nf-left] : 
+     pConfig(Sigma, Delta, newNF(< c : T > ltq, P || (c ::= R), ql), I, O, A) 
+    => 
+     pConfig(Sigma, Delta, newNF(ltq, P || new c : T in (c ::= R), del c ql), I, O, A) 
+    if
+     typeOf(Sigma, addChannels ltq Delta, I, A, P) 
+     /\
+     typeOf(Sigma, addChannels ltq (Delta ((toBound c) :: T)), emptyTypeContext, 
+            insert(toBound c, union(I, getOutputs(P))), A, R) == T 
+ . 
+      
+ crl [comp-new-nf-right] :
+    pConfig(Sigma, Delta, newNF(ltq, P || new c : T in Q, ql), I, O, A)
+    =>
+    pConfig(Sigma, Delta, newNF(< c : T > ltq, P || Q, c :: ql), I, O, A) 
+    if
+     typeOf(Sigma, addChannels ltq Delta, union(I, getOutputs(Q)), A, P) 
+     /\
+     typeOf(Sigma, addChannels ltq (Delta ((toBound c) :: T)), 
+            union(I, getOutputs(P)), A, Q) 
+ .
+ 
+  crl [fold-bind-new] :
+    pConfig(Sigma, Delta, 
+             newNF(< c : T > ltq, P || (c ::= R) || (o ::= x : T <- read c ; S), ql),
+            I, O, A)
+    => 
+    pConfig(Sigma, Delta, 
+             newNF(ltq, P || (o ::= x : T <- R ; S), del c ql),
+            I, O, A) 
+    if 
+    typeOf(Sigma, addChannels ltq (Delta ((toBound c) :: T)), emptyTypeContext, 
+            insert(toBound o, insert(toBound c, union(I, getOutputs(P)))), A, R) == T . 
+           
+  crl [fold-bind-new-nf] :
+    pConfig(Sigma, Delta, 
+             newNF(< c : T > ltq, P || (c ::= R) || 
+                                 (o ::= nf((x : T <- read c) BRL, S, QL)), 
+                   ql),
+            I, O, A)
+    => 
+    pConfig(Sigma, Delta, 
+             newNF(ltq, P || (o ::= preNF((x : T <~ R) BRL, S, QL)), del c ql),
+            I, O, A) 
+    if typeOf(Sigma, addChannels ltq (Delta ((toBound c):: T)),
+               addDeclarations BRL emptyTypeContext, 
+               insert(toBound o, 
+                      insert(toBound c, union(I,  getOutputs(P)))), 
+              A, R) == T 
+  .  
+            
+  crl [fold-bind-new-prenf] :
+    pConfig(Sigma, Delta, 
+             newNF(< c : T > ltq, P || (c ::= R) || 
+                                 (o ::= preNF((x : T <- read c) BRL, S, QL)), ql),
+            I, O, A)
+    => 
+    pConfig(Sigma, Delta, 
+             newNF(ltq, P || (o ::= preNF((x : T <~ R) BRL, S, QL)), del c ql),
+            I, O, A) 
+    if        
+    typeOf(Sigma, addChannels ltq (Delta ((toBound c) :: T)), 
+            emptyTypeContext, 
+            insert(toBound o, 
+                   insert(toBound c, union(I, getOutputs(P)))), 
+            A, R) == T .
+            
+ crl [COMP-NEW-newNF] :
+     pConfig(Sigma, Delta, P || newNF(ltq, Q, QL), I, O, A)
+     =>   
+     pConfig(Sigma, Delta, newNF(ltq, P || Q, QL), I, O, A)
+ if
+     typeOf(Sigma, addChannels ltq Delta, union(I, getOutputs(P)), A, Q)
+     /\
+     typeOf(Sigma, Delta, I, 
+            union(I, getOutputs(newNF(ltq, Q, QL))), A, P)     
+ .
+   
+   rl [lift-inner-new-nf] :
+     pConfig(Sigma, Delta, newNF(ltq1, newNF(ltq2, P, ql2) , ql1), I, O, A)
+     => 
+     pConfig(Sigma, Delta, newNF(ltq1 ltq2, P, ql1 ++ ql2), I, O, A)
+   .
+      
+  crl [UNUSED-nf] :
+    pConfig(Sigma, Delta,
+            (cn1 ::= samp Dist) || (cn2 ::= nf( (x : T1 <- read cn1) BRL , R2, QL) ),
+            I, O, A) 
+    =>           
+     pConfig(Sigma, Delta,
+            (cn1 ::= samp Dist) || (cn2 ::= nf( BRL , R2, del x QL) ),
+            I, O, A) 
+    if
+     typeOf(Sigma, Delta, addDeclarations BRL (x : T1), 
+             insert(toBound cn1, insert(toBound cn2, I)), A, R2) ==
+     typeInCtx(toBound cn2, A, Delta)
+     /\
+     elem (toBound cn1) T1 Delta A        
+    . 
+    
+   crl [UNUSED-nf-copy] :
+    pConfig(Sigma, Delta,
+            (cn1 ::= nf(emptyBRList, samp Dist, emptyCNameList)) || 
+            (cn2 ::= nf( (x : T1 <- read cn1) BRL , R2, QL) ),
+            I, O, A) 
+    =>           
+     pConfig(Sigma, Delta,
+            (cn1 ::= nf(emptyBRList, samp Dist, emptyCNameList)) || 
+            (cn2 ::= nf( BRL , R2, del x QL) ),
+            I, O, A) 
+    if 
+     typeOf(Sigma, Delta, addDeclarations BRL (x : T1), 
+             insert(toBound cn1, insert(toBound cn2, I)), A, R2) ==
+     typeInCtx(toBound cn2, A, Delta)
+     /\
+     elem (toBound cn1) T1 Delta A
+    .    
+                   
+  crl [UNUSED-pre-nf] :
+    pConfig(Sigma, Delta,
+            (q1 ::= samp Dist) || (q2 ::= preNF( (x : T1 <- read q1) BRL , R2, QL) ),
+            I, O, A) 
+    =>           
+     pConfig(Sigma, Delta,
+            (q1 ::= samp Dist) || (q2 ::= preNF( BRL , R2, del x QL) ),
+            I, O, A) 
+     if
+     typeOf(Sigma, Delta, addDeclarations BRL (x : T1), 
+             insert(toBound q1, insert(toBound q2, I)), A, R2) ==
+     typeInCtx(toBound q2, A, Delta)
+             /\
+     elem (toBound q1) T1 Delta A 
+     .    
+   
+  crl [SUBST-nf] : 
+     pConfig(Sigma, Delta,
+             (cn1 ::= R1) || (cn2 ::= nf( (x1 : T1 <- read cn1) BRL , R2, QL) ),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta,
+             (cn1 ::= R1) || (cn2 ::= preNF((x1 : T1 <~ R1) BRL , R2, QL)),
+             I, O, A) 
+     if isSampFree(R1) /\
+        O == insert(toBound cn1, toBound cn2) /\ 
+     typeOf(Sigma, Delta, emptyTypeContext, 
+            insert(toBound cn1, insert(toBound cn2, I)), A, R1) == T1 /\
+     typeOf(Sigma, Delta, addDeclarations BRL (x1 : T1), 
+            insert(toBound cn1, insert(toBound cn2, I)), A, R2) ==
+     typeInCtx(toBound cn2, A, Delta)
+     /\
+     elem (toBound cn1) T1 Delta A 
+     . 
+     
+     
+  crl [moveReadInnerNf] :
+    pConfig(Sigma, Delta,
+             cn1 ::= nf((x : T <- read cn2) BRL , R1, QL) ,
+             I, O, A)  
+     => 
+       pConfig(Sigma, Delta,
+             cn1 ::= preNF(BRL , x : T <- read cn2 ; R1, del x QL) ,
+             I, O, A)    
+  if elem (toBound cn2) T Delta A 
+  /\ typeOf(Sigma, Delta, addDeclarations BRL (x : T), 
+            insert(toBound cn1, I), A, R1) == 
+     typeInCtx(toBound cn1, A, Delta)
+  .  
+  
+    crl [moveReadInnerPreNf] :
+    pConfig(Sigma, Delta,
+             cn1 ::= preNF((x : T <- read cn2) BRL , R1, QL) ,
+             I, O, A)  
+     => 
+       pConfig(Sigma, Delta,
+             cn1 ::= preNF(BRL , x : T <- read cn2 ; R1, del x QL) ,
+             I, O, A)  
+    if elem (toBound cn2) T Delta A 
+     /\ typeOf(Sigma, Delta, addDeclarations BRL (x : T), 
+            insert(toBound cn1, I), A, R1) == 
+        typeInCtx(toBound cn1, A, Delta)          
+  .   
+    
+  rl [SUBST-nf-rev] : 
+     pConfig(Sigma, Delta,
+             (cn1 ::= R1) || (cn2 ::= preNF( BRL , R1, QL) ),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta,
+             (cn1 ::= R1) || (cn2 ::= preNF((x1 : T1 <- read cn1) BRL , return x1, x1 :: QL)),
+             I, O, A)   
+  [nonexec] .  
+  
+  crl [SUBST-nf-read] : 
+     pConfig(Sigma, Delta,
+             (cn1 ::= nf((x2 : T1 <- read C), return x2, x2 :: emptyCNameList )) || 
+             (cn2 ::= nf( (x1 : T1 <- read cn1) BRL , R2, QL) ),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta,
+             (cn1 ::= nf((x2 : T1 <- read C), return x2, x2 :: emptyCNameList )) || 
+             (cn2 ::= nf((x2 : T1 <- read C) BRL , R2 [x1 / x2], replace x1 x2 QL)),
+             I, O, A) 
+     if
+     isElemB(C, I, A) /\
+     O == insert(toBound cn1, toBound cn2) /\ 
+     typeOf(Sigma, Delta, addDeclarations BRL (x1 : T1), 
+             insert(toBound cn1, insert(toBound cn2, I)), A, R2) ==
+     typeInCtx(toBound cn2, A, Delta)
+             /\
+     elem (toBound cn1) T1 Delta A 
+             /\
+     elem (toBound C) T1 Delta A           
+     .   
+ 
+ *********************
+ *** rules for families
+ *********************
+
+  rl [alpha-family] :
+   pConfig(Sigma, Delta, 
+            newNF(ltq {C q (bound n) : T}, 
+                  P || family C q (bound n) ::= cases, QL), 
+            I, O, A)
+   => 
+   pConfig(Sigma, Delta, 
+           newNF(ltq {C q' (bound n) : T}, 
+                 P || (family C q' (bound n) ::= 
+                        (alphaCases cases q q')), QL), 
+                 I, O, A)
+ [nonexec]
+ .
+  
+ rl [addToGroup] :
+   pConfig(Sigma, Delta, 
+           (family C q (bound nt) ::= P) || 
+            family C' q' (bound nt1) ::= cases, I, O, A)
+   => 
+   pConfig(Sigma, Delta, 
+           family C q (bound nt) ::= 
+               (P || family C' q' (bound nt1) ::= cases), 
+           I, O, A)
+ .  
+    
+  crl [absorb-new-nf-family-one] : 
+     pConfig(Sigma, Delta, 
+             newNF({C q (bound n) : T }  ltq, 
+                   P || (family C q (bound n) ::= cases), ql), 
+             I, O, A) 
+     => 
+     pConfig(Sigma, Delta, newNF(ltq, P, del C ql), I, O, A) 
+  if
+     typeOf(Sigma, addChannels ({C q (bound n) : T }  ltq) Delta, 
+            insert(C @ n, union(I, getOutputs(P))), A, 
+            family C q (bound n) ::= cases)
+     /\
+     typeOf(Sigma, addChannels ltq Delta, I, A, P)       
+     /\ 
+     getOutputs(newNF2New(newNF(ltq, P, ql))) == O 
+ .
+ 
+ crl [absorb-new-nf-family-two] : 
+     pConfig(Sigma, Delta, 
+             newNF({C (q q')((bound n) (uniformBound nt)) : T }  ltq, 
+                   P || 
+                   (family C (q q')
+                             ((bound n) (uniformBound nt)) ::= cases), 
+                   ql), 
+             I, O, A) 
+     => 
+     pConfig(Sigma, Delta, newNF(ltq, P, del C ql), I, O, A) 
+ if typeOf(Sigma, 
+           addChannels ({C (q q')
+                           ((bound n) (uniformBound nt)) : T } 
+                        ltq) Delta, 
+           insert(C @ (n nt), union(I, getOutputs(P))), 
+           A, 
+           family C (q q')((bound n) (uniformBound nt)) ::= cases
+          )
+     /\
+     typeOf(Sigma, addChannels ltq Delta, I, A, P)       
+     /\ 
+     getOutputs(newNF2New(newNF(ltq, P, ql))) == O     
+ .  
+ 
+      
+ crl [absorb-reverse-new-nf-family] : 
+     pConfig(Sigma, Delta, newNF(ltq, P, ql), I, O, A)
+     =>
+     pConfig(Sigma, Delta, 
+             newNF({q nlist blist : T } ltq, 
+                   P || (family q nlist blist ::= cases), q :: ql), I, O, A) 
+ if   
+     typeOf(Sigma, addChannels ltq Delta, I, A, P) 
+     /\
+     typeOf(Sigma, addChannels ({q nlist blist : T } ltq) Delta, 
+             insert(toBounds q blist, union(I, O)), A,
+             (family q nlist blist ::= cases)) 
+     /\
+     getOutputs(newNF2New(newNF(ltq, P, ql))) == O 
+ [nonexec] 
+ . 
+     
+   crl [comp-new-nf-right-family] :
+    pConfig(Sigma, Delta, 
+            newNF(ltq, P || newfamily c nlist blist : T in Q, ql), 
+            I, O, A)
+    =>
+    pConfig(Sigma, Delta, 
+            newNF({ c nlist blist : T } ltq, P || Q, c :: ql), 
+            I, O, A) 
+    if
+     typeOf(Sigma, addChannels ltq Delta, union(I, getOutputs(Q)), A, P) 
+     /\
+     typeOf(Sigma, addChannels ltq (Delta ((toBounds c blist) :: T)),
+            union(I, getOutputs(P)), A, Q) 
+    .   
+    
+    rl [COMP-NEW-newNF-newfamily] :
+     pConfig(Sigma, Delta, 
+             P || (newfamily c nlist blist : T in Q), I, O, A)
+     =>  
+     pConfig(Sigma, Delta, 
+             newNF( {c nlist blist : T}, P || Q, c :: emptyCNameList), 
+             I, O, A)
+     if 
+     typeOf(Sigma, Delta ((toBounds c blist) :: T), 
+            union(I, getOutputs(P)), A, Q)
+     /\
+     typeOf(Sigma, Delta, 
+            union(I ,(getOutputs(Q) \ (toBounds c blist))), A, P) 
+     .              
+ 
+ crl [moveReadInnerNfFamily] :
+    pConfig(Sigma, Delta,
+             family C lq blist ::= nf((x : T <- read cn2) BRL , R1, QL) ,
+             I, O, A)  
+     => 
+       pConfig(Sigma, Delta,
+             family C lq blist ::= 
+              preNF(BRL , x : T <- read cn2 ; R1, del x QL) ,
+             I, O, A)
+   if          
+   elem (toBound cn2) T Delta A 
+  /\ typeOf(Sigma, Delta, addDeclarations BRL (x : T), 
+            insert(toBounds C blist , I), A, R1) == 
+     typeInCtx(toBounds C blist, A, Delta)              
+  .  
+  
+    crl [moveReadInnerPreNfFamily] :
+    pConfig(Sigma, Delta,
+             family C lq blist ::= 
+               preNF((x : T <- read cn2) BRL , R1, QL) ,
+             I, O, A)  
+     => 
+       pConfig(Sigma, Delta,
+             family C lq blist ::= 
+               preNF(BRL , x : T <- read cn2 ; R1, del x QL) ,
+             I, O, A) 
+             if          
+   elem (toBound cn2) T Delta A 
+  /\ typeOf(Sigma, Delta, addDeclarations BRL (x : T), 
+            insert(toBounds C blist , I), A, R1) == 
+     typeInCtx(toBounds C blist, A, Delta)          
+  .   
+     crl [SUBST-nf-rev-families-one] : 
+     pConfig(Sigma, Delta,
+             (family C1 q (bound nt1) ::= cases) 
+             || 
+             (family C q' (bound nt2) ::= preNF( BRL , R1, QL) ),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta,
+             (family C1 q (bound nt1) ::= cases) 
+             || 
+              (family C q' (bound nt2) ::= 
+                preNF((x1 : T1 <- read (C1[nj])) BRL , 
+                       return x1, x1 :: QL)),
+             I, O, A) 
+     if 
+     typeOf(Sigma, Delta, emptyTypeContext, 
+            insert(toBounds C1 (bound nt1), 
+             insert(toBounds C (bound nt2) , I)), 
+             insert(q =T= nj, A), R2) 
+     == 
+     typeInCtx(toBounds C1 (bound nt1), insert(q =T= nj, A), Delta) 
+     /\
+     typeOf(Sigma, Delta, addDeclarations BRL emptyTypeContext, 
+            insert(toBounds C1 (bound nt1), 
+               insert(toBounds C (bound nt2) , I)), A, R1) 
+     == 
+     typeInCtx(toBounds C (bound nt2), A, Delta) 
+     /\       
+     (projectIndex (family C1 q (bound nt1)  ::= cases) nj 
+          insert(q =T= nj, A) empty) == (C1[nj] ::= R2)
+     /\ 
+     R1 == convertNF(R2)               
+  [nonexec] . 
+  
+    crl [subst-families-one] :
+     pConfig(Sigma, Delta, 
+             (family C q (bound nt) ::= cases)
+             ||
+             (cn2 ::= nf((x : T <- read (C[nj])) BRL, R, ql)),
+             I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+             (family C q (bound nt) ::= cases)
+             ||
+             (cn2 ::= preNF((x : T <~ R2) BRL, R, ql)
+             )
+             ,
+             I, O, A) 
+     if 
+      typeOf(Sigma, Delta, addDeclarations BRL (x : T), 
+            insert(toBounds C (bound nt), 
+             insert(toBound cn2 , I)), A, R) 
+     == 
+     typeInCtx(toBound cn2, A, Delta) 
+     /\ 
+     typeInCtx(C @ nt, A, Delta) == T
+     /\ 
+     (projectIndex (family C q (bound nt)  ::= cases) nj 
+          insert(q =T= nj, A) empty) == (C[nj] ::= R2)
+         
+     [nonexec] 
+     .
+     
+     var C1 : Qid .
+     
+     crl [subst-channel-one-family] :
+     pConfig(Sigma, Delta, 
+             (cn ::= R2)
+             ||
+             (family C1 q' (bound nt1) ::= 
+                nf((x : T <- read cn) BRL, R, ql)
+             ),
+             I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+             (cn ::= R2)
+             ||
+             (family C1 q' (bound nt1) ::= 
+               preNF((x : T <~ R2) BRL, R, ql)
+             ),
+             I, O, A) 
+     if isSampFree(R2) /\
+        O == insert(toBound cn, C1 @ nt1) /\ 
+     typeOf(Sigma, Delta, emptyTypeContext, 
+            insert(toBound cn, insert(C1 @ nt1, I)), A, R2) == T /\
+     typeOf(Sigma, Delta, addDeclarations BRL (x : T), 
+            insert(toBound cn, insert(C1 @ nt1, I)), A, R) == 
+     typeInCtx(C1 @ nt1, A, Delta)
+     /\ 
+     elem (toBound cn) T Delta A 
+     . 
+     
+              
+     crl [subst-families-one-family] :
+     pConfig(Sigma, Delta, 
+             (family C q (bound nt) ::= cases)
+             ||
+             (family C1 q' (bound nt1) ::= 
+               nf((x : T <- read (C[nj])) BRL, R, ql)),
+             I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+             (family C q (bound nt) ::= cases)
+             ||
+             (family C1 q' (bound nt1) ::= 
+               preNF((x : T <~ R2) BRL, R, ql)
+             )
+             ,
+             I, O, A) 
+     if (projectIndex (family C q (bound nt)  ::= cases) nj 
+          insert(q =T= nj, A) empty) == (C[nj] ::= R2)
+     [nonexec] 
+     .
+              
+     crl [subst-2-families-one] :
+     pConfig(Sigma, Delta, 
+             (family C q (bound nt) ::= cases')
+             ||
+             (cn2 ::= cases),
+             I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+             (family C q (bound nt) ::= cases')
+             ||
+             (cn2 ::= nf('x : T <- read (C[nj]), 
+                         return 'x, 
+                         'x :: emptyCNameList)
+             ),
+             I, O, A) 
+     if (projectIndex (family C q (bound nt)  ::= cases') nj 
+          insert(q =T= nj, A) empty) == (C[nj] ::= cases)
+     [nonexec] 
+     .
+     
+     crl [subst-families-two] :
+     pConfig(Sigma, Delta, 
+             (family C (q q') ((bound n) (uniformBound nt)) ::= cases')
+             ||
+             (cn2 ::= cases),
+             I, O, A)
+     => 
+    pConfig(Sigma, Delta, 
+             (family C (q q') ((bound n) (uniformBound nt))  ::= cases')
+             ||
+             (cn2 ::= nf('x : T <- read (C[q nj]), return 'x, 'x :: emptyCNameList)),
+             I, O, A) 
+     if (projectIndex 
+          (family C (q q') 
+                    ((bound n) (uniformBound nt)) ::= cases') nj A empty)
+         == 
+        (C[q nj] ::= cases)
+     [nonexec] .
+     
+     rl [subst-rev-families] :
+     pConfig(Sigma, Delta, 
+             (family C q (bound n) ::= 
+                whenList1 ;; (when (q =T= nj) --> R) ;; whenList2)
+             ||
+             (cn2 ::= R),
+             I, O, A)
+     => 
+    pConfig(Sigma, Delta, 
+             (family C q (bound n) ::= 
+               whenList1 ;; (when (q =T= nj) --> R) ;; whenList2)
+             ||
+             (cn2 ::= 
+               nf('x : T <- read (C[nj]), 
+                  return 'x, 'x :: emptyCNameList)),
+             I, O, A) 
+    [nonexec] .             
+     
+     crl [SUBST-nf-read-family-one] : 
+     pConfig(Sigma, Delta ,
+             (family q1 q (bound n) ::= 
+                nf((x2 : T1 <- read cn1), 
+                   return x2, x2 :: emptyCNameList )) 
+              || 
+             (cn2 ::= nf( (x1 : T1 <- read (q1[nj])) BRL , R2, QL) ),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta,
+             (family q1 q (bound n) ::= 
+               nf((x2 : T1 <- read cn1), return x2, x2 :: emptyCNameList ))
+             || 
+             (cn2 ::= 
+               nf((x2 : T1 <- read (evalCName cn1 (q |-> nj))) BRL , 
+                  R2 [x1 / x2], replace x1 x2 QL)),
+             I, O, A) 
+     if 
+     isElemB(cn1, I, A) /\
+     elem (toBounds q1 (bound n)) T1 Delta A /\
+     elem (toBound cn1) T1 Delta A /\
+     O == insert(toBounds q1 (bound n), toBound cn2)  /\
+     typeOf(Sigma, Delta, addDeclarations BRL (x1 : T1), 
+            insert(toBounds q1 (bound n), insert(toBound cn1, I)), A, R2)
+     == typeInCtx(toBound cn2, A, Delta) 
+           . 
+     
+     rl [SUBST-nf-read-family-two] : 
+     pConfig(Sigma, Delta ,
+             (family q1 (q q') ((bound n1) (uniformBound nt)) ::= 
+                 nf((x2 : T1 <- read cn1), 
+                    return x2, x2 :: emptyCNameList )) 
+             || 
+             (cn2 ::= nf( (x1 : T1 <- read (q1[q nj])) BRL , R2, QL) ),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta,
+             (family q1 (q q') ((bound n1) (uniformBound nt)) ::= 
+                nf((x2 : T1 <- read cn1), 
+                   return x2, x2 :: emptyCNameList ))  
+              || 
+             (cn2 ::= 
+              nf((x2 : T1 <- read (evalCName cn1 (q' |-> nj))) BRL , 
+                 R2 [x1 / x2], replace x1 x2 QL)),
+             I, O, A) 
+    if
+     isElemB(cn1, I, A)  /\
+     elem (toBounds q1 (bound n)) T1 Delta A /\
+     elem (toBound cn1) T1 Delta A /\
+     O == insert(toBounds q1 (bound n), toBound cn2)  /\
+     typeOf(Sigma, Delta, addDeclarations BRL (x1 : T1), 
+            insert(toBounds q1 (bound n), insert(toBound cn1, I)), A, R2)
+     == typeInCtx(toBound cn2, A, Delta) 
+        . 
+     
+     var q'' : Qid .
+     
+     rl [SUBST-nf-read-family-two-family] : 
+     pConfig(Sigma, Delta ,
+             (family q1 (q q') ((bound n1) (uniformBound nt)) ::= 
+                 nf((x2 : T1 <- read cn1), 
+                    return x2, x2 :: emptyCNameList )) 
+             || 
+             (family q2 q'' (bound nt2) ::= 
+                 nf( (x1 : T1 <- read (q1[q nj])) BRL , R2, QL) ),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta,
+             (family q1 (q q') ((bound n1) (uniformBound nt)) ::= 
+                nf((x2 : T1 <- read cn1), 
+                   return x2, x2 :: emptyCNameList ))  
+             || 
+             (family q2 q'' (bound nt2) ::= 
+                nf((x2 : T1 <- read (evalCName cn1 (q' |-> nj))) BRL ,
+                   R2 [x1 / x2], 
+                   replace x1 x2 QL)),
+             I, O, A) . 
+      
+     crl [SUBST-nf-read-family] : 
+     pConfig(Sigma, Delta ,
+             (family q1 ntl bounds ::= 
+                nf((x2 : T1 <- read cn1), 
+                   return x2, x2 :: emptyCNameList )) 
+             || 
+             (cn2 ::= 
+                nf( (x1 : T1 <- read (q1[nj])) BRL , R2, QL) ),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta,
+             (family q1 ntl bounds ::= 
+               nf((x2 : T1 <- read cn1), return x2, x2 :: emptyCNameList))
+             || 
+             (cn2 ::= 
+               nf((x2 : T1 <- read cn1) BRL , 
+                  R2 [x1 / x2], 
+                  replace x1 x2 QL)),
+             I, O, A) 
+     if 
+     isElemB(cn1, I, A) /\
+     elem (toBounds q1 bounds) T1 Delta A /\
+     elem (toBound cn1) T1 Delta A /\
+     O == insert(toBounds q1 bounds, toBound cn2)  /\
+     typeOf(Sigma, Delta, addDeclarations BRL (x1 : T1), 
+            insert(toBounds q1 bounds, insert(toBound cn1, I)), A, R2) ==
+     typeInCtx(toBound cn2, A, Delta) .
+
+  
+     rl [comp-new-families] : 
+     pConfig(Sigma, Delta, 
+              newNF(ltq1, P1, ql1) || newNF(ltq2, P2, ql2), I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+              newNF(ltq1 ltq2, P1 || P2, ql1 ++ ql2), I, O, A) 
+     .
+     
+      crl [use-family-p] : 
+     pConfig(Sigma, Delta, P1 || family C lq blist ::= P, I, O, A)
+     => 
+     pConfig(Sigma, Delta, P2 || family C lq blist ::= P, I, O, A)
+     if 
+     pConfig(Sigma, Delta, P1 || P, I, O, A)
+     => 
+     pConfig(Sigma, Delta, P2 || P, I, O, A)
+     [nonexec] .
+      
+      
+    crl [fold-bind-new-nf-families] :
+    pConfig(Sigma, Delta, 
+             newNF({ C q (bound n) : T } ltq, 
+                   P || 
+                   (family C q (bound n) ::= R) || 
+                   (family C' q' (bound n1) ::= 
+                      nf((x : T <- read (C[q'])) BRL, S, QL)), 
+                   ql),
+            I, O, A)
+    => 
+    pConfig(Sigma, Delta, 
+             newNF(ltq,
+                   P || 
+                   (family C' q' (bound n1) ::= 
+                     preNF((x : T <~ R) BRL, S, QL)), del C ql),
+            I, O, A)  
+    if typeOf(Sigma, addChannels ltq (Delta ((toBound c):: T)),
+              addDeclarations BRL emptyTypeContext, 
+              insert(toBound o, 
+               insert(toBound c, union(I, getOutputs(P)))), A, R) == T 
+  . 
+      
+     *** congruence rules for families
+       
+     crl [CONG-NEWFAMILY] : 
+     pConfig(Sigma, Delta, newfamily C lq blist : T in P1, I, O, A)
+     =>  
+     pConfig(Sigma, Delta, newfamily C lq blist : T in P2, I, O, A)
+     if 
+     pConfig(Sigma, Delta ((toBounds C blist) :: T), P1, 
+             I, insert(toBounds C blist, O), A)
+     =>
+     pConfig(Sigma, Delta', P2, I, O', A)
+     /\
+     O' == insert(toBounds C blist, O)
+     /\
+     Delta' == Delta ((toBounds C blist) :: T)
+     [nonexec]
+     .
+
+        
+      
+     crl [CONG-FAMILY-R] : 
+     pConfig(Sigma, Delta, family C lq blist ::= R, I, O, A)
+     => 
+     pConfig(Sigma, Delta, family C lq blist ::= R', I, O, A)
+     if 
+     rConfig(Sigma, Delta, emptyTypeContext, R, 
+             insert(toBounds C blist, I), A, 
+             typeInCtx(toBounds C blist, A, Delta))
+     =>
+     rConfig(Sigma, Delta, emptyTypeContext, R', I', A, T) 
+     /\ I' == insert(toBounds C blist, I)  
+     /\ T == typeInCtx(toBounds C blist, A, Delta)
+     [nonexec] .
+     
+           
+     crl [CONG-FAMILY-P] : 
+     pConfig(Sigma, Delta, family C lq blist ::= P1, I, O, A)
+     => 
+     pConfig(Sigma, Delta, family C lq blist ::= P2, I, O, A)
+     if
+     pConfig(Sigma, Delta, P1, I, O, A)
+     =>
+     pConfig(Sigma, Delta, P2, I, O, A) [nonexec] .
+    
+     var whenCond : WhenCond .
+     var whenList1 whenList2 whenList whenList' : WhenList .
+     
+     crl [CONG-FAMILY-WHENLIST-P] : 
+     pConfig(Sigma, Delta, 
+             family C lq blist ::= 
+               whenList1 ;; (when bt --> P1) ;; whenList2, I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+              family C lq blist ::= 
+                whenList1 ;; (when bt --> P2) ;; whenList2, I, O, A) 
+     if 
+     pConfig(Sigma, Delta, P1, I, O, insert(bt, A) )
+     =>  
+     pConfig(Sigma, Delta, P2, I, O, A')
+     /\ 
+     A' == insert(bt, A) [nonexec] . 
+
+     var A' : Set{BoolTerm} . 
+
+     crl [CONG-FAMILY-WHENLIST-R] : 
+     pConfig(Sigma, Delta, 
+       family C lq blist ::= 
+         (whenList1 ;; (when bt --> R1) ;; whenList2), I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+       family C lq blist ::= 
+        (whenList1 ;; (when bt --> R2) ;; whenList2), I, O, A) 
+     if 
+     rConfig(Sigma, Delta, emptyTypeContext, R1, 
+             insert(toBounds C blist, I), 
+             insert(bt, A), T)
+     =>  
+     rConfig(Sigma, Delta, emptyTypeContext, R2, I', A', T)
+     /\
+     A' == insert(bt, A) 
+     /\
+     I' == insert(toBounds C blist, I) [nonexec] . 
+
+     *** case distinction
+     
+     var aP1 aP2 : Protocol .
+     var A'' : Set{BoolTerm} .
+     var aQid : Qid .
+     
+     crl [CASE-DISTINCTION-one] :
+     pConfig (Sigma, Delta, 
+               P || family aQid q (bound n) ::= 
+                      ((when bt --> aP1) ;; whenList),
+               I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+              P || family aQid q (bound n) ::= 
+                     ((when bt --> aP2) ;; whenList'),
+               I, O, A) 
+     if 
+     pConfig(Sigma, Delta, P || aP1, I, O, insert(bt, A))
+     =>
+     pConfig(Sigma, Delta, P || aP2, I, O, A')
+     /\
+     A' == insert(bt, A)
+     /\
+     pConfig (Sigma, Delta, 
+               P || family aQid q (bound n) ::= whenList,
+               I, O, insert(neg bt, A)) 
+     =>
+     pConfig(Sigma, Delta, 
+              P || family aQid q (bound n) ::= whenList',
+               I, O, A'')
+     /\
+     A'' == insert(neg bt, A)              [nonexec] .   
+               
+     crl [CASE-DISTINCTION-one-end] :
+     pConfig (Sigma, Delta, 
+               P || family C q (bound n) ::= (otherwise --> aP1),
+               I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+              P || family C q (bound n) ::= (otherwise --> aP2),
+               I, O, A) 
+     if 
+     pConfig(Sigma, Delta, P || aP1, I, O, A)
+     =>
+     pConfig(Sigma, Delta, P || aP2, I, O, A)            
+     [nonexec] .
+
+     crl [CASE-DISTINCTION-one-R] :
+     pConfig (Sigma, Delta, 
+               P || family aQid q (bound n) ::= 
+                     ((when bt --> R1) ;; whenList),
+               I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+              P || family aQid q (bound n) ::= 
+                    ((when bt --> R2) ;; whenList'),
+               I, O, A) 
+     if 
+     pConfig(Sigma, Delta, 
+              P || family aQid q (bound n) ::= R1, 
+              I, O, insert(bt, A))
+     =>
+     pConfig(Sigma, Delta, 
+             P || family aQid q (bound n) ::= R2, 
+             I, O, A')
+     /\
+     A' == insert(bt, A)
+     /\
+     pConfig (Sigma, Delta, 
+               P || family aQid q (bound n) ::= whenList,
+               I, O, insert(neg bt, A)) 
+     =>
+     pConfig(Sigma, Delta, 
+              P || family aQid q (bound n) ::= whenList',
+               I, O, A'')
+     /\
+     A'' == insert(neg bt, A)              [nonexec] .   
+               
+     crl [CASE-DISTINCTION-one-R-end] :
+     pConfig (Sigma, Delta, 
+               P || family C q (bound n) ::= (otherwise --> R1),
+               I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+              P || family C q (bound n) ::= (otherwise --> R2),
+               I, O, A) 
+     if 
+     pConfig(Sigma, Delta, P || family C q (bound n) ::= R1, I, O, A) 
+     =>
+     pConfig(Sigma, Delta, P || family C q (bound n) ::= R2, I, O, A)            
+     [nonexec] .
+     
+     
+     *** induction
+     
+     
+     var k n1 n2 : Nat . 
+     var R'' : Reaction .
+     
+     crl [INDUCTION-R-one] :
+     pConfig(Sigma, Delta ((C @ n) :: T), 
+       P || (family C q (bound n) ::= R), I, O, A)
+     =>
+     pConfig(Sigma, Delta ((C @ n) :: T), 
+       P || (family C q (bound n) ::= R'), I, O, A)
+     if 
+     pConfig(Sigma, Delta ((C @ n) :: T), 
+       P || (C [0] ::= replaceVars(R, q |-> 0)), I, O, 
+       insert(q =T= 0, A)) 
+     => 
+     pConfig(Sigma, Delta ((C @ n) :: T), 
+       P || (C [0] ::= R''), I, O, A')
+     /\
+     R'' == replaceVars(R', q |-> 0)
+     /\
+     A' == insert(q =T= 0, A)
+     /\
+     pConfig(Sigma, Delta ((C @ n) :: T), 
+       P || (family C q (bound 'k) ::= R') || 
+       (C['k ++ 1] ::= replaceVars(R, q |-> 'k ++ 1)), I, O, A) 
+     =>
+     pConfig(Sigma, Delta ((C @ n) :: T), 
+       P || (family C q (bound 'k) ::= R') || 
+       (C['k ++ 1] ::= R3), I, O, A) 
+     /\
+     R3 == replaceVars(R, q |-> 'k ++ 1)
+       [nonexec] .
+   
+       
+     crl [INDUCTION-R-two] :
+     pConfig(Sigma, Delta ((C @ (n1 n2)) :: T), 
+       P || (family C (q q') ((bound n1) (uniformBound n2)) ::= R), I, O, A)
+     =>
+     pConfig(Sigma, Delta ((C @ (n1 n2)) :: T), 
+       P || (family C (q q') ((bound n1) (uniformBound n2)) ::= R'), I, O, A)
+     if 
+     pConfig(
+       Sigma, Delta ((C @ (n1 n2)) :: T), 
+       P || (C[q 0] ::= replaceVars(R, q' |-> 0)), I, 
+       insert(C[q 0] @ nil, getOutputs(P)), A) 
+     => 
+     pConfig(Sigma, Delta ((C @ (n1 n2)):: T), 
+       P || (C[q 0] ::= R2), I, O', A)
+     /\ O' == insert(C[q 0] @ nil, getOutputs(P)) 
+     /\
+     R2 == replaceVars(R', q' |-> 0)
+     /\
+     pConfig(Sigma, Delta ((C @ (n1 n2)) :: T), 
+       P || (family C (q q') ((bound n1) (uniformBound 'k)) ::= R') 
+       || (C[q ('k ++ 1)] ::= replaceVars(R, q' |-> 'k ++ 1 )), I, 
+       insert(C @ (n1 'k),  
+                insert(C[q ('k ++ 1)] @ nil, getOutputs(P))), A) 
+     =>
+     pConfig(Sigma, Delta ((C @ (n1 n2)) :: T), 
+       P || (family C (q q') ((bound n1) (uniformBound 'k)) ::= R')
+         || (C[q ('k ++ 1)] ::= R3), I, O'', A) 
+     /\
+     O'' == insert(C @ (n1 'k),  
+                insert(C[q ('k ++ 1)] @ nil, getOutputs(P)))
+     /\
+     R3 == replaceVars(R', q' |-> 'k ++ 1 )
+       [nonexec] .  
+  
+       
+     crl [INDUCTION-when-one] :
+     pConfig(Sigma, Delta, 
+       P || (family C q (bound nt1) ::= cases), I, O, A)
+     =>
+     pConfig(Sigma, Delta , 
+       P || (family C q (bound nt1) ::= cases'), I, O, A)
+     if 
+     pConfig(Sigma, Delta , 
+       P || (projectIndex (family C q (bound nt1) ::= cases) 0 A empty ), I, 
+       insert( C[0] @ nil, O \ (C @ nt1)), 
+       insert(q =T= 0, A)
+       ) 
+     => 
+     pConfig(Sigma, Delta , P2 , I, O', A')
+     /\
+     O' == insert( C[0] @ nil, O \ (C @ nt1))
+     /\
+     A' ==  insert(q =T= 0, A) 
+     /\
+     P2 == P || (projectIndex (family C q (bound nt1) ::= cases') 0 A empty)
+     /\
+     pConfig(Sigma, Delta , 
+       P || (family C q (bound 'k) ::= cases') || 
+       (projectIndex 
+        (family C q (bound nt1) ::= cases) ('k ++ 1) A empty), I, 
+       insert(C @ 'k, insert(C['k ++ 1] @ nil, O \ (C @ nt1))), 
+       insert('k ++ 1 <=T nt1, A)
+       )
+       =>
+     pConfig(Sigma, Delta, P3, I, O'', A'')
+     /\
+     O'' = insert(C @ 'k, insert(C['k ++ 1] @ nil, O \ (C @ nt1)))
+     /\
+     A'' == insert('k ++ 1 <=T nt1, A) 
+     /\
+     P3 == (
+             P || (family C q (bound 'k) ::= cases') ||
+             (projectIndex 
+               (family C q (bound nt1) ::= cases') ('k ++ 1) A empty
+             )
+           )
+       [nonexec] . 
+       
+      crl [INDUCTION-when-one-comb] :
+     pConfig(Sigma, Delta, 
+       P || (family 'Comp[C C'] q (bound nt1) ::= 
+                    ((C[q] ::= R1) || (C'[q] ::= R2)) ), I, O, A)
+     =>
+     pConfig(Sigma, Delta , 
+       P || (family 'Comp[C C'] q (bound nt1) ::= 
+                    ((C[q] ::= R3) || (C'[q] ::= R4)) ), I, O, A)
+     if 
+     pConfig(Sigma, Delta , 
+       P || ((C [0] ::= replaceVars(R1, q |-> 0)) || 
+             (C'[0] ::= replaceVars(R2, q |-> 0))
+            ), I, 
+       insert( C[0] @ nil, 
+         insert( C'[0] @ nil, O \ (insert(C @ nt1, C' @ nt1)))), 
+       insert(q =T= 0, A)
+       ) 
+     => 
+     pConfig(Sigma, Delta , P2 , I, O', A')
+     /\
+     O' == insert( C[0] @ nil, 
+            insert( C'[0] @ nil, O \ (insert(C @ nt1, C' @ nt1))))
+     /\
+     A' ==  insert(q =T= 0, A) 
+     /\
+     P2 == P || ((C [0] ::= replaceVars(R3, q |-> 0)) || 
+                 (C'[0] ::= replaceVars(R4, q |-> 0)))
+     /\
+     pConfig(Sigma, Delta , 
+       P || (family 'Comp[C C'] q (bound 'k) ::= 
+                    ((C[q] ::= R3) || (C'[q] ::= R4)) ) || 
+                      (C['k ++ 1] ::= replaceVars(R1, q |-> 'k ++ 1) ) 
+                      ||
+                      (C'['k ++ 1] ::= replaceVars(R2, q |-> 'k ++ 1)), I, 
+       insert(C @ 'k, 
+        insert(C' @ 'k,
+         insert(C['k ++ 1] @ nil,
+           insert(C'['k ++ 1] @ nil,
+                  O \ (insert(C @ nt1, C' @ nt1)
+                      )
+                  )))),
+       insert('k ++ 1 <=T nt1, A)
+       )
+       =>
+     pConfig(Sigma, Delta, P3, I, O'', A'')
+     /\
+     O'' = insert(C @ 'k, 
+        insert(C' @ 'k,
+         insert(C['k ++ 1] @ nil,
+           insert(C'['k ++ 1] @ nil,
+                  O \ (insert(C @ nt1, C' @ nt1)
+                      )
+                  ))))
+     /\
+     A'' == insert('k ++ 1 <=T nt1, A) 
+     /\
+     P3 == (P || (family 'Comp[C C'] q (bound 'k) ::= 
+                    ((C[q] ::= R3) || (C'[q] ::= R4)) ) || 
+                      (C['k ++ 1] ::= replaceVars(R3, q |-> 'k ++ 1) ) 
+                      ||
+                      (C'['k ++ 1] ::= replaceVars(R4, q |-> 'k ++ 1))
+           )
+       [nonexec] .   
+       
+     crl [INDUCTION-when-two] :
+     pConfig(Sigma, Delta, 
+       P || (family C (q q') ((bound n1) (uniformBound n2)) ::= cases), 
+       I, O, A)
+     =>
+     pConfig(Sigma, Delta , 
+       P || (family C (q q') ((bound n1) (uniformBound n2)) ::= cases'), 
+       I, O, A)
+     if 
+     pConfig(Sigma, Delta , 
+       P || 
+       (projectIndex 
+         (family C (q q') ((bound n1) (uniformBound n2)) ::= cases) 
+         0 A empty 
+       ), I, 
+       union (O \ (C @ (n1 n2)), C[q 0] @ nil), 
+       insert(q' =T= 0, insert(q <=T n1, A))
+       ) 
+     => 
+     pConfig(Sigma, Delta , 
+       P || P2, I, O', A') 
+     /\
+     O' == union (O \ (C @ (n1 n2)), C[q 0] @ nil)
+     /\
+     A' == insert(q' =T= 0, insert(q <=T n1, A))
+     /\
+     P2 == projectIndex (
+             family C (q q') ((bound n1) (uniformBound n2)) ::= cases') 
+             0 A empty
+     /\
+     pConfig(Sigma, Delta , 
+       P || (family C (q q') ((bound n1) (uniformBound 'k)) ::= cases') 
+       || (projectIndex 
+            (family C (q q') ((bound n1) (uniformBound n2)) ::= cases) 
+            ('k ++ 1) A empty), 
+             I, 
+             insert( C @ (n1 'k) , 
+                     insert( 
+                       C[q ('k ++ 1)] @ nil, 
+                       (O \ (C @ (n1 n2)) )
+                     ) 
+            ), 
+             insert('k <T n2, 
+               insert('k ++ 1 <=T n2, insert(q <=T n1, A)))
+             )
+       =>
+     pConfig(Sigma, Delta , P4, I, O'', A'')  
+     /\
+     O'' == insert( C @ (n1 'k) , 
+                     insert( 
+                       C[q ('k ++ 1)] @ nil , 
+                       (O \ (C @ (n1 n2)) )
+                     ) 
+            )
+     /\
+     A'' == insert('k <T n2, 
+              insert('k ++ 1 <=T n2, insert(q <=T n1, A)))
+     /\
+     P4 == 
+           P || 
+           (family C (q q') ((bound n1) (uniformBound 'k)) ::= cases') || 
+           (projectIndex 
+             (family C (q q') ((bound n1) (uniformBound n2)) ::= cases')
+             ('k ++ 1) A empty)
+       [nonexec] .  
+                              
+    rl [convert-combined] :
+       family C q (bound n) ::=
+        (
+         (when bt --> P1 )
+         ;;
+         (otherwise --> P2)
+        )
+       => 
+       combine q n bt P1 P2 .
+       
+   rl [drop-group-name] :
+     family C q (bound n) ::= P 
+     => 
+     P .     
+
+   crl [wrap-channel-family] :  
+     pConfig(Sigma, Delta, 
+             newNF( ltq { C q (bound nt) : T } < C[nt + 1] : T >
+                   , 
+                   P || ( C[nt + 1] ::= R ) || 
+                   family C q (bound nt) ::= 
+                    (whenList1 ;; (when bt --> R) ;; whenList2), 
+                   QL),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta, 
+             newNF(ltq { C q (bound (nt + 1)) : T }
+                   , 
+                   P || 
+                   family C q (bound (nt + 1)) ::=  
+                    (whenList1 ;; (when bt --> R) ;; whenList2), 
+                   del (C[nt + 1]) QL),
+             I, O, A)  
+     if A |= bt with (q |-> (nt + 1))
+     .
+     
+     rl [unwrap-channel-family] :
+     pConfig(Sigma, Delta, 
+             newNF( ltq { C q (bound (nt + 1)) : T },
+                    P  || family C q (bound (nt + 1)) ::= cases, 
+                   QL),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta, 
+             newNF( ltq { C q (bound nt) : T } < C[nt + 1] : T >,
+                    P || 
+                   (projectIndex 
+                      (family C q (bound (nt + 1)) ::= cases) 
+                      (nt + 1) A empty
+                   ) ||
+                   (family C q (bound nt) ::= cases), 
+                   C[nt + 1] :: QL),
+             I, O, A)  
+    .  
+    
+    rl [wrap-channel-family-new-R] :
+     pConfig(Sigma, Delta, 
+             newNF( ltq { C q (bound nt) : T } < C[nt + 1] : T >
+                   , 
+                   P || ( C[nt + 1] ::= R1 ) || 
+                  family C q (bound nt) ::= R2,
+                   QL),
+             I, O, A) 
+     =>
+     pConfig(Sigma, Delta, 
+             newNF( ltq { C q (bound (nt + 1)) : T }
+                   , 
+                   P || family C q (bound (nt + 1)) ::= 
+                          ((when (q =T= (nt + 1)) --> R1) ;; 
+                            otherwise --> R2),
+                   del (C[nt + 1]) QL),
+             I, O, A)
+    .  
+    
+     rl [wrap-channel-family-new-W] :
+     pConfig(Sigma, Delta, 
+             newNF( ltq { C q (bound nt) : T } < C[nt + 1] : T >
+                   , 
+                   P || ( C[nt + 1] ::= R1 ) || 
+                   family C q (bound nt) ::= whenList,
+                   QL),
+             I, O, A) 
+     =>
+     pConfig(Sigma, Delta, 
+             newNF( ltq { C q (bound (nt + 1)) : T }
+                   , 
+                   P || family C q (bound (nt + 1)) ::= 
+                          ((when (q =T= (nt + 1)) --> R1) ;; 
+                            whenList),
+                   del (C[nt + 1]) QL),
+             I, O, A)
+    . 
+      
+    crl [merge-cases] :                 
+    pConfig(Sigma, Delta, 
+             newNF( ltq { C q (bound nt) : T }
+                   , 
+                   P || family C q (bound nt) ::= 
+                         (whenList1 ;;
+                          (when (q =T= nt1) --> R1) ;;
+                          whenList2 ;;
+                          (otherwise --> R2)),
+                   QL),
+             I, O, A) 
+     => 
+        pConfig(Sigma, Delta, 
+             newNF( ltq { C q (bound nt) : T }
+                   , 
+                   P || family C q (bound nt) ::= 
+                         (whenList1 ;;
+                          whenList2 ;;
+                          (otherwise --> R2)),
+                   QL),
+             I, O, A) 
+     if replaceVars(R2, q |-> nt1) == R1 
+   .   
+
+\end{lstlisting}
