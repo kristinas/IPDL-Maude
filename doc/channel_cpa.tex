@@ -108,7 +108,7 @@ Putting this all together yields the following code for the simulator:
 \item $\OkMsg(i)^\adv_\id \coloneqq \read{\OkCtxt(i)^\adv_\net}$ for $0 \leq i < q$
 \end{itemize}
 
-\subsection{Real $\approx$ Ideal + Simulator}
+\subsection{Real \texorpdfstring{$\approx$}{Approximates} Ideal + Simulator}
 Composing the simulator with the ideal functionality and hiding the internal communication yields the following:
 
 \begin{itemize}
@@ -143,7 +143,7 @@ Composing the simulator with the ideal functionality and hiding the internal com
 \item $\Key \coloneqq \samp{\unif_\key}$
 \item $\Send(i) \coloneqq m \leftarrow \In(i); \ k \leftarrow \Key; \ \samp{\enc(m,k)}$ for $0 \leq i < q$
 \item $\LeakCtxt(i)^\net_\adv \coloneqq \read{\Send(i)}$ for $0 \leq i < q$
-\item $\Out(i) \coloneqq {\color{red} \_ \leftarrow \OkCtxt(i)^\adv_\net; \ c \leftarrow \Send(i);} \ k \leftarrow \Key; \ \ret{\dec(c,k)}$ for $0 \leq i < q$
+\item $\Out(i) \coloneqq {\color{red} \_ \leftarrow \OkCtxt(i)^\adv_\net; \ c \leftarrow \Send(i); \ } k \leftarrow \Key; \ \ret{\dec(c,k)}$ for $0 \leq i < q$
 \end{itemize}
 
 \noindent Next we conceptually separate the encryption and decryption actions from the message-passing in the real-world by introducing new internal channels $\Enc(-)$ and $\Dec(-)$:

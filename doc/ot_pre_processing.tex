@@ -212,11 +212,11 @@ Our goal is to simplify the real protocol until it becomes clear how to separate
 \end{itemize}
 Substituting the channel $\SharedKey$ into $\Out$ yields
 \begin{itemize}
-\item $\Out \coloneqq e_0 \leftarrow \MsgEnc(0); \ e_1 \leftarrow \MsgEnc(1); \ {\color{red} k_0 \leftarrow \Key(0); \ k_1 \leftarrow \Key(1); \ f \leftarrow \Flip;} \ c \leftarrow \Choice; $ \\ ${\color{red} \ifte{c}{\big(\ifte{f}{\ret{e_1 \oplus k_1}}{\ret{e_1 \oplus k_0}}\big)}{\big(\ifte{f}{\ret{e_0 \oplus k_1}}{\ret{e_0 \oplus k_0}}\big)}}$
+\item $\Out \coloneqq e_0 \leftarrow \MsgEnc(0); \ e_1 \leftarrow \MsgEnc(1); \ {\color{red} k_0 \leftarrow \Key(0); \ k_1 \leftarrow \Key(1); \ f \leftarrow \Flip; \ } c \leftarrow \Choice; $ \\ ${\color{red} \ifte{c}{\big(\ifte{f}{\ret{e_1 \oplus k_1}}{\ret{e_1 \oplus k_0}}\big)}{\big(\ifte{f}{\ret{e_0 \oplus k_1}}{\ret{e_0 \oplus k_0}}\big)}}$
 \end{itemize}
 Further substituting the channels $\MsgEnc(0)$ and $\MsgEnc(1)$ into $\Out$ yields
 \begin{itemize}
-\item $\Out \coloneqq {\color{red} m_0 \leftarrow \Msg(0); \ m_1 \leftarrow \Msg(1);} \ k_0 \leftarrow \Key(0); \ k_1 \leftarrow \Key(1); \ f \leftarrow \Flip; \ c \leftarrow \Choice;$ \\ $\mathsf{if} \ c \ \mathsf{then} \ \ifte{f}{\ret{{\color{red} (m_1 \oplus k_1)} \oplus k_1}}{\ret{{\color{red} (m_1 \oplus k_0)} \oplus k_0}}$ \\ ${\color{white} \mathsf{if} \ c \ } \mathsf{else} \ \ifte{f}{\ret{{\color{red} (m_0 \oplus k_1)} \oplus k_1}}{\ret{{\color{red} (m_0 \oplus k_0)} \oplus k_0}}$
+\item $\Out \coloneqq {\color{red} m_0 \leftarrow \Msg(0); \ m_1 \leftarrow \Msg(1); \ } k_0 \leftarrow \Key(0); \ k_1 \leftarrow \Key(1); \ f \leftarrow \Flip; \ c \leftarrow \Choice;$ \\ $\mathsf{if} \ c \ \mathsf{then} \ \ifte{f}{\ret{{\color{red} (m_1 \oplus k_1)} \oplus k_1}}{\ret{{\color{red} (m_1 \oplus k_0)} \oplus k_0}}$ \\ ${\color{white} \mathsf{if} \ c \ } \mathsf{else} \ \ifte{f}{\ret{{\color{red} (m_0 \oplus k_1)} \oplus k_1}}{\ret{{\color{red} (m_0 \oplus k_0)} \oplus k_0}}$
 \end{itemize}
 We can now cancel out the two applications of $\oplus$ since they are mutually inverse by assumption:
 \begin{itemize}
@@ -265,8 +265,8 @@ Summarizing, the cleaned-up version of the real protocol is below:
 \item {\color{blue} $\LeakChoice^\rec_\adv \coloneqq \read{\Choice}$}
 \item $\ChoiceEnc \coloneqq f \leftarrow \Flip; \ c \leftarrow \Choice; \\ \ifte{c}{\big(\ifte{f}{\ret{\false}}{\ret{\true}}\big)}{\big(\ifte{f}{\ret{\true}}{\ret{\false}}\big)}$
 \item {\color{blue} $\LeakChoiceEnc^\rec_\adv \coloneqq \read{\ChoiceEnc}$}
-\item $\MsgEnc(0) \coloneqq m_0 \leftarrow \Msg(0); \ m_1 \leftarrow \Msg(1); \ {\color{red} k \leftarrow \KeyPair;} \ c \leftarrow \Choice;$ \\ {\color{red} $\ifte{c}{\ret{m_0 \oplus (\snd \ k)}}{\ret{m_0 \oplus (\fst \ k)}}$}
-\item $\MsgEnc(1) \coloneqq m_0 \leftarrow \Msg(0); \ m_1 \leftarrow \Msg(1); \ {\color{red} k \leftarrow \KeyPair;} \ c \leftarrow \Choice;$ \\ {\color{red} $\ifte{c}{\ret{m_1 \oplus (\fst \ k)}}{\ret{m_1 \oplus (\snd \ k)}}$}
+\item $\MsgEnc(0) \coloneqq m_0 \leftarrow \Msg(0); \ m_1 \leftarrow \Msg(1); \ {\color{red} k \leftarrow \KeyPair; \ } c \leftarrow \Choice;$ \\ {\color{red} $\ifte{c}{\ret{m_0 \oplus (\snd \ k)}}{\ret{m_0 \oplus (\fst \ k)}}$}
+\item $\MsgEnc(1) \coloneqq m_0 \leftarrow \Msg(0); \ m_1 \leftarrow \Msg(1); \ {\color{red} k \leftarrow \KeyPair; \ } c \leftarrow \Choice;$ \\ {\color{red} $\ifte{c}{\ret{m_1 \oplus (\fst \ k)}}{\ret{m_1 \oplus (\snd \ k)}}$}
 \item {\color{blue} $\LeakMsgEnc(0)^\rec_\adv \coloneqq \read{\MsgEnc(0)}$}
 \item {\color{blue} $\LeakMsgEnc(1)^\rec_\adv \coloneqq \read{\MsgEnc(1)}$}
 \item $\Out \coloneqq m_0 \leftarrow \Msg(0); \ m_1 \leftarrow \Msg(1); \ c \leftarrow \Choice; \ \ifte{c}{\ret{m_1}}{\ret{m_0}}$
@@ -302,8 +302,8 @@ Summarizing, the cleaned-up version of the real protocol is below:
 Since sampling and branching are interchangeable, the three reaction snippets
 \begin{align*}
 & \bullet \; k_0 \leftarrow \unif_\msg; \ k_1 \leftarrow \unif_\msg; \ \ifte{f}{\ret{(k_1,k_0)}}{\ret{(k_0,k_1)}} \\
-& \bullet \; \ifte{f}{\big({\color{red} k_0 \leftarrow \unif_\msg; \ k_1 \leftarrow \unif_\msg;} \ \ret{(k_1,k_0)}\big)}{\big(k_0 \leftarrow \unif_\msg; \ k_1 \leftarrow \unif_\msg; \ \ret{(k_0,k_1)}\big)} \\
-& \bullet \; \ifte{f}{\big({\color{red} k_1 \leftarrow \unif_\msg; \ k_0 \leftarrow \unif_\msg;} \ \ret{(k_1,k_0)}\big)}{\big(k_0 \leftarrow \unif_\msg; \ k_1 \leftarrow \unif_\msg; \ \ret{(k_0,k_1)}\big)}
+& \bullet \; \ifte{f}{\big({\color{red} k_0 \leftarrow \unif_\msg; \ k_1 \leftarrow \unif_\msg; \ } \ret{(k_1,k_0)}\big)}{\big(k_0 \leftarrow \unif_\msg; \ k_1 \leftarrow \unif_\msg; \ \ret{(k_0,k_1)}\big)} \\
+& \bullet \; \ifte{f}{\big({\color{red} k_1 \leftarrow \unif_\msg; \ k_0 \leftarrow \unif_\msg; \ } \ret{(k_1,k_0)}\big)}{\big(k_0 \leftarrow \unif_\msg; \ k_1 \leftarrow \unif_\msg; \ \ret{(k_0,k_1)}\big)}
 \end{align*}
 are equivalent. But the last snippet amounts to doing the same thing either way, so we might just as well not flip:
 \begin{itemize}
@@ -394,7 +394,7 @@ Unfolding the samplings back thus gives us:
 \item {\color{blue} $\LeakChoice^\rec_\adv \coloneqq \read{\Choice}$}
 \item $\ChoiceEnc \coloneqq f \leftarrow \Flip; \ c \leftarrow \Choice; \\ \ifte{c}{\big(\ifte{f}{\ret{\false}}{\ret{\true}}\big)}{\big(\ifte{f}{\ret{\true}}{\ret{\false}}\big)}$
 \item {\color{blue} $\LeakChoiceEnc^\rec_\adv \coloneqq \read{\ChoiceEnc}$}
-\item $\PrivateMsg \coloneqq m_0 \leftarrow \Msg(0); \ m_1 \leftarrow \Msg(1); \ {\color{red} k_1 \leftarrow \unif_\msg;} \ c \leftarrow \Choice;$ \\ $\ifte{c}{\ret{m_0 \oplus k_1}}{\ret{m_1 \oplus k_1}}$
+\item $\PrivateMsg \coloneqq m_0 \leftarrow \Msg(0); \ m_1 \leftarrow \Msg(1); \ {\color{red} k_1 \leftarrow \unif_\msg; \ } c \leftarrow \Choice;$ \\ $\ifte{c}{\ret{m_0 \oplus k_1}}{\ret{m_1 \oplus k_1}}$
 \item $\MsgEnc(0) \coloneqq m_0 \leftarrow \Msg(0); \ m_1 \leftarrow \Msg(1); \ c \leftarrow \Choice; \ k_0 \leftarrow \Key(0); \ p \leftarrow \PrivateMsg;$ \\ $\ifte{c}{\ret{p}}{\ret{m_0 \oplus k_0}}$
 \item $\MsgEnc(1) \coloneqq m_0 \leftarrow \Msg(0); \ m_1 \leftarrow \Msg(1); \ c \leftarrow \Choice; \ k_0 \leftarrow \Key(0); \ p \leftarrow \PrivateMsg;$ \\ $\ifte{c}{\ret{m_1 \oplus k_0}}{\ret{p}}$
 \item {\color{blue} $\LeakMsgEnc(0)^\rec_\adv \coloneqq \read{\MsgEnc(0)}$}

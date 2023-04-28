@@ -1,3 +1,11 @@
+\newcommand{\flip}{\mathsf{flip}}
+\newcommand{\id}{\mathsf{id}}
+\newcommand{\adv}{\mathsf{adv}}
+\newcommand{\Alice}{\mathsf{Alice}}
+\newcommand{\In}{\mathsf{In}}
+\newcommand{\Ctxt}{\mathsf{Ctxt}}
+\newcommand{\Key}{\mathsf{Key}}
+\newcommand{\LeakCtxt}{\mathsf{LeakCtxt}}
 \subsection{Maude}
 
 Maude \cite{DBLP:conf/maude/2007} is a high-level declarative
@@ -9,18 +17,18 @@ Maude features several kinds of modules:
 model semantics) in 
 membership equational logic that allow definitions of 
 data types and operations on them, via multiple sorts, subsort
-relations between them, equations between terms and
+relations between them, equations between terms, and
 assertions of membership of a term to a sort,
 \item \emph{system modules}, which are theories in rewriting logic
 that extend functional modules with
-definitions of rewrite rules, representing transitions between states,
+definitions of rewrite rules, representing transitions between states, and
 \item \emph{strategy modules}, which control 
 the way the rewriting rules are applied, by means of strategy combinators,
 such as concatenation, iterations and others.
 \end{itemize}
 
 We now present the features of the Maude language that we make use of
-in formalizing IPDL.
+in formalizing \textsf{IPDL}.
 Maude functional modules are introduced with the syntax
 \code{fmod NAME is ... endfm}. In a functional module we can declare
 sorts, using the keyword \code{sort}, state that two sorts are
@@ -30,11 +38,11 @@ an operation \code{f} with argument sorts \code{s1 ... sk} and
 result sort \code{s}. Moreover, operations
 may have attributes, written in square brackets after their declarations,
 like \code{comm} for commutativity or \code{assoc} for associativity.
-In Maude terms are rewritten to a normal form modulo the declared 
+In Maude, terms are rewritten to a normal form modulo the declared 
 attributes and the equations of defined operations.
 More precisely, 
 equations are used as equational rules: instances of the left-hand side
-pattern that matches subterms of a term are replaces with the 
+pattern that match subterms of a term are replaces with the 
 corresponding instances of the right-hand side.
 The process is called term rewriting and the result of simplifying a term by complete application of equational rules is called its normal form. 
 We can control which operations will appear in these ground
@@ -43,7 +51,7 @@ is not a constructor of a sort is regarded as defined.
 Equations are introduced by the syntax 
 \code{eq t1 = t2}, where \code{t1} and \code{t2} are terms
 of sorts related via subsorting. 
-We can assert sort memberships using the syntax 
+We can assert sort membership using the syntax 
 \code{t : s}
 where \code{t} is a term and \code{s} is a sort.
 Conditional equations are written
@@ -80,7 +88,7 @@ expression zero or more times, \code{idle} for the strategy giving as result its
 strategy \code{s1} then, if the run is successful, it runs \code{s2},
 otherwise it runs \code{s3}.
 Several other derived constructions are also
-supported, e.g. \code{try s} for \code{s ? idle : idle} and \code{s1 or-else s2} for \code{s1 ? idle : s2}. The match and rewrite operator 
+supported, \emph{e.g.}, \code{try s} for \code{s ? idle : idle} and \code{s1 or-else s2} for \code{s1 ? idle : s2}. The match and rewrite operator 
 \code{matchrew} restricts the application of a strategy to a specific
 subterm of the subject term, see details in \cite{DBLP:conf/maude/2007}.
 Strategies are declared as \code{strat NAME : s1 ... sk @ s .},
@@ -98,7 +106,7 @@ equations are allowed.
 Two more importation modes are supported, but we do not make use 
 of them.
 
-Maude provides several predefined data types. We will use booleans, natural
+Maude provides several predefined data types. We will use Booleans, natural
 numbers, lists, sets and maps.
   
 \subsection{Syntax}
@@ -125,7 +133,7 @@ implemented as a predicate
 \code{typeOf : Signature TypeContext Expression -> Bool}, while
 we let Maude handle expression equality by only adding the expression
 equality rules \textsc{fast-pair}, \textsc{snd-pair} and 
-\textsc{pair-ext} as axioms, e.g.
+\textsc{pair-ext} as axioms, \emph{e.g.},
 \code{eq fst pair(E1, E2) = E1 .} where \code{E1 E2 : Expression}.
 
 Channel sets are simply sets of identifiers, standing for channel
@@ -148,7 +156,7 @@ if and only if
 \code{typeOf(Sigma, Delta, Gamma, I, R) = T}, where \code{Sigma} is 
 current signature. 
 Maude allows us to write the typing
-judgements in a very similar way to their original formulation, e.g. the typing rule for binding is written as
+judgements in a very similar way to their original formulation, \emph{e.g.}, the typing rule for binding is written as
 \begin{lstlisting}
 
  ceq typeOf(Sigma, Delta, Gamma, I, x : T1 <- R1 ; R2) = 
@@ -347,7 +355,7 @@ is
 During equivalence proofs, we may obtain 
 in a normal form \code{nf(L, R, O)}
 either arbitrary binds in \code{L} 
-(e.g. by substituting a read from a channel with the reaction
+(\emph{e.g.}, by substituting a read from a channel with the reaction
 assigned to that channel)
 or reactions \code{R} that are not bind-free.
 This will be represented as a pre-normal-form, 
@@ -587,7 +595,7 @@ INDUCTION-when-one[
 We now come to the strategies that will appear in proofs. It is possible that some of them will make use of other substrategies, but as these will not be in use, we refrain from including them here. To ease presentation,
 we group strategies by the main core rule that is applied. They may 
 have several forms to be applied in different contexts  
-e.g. channels, families, groups of families, cases.
+\emph{e.g.}, channels, families, groups of families, cases.
 
 The rules \textsc{refl}, \textsc{trans}, \textsc{axiom} and
 \textsc{embed} are not explicitly applied, as they are implied by

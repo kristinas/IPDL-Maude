@@ -151,7 +151,7 @@ where Alice encrypts the input message by multiplying it with the shared key pro
 where Bob decrypts the ciphertext received from Alice by multiplying it with the inverse of the shared key, and outputs the result. For communicating the ciphertext from Alice to Bob through the adversary, we have the third authenticated channel:
 \begin{itemize}
 \item $\LeakCtxt^\net_\adv \coloneqq \read{\Send}$
-\item $\Recv \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \read{\Send(i)}$
+\item $\Recv \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \read{\Send}$
 \end{itemize}
 The real protocol is a composition of the two parties and the three authenticated channels, followed by the hiding of the internal communication. 
 
@@ -180,7 +180,7 @@ The inputs to the simulator are channels $\OkPublicKey(\Alice)^\adv_\net$, $\OkP
 \end{itemize}
 followed by the hiding of the channels $\OkKey(\Alice)^\adv_\net$ and $\OkKey(\Bob)^\adv_\net$.
 
-\subsection{Real $\approx$ Ideal + Simulator: Diffie-Hellman Key Exchange}
+\subsection{Real \texorpdfstring{$\approx$}{Approximates} Ideal + Simulator: Diffie-Hellman Key Exchange}
 Plugging the simulator into the ideal functionality and substituting away the now-internal channels $\OkKey(\Alice)^\adv_\id$ and $\OkKey(\Bob)^\adv_\id$ that originally served as a line of communication for the adversary yields the following:
 
 \begin{itemize}
@@ -297,7 +297,7 @@ Plugging the simulator into the ideal functionality and substituting away the no
 
 \noindent This is precisely the simplified composition of the ideal functionality and the simulator from the beginning of this section.
 
-\subsection{Real $\approx$ Ideal + Simulator: One-Time Pad}
+\subsection{Real \texorpdfstring{$\approx$}{Approximates} Ideal + Simulator: One-Time Pad}
 Plugging the simulator into the ideal functionality and substituting away the internal channels $\LeakMsgRcvd^\id_\adv$ and $\OkMsg^\adv_\id$ that originally served as a line of communication for the adversary yields the composition of the key exchange simulator with the protocol
 \begin{itemize}
 \item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\net; \ \samp{\unif_\msg}$
@@ -309,7 +309,7 @@ Next we move on to simplifying the real protocol. The real protocol can be refac
 \begin{itemize}
 \item $\Send \coloneqq m \leftarrow \In; \ k_A \leftarrow \Key(\Alice); \ \ret{m * k_A}$
 \item $\LeakCtxt^\net_\adv \coloneqq \read{\Send}$
-\item $\Recv \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \read{\Send(i)}$
+\item $\Recv \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \read{\Send}$
 \item $\Out \coloneqq r \leftarrow \Recv; \ k_B \leftarrow \Key(\Bob); \ \ret{r * k_B^{-1}}$
 \end{itemize}
 where the channels $\Send$ and $\Recv$ are internal, followed by the hiding of the channels $\Key(\Alice)$ and $\Key(\Bob)$.
