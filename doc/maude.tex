@@ -180,15 +180,21 @@ if and only if
 \code{typeOf(Sigma, Delta, I, P)},
 where \code{Sigma} is the current signature and
 \code{getOutputs} computes the outputs of \code{P}.
-For example, the typing rule for \code{new} checks that 
-all the inputs from \code{I} occur in the channel context
-\code{Delta}, that \code{c} is new and that \code{P} typechecks
+The implementation splits the typechecking into a check that the inputs are valid w.r.t. \code{Delta} and a recursive function that does the rest of typechecking:
+
+\begin{lstlisting}
+eq typeOf(Sigma, Delta, I, A, P) = 
+    validChanSet I Delta A 
+    and 
+    typeOfAux(Sigma, Delta, I, A, P)
+\end{lstlisting}
+
+For example, the typing rule for \code{new} checks that \code{c} is new and that \code{P} typechecks
 when extending \code{Delta} with the typed channel \code{ c :: T}:
 \begin{lstlisting}
- eq typeOf(Sigma, Delta, I, new c : T in P) =
-         validChanSet I Delta
-     and not occurs c Delta
-     and typeOf(Sigma, Delta (c :: T), I, P) .   
+ eq typeOfAux(Sigma, Delta, I, new c : T in P) =
+         not occurs c Delta
+     and typeOfAux(Sigma, Delta (c :: T), I, P) .   
 \end{lstlisting}
 
 
@@ -198,12 +204,20 @@ when extending \code{Delta} with the typed channel \code{ c :: T}:
 
 At the reaction level, exact equality is given with axioms of the form
 $\Delta; \ \Gamma \vdash R_1 = R_2 : I \to \tau$. 
-Let us consider the following example
+Let us consider the following example:
 
-$\code{(A :: bool) (B :: bool)}; \code{empty} \vdash \code{x : bool <- return True  ; if x then read A else read B} = \code{read A} : \code{\{A, B\}} \to \code{bool}$. 
+$\code{(A :: bool) (B :: bool)}; \code{empty} \vdash$
+
+$\code{x : bool <- return True  ; if x then read A else read B} = \code{read A} : \code{\{A, B\}} \to \code{bool}$. 
+
 The proof of this is obtained by applying the \textsc{trans} axiom to
 
-$\code{(A :: bool) (B :: bool)}; \code{empty} \vdash \code{x : bool <- return True  ; if x then read A else read B} = \code{if True then read A else read B} : \code{\{A, B\}} \to \code{bool}$
+$\code{(A :: bool) (B :: bool)}; \code{empty} \vdash$
+
+$\code{x : bool <- return True  ; if x then read A else read B} = 
+$
+
+$\code{if True then read A else read B} : \code{\{A, B\}} \to \code{bool}$
 
 \noindent that we prove by \textsc{ret-bind} and
 
