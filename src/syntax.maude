@@ -1881,8 +1881,6 @@ fmod PROTOCOL-TYPING is
  eq typeOfAux(Sigma, Delta, I, A, emptyProtocol) = true .
 
  eq typeOfAux(Sigma, Delta, I, A, cn ::= R) = 
-    *** validChanSet I Delta A
-    *** and
     typeOf(Sigma, Delta, emptyTypeContext, I, A, R) 
      == 
     typeInCtx(toBound cn, A, Delta)
@@ -1890,16 +1888,12 @@ fmod PROTOCOL-TYPING is
     not isElemB(cn, I, A) .
   
  eq typeOfAux(Sigma, Delta, I, A, P1 || P2) =
-     *** validChanSet I Delta A
-     *** and
      typeOfAux(Sigma, Delta, union(I, getOutputs(P2)), A, P1) 
      and 
      typeOfAux(Sigma, Delta, union(I,  getOutputs(P1)), A, P2)
      .
 
  eq typeOfAux(Sigma, Delta, I, A, new o : T in P) =
-     *** validChanSet I Delta A
-     *** and 
      not occurs (toBound o) Delta A
      and
      typeOfAux(Sigma, Delta ((o @ nil) :: T), I, A, P)
@@ -1907,8 +1901,6 @@ fmod PROTOCOL-TYPING is
 
     
  eq typeOfAux(Sigma, Delta, I, A, newfamily c nlist blist : T in P) =
-    *** validChanSet I Delta A
-    *** and 
     not occurs (toBounds c blist) Delta A
     and
     typeOfAux(Sigma, Delta ((toBounds c blist) :: T), I, A, P) 
@@ -1934,8 +1926,6 @@ fmod PROTOCOL-TYPING is
      insert(ind2 <=T nt2, insert(ind1 <=T nt1, A)) .
   
  eq typeOfAux(Sigma, Delta, I, A, family c nlist blist ::= R) = 
-     *** validChanSet I Delta A
-     *** and 
      occurs (toBounds c blist) Delta A
      and *** here is where we add the assumptions about the vars in nlist for R!
      typeOf(Sigma, Delta, emptyTypeContext, insert(toBounds c blist, I), 
@@ -1951,8 +1941,6 @@ fmod PROTOCOL-TYPING is
     typeOfAux(Sigma, Delta, I, A, P) .    
     
  eq typeOfAux(Sigma, Delta, I, A, family c nlist blist ::= (when bt --> R)) = 
-     *** validChanSet I Delta A
-     *** and
      occurs (toBounds c blist) Delta A
      and
      typeOf(Sigma, Delta, emptyTypeContext, insert(toBounds c blist, I), 
@@ -1961,8 +1949,6 @@ fmod PROTOCOL-TYPING is
  . 
     
   eq typeOfAux(Sigma, Delta, I, A, family c nlist blist ::= (otherwise --> R)) = 
-     *** validChanSet I Delta A
-     *** and
      occurs (toBounds c blist) Delta A
      and
      typeOf(Sigma, Delta, emptyTypeContext, 
