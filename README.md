@@ -17,7 +17,7 @@ The [src](https://github.com/kristinas/IPDL-Maude/tree/main/src "src") folder co
 The [doc](https://github.com/kristinas/IPDL-Maude/tree/main/doc) folder contains a [technical report](https://github.com/kristinas/IPDL-Maude/blob/main/doc/tech_report_popl.pdf) describing the theory behind the tool,
 and updated version of the syntax together with a description of the [Maude implementation of IPDL](https://github.com/kristinas/IPDL-Maude/blob/main/doc/tech_report_maude.pdf) and a detailed presentation of the [case studies](https://github.com/kristinas/IPDL-Maude/blob/main/doc/case_studies.pdf):
 - Authenticated-To-Secure Channel: CPA Security (Sec. 1) for approximate equality of protocols;
-- Authenticated-To-Secure Channel: Diffie-Hellman Key Exchange (DHKE) for approximate equality of protocols;
+- Authenticated-To-Secure Channel: Diffie-Hellman Key Exchange - DHKE (Sec. 2) for approximate equality of protocols;
 - Oblivious Transfer: 1-Out-Of-2 Pre-Processing (Sec. 3) for exact equality of protocols;
 - Multi-Party Coin Toss (Sec. 4) for induction;
 - Two-Party GMW Protocol (Sec. 5) for induction.
