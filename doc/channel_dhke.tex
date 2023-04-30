@@ -102,8 +102,8 @@ Symmetrically, Bob generates a secret key $k_B$ and sends the value $g^{k_B}$ to
 \end{itemize}
 Each authenticated channel leaks the corresponding public key to the adversary and waits for their approval before forwarding the key to the other party:
 \begin{itemize}
-\item $\LeakPublicKey(\Alice)^\adv_net \coloneqq \read{\Send(\Alice,\Bob)}$
-\item $\LeakPublicKey(\Bob)^\adv_net \coloneqq \read{\Send(\Bob,\Alice)}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\Send(\Alice,\Bob)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\Send(\Bob,\Alice)}$
 \item $\Recv(\Alice,\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\Send(\Alice,\Bob)}$
 \item $\Recv(\Bob,\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\Send(\Bob,\Alice)}$
 \end{itemize}
@@ -129,12 +129,12 @@ The code for Bob has the symmetric form:
 \end{itemize}
 At last we have the two authenticated channels: from Alice to Bob,
 \begin{itemize}
-\item $\LeakPublicKey(\Alice)^\adv_net \coloneqq \read{\Send(\Alice,\Bob)}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\Send(\Alice,\Bob)}$
 \item $\Recv(\Alice,\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\Send(\Alice,\Bob)}$
 \end{itemize}
 and from Bob to Alice:
 \begin{itemize}
-\item $\LeakPublicKey(\Bob)^\adv_net \coloneqq \read{\Send(\Bob,\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\Send(\Bob,\Alice)}$
 \item $\Recv(\Bob,\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\Send(\Bob,\Alice)}$
 \end{itemize}
 Composing all of this together and hiding the internal communication yields the Diffie-Hellman part of the real-world protocol.
@@ -175,10 +175,10 @@ In the above, the channels $\SecretKey(\Alice)$, $\SecretKey(\Bob)$ and $\Public
 \subsection{The Simulator: One-Time Pad}
 The inputs to the simulator are channels $\OkPublicKey(\Alice)^\adv_\net$, $\OkPublicKey(\Bob)^\adv_\net$, $\OkCtxt^\adv_\net$, $\LeakMsgRcvd^\id_\adv$, whereas the outputs are channels $\LeakPublicKey(\Alice)^\adv_\net$, $\LeakPublicKey(\Bob)^\adv_\net$, $\LeakCtxt^\net_\adv$, $\OkMsg^\adv_\id$. We define the simulator as the composition of the key exchange simulator and the protocol
 \begin{itemize}
-\item $\LeakCtxt^\net_\adv \coloneqq \_ \leftarrow \LeakMsgRcvd^\id_\adv; \ \_ \leftarrow \OkKey(\Alice)^\adv_\net; \ \samp{\unif_\msg}$
-\item $\OkMsg^\adv_\id \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \_ \leftarrow \OkKey(\Alice)^\adv_\net; \ \_ \leftarrow \OkKey(\Bob)^\adv_\net; \ \ret{\checkmark}$
+\item $\LeakCtxt^\net_\adv \coloneqq \_ \leftarrow \LeakMsgRcvd^\id_\adv; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \samp{\unif_\msg}$
+\item $\OkMsg^\adv_\id \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \ \ret{\checkmark}$
 \end{itemize}
-followed by the hiding of the channels $\OkKey(\Alice)^\adv_\net$ and $\OkKey(\Bob)^\adv_\net$.
+followed by the hiding of the channels $\OkKey(\Alice)^\adv_\id$ and $\OkKey(\Bob)^\adv_\id$.
 
 \subsection{Real \texorpdfstring{$\approx$}{Approximates} Ideal + Simulator: Diffie-Hellman Key Exchange}
 Plugging the simulator into the ideal functionality and substituting away the now-internal channels $\OkKey(\Alice)^\adv_\id$ and $\OkKey(\Bob)^\adv_\id$ that originally served as a line of communication for the adversary yields the following:
@@ -203,8 +203,8 @@ Plugging the simulator into the ideal functionality and substituting away the no
 \item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
 \item $\Send(\Alice,\Bob) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
 \item $\Send(\Bob,\Alice) \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
-\item $\LeakPublicKey(\Alice)^\adv_net \coloneqq \read{\Send(\Alice,\Bob)}$
-\item $\LeakPublicKey(\Bob)^\adv_net \coloneqq \read{\Send(\Bob,\Alice)}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\Send(\Alice,\Bob)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\Send(\Bob,\Alice)}$
 \item $\Recv(\Alice,\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\Send(\Alice,\Bob)}$
 \item $\Recv(\Bob,\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\Send(\Bob,\Alice)}$
 \item $\Key(\Alice) \coloneqq r_B \leftarrow \Recv(\Bob,\Alice); \ k_A \leftarrow \SecretKey(\Alice); \ \ret{r_B^{k_A}}$
@@ -216,8 +216,8 @@ Plugging the simulator into the ideal functionality and substituting away the no
 \begin{itemize}
 \item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
 \item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
-\item $\LeakPublicKey(\Alice)^\adv_net \coloneqq {\color{red} k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}}$
-\item $\LeakPublicKey(\Bob)^\adv_net \coloneqq {\color{red} k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq {\color{red} k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq {\color{red} k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}}$
 \item $\Key(\Alice) \coloneqq {\color{red} \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ k_B \leftarrow \SecretKey(\Bob); \ } k_A \leftarrow \SecretKey(\Alice); \ \ret{{\color{red} (\gen^{k_B})}^{k_A}}$
 \item $\Key(\Bob) \coloneqq {\color{red} \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ k_A \leftarrow \SecretKey(\Alice); \ } k_B \leftarrow \SecretKey(\Bob); \ \ret{{\color{red} (\gen^{k_A})}^{k_B}}$
 \end{itemize}
@@ -227,8 +227,8 @@ Plugging the simulator into the ideal functionality and substituting away the no
 \begin{itemize}
 \item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
 \item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
-\item $\LeakPublicKey(\Alice)^\adv_net \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
-\item $\LeakPublicKey(\Bob)^\adv_net \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
 \item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ {\color{red} k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ } \ret{(\gen^{\color{red} k_A})^{\color{red} k_B}}$
 \item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{(\gen^{k_A})^{k_B}}$
 \end{itemize}
@@ -239,8 +239,8 @@ Plugging the simulator into the ideal functionality and substituting away the no
 \item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
 \item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
 \item {\color{red} $\Key \coloneqq k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{(\gen^{k_A})^{k_B}}$}
-\item $\LeakPublicKey(\Alice)^\adv_net \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
-\item $\LeakPublicKey(\Bob)^\adv_net \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
 \item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ {\color{red} \read{\Key}}$
 \item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ {\color{red} \read{\Key}}$
 \end{itemize}
@@ -253,8 +253,8 @@ Plugging the simulator into the ideal functionality and substituting away the no
 \item $\Key \coloneqq k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{(\gen^{k_A})^{k_B}}$
 \item {\color{red} $\PublicKey(\Alice) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$}
 \item {\color{red} $\PublicKey(\Bob) \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$}
-\item $\LeakPublicKey(\Alice)^\adv_net \coloneqq {\color{red} \read{\PublicKey(\Alice)}}$
-\item $\LeakPublicKey(\Bob)^\adv_net \coloneqq {\color{red} \read{\PublicKey(\Bob)}}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq {\color{red} \read{\PublicKey(\Alice)}}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq {\color{red} \read{\PublicKey(\Bob)}}$
 \item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\Key}$
 \item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\Key}$
 \end{itemize}
@@ -289,8 +289,8 @@ Plugging the simulator into the ideal functionality and substituting away the no
 \item $\Key \coloneqq k \leftarrow \SecretKey; \ \ret{\gen^k}$
 \item $\PublicKey(\Alice) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
 \item $\PublicKey(\Bob) \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
-\item $\LeakPublicKey(\Alice)^\adv_net \coloneqq \read{\PublicKey(\Alice)}$
-\item $\LeakPublicKey(\Bob)^\adv_net \coloneqq \read{\PublicKey(\Bob)}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$
 \item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\Key}$
 \item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\Key}$
 \end{itemize}
@@ -300,10 +300,10 @@ Plugging the simulator into the ideal functionality and substituting away the no
 \subsection{Real \texorpdfstring{$\approx$}{Approximates} Ideal + Simulator: One-Time Pad}
 Plugging the simulator into the ideal functionality and substituting away the internal channels $\LeakMsgRcvd^\id_\adv$ and $\OkMsg^\adv_\id$ that originally served as a line of communication for the adversary yields the composition of the key exchange simulator with the protocol
 \begin{itemize}
-\item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\net; \ \samp{\unif_\msg}$
-\item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \_ \leftarrow \OkKey(\Alice)^\adv_\net; \ \_ \leftarrow \OkKey(\Bob)^\adv_\net; \  \read{\In}$
+\item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \samp{\unif_\msg}$
+\item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \  \read{\In}$
 \end{itemize}
-followed by the hiding of the channels $\OkKey(\Alice)^\adv_\net$ and $\OkKey(\Bob)^\adv_\net$.
+followed by the hiding of the channels $\OkKey(\Alice)^\adv_\id$ and $\OkKey(\Bob)^\adv_\id$.
 
 Next we move on to simplifying the real protocol. The real protocol can be refactored as the composition of the key exchange part and the protocol
 \begin{itemize}
@@ -368,7 +368,7 @@ After simplifying we get
 \item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ k \leftarrow \Key; \ \ret{m * k}$
 \item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \ \read{\In}$
 \end{itemize}
-where the channel $\Key$ is internal, followed by the hiding of the channels $\OkKey(\Alice)^\adv_\net$ and $\OkKey(\Bob)^\adv_\net$.
+where the channel $\Key$ is internal, followed by the hiding of the channels $\OkKey(\Alice)^\adv_\id$ and $\OkKey(\Bob)^\adv_\id$.
 
 Since the channel $\Key$ is now only used in the channel $\LeakCtxt^\net_\adv$, we can fold it in:
 \begin{itemize}
@@ -386,4 +386,4 @@ Since the channel $\Key$ is now only used in the channel $\LeakCtxt^\net_\adv$, 
 \item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \samp{\unif_\msg}$
 \item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \ \read{\In}$
 \end{itemize}
-followed by the hiding of the channels $\OkKey(\Alice)^\adv_\net$ and $\OkKey(\Bob)^\adv_\net$. But this is precisely the simplified composition of the ideal functionality and the simulator from the beginning of this section.
+followed by the hiding of the channels $\OkKey(\Alice)^\adv_\id$ and $\OkKey(\Bob)^\adv_\id$. But this is precisely the simplified composition of the ideal functionality and the simulator from the beginning of this section.
