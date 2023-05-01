@@ -740,7 +740,7 @@ using   TRANS{
 **********************************
 
 
-*** this is the idealSimOTP subproof, commented out after plugging in the main proof
+***( this is the idealSimOTP subproof, commented out after plugging in the main proof
 srew [1] 
  aConfig(sig,
         ('OkCtxt_adv_net @ nil :: msg) 
@@ -769,6 +769,7 @@ using  STRICT{
        ; moveNewToFront
        }
 .
+)
 
 srew [1] 
  aConfig(sig,
@@ -883,11 +884,18 @@ using TRANS{
             ; foldNF('Key, 'LeakCtxt_net_adv)
             ; applySameMulPre('LeakCtxt_net_adv)
             ; pre2Nf
-          } 
-        }
+          }  *** end cong-comp-right
+        } *** end cong-new-nf
              ; moveNewToFront
              ; changeOrder('Out, 'okc :: 'oka :: 'okb :: 'm :: emptyCNameList)
-             
+             ; SYM[P1:Protocol <- idealSimOTP]{
+         sugar-newNF  
+       ; CONG-NEW-NF{moveProtocolUnderNewNF}
+       ; lift-inner-new-nf 
+       ; foldNF('OkMsg_adv_id, 'Out)
+       ; foldNF('LeakMsgRcvd_id_adv, 'LeakCtxt_net_adv)
+       ; moveNewToFront
+             } *** end sym
             }     
       } *** end of the big trans proof
 .
