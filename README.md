@@ -24,6 +24,7 @@ and updated version of the syntax together with a description of the [Maude impl
 
 In the [lib](https://github.com/kristinas/IPDL-Maude/tree/main/lib "lib") folder  we have the formalizations of the case studies (if an item of the list above is missing here, its implementation is ongoing):
 - `secure.maude` for CPA Security;
+- `dhke.maude` for Diffie-Hellman Key Exchange;
 - `preProcessing.maude` for 1-Out-Of-2 Pre-Processing;
 - `multipartyCoinToss.maude` for Multi-Party Coin Toss.
 
