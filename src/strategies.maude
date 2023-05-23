@@ -691,6 +691,14 @@ smod STRATS is
  *** pure syntactic transformations
  ***********************************
  
+ *** get all new declarations in front
+ strat moveNewToFront @ ProtocolConfig .
+ sd moveNewToFront := 
+    ((CONG-NEW-NF{CONG-COMP-RIGHT{comp-new-families}}) !) 
+     ; (moveProtocolUnderNewNF !)
+     ; (lift-inner-new-nf !)
+ .    
+ 
   *** move the family Q2 inside the group Q1
  strat applyAddToGroup : Qid Qid @ ProtocolConfig .
  sd applyAddToGroup(Q1, Q2) :=
