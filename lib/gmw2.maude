@@ -40,7 +40,7 @@ mod GMW2 is
  op xor-gate : Nat Nat -> Gate [ctor] .
  op and-gate : Nat Nat -> Gate [ctor] .
  
- sort Circuit .
+ sort Circuit . *** list of gates
  subsort Gate < Circuit .
  op emptyCircuit : -> Circuit [ctor] .
  op __ : Circuit Circuit -> Circuit [ctor assoc id: emptyCircuit] .
