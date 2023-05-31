@@ -21,18 +21,16 @@
 \newcommand{\AdvOpen}{\mathsf{AdvOpen}}
 \newcommand{\LeakOpened}{\mathsf{LeakOpened}}
 
-In this section we implement a protocol where $n+2$ parties labeled $0,\ldots,n+1$ reach a Boolean consensus. We prove the protocol secure against a malicious attacker in the case when the last party is honest and any other party is arbitrarily honest or corrupt. Formally, we assume a coin-flip distribution $\flip : \one \twoheadrightarrow \Bool$ and a Boolean sum function \[\oplus : \Bool \times \Bool \rightarrow \Bool\] where we write $x \oplus y$ in place of $\oplus \ (x,y)$.
+In this section we implement a protocol where $n+2$ parties labeled $0,\ldots,n+1$ reach a Boolean consensus. We prove the protocol secure against a malicious attacker in the case when the last party is honest and any other party is arbitrarily honest or corrupt. Formally, we assume a coin-flip distribution $\flip : \one \twoheadrightarrow \Bool$ and a Boolean sum function $\oplus : \Bool \times \Bool \rightarrow \Bool$, where we write $x \oplus y$ in place of $\oplus \ (x,y)$.
 
 \subsection{The Assumptions}
-At the expression level, we assume that the operation of Boolean sum with a fixed bit is self-inverse: \emph{i.e.}, we have the two axioms
+At the expression level, we assume that the operation of Boolean sum with a fixed bit is self-inverse:
 \begin{itemize}
-\item $x : \Bool, y : \Bool \vdash x \oplus (x \oplus y) = y : \Bool$, and  
 \item $x : \Bool, y : \Bool \vdash (x \oplus y) \oplus y = x : \Bool$.
 \end{itemize}
-At the reaction level, we assume that the distribution $\flip$ on bits is invariant under the operation of Boolean sum with a fixed bit (as is indeed the case when $\flip$ is uniform):
+At the distribution level, we assume that the distribution $\flip$ on bits is invariant under the operation of Boolean sum with a fixed bit (as is indeed the case when $\flip$ is uniform):
 \begin{itemize}
-\item $\cdot \ ; \ x : \Bool \vdash (y \leftarrow \flip; \ \ret{x \oplus y}) = \samp{\flip} : \emptyset \to \Bool$, and
-\item $\cdot \ ; \ y : \Bool \vdash (x \leftarrow \flip; \ \ret{x \oplus y}) = \samp{\flip} : \emptyset \to \Bool$.
+\item $x : \Bool \vdash \big(y \leftarrow \flip; \ 1[x \oplus y]\big) = \flip : \Bool$
 \end{itemize}
 
 \subsection{The Ideal Protocol}

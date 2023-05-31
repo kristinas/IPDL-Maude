@@ -53,17 +53,30 @@
 \maketitle
 
 \begin{abstract}
-We present here the full proofs of our \ipdl case studies: Authenticated-To-Secure Channel: IND-CPA Encryption in Section \ref{sec:a2s_cpa}; Authenticated-To-Secure Channel: Diffie-Hellman Key Exchange in Section \ref{sec:a2s_dhke}; Oblivious Transfer: 1-Out-Of-2 Pre-Processing in Section \ref{sec:ot_pre}; Multi-Party Coin Toss in Section \ref{sec:coin}; and Two-Party GMW Protocol in Section \ref{sec:gmw}.
+We present here the full proofs of our \ipdl case studies: Authenticated-To-Secure Channel in Section \ref{sec:channel_cpa};
+Diffie-Hellman Key Exchange (DHKE) in Section \ref{sec:dhke}; DHKE + One-Time Pad in \ref{sec:dhke_otp}; El Gamal Encryption in Section \ref{sec:el_gamal}; Oblivious Transfer: 1-Out-Of-2 Pre-Processing in Section \ref{sec:ot_pre}; Multi-Party Coin Toss in Section \ref{sec:coin}; and Two-Party GMW Protocol in Section \ref{sec:gmw}.
 \end{abstract}
 
 \section*{\small Acknowledgement}
 This project was funded through the NGI Assure Fund, a fund established by NLnet with financial support from the European Commission's Next Generation Internet programme, under the aegis of DG Communications Networks, Content and Technology under grant agreement No. 957073.
 
-\section{Authenticated-To-Secure Channel: IND-CPA Encryption}\label{sec:a2s_cpa}
+\section{Symmetric-Key Encryption: CPA Security}\label{sec:cpa}
+\input{cpa}
+
+\section{Symmetric-Key Encryption: CPA\$-To-CPA Security}\label{sec:pseudo_cpa}
+\input{pseudo_cpa}
+
+\section{Symmetric-Key Encryption: Authenticated-To-Secure Channel}\label{sec:channel_cpa}
 \input{channel_cpa}
 
-\section{Authenticated-To-Secure Channel: Diffie-Hellman Key Exchange (DHKE)}\label{sec:a2s_dhke}
-\input{channel_dhke}
+\section{Diffie-Hellman Key Exchange (DHKE)}\label{sec:dhke}
+\input{dhke}
+
+\section{Diffie-Hellman Key Exchange (DHKE) + One-Time Pad (OTP)}\label{sec:dhke_otp}
+\input{dhke_otp}
+
+\section{Public-Key Encryption: El Gamal}\label{sec:el_gamal}
+\input{el_gamal}
 
 %\section{Oblivious Transfer: 1-Out-Of-4}
 %\input{ot_1_out_of_4}

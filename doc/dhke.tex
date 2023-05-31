@@ -1,0 +1,339 @@
+\renewcommand{\key}{\mathsf{key}}
+\renewcommand{\msg}{\mathsf{msg}}
+\renewcommand{\unif}{\mathsf{unif}}
+\renewcommand{\gen}{\mathsf{g}}
+\renewcommand{\exp}{\mathsf{exp}}
+\renewcommand{\id}{\mathsf{id}}
+\renewcommand{\net}{\mathsf{net}}
+\renewcommand{\adv}{\mathsf{adv}}
+\newcommand{\Alice}{\mathsf{Alice}}
+\newcommand{\Bob}{\mathsf{Bob}}
+\renewcommand{\Key}{\mathsf{Key}}
+\renewcommand{\Send}{\mathsf{Send}}
+\renewcommand{\Recv}{\mathsf{Recv}}
+\newcommand{\OkKey}{\mathsf{OkKey}}
+\newcommand{\SharedKey}{\mathsf{SharedKey}}
+\newcommand{\SecretKey}{\mathsf{SecretKey}}
+\newcommand{\PublicKey}{\mathsf{PublicKey}}
+\newcommand{\LeakPublicKey}{\mathsf{LeakPublicKey}}
+\newcommand{\OkPublicKey}{\mathsf{OkPublicKey}}
+\newcommand{\DDH}{\mathsf{DDH}}
+
+In symmetric-key encryption, the sender (Alice) and the receiver (Bob) need to agree on a shared secret key. One such key-agreement protocol is the Diffie-Hellman Key Exchange (DHKE), which we now prove secure in \textsf{IPDL}.
+
+Formally, we assume a type $\key$ of secret keys (elements of $\{0,\ldots,p-1\}$, where $p$ is a prime); a type $\msg$ of messages, also serving as public keys (elements of a cyclic group $G = \{g^0,\ldots,g^{p-1}\}$); a uniform distribution $\unif_\key : \one \twoheadrightarrow \key$ on keys; a uniform distribution $\unif_\msg : \one \twoheadrightarrow \msg$ on messages; the generator $\gen : \one \rightarrow \msg$ of $G$; and the exponentiation function $\exp : \msg \times \key \rightarrow \msg$ that raises an element of $G$ to the power of $k \in \{0,\ldots,p-1\}$. We will write $m^k$ in place of $\exp \ (m,k)$.
+
+\subsection{The Assumptions}
+At the level of expressions, we only need to know that exponents commute:
+\begin{itemize}
+\item $k : \key, l : \key \vdash (\gen^l)^k = (\gen^k)^l : \msg$, and
+\end{itemize}
+At the level of distributions, we need to know that sampling a random secret key $k$ from $\unif_\key$ and returning $g^k$ is the same as sampling from $\unif_\msg$ directly (a consequence of $\unif_\key$ being uniform),
+\begin{itemize}
+\item $\cdot \vdash \big(k \leftarrow \unif_\key; \ 1[\gen^k]\big) = \unif_\msg : \msg$
+\end{itemize}
+Finally, at the level of protocols we need the \emph{decisional Diffie-Hellman (DDH)} cryptographic assumption: as long as the secret keys $k,l$ are generated uniformly, even if the adversary knows the values $g^k$ and $g^l$, they will be unable to distinguish $(g^k)^l$ from a uniformly generated element of $G$. The corresponding protocol-level axiom states that in the channel context $\DDH_3 : \msg \times (\msg \times \msg)$, the single-reaction no-input protocol
+\begin{itemize}
+\item $\DDH_3 \coloneqq k_A \leftarrow \unif_\key; \ k_B \leftarrow \unif_\key; \ \ret{\big(\gen^{k_A}, \big(\gen^{k_B}, (\gen^{k_A})^{k_B}\big)\big)}$
+\end{itemize}
+rewrites approximately to the protocol
+\begin{itemize}
+\item $\DDH_3 \coloneqq k_A \leftarrow \unif_\key; \ k_B \leftarrow \unif_\key; \ k_R \leftarrow \unif_\key; \ \ret{\big(\gen^{k_A}, \big(\gen^{k_B}, \gen^{k_R}\big)\big)}$
+\end{itemize}
+
+\subsection{The Ideal Functionality}
+The ideal functionality for the key exchange generates the shared key randomly, and, upon the approval from the adversary, sends it to the respective party:
+\begin{itemize}
+\item $\SharedKey \coloneqq \samp{\unif_\msg}$
+\item $\Key(\Alice) \coloneqq \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \read{\SharedKey}$
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkKey(\Bob)^\adv_\id; \ \read{\SharedKey}$
+\end{itemize}
+Here the channel $\SharedKey$ is internal.
+
+\subsection{The Real Protocol}
+The real-world protocol consists of Alice, Bob, and two authenticated channels. Alice randomly generates a secret key $k_A$ and sends the value $g^{k_A}$ as her public key to Bob using one of the authenticated channels:
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\Send(\Alice,\Bob) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
+\end{itemize}
+Symmetrically, Bob generates a secret key $k_B$ and sends the value $g^{k_B}$ to Alice using the second authenticated channel:
+\begin{itemize}
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item $\Send(\Bob,\Alice) \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
+\end{itemize}
+Each authenticated channel leaks the corresponding public key to the adversary and waits for their approval before forwarding the key to the other party:
+\begin{itemize}
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\Send(\Alice,\Bob)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\Send(\Bob,\Alice)}$
+\item $\Recv(\Alice,\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\Send(\Alice,\Bob)}$
+\item $\Recv(\Bob,\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\Send(\Bob,\Alice)}$
+\end{itemize}
+Upon receiving Bob's public key $g^{k_B}$, Alice computes the shared key as the value $(g^{k_B})^{k_A}$:
+\begin{itemize}
+\item $\Key(\Alice) \coloneqq p_B \leftarrow \Recv(\Bob,\Alice); \ k_A \leftarrow \SecretKey(\Alice); \ \ret{p_B^{k_A}}$
+\end{itemize}
+Analogously, upon receiving Alice's public key $g^{k_A}$, Bob computes the shared key as the value $(g^{k_A})^{k_B}$:
+\begin{itemize}
+\item $\Key(\Bob) \coloneqq p_A \leftarrow \Recv(\Alice,\Bob); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{p_A^{k_B}}$
+\end{itemize}
+Thus, we have the following code for Alice:
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\Send(\Alice,\Bob) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
+\item $\Key(\Alice) \coloneqq p_B \leftarrow \Recv(\Bob,\Alice); \ k_A \leftarrow \SecretKey(\Alice); \ \ret{p_B^{k_A}}$
+\end{itemize}
+The code for Bob has the symmetric form:
+\begin{itemize}
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item $\Send(\Bob,\Alice) \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
+\item $\Key(\Bob) \coloneqq p_A \leftarrow \Recv(\Alice,\Bob); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{p_A^{k_B}}$
+\end{itemize}
+At last we have the two authenticated channels: from Alice to Bob,
+\begin{itemize}
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\Send(\Alice,\Bob)}$
+\item $\Recv(\Alice,\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\Send(\Alice,\Bob)}$
+\end{itemize}
+and from Bob to Alice:
+\begin{itemize}
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\Send(\Bob,\Alice)}$
+\item $\Recv(\Bob,\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\Send(\Bob,\Alice)}$
+\end{itemize}
+Composing all of this together and hiding the internal communication yields the Diffie-Hellman Key Exchange protocol.
+
+\subsection{The Simulator}
+The channels $\OkPublicKey(\Alice)^\adv_\net$ and $\OkPublicKey(\Bob)^\adv_\net$ are inputs to the simulator, whereas the channels $\LeakPublicKey(\Alice)^\adv_\net$, $\LeakPublicKey(\Bob)^\adv_\net$ and $\OkKey(\Alice)^\adv_\id$, $ \OkKey(\Bob)^\adv_\id$ are the outputs.
+
+The simulator constructs the public keys for Alice and Bob exactly as in the real protocol: it randomly generates the respective secret keys $k_A$ and $k_B$, and computes the corresponding public keys as $g^{k_A}$ and $g^{k_B}$. In the real-world Diffie-Hellman Key Exchange, Alice can only construct the shared key once the adversary approves the forwarding of Bob's public key to her. Hence, the ideal functionality is only allowed to forward the shared key to Alice once the approval for Bob's public key clears, and vice versa.
+
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item $\PublicKey(\Alice) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
+\item $\PublicKey(\Bob) \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$
+\item $\OkKey(\Alice)^\adv_\id \coloneqq \read{\OkPublicKey(\Bob)^\adv_\net}$
+\item $\OkKey(\Bob)^\adv_\id \coloneqq \read{\OkPublicKey(\Alice)^\adv_\net}$
+\end{itemize}
+In the above, the channels $\SecretKey(\Alice)$, $\SecretKey(\Bob)$ and $\PublicKey(\Alice)$, $\PublicKey(\Bob)$ are internal.
+
+\subsection{Real \texorpdfstring{$\approx$}{Approximates} Ideal + Simulator}
+Plugging the simulator into the ideal functionality and substituting away the internal channels $\OkKey(\Alice)^\adv_\id$, $\OkKey(\Bob)^\adv_\id$ that originally served as a line of communication for the adversary yields the following:
+
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item $\SharedKey \coloneqq \samp{\unif_\msg}$
+\item $\PublicKey(\Alice) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
+\item $\PublicKey(\Bob) \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$
+\item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\SharedKey}$
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\SharedKey}$
+\end{itemize}
+
+\noindent Next we move on to simplifying the real protocol.  Explicitly, we have the code below:
+
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item $\Send(\Alice,\Bob) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
+\item $\Send(\Bob,\Alice) \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\Send(\Alice,\Bob)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\Send(\Bob,\Alice)}$
+\item $\Recv(\Alice,\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\Send(\Alice,\Bob)}$
+\item $\Recv(\Bob,\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\Send(\Bob,\Alice)}$
+\item $\Key(\Alice) \coloneqq p_B \leftarrow \Recv(\Bob,\Alice); \ k_A \leftarrow \SecretKey(\Alice); \ \ret{p_B^{k_A}}$
+\item $\Key(\Bob) \coloneqq p_A \leftarrow \Recv(\Alice,\Bob); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{p_A^{k_B}}$
+\end{itemize}
+
+\noindent The internal channels $\Send(\Alice,\Bob)$, $\Send(\Bob,\Alice)$ and $\Recv(\Alice,\Bob)$, $\Recv(\Bob,\Alice)$ can be substituted away:
+
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item {\color{red} $\LeakPublicKey(\Alice)^\adv_\net \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$}
+\item {\color{red} $\LeakPublicKey(\Bob)^\adv_\net \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$}
+\item {\color{red} $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ k_B \leftarrow \SecretKey(\Bob); \ k_A \leftarrow \SecretKey(\Alice); \ \ret{(\gen^{k_B})}^{k_A}$}
+\item {\color{red} $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{(\gen^{k_A})}^{k_B}$}
+\end{itemize}
+
+\noindent Exponents commute by assumption, so we can rewrite the channel $\Key(\Alice)$ equivalently as
+
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
+\item {\color{red} $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ k_B \leftarrow \SecretKey(\Bob); \ k_A \leftarrow \SecretKey(\Alice); \ \ret{(\gen^{k_A})}^{k_B}$}
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{(\gen^{k_A})}^{k_B}$
+\end{itemize}
+
+\noindent After rearranging, the channels $\Key(\Alice)$ and $\Key(\Bob)$ construct the exact same shared key:
+
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
+\item {\color{red} $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{(\gen^{k_A})^{k_B}}$}
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{(\gen^{k_A})^{k_B}}$
+\end{itemize}
+
+\noindent We can extract the key construction into a new internal channel $\SharedKey$:
+
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item {\color{red} $\SharedKey \coloneqq k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{(\gen^{k_A})^{k_B}}$}
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
+\item {\color{red} $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\SharedKey}$}
+\item {\color{red} $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\SharedKey}$}
+\end{itemize}
+
+\noindent Similarly, we can extract the public key construction for Alice and Bob into new internal channels $\PublicKey(\Alice)$ and $\PublicKey(\Bob)$:
+
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item $\SharedKey \coloneqq k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{(\gen^{k_A})^{k_B}}$
+\item {\color{red} $\PublicKey(\Alice) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$}
+\item {\color{red} $\PublicKey(\Bob) \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$}
+\item {\color{red} $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$}
+\item {\color{red} $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$}
+\item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\SharedKey}$
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\SharedKey}$
+\end{itemize}
+
+\noindent Adding a gratuitous dependency on the channel $\SecretKey(\Bob)$ into the channel $\PublicKey(\Alice)$, and, analogously, on the channel $\SecretKey(\Alice)$ into the channel $\PublicKey(\Bob)$ yields
+
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item $\SharedKey \coloneqq k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{(\gen^{k_A})^{k_B}}$
+\item {\color{red} $\PublicKey(\Alice) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_A}}$}
+\item {\color{red} $\PublicKey(\Bob) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$}
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$
+\item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\SharedKey}$
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\SharedKey}$
+\end{itemize}
+
+\noindent We can now extract the DDH triple into a new internal channel $\DDH_3$:
+
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item {\color{red} $\DDH_3 \coloneqq k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ \ret{\big(\gen^{k_A}, \big(\gen^{k_B}, (\gen^{k_A})^{k_B}\big)\big)}$}
+\item {\color{red} $\SharedKey \coloneqq \big(k_A,\big(k_B,k\big)\big) \leftarrow \DDH_3; \ \ret{k}$}
+\item {\color{red} $\PublicKey(\Alice) \coloneqq \big(k_A,\big(k_B,k\big)\big) \leftarrow \DDH_3; \ \ret{k_A}$}
+\item {\color{red} $\PublicKey(\Bob) \coloneqq \big(k_A,\big(k_B,k\big)\big) \leftarrow \DDH_3; \ \ret{k_B}$}
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$
+\item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\SharedKey}$
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\SharedKey}$
+\end{itemize}
+
+\noindent The internal channels $\SecretKey(\Alice)$ and $\SecretKey(\Bob)$ are now only used in the channel $\DDH_3$, so we can fold them in:
+
+\begin{itemize}
+\item {\color{red} $\DDH_3 \coloneqq k_A \leftarrow \unif_\key; \ k_B \leftarrow \unif_\key; \ \ret{\big(\gen^{k_A}, \big(\gen^{k_B}, (\gen^{k_A})^{k_B}\big)\big)}$}
+\item $\SharedKey \coloneqq \big(k_A,\big(k_B,k\big)\big) \leftarrow \DDH_3; \ \ret{k}$
+\item $\PublicKey(\Alice) \coloneqq \big(k_A,\big(k_B,k\big)\big) \leftarrow \DDH_3; \ \ret{k_A}$
+\item $\PublicKey(\Bob) \coloneqq \big(k_A,\big(k_B,k\big)\big) \leftarrow \DDH_3; \ \ret{k_B}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$
+\item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\SharedKey}$
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\SharedKey}$
+\end{itemize}
+
+\noindent Using the DDH assumption, we can approximately rewrite the above protocol to
+
+\begin{itemize}
+\item {\color{red} $\DDH_3 \coloneqq k_A \leftarrow \unif_\key; \ k_B \leftarrow \unif_\key; \ k_R \leftarrow \unif_\key; \ \ret{\big(\gen^{k_A}, \big(\gen^{k_B}, \gen^{k_R}\big)\big)}$}
+\item $\SharedKey \coloneqq \big(k_A,\big(k_B,k\big)\big) \leftarrow \DDH_3; \ \ret{k}$
+\item $\PublicKey(\Alice) \coloneqq \big(k_A,\big(k_B,k\big)\big) \leftarrow \DDH_3; \ \ret{k_A}$
+\item $\PublicKey(\Bob) \coloneqq \big(k_A,\big(k_B,k\big)\big) \leftarrow \DDH_3; \ \ret{k_B}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$
+\item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\SharedKey}$
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\SharedKey}$
+\end{itemize}
+
+\noindent Unfolding the three samplings from the channel $\DDH_3$ into new internal channels $\SecretKey(\Alice)$, $\SecretKey(\Bob)$, $\Key$ yields
+
+\begin{itemize}
+\item {\color{red} $\Key \coloneqq \samp{\unif_\key}$}
+\item {\color{red} $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$}
+\item {\color{red} $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$}
+\item {\color{red} $\DDH_3 \coloneqq k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ k_R \leftarrow \Key; \ \ret{\big(\gen^{k_A}, \big(\gen^{k_B}, \gen^{k_R}\big)\big)}$}
+\item $\SharedKey \coloneqq \big(k_A,\big(k_B,k\big)\big) \leftarrow \DDH_3; \ \ret{k}$
+\item $\PublicKey(\Alice) \coloneqq \big(k_A,\big(k_B,k\big)\big) \leftarrow \DDH_3; \ \ret{k_A}$
+\item $\PublicKey(\Bob) \coloneqq \big(k_A,\big(k_B,k\big)\big) \leftarrow \DDH_3; \ \ret{k_B}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$
+\item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\SharedKey}$
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\SharedKey}$
+\end{itemize}
+
+\noindent The internal channel $\DDH_3$ can now be substituted away:
+
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item {\color{red} $\SharedKey \coloneqq k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ k_R \leftarrow \Key; \ \ret{\gen^{k_R}}$}
+\item {\color{red} $\PublicKey(\Alice) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ k_R \leftarrow \Key; \ \ret{\gen^{k_A}}$}
+\item {\color{red} $\PublicKey(\Bob) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ k_B \leftarrow \SecretKey(\Bob); \ k_R \leftarrow \Key; \ \ret{\gen^{k_B}}$}
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$
+\item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\SharedKey}$
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\SharedKey}$
+\end{itemize}
+
+\noindent Dropping the gratuitous dependencies -- on channels $\SecretKey(\Alice)$, $\SecretKey(\Bob)$ in the channel $\SharedKey$,
+on channels $\SecretKey(\Bob)$, $\Key$ in the channel $\PublicKey(\Alice)$, and on channels $\SecretKey(\Alice)$, $\Key$ in the channel $\PublicKey(\Bob)$ -- yields the following:
+
+\begin{itemize}
+\item $\Key \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item {\color{red} $\SharedKey \coloneqq k_R \leftarrow \Key; \ \ret{\gen^{k_R}}$}
+\item {\color{red} $\PublicKey(\Alice) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$}
+\item {\color{red} $\PublicKey(\Bob) \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$}
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$
+\item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\SharedKey}$
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\SharedKey}$
+\end{itemize}
+
+\noindent Since the channel $\Key$ is now only used in the channel $\SharedKey$, we can fold it in:
+
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item {\color{red} $\SharedKey \coloneqq k_R \leftarrow \unif_\key; \ \ret{\gen^{k_R}}$}
+\item $\PublicKey(\Alice) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
+\item $\PublicKey(\Bob) \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$
+\item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\SharedKey}$
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\SharedKey}$
+\end{itemize}
+
+\noindent By assumption, sampling a random secret key $k_R$ from $\unif_\key$ and returning $g^{k_R}$ is the same as sampling from $\unif_\msg$ directly, so we can simplify the channel $\SharedKey$ as follows:
+
+\begin{itemize}
+\item $\SecretKey(\Alice) \coloneqq \samp{\unif_\key}$
+\item $\SecretKey(\Bob) \coloneqq \samp{\unif_\key}$
+\item {\color{red} $\SharedKey \coloneqq \samp{\unif_\msg}$}
+\item $\PublicKey(\Alice) \coloneqq k_A \leftarrow \SecretKey(\Alice); \ \ret{\gen^{k_A}}$
+\item $\PublicKey(\Bob) \coloneqq k_B \leftarrow \SecretKey(\Bob); \ \ret{\gen^{k_B}}$
+\item $\LeakPublicKey(\Alice)^\adv_\net \coloneqq \read{\PublicKey(\Alice)}$
+\item $\LeakPublicKey(\Bob)^\adv_\net \coloneqq \read{\PublicKey(\Bob)}$
+\item $\Key(\Alice) \coloneqq \_ \leftarrow \OkPublicKey(\Bob)^\adv_\net; \ \read{\SharedKey}$
+\item $\Key(\Bob) \coloneqq \_ \leftarrow \OkPublicKey(\Alice)^\adv_\net; \ \read{\SharedKey}$
+\end{itemize}
+
+\noindent This is precisely the simplified composition of the ideal functionality and the simulator from the beginning of this section.

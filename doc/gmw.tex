@@ -13,7 +13,7 @@
 \renewcommand{\Bob}{\mathsf{Bob}}
 \newcommand{\BobOk}{\mathsf{BobOk}}
 \newcommand{\Adv}{\mathsf{Adv}}
-\newcommand{\BobOTBits}{\mathsf{BobOTBits}}
+\newcommand{\BobOTBit}{\mathsf{BobOTBit}}
 \renewcommand{\In}{\mathsf{In}}
 \newcommand{\InOk}{\mathsf{InOk}}
 \renewcommand{\Out}{\mathsf{Out}}
@@ -45,7 +45,9 @@
 \newcommand{\Wires}{\mathsf{Wires}}
 \newcommand{\Real}{\mathsf{Real}}
 
-In the two-party GMW protocol, Alice and Bob jointly compute the value of a given Boolean circuit built out of \emph{xor-}, \emph{and-}, and \emph{not} gates. The inputs to the circuit are divided between Alice and Bob, and neither party has access to the inputs of the other. For each gate, Alice and Bob maintain their respective \emph{shares} of the actual value $v$ computed by the gate, with Alice's share computed only from the information available to Alice, and analogously for Bob. The respective shares for Alice and Bob sum up to $v$. We prove the protocol secure against a semi-honest attacker in the case when Alice is corrupt and Bob is honest. Formally, we assume a coin-flip distribution $\flip : \one \twoheadrightarrow \Bool$; a Boolean sum function $\oplus : \Bool \times \Bool \rightarrow \Bool$, where we write $x \oplus y$ in place of $\oplus \ (x,y)$; a Boolean multiplication function $* : \Bool \times \Bool \rightarrow \Bool$, where we write $x * y$ in place of $* \ (x,y)$; and a Boolean negation function $\neg : \Bool \rightarrow \Bool$, where we write $\neg x$ in place of $\neg \ x$. \smallskip
+In the two-party GMW protocol, Alice and Bob jointly compute the value of a given Boolean circuit built out of \emph{xor-}, \emph{and-}, and \emph{not} gates. The inputs to the circuit are divided between Alice and Bob, and neither party has access to the inputs of the other. For each gate, Alice and Bob maintain their respective \emph{shares} of the actual value $v$ computed by the gate, with Alice's share computed only from the information available to Alice, and analogously for Bob. The respective shares for Alice and Bob sum up to $v$. We prove the protocol secure against a semi-honest attacker in the case when Alice is corrupt and Bob is honest.
+
+Formally, we assume a coin-flip distribution $\flip : \one \twoheadrightarrow \Bool$; a Boolean sum function $\oplus : \Bool \times \Bool \rightarrow \Bool$, where we write $x \oplus y$ in place of $\oplus \ (x,y)$; a Boolean multiplication function $* : \Bool \times \Bool \rightarrow \Bool$, where we write $x * y$ in place of $* \ (x,y)$; and a Boolean negation function $\neg : \Bool \rightarrow \Bool$, where we write $\neg x$ in place of $\neg \ x$.
 
 We represent Boolean circuits using the syntax below, where we assume an ambient (finite) set $I$ of inputs. Starting from the empty circuit $\epsilon$ we add one gate at a time: an \emph{input} gate allows us to plug into a specified input $i$; a \emph{not} gate negates the value carried on wire $k$; an \emph{xor} gate computes the Boolean sum of the two values carried on wires $k$ and $l$; and an \emph{and} gate does the same for Boolean product.
 
@@ -100,10 +102,9 @@ Finally, multiplying a Boolean with $\false$ or $\true$ yields $\false$ or the o
 \item $x : \Bool \vdash x * \false = \false : \Bool$, and
 \item $x : \Bool \vdash x * \true = x : \Bool$.
 \end{itemize}
-At the reaction level, we assume that the distribution $\flip$ on Booleans is invariant under the operation of Boolean sum with a fixed Boolean (as is indeed the case when $\flip$ is uniform):
+At the distribution level, we assume that the distribution $\flip$ on Booleans is invariant under the operation of Boolean sum with a fixed Boolean (as is indeed the case when $\flip$ is uniform):
 \begin{itemize}
-\item $\cdot \ ; \ x : \Bool \vdash (y \leftarrow \flip; \ \ret{x \oplus y}) = \samp{\flip} : \emptyset \to \Bool$, and
-\item $\cdot \ ; \ y : \Bool \vdash (x \leftarrow \flip; \ \ret{x \oplus y}) = \samp{\flip} : \emptyset \to \Bool$.
+\item $x : \Bool \vdash \big(y \leftarrow \flip; \ 1[x \oplus y]\big) = \flip : \Bool$
 \end{itemize}
 
 \subsection{The Ideal Protocol}
@@ -146,7 +147,7 @@ The leakage from the ideal functionality includes the timing information for Bob
 \noindent Finally, the channels $\Wire(-)$ coming from the inductive protocol $\Wires(C,K)$ are designated as internal.
 
 \subsection{The Real Protocol}
-The real protocol consists of the two parties, plus an instance of an ideal 1-out-of-4 Oblivious Transfer (OT) functionality for each gate, with Alice the sender and Bob the receiver. The code for each party is separated into three parts: in the initial phase, each party computes and distributes everyone's shares for each of its inputs. In the inductive phase, each party computes their share of each wire by induction on the ambient circuit. At last, in the final phase, Alice and Bob send their shares of each output wire to each other and add them up to compute the result.
+The real protocol consists of the two parties, plus an instance of an ideal 1-Out-Of-4 Oblivious Transfer (OT) functionality for each gate, with Alice the sender and Bob the receiver. The code for each party is separated into three parts: in the initial phase, each party computes and distributes everyone's shares for each of its inputs. In the inductive phase, each party computes their share of each wire by induction on the ambient circuit. At last, in the final phase, Alice and Bob send their shares of each output wire to each other and add them up to compute the result.
 
 \subsubsection{Alice: The Initial Phase}
 Alice generates her own shares randomly and sends Bob the sum of her share and the actual value of the input. Alice's share of Bob's input is sent to her by Bob. As Alice is semi-honest, she leaks the value of her inputs. After storing each share, Alice leaks it to the adversary. Furthermore, when sending Bob's share of her input to Bob, she simultaneously leaks it to the adversary, and after receiving her share of Bob's input from Bob, she forwards it along to the adversary.
@@ -175,9 +176,9 @@ Bob generates Alice's shares randomly, and sets his own share to be the sum of A
 \subsubsection{Alice: The Inductive Phase}
 In the case of an \emph{input} gate, Alice uses her corresponding input share from the initial stage. In the case of a \emph{not} gate, she simply copies her share $x_A$ of the incoming wire. If the gate is an \emph{xor} gate, the resulting share is the sum $x_A \oplus y_A$ of the shares of the incoming two wires. The case of an \emph{and} gate is the most complex. The sum of Alice's and Bob's respective shares must equal $(x_A \oplus x_B) * (y_A \oplus y_B)$, where $x_A,y_A$ and $x_B,y_B$ are the respective shares of Alice and Bob on the incoming two wires. We have
 \[(x_A \oplus x_B) * (y_A \oplus y_B) = (x_A * y_A) \oplus (x_A * y_B) \oplus (x_B * y_A) \oplus (x_B * y_B)\]
-and the quantity $(x_A * y_B) \oplus (x_B * y_A)$ cannot be directly computed by either Alice or Bob, as neither of them has access to the shares of the other. Instead, Alice and Bob engage in an idealized 1-out-of-4 OT exchange: there are four possible combinations of values that $x_B,y_B$ can take, and Alice computes the value of $(x_A * y_B) \oplus (x_B * y_A)$ for each. This offers Bob four messages to choose from, and he selects the one corresponding to the actual values of $x_B,y_B$. A small caveat: in the exchange as described above, Bob would still be able to infer the value of Alice's shares in certain cases: \emph{e.g.}, if $x_B = 0$ and $y_B = 1$, Bob gets the share $x_A$ as the result of the exchange. To prevent this, Alice encodes her messages by xor-ing them with a random bit $b$ that only she knows.
+and the quantity $(x_A * y_B) \oplus (x_B * y_A)$ cannot be directly computed by either Alice or Bob, as neither of them has access to the shares of the other. Instead, Alice and Bob engage in an idealized 1-Out-Of-4 OT exchange: there are four possible combinations of values that $x_B,y_B$ can take, and Alice computes the value of $(x_A * y_B) \oplus (x_B * y_A)$ for each. This offers Bob four messages to choose from, and he selects the one corresponding to the actual values of $x_B,y_B$. A small caveat: in the exchange as described above, Bob would still be able to infer the value of Alice's shares in certain cases: \emph{e.g.}, if $x_B = 0$ and $y_B = 1$, Bob gets the share $x_A$ as the result of the exchange. To prevent this, Alice encodes her messages by xor-ing them with a random bit $b$ that only she knows.
 
-To stay consistent throughout the cases, we set up our protocol so that each gate induces the same set of outputs, even though some of these channels may not be relevant to the specific case in question. For example, at each gate Alice will construct a channel $\OTBit(\A,\B,-)$ to \emph{potentially} store the aforementioned random bit $b$, in the case that the gate happens to be an \emph{and} gate and she needs to engage in a 1-out-of-4 OT exchange with Bob. Similar remarks apply to all the OT channels, which are likewise only relevant for Boolean multiplication. Irrelevant channels will simply diverge, which makes them effectively nonexistent.
+To stay consistent throughout the cases, we set up our protocol so that each gate induces the same set of outputs, even though some of these channels may not be relevant to the specific case in question. For example, at each gate Alice will construct a channel $\OTBit(\A,\B,-)$ to \emph{potentially} store the aforementioned random bit $b$, in the case that the gate happens to be an \emph{and} gate and she needs to engage in a 1-Out-Of-4 OT exchange with Bob. Similar remarks apply to all the OT channels, which are likewise only relevant for Boolean multiplication. Irrelevant channels will simply diverge, which makes them effectively nonexistent.
 
 \begin{itemize}
 \item $\A(\epsilon,0)$ is the protocol $\zero$
@@ -191,7 +192,7 @@ Alice's share is the input share as determined in the initial part of the protoc
 \item $\begin{cases*} \Share(\A,K) \coloneqq \read{\InputShare(\A,\A,i)} & \text{if $i$ is an input of Alice} \\ \Share(\A,K) \coloneqq \read{\InputShare(\A,\B,i)} & \text{if $i$ is an input of Bob} \end{cases*}$
 \item {\color{blue} $\LeakShare(\A,K)^\A_\adv \coloneqq \read{\Share(\A,K)}$}
 \end{itemize}
-The 1-out-of-4 OT exchange with Bob is vacuous:
+The 1-Out-Of-4 OT exchange with Bob is vacuous:
 \begin{itemize}
 \item $\OTMsg(\A,\B,K,0) \coloneqq \read{\OTMsg(\A,\B,K,0)}$
 \item $\OTMsg(\A,\B,K,1) \coloneqq \read{\OTMsg(\A,\B,K,1)}$
@@ -208,7 +209,7 @@ Alice's share is the share on wire $k$:
 \item $\Share(\A,K) \coloneqq \read{\Share(\A,k)}$
 \item {\color{blue} $\LeakShare(\A,K)^\A_\adv \coloneqq \read{\Share(\A,K)}$}
 \end{itemize}
-As before, she engages in a vacuous 1-out-of-4 OT exchange with Bob:
+As before, she engages in a vacuous 1-Out-Of-4 OT exchange with Bob:
 \begin{itemize}
 \item $\OTMsg(\A,\B,K,0) \coloneqq \read{\OTMsg(\A,\B,K,0)}$
 \item $\OTMsg(\A,\B,K,1) \coloneqq \read{\OTMsg(\A,\B,K,1)}$
@@ -225,7 +226,7 @@ Alice's share is the sum of shares on wires $k$ and $l$:
 \item $\Share(\A,K) \coloneqq x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{x_A \oplus y_A}$
 \item {\color{blue} $\LeakShare(\A,K)^\A_\adv \coloneqq \read{\Share(\A,K)}$}
 \end{itemize}
-As before, Alice engages in a vacuous 1-out-of-4 OT exchange with Bob:
+As before, Alice engages in a vacuous 1-Out-Of-4 OT exchange with Bob:
 \begin{itemize}
 \item $\OTMsg(\A,\B,K,0) \coloneqq \read{\OTMsg(\A,\B,K,0)}$
 \item $\OTMsg(\A,\B,K,1) \coloneqq \read{\OTMsg(\A,\B,K,1)}$
@@ -242,7 +243,7 @@ Her share is the encoded product of shares on wires $k$ and $l$, where the encod
 \item $\Share(\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{(x_A * y_A) \oplus b_A}$
 \item {\color{blue} $\LeakShare(\A,K)^\A_\adv \coloneqq \read{\Share(\A,K)}$}
 \end{itemize}
-Alice's 1-out-of-4 OT exchange with Bob is now proper:
+Alice's 1-Out-Of-4 OT exchange with Bob is now proper:
 \begin{itemize}
 \item $\OTMsg(\A,\B,K,0) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A}$
 \item $\OTMsg(\A,\B,K,1) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A \oplus x_A}$
@@ -252,7 +253,7 @@ Alice's 1-out-of-4 OT exchange with Bob is now proper:
 \end{itemize}
 
 \subsubsection{Bob: The Inductive Phase}
-In the case of an \emph{input} gate, Bob uses his corresponding input share from the initial stage. In the case of a \emph{not} gate, the resulting share is a negation of the share $x_B$ of the incoming wire. If the gate is an \emph{xor} gate, the resulting share is the sum $x_B \oplus y_B$ of the shares of the incoming two wires. Finally, in the case of an \emph{and} gate, Bob engages in an idealized 1-out-of-4 exchange with Alice as described in the previous section. To compute his share, he adds the result of the OT exchange to the product $x_B * y_B$ of the shares of the incoming two wires.
+In the case of an \emph{input} gate, Bob uses his corresponding input share from the initial stage. In the case of a \emph{not} gate, the resulting share is a negation of the share $x_B$ of the incoming wire. If the gate is an \emph{xor} gate, the resulting share is the sum $x_B \oplus y_B$ of the shares of the incoming two wires. Finally, in the case of an \emph{and} gate, Bob engages in an idealized 1-Out-Of-4 exchange with Alice as described in the previous section. To compute his share, he adds the result of the OT exchange to the product $x_B * y_B$ of the shares of the incoming two wires.
 
 \begin{itemize}
 \item $\B(\epsilon,0)$ is the protocol $\zero$
@@ -307,7 +308,7 @@ For each output wire, Bob sends his share to Alice and computes the output by su
 \end{itemize}
 
 \subsubsection{1-Out-Of-4 Oblivious Transfer Functionality}
-For each wire $0 \leq k < K$ we have a separate idealized 1-out-of-4 OT functionality $\ObliviousTransfer(k)$, which we now describe. The functionality starts by selecting the correct message:
+For each wire $0 \leq k < K$ we have a separate idealized 1-Out-Of-4 OT functionality $\ObliviousTransfer(k)$, which we now describe. The functionality starts by selecting the correct message:
 \begin{itemize}
 \item $\OTOut(\A,\B,k) \coloneqq m_0 \leftarrow \OTMsg(\A,\B,k,0); \ m_1 \leftarrow \OTMsg(\A,\B,k,1); \ m_2 \leftarrow \OTMsg(\A,\B,k,2); \\ m_3 \leftarrow \OTMsg(\A,\B,k,3); \ c_0 \leftarrow \OTChoice(\B,\A,K,0); \ c_1 \leftarrow \OTChoice(\B,\A,K,1); \\ \ifte{c_0}{\big(\ifte{c_1}{\ret{m_3}}{\ret{m_2}}\big)}{\big(\ifte{c_1}{\ret{m_1}}{\ret{m_0}}\big)}$
 \end{itemize}
@@ -371,7 +372,7 @@ Our goal is to keep simplifying the real protocol until it becomes clear how to 
 \item $\Share(\B,k)$ for $0 \leq k < K$.
 \end{itemize}
 
-\noindent The initial part arises by composing together the initial parts for Alice and Bob, and declaring the channels $\SendInputShare(\B,\A,-)$ and $\SendInputShare(\A,\B,-)$ as internal:
+The initial part arises by composing together the initial parts for Alice and Bob, and declaring the channels $\SendInputShare(\B,\A,-)$ and $\SendInputShare(\A,\B,-)$ as internal:
 
 \begin{itemize}
 \item {\color{blue} $\LeakIn(\A,i)^\A_\adv \coloneqq \read{\In(\A,i)}$ for $0 \leq i < N$}
@@ -495,7 +496,7 @@ Our goal is to keep simplifying the real protocol until it becomes clear how to 
 \end{itemize}
 
 \subsubsection{Simplifying The Real Protocol: The Initial Phase}
-Our goal here is to eliminate the internal channels $\SendInputShare(\B,\A,-)$ and $\SendInputShare(\A,\B,-)$. To this end, we replace any reference to these channels by the corresponding channels $\InputShare(\B,\A,-)$ and $\InputShare(\A,\B,-)$ whenever we can:
+Our goal here is to eliminate the internal channels $\SendInputShare(\B,\A,-)$ and $\SendInputShare(\A,\B,-)$. We first replace any mention of these in channels $\InputShare(\B,\B,i)$, $\LeakSendInputShare(\B,\A,i)^\A_\adv$, $\LeakSendInputShare(\A,\B,i)^\A_\adv$ by the corresponding channels $\InputShare(\B,\A,-)$ and $\InputShare(\A,\B,-)$:
 
 \begin{itemize}
 \item {\color{blue} $\LeakIn(\A,i)^\A_\adv \coloneqq \read{\In(\A,i)}$ for $0 \leq i < N$}
@@ -503,16 +504,16 @@ Our goal here is to eliminate the internal channels $\SendInputShare(\B,\A,-)$ a
 \item $\InputShare(\A,\A,i) \coloneqq x \leftarrow \In(\A,i); \ \samp{\flip}$ for $0 \leq i < N$
 \item $\InputShare(\A,\B,i) \coloneqq \read{\SendInputShare(\A,\B,i)}$ for $0 \leq i < M$
 \item $\InputShare(\B,\A,i) \coloneqq \read{\SendInputShare(\B,\A,i)}$ for $0 \leq i < N$
-\item $\InputShare(\B,\B,i) \coloneqq {\color{red} x_A \leftarrow \InputShare(\A,\B,i); \ } x \leftarrow \In(\B,i); \  \ret{x_A \oplus x}$ for $0 \leq i < M$\smallskip
+\item $\InputShare(\B,\B,i) \coloneqq x_A \leftarrow \InputShare(\A,\B,i); \ x \leftarrow \In(\B,i); \  \ret{x_A \oplus x}$ for $0 \leq i < M$\smallskip
 \item {\color{blue} $\LeakInputShare(\A,\A,i)^\A_\adv \coloneqq \read{\InputShare(\A,\A,i)}$ for $0 \leq i < N$}
 \item {\color{blue} $\LeakInputShare(\A,\B,i)^\A_\adv \coloneqq \read{\InputShare(\A,\B,i)}$ for $0 \leq i < M$}\smallskip
 \item $\SendInputShare(\B,\A,i) \coloneqq x_A \leftarrow \InputShare(\A,\A,i); \ x \leftarrow \In(\A,i); \ \ret{x_A \oplus x}$ for $0 \leq i < N$
 \item $\SendInputShare(\A,\B,i) \coloneqq x \leftarrow \In(\B,i); \ \samp{\flip}$ for $0 \leq i < M$\smallskip
-\item {\color{red} $\LeakSendInputShare(\B,\A,i)^\A_\adv \coloneqq \read{\InputShare(\B,\A,i)}$ for $0 \leq i < N$}
-\item {\color{red} $\LeakSendInputShare(\A,\B,i)^\A_\adv \coloneqq \read{\InputShare(\A,\B,i)}$ for $0 \leq i < M$}
+\item {\color{blue} $\LeakSendInputShare(\B,\A,i)^\A_\adv \coloneqq \read{\InputShare(\B,\A,i)}$ for $0 \leq i < N$}
+\item {\color{blue} $\LeakSendInputShare(\A,\B,i)^\A_\adv \coloneqq \read{\InputShare(\A,\B,i)}$ for $0 \leq i < M$}
 \end{itemize}
 
-\noindent Now the only place where the channels $\SendInputShare(\B,\A,-)$ and $\SendInputShare(\A,\B,-)$ pop up is in the very channels $\InputShare(\B,\A,-)$ and $\InputShare(\A,\B,-)$, respectively. So we can fold them in:
+\noindent Now the only place where the channels $\SendInputShare(\B,\A,-)$ and $\SendInputShare(\A,\B,-)$ show up is in the very channels $\InputShare(\B,\A,-)$ and $\InputShare(\A,\B,-)$, respectively. So we can fold them in:
 
 \begin{itemize}
 \item {\color{blue} $\LeakIn(\A,i)^\A_\adv \coloneqq \read{\In(\A,i)}$ for $0 \leq i < N$}
@@ -560,15 +561,15 @@ By substituting the channels $\OTChoice(\B,\A,K,-)$ into the channels $\LeakOTCh
 \end{itemize}
 Substituting the channels $\OTMsg(\A,\B,K,-)$ and $\OTChoice(\B,\A,K,-)$ into $\OTOut(\B,\A,K)$ yields
 \begin{itemize}
-\item $\OTOut(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ \ifte{x_B}{\big(\ifte{y_B}{\ret{b_A \oplus x_A \oplus y_A}}{\ret{b_A \oplus y_A}}\big)}{\big(\ifte{y_B}{\ret{b_A \oplus x_A}}{\ret{b_A}}\big)}$
+\item $\OTOut(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \\ \Share(\B,l); \ \ifte{x_B}{\big(\ifte{y_B}{\ret{b_A \oplus x_A \oplus y_A}}{\ret{b_A \oplus y_A}}\big)}{\big(\ifte{y_B}{\ret{b_A \oplus x_A}}{\ret{b_A}}\big)}$
 \end{itemize}
 The above is just a fancy way of saying the following:
 \begin{itemize}
-\item $\OTOut(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ \ret{b_A \oplus (x_A * y_B) \oplus (x_B * y_A)}$
+\item $\OTOut(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \\ \Share(\B,l); \ \ret{b_A \oplus (x_A * y_B) \oplus (x_B * y_A)}$
 \end{itemize}
 Substituting this new definition of $\OTOut(K)$ into the channel $\OTBit(\B,\A,K)$ yields
 \begin{itemize}
-\item $\OTBit(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ \ret{b_A \oplus (x_A * y_B) \oplus (x_B * y_A)}$
+\item $\OTBit(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \\ \Share(\B,l); \ \ret{b_A \oplus (x_A * y_B) \oplus (x_B * y_A)}$
 \end{itemize}
 Summarizing, we can rewrite the inductive part of the real protocol as follows:
 
@@ -643,7 +644,7 @@ Summarizing, we can rewrite the inductive part of the real protocol as follows:
 \item $\Real\big(C; \, \andgate(k,l),K+1\big)$ is the composition of the protocol $\Real(C,K)$ with the protocol
 \begin{itemize}
 \item $\OTBit(\A,\B,K) \coloneqq x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \samp{\flip}$
-\item $\OTBit(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ \ret{b_A \oplus (x_A * y_B) \oplus (x_B * y_A)}$\smallskip
+\item $\OTBit(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ret{b_A \oplus (x_A * y_B) \oplus (x_B * y_A)}$\smallskip
 \item $\Share(\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{(x_A * y_A) \oplus b_A}$
 \item $\Share(\B,K) \coloneqq b_B \leftarrow \OTBit(\B,\A,K); \ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \Share(\B,l); \ \ret{b_B \oplus (x_B * y_B)}$\smallskip
 \item $\OTMsg(\A,\B,K,0) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A}$
@@ -652,7 +653,7 @@ Summarizing, we can rewrite the inductive part of the real protocol as follows:
 \item $\OTMsg(\A,\B,K,3) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A \oplus x_A \oplus y_A}$\smallskip
 \item $\OTChoice(\B,\A,K,0) \coloneqq \read{\Share(\B,k)}$
 \item $\OTChoice(\B,\A,K,1) \coloneqq \read{\Share(\B,l)}$\smallskip
-\item $\OTOut(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ \ret{b_A \oplus (x_A * y_B) \oplus (x_B * y_A)}$\medskip
+\item $\OTOut(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \\ \Share(\B,l); \ \ret{b_A \oplus (x_A * y_B) \oplus (x_B * y_A)}$\medskip
 \item {\color{blue} $\LeakOTBit(\A,\B,K)^\A_\adv \coloneqq \read{\OTBit(\A,\B,K)}$}
 \item {\color{blue} $\LeakShare(\A,K)^\A_\adv \coloneqq \read{\Share(\A,K)}$}\medskip
 \item {\color{blue} $\LeakOTMsg(\A,\B,K,0)^\ot_\adv \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A}$}
@@ -884,8 +885,8 @@ to record the relevant timing information. In the presence of these channels, we
 \item {\color{blue} $\LeakOTMsg(\A,\B,K,1)^\ot_\adv \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A \oplus x_A}$}
 \item {\color{blue} $\LeakOTMsg(\A,\B,K,2)^\ot_\adv \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A \oplus y_A}$}
 \item {\color{blue} $\LeakOTMsg(\A,\B,K,3)^\ot_\adv \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A \oplus x_A \oplus y_A}$}\medskip
-\item {\color{red} $\LeakOTChoiceRcvd(\B,\A,K,0)^\ot_\adv \coloneqq \read{\ShareOk(\B,k)}$}
-\item {\color{red} $\LeakOTChoiceRcvd(\B,\A,K,1)^\ot_\adv \coloneqq \read{\ShareOk(\B,l)}$}
+\item {\color{blue} $\LeakOTChoiceRcvd(\B,\A,K,0)^\ot_\adv \coloneqq \read{\ShareOk(\B,k)}$}
+\item {\color{blue} $\LeakOTChoiceRcvd(\B,\A,K,1)^\ot_\adv \coloneqq \read{\ShareOk(\B,l)}$}
 \end{itemize}
 \end{itemize}
 
@@ -911,7 +912,7 @@ to record the relevant timing information. In the presence of these channels, we
 \item $\Bob\big(C; \, \andgate(k,l),K+1\big)$ is the composition of the protocol $\Bob(C,K)$ with the protocol
 \begin{itemize}
 \item $\OTBit(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ \ret{b_A \oplus (x_A * y_B) \oplus (x_B * y_A)}$
-\item $\Share(\B,K) \coloneqq {\color{red} \_ \leftarrow \OTBitOk(\B,\A,K); \ } b_B \leftarrow \OTBit(\B,\A,K); \ {\color{red} \_ \leftarrow \ShareOk(\B,k); \ } x_B \leftarrow \Share(\B,k); \\ {\color{red} \_ \leftarrow \ShareOk(\B,l); \ } y_B \leftarrow \Share(\B,l); \ \ret{b_B \oplus (x_B * y_B)}$
+\item $\Share(\B,K) \coloneqq {\color{red} \_ \leftarrow \OTBitOk(\B,\A,K); \ } b_B \leftarrow \OTBit(\B,\A,K); \ {\color{red} \_ \leftarrow \ShareOk(\B,k); \ } \ x_B \leftarrow \Share(\B,k); \\ {\color{red} \_ \leftarrow \ShareOk(\B,l); \ } y_B \leftarrow \Share(\B,l); \ \ret{b_B \oplus (x_B * y_B)}$
 \end{itemize}
 \end{itemize}
 
@@ -1057,7 +1058,7 @@ and revert the inductively defined protocol fragment $\AliceOk(C,K)$ back to
 \end{itemize}
 \end{itemize}
 
-\noindent Finally, we can eliminate all references to timing channels from the protocol fragment $\Adv(C,K)$:
+\noindent Finally, we can eliminate all references to timing channels from the protocol fragment $\Adv(C,K)$, specifically from the channels $\LeakOTChoiceRcvd(\B,\A,-,-)^\ot_\adv$:
 
 \begin{itemize}
 \item $\Adv(\epsilon,0)$ is the protocol $\zero$
@@ -1102,8 +1103,8 @@ and revert the inductively defined protocol fragment $\AliceOk(C,K)$ back to
 \item {\color{blue} $\LeakOTMsg(\A,\B,K,1)^\ot_\adv \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A \oplus x_A}$}
 \item {\color{blue} $\LeakOTMsg(\A,\B,K,2)^\ot_\adv \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A \oplus y_A}$}
 \item {\color{blue} $\LeakOTMsg(\A,\B,K,3)^\ot_\adv \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A \oplus x_A \oplus y_A}$}\medskip
-\item {\color{red} $\LeakOTChoiceRcvd(\B,\A,K,0)^\ot_\adv \coloneqq \_ \leftarrow \Share(\A,k); \ \ret{\checkmark}$}
-\item {\color{red} $\LeakOTChoiceRcvd(\B,\A,K,1)^\ot_\adv \coloneqq \_ \leftarrow \Share(\A,l); \ \ret{\checkmark}$}
+\item {\color{blue} $\LeakOTChoiceRcvd(\B,\A,K,0)^\ot_\adv \coloneqq \_ \leftarrow \Share(\A,k); \ \ret{\checkmark}$}
+\item {\color{blue} $\LeakOTChoiceRcvd(\B,\A,K,1)^\ot_\adv \coloneqq \_ \leftarrow \Share(\A,l); \ \ret{\checkmark}$}
 \end{itemize}
 \end{itemize}
 
@@ -1114,7 +1115,7 @@ As mentioned before, Alice's and Bob's respective shares of each wire sum up to 
 \begin{itemize}
 \item $\Wire(k) \coloneqq x_A \leftarrow \Share(\A,k); \ x_B \leftarrow \Share(\B,k); \ \ret{x_A \oplus x_B}$ for $0 \leq k < K$
 \end{itemize}
-that record the sum of shares. In the presence of the above, we can rewrite the final part of the real protocol as follows:
+that record the sum of shares. In the presence of the above, we can rewrite the final part of the real protocol as
 
 \begin{itemize}
 \item {\color{blue} $\begin{cases*} \LeakSendFinalShare(\A,k)^\A_\adv \coloneqq \read{\Share(\A,k)} & \text{if wire $0 \leq k < K$ is output} \\ \LeakSendFinalShare(\A,k)^\A_\adv \coloneqq \read{\LeakSendFinalShare(\A,k)^\A_\adv} & \text{otherwise} \end{cases*}$}
@@ -1124,7 +1125,7 @@ that record the sum of shares. In the presence of the above, we can rewrite the 
 \item {\color{blue} $\LeakOut(\A,k)^\A_\adv \coloneqq \read{\Out(\A,k)}$ for $0 \leq k < K$}
 \end{itemize}
 
-\noindent Right now, Bob's shares are computed inductively and the $\Wire(-)$ channels have a closed form. By induction on circuits, we can flip this around: we characterize the channels
+\noindent Right now, Bob's shares are computed inductively and the channels $\Wire(-)$ have a closed form. By induction on circuits, we can flip this around: we characterize the channels
 \begin{itemize}
 \item $\Wire(k) \coloneqq x_A \leftarrow \Share(\A,k); \ x_B \leftarrow \Share(\B,k); \ \ret{x_A \oplus x_B}$ for $0 \leq k < K$
 \end{itemize}
@@ -1132,23 +1133,23 @@ inductively as the protocol $\Wires(C,K)$ that's part of the ideal functionality
 \begin{itemize}
 \item $\Share(\B,k) \coloneqq x_A \leftarrow \Share(\A,k); \ x \leftarrow \Wire(k); \ \ret{x_A \oplus x}$ for $0 \leq k < K$
 \end{itemize}
-and an inductive part $\BobOTBits(C,K)$:
+and an inductive part $\BobOTBit(C,K)$:
 
 \begin{itemize}
-\item $\BobOTBits(\epsilon,0)$ is the protocol $\zero$
-\item $\BobOTBits\big(C; \, \inputgate(i),K+1\big)$ is the composition of the protocol $\BobOTBits(C,K)$ with the single-reaction protocol
+\item $\BobOTBit(\epsilon,0)$ is the protocol $\zero$
+\item $\BobOTBit\big(C; \, \inputgate(i),K+1\big)$ is the composition of the protocol $\BobOTBit(C,K)$ with the single-reaction protocol
 \begin{itemize}
 \item $\OTBit(\B,\A,K) \coloneqq \read{\OTBit(\B,\A,K)}$
 \end{itemize}
-\item $\BobOTBits\big(C; \, \notgate(k),K+1\big)$ is the composition of the protocol $\BobOTBits(C,K)$ with the single-reaction protocol
+\item $\BobOTBit\big(C; \, \notgate(k),K+1\big)$ is the composition of the protocol $\BobOTBit(C,K)$ with the single-reaction protocol
 \begin{itemize}
 \item $\OTBit(\B,\A,K) \coloneqq \read{\OTBit(\B,\A,K)}$
 \end{itemize}
-\item $\BobOTBits\big(C; \, \xorgate(k,l),K+1\big)$ is the composition of the protocol $\BobOTBits(C,K)$ with the single-reaction protocol
+\item $\BobOTBit\big(C; \, \xorgate(k,l),K+1\big)$ is the composition of the protocol $\BobOTBit(C,K)$ with the single-reaction protocol
 \begin{itemize}
 \item $\OTBit(\B,\A,K) \coloneqq \read{\OTBit(\B,\A,K)}$
 \end{itemize}
-\item $\BobOTBits\big(C; \, \andgate(k,l),K+1\big)$ is the composition of the protocol $\BobOTBits(C,K)$ with the single-reaction protocol
+\item $\BobOTBit\big(C; \, \andgate(k,l),K+1\big)$ is the composition of the protocol $\BobOTBit(C,K)$ with the single-reaction protocol
 \begin{itemize}
 \item $\OTBit(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ \ret{b_A \oplus (x_A * y_B) \oplus (x_B * y_A)}$
 \end{itemize}
@@ -1158,7 +1159,7 @@ and an inductive part $\BobOTBits(C,K)$:
 \begin{itemize}
 \item In the case of an \emph{input} gate, let us assume $i$ is an input of Alice; the case for Bob is entirely analogous. We start by substituting the channels $\Share(\A,K)$ and $\Share(\B,K)$ into the channel
 \begin{itemize}
-\item $\Wire(K) \coloneqq x_A \leftarrow \Share(\A,K); \ x_B \leftarrow \Share(\B,K); \ \ret{x_A \oplus x_B}$ yielding
+\item $\Wire(K) \coloneqq x_A \leftarrow \Share(\A,K); \ x_B \leftarrow \Share(\B,K); \ \ret{x_A \oplus x_B}$, yielding
 \item $\Wire(K) \coloneqq x_A \leftarrow \InputShare(\A,\A,i); \ x_B \leftarrow \InputShare(\B,\A,i); \ \ret{x_A \oplus x_B}$
 \end{itemize}
 Substituting this new definition of $\Wire(K)$ along with the channel $\Share(\A,K)$ into the channel
@@ -1170,11 +1171,17 @@ After canceling out the two applications of $\oplus$ and simplifying, we get
 \begin{itemize}
 \item $\Share(\B,K) \coloneqq x_A \leftarrow \InputShare(\A,\A,i); \ \read{\InputShare(\B,\A,i)}$
 \end{itemize}
-which is precisely the desired inductive formulation of $\Share(\B,K)$. We continue to work on the channel $\Wire(K)$. A further substitution of the channel $\InputShare(\B,\A,i)$ into $\Wire(K)$ yields
+which is precisely the desired inductive formulation of $\Share(\B,K)$.
+
+We continue to work on the channel $\Wire(K)$. A further substitution of the channel $\InputShare(\B,\A,i)$ into the channel $\Wire(K)$ yields
 \begin{itemize}
 \item $\Wire(K) \coloneqq x_A \leftarrow \InputShare(\A,\A,i); \ x \leftarrow \In(\A,i); \ \ret{x_A \oplus (x_A \oplus x)}$
 \end{itemize}
 After canceling out the two applications of $\oplus$ and simplifying, we get
+\begin{itemize}
+\item $\Wire(K) \coloneqq x_A \leftarrow \InputShare(\A,\A,i); \ \read{\In(\A,i)}$
+\end{itemize}
+Dropping the gratuitous dependency on the channel $\InputShare(\A,\A,i)$ yields
 \begin{itemize}
 \item $\Wire(K) \coloneqq \read{\In(\A,i)}$
 \end{itemize}
@@ -1193,7 +1200,9 @@ After canceling out the two applications of $\oplus$, we get
 \begin{itemize}
 \item $\Share(\B,K) \coloneqq x_A \leftarrow \Share(\A,k); \ x_B \leftarrow \Share(\B,k); \ \ret{\neg x_B}$
 \end{itemize}
-which is precisely the desired inductive formulation of $\Share(\B,K)$. We continue to work on the channel $\Wire(K)$. The negation can be brought to the top level:
+which is precisely the desired inductive formulation of $\Share(\B,K)$.
+
+We continue to work on the channel $\Wire(K)$. The negation can be brought to the top level:
 \begin{itemize}
 \item $\Wire(K) \coloneqq x_A \leftarrow \Share(\A,k); \ x_B \leftarrow \Share(\B,k); \ \ret{\neg (x_A \oplus x_B)}$
 \end{itemize}
@@ -1212,13 +1221,23 @@ Substituting this new definition of $\Wire(K)$ along with the channel $\Share(\A
 \item $\Share(\B,K) \coloneqq x_A \leftarrow \Share(\A,K); \ x \leftarrow \Wire(K); \ \ret{x_A \oplus x}$ yields
 \item $\Share(\B,K) \coloneqq x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \Share(\B,l); \\ \ret{(x_A \oplus y_A) \oplus (x_A \oplus y_A) \oplus (x_B \oplus y_B)}$
 \end{itemize}
-After canceling out the two top-level applications of $\oplus$ and rearranging, we get
+After canceling out the two top-level applications of $\oplus$, we get
+\begin{itemize}
+\item $\Share(\B,K) \coloneqq x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \Share(\B,l); \ \ret{x_B \oplus y_B}$
+\end{itemize}
+After rearranging, the above becomes
 \begin{itemize}
 \item $\Share(\B,K) \coloneqq x_A \leftarrow \Share(\A,k); \ {\color{red} x_B \leftarrow \Share(\B,k); \ y_A \leftarrow \Share(\A,l); \ } y_B \leftarrow \Share(\B,l); \ \ret{x_B \oplus y_B}$
 \end{itemize}
-which is precisely the desired inductive formulation of $\Share(\B,K)$. We continue to work on the channel $\Wire(K)$. The same type of rearrangement yields
+which is precisely the desired inductive formulation of $\Share(\B,K)$.
+
+We continue to work on the channel $\Wire(K)$. Since $\oplus$ is commutative, we can write the channel $\Wire$ as
 \begin{itemize}
-\item $\Wire(K) \coloneqq x_A \leftarrow \Share(\A,k); \ {\color{red} x_B \leftarrow \Share(\B,k); \ y_A \leftarrow \Share(\A,l); \ } y_B \leftarrow \Share(\B,l); \\ \ret{(x_A \oplus {\color{red} x_B}) \oplus ({\color{red} y_A} \oplus y_B)}$
+\item $\Wire(K) \coloneqq x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \Share(\B,l); \\ \ret{(x_A \oplus {\color{red} x_B}) \oplus ({\color{red} y_A} \oplus y_B)}$
+\end{itemize}
+After rearranging, the above becomes
+\begin{itemize}
+\item $\Wire(K) \coloneqq x_A \leftarrow \Share(\A,k); \ {\color{red} x_B \leftarrow \Share(\B,k); \ y_A \leftarrow \Share(\A,l); \ } y_B \leftarrow \Share(\B,l); \\ \ret{(x_A \oplus x_B}) \oplus (y_A \oplus y_B)$
 \end{itemize}
 This is precisely what we get when we substitute the channels $\Wire(k)$ and $\Wire(l)$ into the channel
 \begin{itemize}
@@ -1235,23 +1254,37 @@ Substituting this new definition of $\Wire(K)$ along with the channel $\Share(\A
 \item $\Share(\B,K) \coloneqq x_A \leftarrow \Share(\A,K); \ x \leftarrow \Wire(K); \ \ret{x_A \oplus x}$ yields
 \item $\Share(\B,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ b_B \leftarrow \OTBit(\B,\A,K); \\ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \Share(\B,l); \ \ret{\big((x_A * y_A) \oplus b_A\big) \oplus \big((x_A * y_A) \oplus b_A\big) \oplus \big(b_B \oplus (x_B * y_B)\big)}$
 \end{itemize}
-After canceling out the two top-level applications of $\oplus$ and rearranging, we get
+After canceling out the two top-level applications of $\oplus$ we get
+\begin{itemize}
+\item $\Share(\B,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ b_B \leftarrow \OTBit(\B,\A,K); \\ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \Share(\B,l); \ \ret{b_B \oplus (x_B * y_B)}$
+\end{itemize}
+After rearranging, the above becomes
 \begin{itemize}
 \item $\Share(\B,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ {\color{red} b_B \leftarrow \OTBit(\B,\A,K); \ x_A \leftarrow \Share(\A,k); \ x_B \leftarrow \Share(\B,k);} \\ {\color{red} y_A \leftarrow \Share(\A,l); \ } y_B \leftarrow \Share(\B,l); \ \ret{b_B \oplus (x_B * y_B)}$
 \end{itemize}
-which is precisely the desired inductive formulation of $\Share(\B,K)$. We continue to work on the channel $\Wire(K)$. A further substitution of the channel $\OTBit(\B,\A,K)$ yields
+which is precisely the desired inductive formulation of $\Share(\B,K)$.
+
+We continue to work on the channel $\Wire(K)$. A further substitution of the channel $\OTBit(\B,\A,K)$ yields
 \begin{itemize}
 \item $\Wire(K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ \ret{\big((x_A * y_A) \oplus b_A\big) \oplus \big(b_A \oplus (x_A * y_B) \oplus (x_B * y_A) \oplus (x_B * y_B)\big)}$
 \end{itemize}
-or equivalently,
+or, reassociated,
 \begin{itemize}
-\item $\Wire(K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ \ret{(x_A * y_A) \big(b_A \oplus b_A \oplus (x_A * y_B) \oplus (x_B * y_A)\big) \oplus (x_B * y_B)}$
+\item $\Wire(K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ \ret{(x_A * y_A) \oplus \big(b_A \oplus b_A \oplus (x_A * y_B) \oplus (x_B * y_A)\big) \oplus (x_B * y_B)}$
 \end{itemize}
-After canceling out the two applications of $\oplus$ with $b_A$ and simplifying, we get
+After canceling out the two applications of $\oplus$ with $b_A$, we get
+\begin{itemize}
+\item $\Wire(K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ \ret{(x_A * y_A) \oplus (x_A * y_B) \oplus (x_B * y_A) \oplus (x_B * y_B)}$
+\end{itemize}
+Dopping the gratuitous dependency on $\OTBit(\A,\B,K)$ yields
 \begin{itemize}
 \item $\Wire(K) \coloneqq x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \Share(\B,l); \\ \ret{(x_A * y_A) \oplus (x_A * y_B) \oplus (x_B * y_A) \oplus (x_B * y_B)}$
 \end{itemize}
-Applying distributivity and rearranging yields
+Applying distributivity yields
+\begin{itemize}
+\item $\Wire(K) \coloneqq x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \Share(\B,l); \\ \ret{(x_A \oplus x_B) * (y_A \oplus y_B)}$
+\end{itemize}
+After rearranging, the above becomes
 \begin{itemize}
 \item $\Wire(K) \coloneqq x_A \leftarrow \Share(\A,k); \ {\color{red} x_B \leftarrow \Share(\B,k); \ y_A \leftarrow \Share(\A,l); \ } y_B \leftarrow \Share(\B,l); \\ \ret{(x_A \oplus x_B) * (y_A \oplus y_B)}$
 \end{itemize}
@@ -1262,7 +1295,7 @@ This is precisely what we get when we substitute the channels $\Wire(k)$ and $\W
 using our inductive hypothesis twice, thereby yielding the desired inductive formulation of $\Wire(K)$.
 \end{itemize}
 
-\noindent Since we have a closed form for computing Bob's shares, we can discard the protocol fragment $\BobOTBits(C,K)$ entirely. Moreover, at this point the only places where we refer to Bob's side of the computation is when leaking Bob's initial and final shares, \emph{i.e.}, in the channels $\LeakSendInputShare(\B,\A,-)^\A_\adv$ and $\LeakSendFinalShare(\B,-)^\A_\adv$. This can be easily remedied by performing the appropriate substitutions. Substituting the channels $\InputShare(\B,\A,-)$ into the channels $\LeakSendInputShare(\B,\A,-)^\A_\adv$ yields the following version of the initial part of the real protocol:
+\noindent Since we have a closed form for computing Bob's shares, we can discard the protocol fragment $\BobOTBit(C,K)$ entirely. Moreover, at this point the only places where we refer to Bob's side of the computation is when leaking Bob's initial and final shares, \emph{i.e.}, in the channels $\LeakSendInputShare(\B,\A,-)^\A_\adv$ and $\LeakSendFinalShare(\B,-)^\A_\adv$. This can be easily remedied by performing the appropriate substitutions. Substituting the channels $\InputShare(\B,\A,-)$ into the channels $\LeakSendInputShare(\B,\A,-)^\A_\adv$ yields the following version of the initial part of the real protocol:
 
 \begin{itemize}
 \item {\color{blue} $\LeakIn(\A,i)^\A_\adv \coloneqq \read{\In(\A,i)}$ for $0 \leq i < N$}
@@ -1273,7 +1306,7 @@ using our inductive hypothesis twice, thereby yielding the desired inductive for
 \item $\InputShare(\B,\B,i) \coloneqq x_A \leftarrow \InputShare(\A,\B,i); \ x \leftarrow \In(\B,i); \  \ret{x_A \oplus x}$ for $0 \leq i < M$\smallskip
 \item {\color{blue} $\LeakInputShare(\A,\A,i)^\A_\adv \coloneqq \read{\InputShare(\A,\A,i)}$ for $0 \leq i < N$}
 \item {\color{blue} $\LeakInputShare(\A,\B,i)^\A_\adv \coloneqq \read{\InputShare(\A,\B,i)}$ for $0 \leq i < M$}\smallskip
-\item {\color{red} $\LeakSendInputShare(\B,\A,i)^\A_\adv \coloneqq x_A \leftarrow \InputShare(\A,\A,i); \ x \leftarrow \In(\A,i); \ \ret{x_A \oplus x}$ for $0 \leq i < N$}
+\item {\color{blue} $\LeakSendInputShare(\B,\A,i)^\A_\adv \coloneqq x_A \leftarrow \InputShare(\A,\A,i); \ x \leftarrow \In(\A,i); \ \ret{x_A \oplus x}$ for $0 \leq i < N$}
 \item {\color{blue} $\LeakSendInputShare(\A,\B,i)^\A_\adv \coloneqq \read{\InputShare(\A,\B,i)}$ for $0 \leq i < M$}
 \end{itemize}
 
@@ -1285,7 +1318,7 @@ into the channels $\LeakSendFinalShare(\B,-)^\A_\adv$ yields the following versi
 
 \begin{itemize}
 \item {\color{blue} $\begin{cases*} \LeakSendFinalShare(\A,k)^\A_\adv \coloneqq \read{\Share(\A,k)} & \text{if wire $0 \leq k < K$ is output} \\ \LeakSendFinalShare(\A,k)^\A_\adv \coloneqq \read{\LeakSendFinalShare(\A,k)^\A_\adv} & \text{otherwise} \end{cases*}$}
-\item {\color{blue} $\begin{cases*} \LeakSendFinalShare(\B,k)^\A_\adv \coloneqq {\color{red} x_A \leftarrow \Share(\A,k); \ x \leftarrow \Wire(k); \ \ret{x_A \oplus x}} & \text{if wire $0 \leq k < K$ is output} \\ \LeakSendFinalShare(\B,k)^\A_\adv \coloneqq \read{\LeakSendFinalShare(\B,k)^\A_\adv} & \text{otherwise} \end{cases*}$}
+\item {\color{blue} $\begin{cases*} \LeakSendFinalShare(\B,k)^\A_\adv \coloneqq x_A \leftarrow \Share(\A,k); \ x \leftarrow \Wire(k); \ \ret{x_A \oplus x} & \text{if wire $0 \leq k < K$ is output} \\ \LeakSendFinalShare(\B,k)^\A_\adv \coloneqq \read{\LeakSendFinalShare(\B,k)^\A_\adv} & \text{otherwise} \end{cases*}$}
 \item $\begin{cases*} \Out(\A,k) \coloneqq \read{\Wire(k)} & \text{if wire $0 \leq k < K$ is output} \\ \Out(\A,k) \coloneqq \read{\Out(\A,k)} & \text{otherwise} \end{cases*}$
 \item $\begin{cases*} \Out(\B,k) \coloneqq \read{\Wire(k)} & \text{if wire $0 \leq k < K$ is output} \\ \Out(\B,k) \coloneqq \read{\Out(\B,k)} & \text{otherwise} \end{cases*}$
 \item {\color{blue} $\LeakOut(\A,k)^\A_\adv \coloneqq \read{\Out(\A,k)}$ for $0 \leq k < K$}
@@ -1322,13 +1355,13 @@ Plugging the simulator into the ideal functionality and substituting away the ch
 The code for the initial part of the simulator is as follows:
 
 \begin{itemize}
-\item {\color{red} $\LeakIn(\A,i)^\A_\adv \coloneqq \read{\LeakIn(\A,i)^\id_\adv}$ for $0 \leq i < N$}
-\item {\color{red} $\LeakInRcvd(\B,i)^\B_\adv \coloneqq \read{\LeakInRcvd(\B,i)^\id_\adv}$ for $0 \leq i < M$}\smallskip
-\item $\InputShare(\A,\A,i) \coloneqq {\color{red} x \leftarrow \LeakIn(\A,i)^\id_\adv; \ } \samp{\flip}$ for $0 \leq i < N$
-\item $\InputShare(\A,\B,i) \coloneqq {\color{red} \_ \leftarrow \LeakInRcvd(\B,i)^\id_\adv; \ } \samp{\flip}$ for $0 \leq i < M$\smallskip
+\item {\color{blue} $\LeakIn(\A,i)^\A_\adv \coloneqq \read{\LeakIn(\A,i)^\id_\adv}$ for $0 \leq i < N$}
+\item {\color{blue} $\LeakInRcvd(\B,i)^\B_\adv \coloneqq \read{\LeakInRcvd(\B,i)^\id_\adv}$ for $0 \leq i < M$}\smallskip
+\item $\InputShare(\A,\A,i) \coloneqq x \leftarrow \LeakIn(\A,i)^\id_\adv; \ \samp{\flip}$ for $0 \leq i < N$
+\item $\InputShare(\A,\B,i) \coloneqq \_ \leftarrow \LeakInRcvd(\B,i)^\id_\adv; \ \samp{\flip}$ for $0 \leq i < M$\smallskip
 \item {\color{blue} $\LeakInputShare(\A,\A,i)^\A_\adv \coloneqq \read{\InputShare(\A,\A,i)}$ for $0 \leq i < N$}
 \item {\color{blue} $\LeakInputShare(\A,\B,i)^\A_\adv \coloneqq \read{\InputShare(\A,\B,i)}$ for $0 \leq i < M$}\smallskip
-\item {\color{blue} $\LeakSendInputShare(\B,\A,i)^\A_\adv \coloneqq x_A \leftarrow \InputShare(\A,\A,i); \ {\color{red} x \leftarrow \LeakIn(\A,i)^\id_\adv; \ } \ret{x_A \oplus x}$ for $0 \leq i < N$}
+\item {\color{blue} $\LeakSendInputShare(\B,\A,i)^\A_\adv \coloneqq x_A \leftarrow \InputShare(\A,\A,i); \ x \leftarrow \LeakIn(\A,i)^\id_\adv; \ \ret{x_A \oplus x}$ for $0 \leq i < N$}
 \item {\color{blue} $\LeakSendInputShare(\A,\B,i)^\A_\adv \coloneqq \read{\InputShare(\A,\B,i)}$ for $0 \leq i < M$}
 \end{itemize}
 
@@ -1400,6 +1433,6 @@ The code for the final part of the simulator is as follows:
 
 \begin{itemize}
 \item {\color{blue} $\begin{cases*} \LeakSendFinalShare(\A,k)^\A_\adv \coloneqq \read{\Share(\A,k)} & \text{if wire $0 \leq k < K$ is output} \\ \LeakSendFinalShare(\A,k)^\A_\adv \coloneqq \read{\LeakSendFinalShare(\A,k)^\A_\adv} & \text{otherwise} \end{cases*}$}
-\item {\color{blue} $\begin{cases*} \LeakSendFinalShare(\B,k)^\A_\adv \coloneqq x_A \leftarrow \Share(\A,k); \ {\color{red} x \leftarrow \LeakOut(\A,k)^\id_\adv; \ } \ret{x_A \oplus x} & \text{if wire $0 \leq k < K$ is output} \\ \LeakSendFinalShare(\B,k)^\A_\adv \coloneqq \read{\LeakSendFinalShare(\B,k)^\A_\adv} & \text{otherwise} \end{cases*}$}
-\item {\color{red} $\LeakOut(\A,k)^\A_\adv \coloneqq \read{\LeakOut(\A,k)^\id_\adv}$ for $0 \leq k < K$}
+\item {\color{blue} $\begin{cases*} \LeakSendFinalShare(\B,k)^\A_\adv \coloneqq x_A \leftarrow \Share(\A,k); x \leftarrow \LeakOut(\A,k)^\id_\adv; \ \ret{x_A \oplus x} & \text{if wire $0 \leq k < K$ is output} \\ \LeakSendFinalShare(\B,k)^\A_\adv \coloneqq \read{\LeakSendFinalShare(\B,k)^\A_\adv} & \text{otherwise} \end{cases*}$}
+\item {\color{blue} $\LeakOut(\A,k)^\A_\adv \coloneqq \read{\LeakOut(\A,k)^\id_\adv}$ for $0 \leq k < K$}
 \end{itemize}
