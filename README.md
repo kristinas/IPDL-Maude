@@ -16,14 +16,18 @@ The [src](https://github.com/kristinas/IPDL-Maude/tree/main/src "src") folder co
 
 The [doc](https://github.com/kristinas/IPDL-Maude/tree/main/doc) folder contains a [technical report](https://github.com/kristinas/IPDL-Maude/blob/main/doc/tech_report_popl.pdf) describing the theory behind the tool,
 and updated version of the syntax together with a description of the [Maude implementation of IPDL](https://github.com/kristinas/IPDL-Maude/blob/main/doc/tech_report_maude.pdf) and a detailed presentation of the [case studies](https://github.com/kristinas/IPDL-Maude/blob/main/doc/case_studies.pdf):
-- Authenticated-To-Secure Channel: CPA Security (Sec. 1) for approximate equality of protocols;
-- Authenticated-To-Secure Channel: Diffie-Hellman Key Exchange - DHKE (Sec. 2) for approximate equality of protocols;
-- Oblivious Transfer: 1-Out-Of-2 Pre-Processing (Sec. 3) for exact equality of protocols;
-- Multi-Party Coin Toss (Sec. 4) for induction;
-- Two-Party GMW Protocol (Sec. 5) for induction.
+- Symmetric-Key Encryption: CPA Security (Sec. 1) for approximate equality of protocols;
+- Symmetric-Key Encryption: CPA$-To-CPA Security (Sec. 2) for approximate equality of protocols;
+- Symmetric-Key Encryption: Authenticated-To-Secure Channel (Sec. 3) for approximate equality of protocols;
+- Authenticated-To-Secure Channel: Diffie-Hellman Key Exchange - DHKE (Sec. 4) for approximate equality of protocols;
+- Oblivious Transfer: 1-Out-Of-2 Pre-Processing (Sec. 7) for exact equality of protocols;
+- Multi-Party Coin Toss (Sec. 8) for induction;
+- Two-Party GMW Protocol (Sec. 9) for induction.
 
 In the [lib](https://github.com/kristinas/IPDL-Maude/tree/main/lib "lib") folder  we have the formalizations of the case studies (if an item of the list above is missing here, its implementation is ongoing):
-- `secure.maude` for CPA Security;
+- `cpaSecurity.maude` for CPA Security;
+- `pseudoRandom.maude` for CPA$-To-CPA Security;
+- `secure.maude` for Authenticated-To-Secure Channel;
 - `dhke.maude` for Diffie-Hellman Key Exchange;
 - `preProcessing.maude` for 1-Out-Of-2 Pre-Processing;
 - `multipartyCoinToss.maude` for Multi-Party Coin Toss.
