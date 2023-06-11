@@ -20,6 +20,8 @@ and updated version of the syntax together with a description of the [Maude impl
 - Symmetric-Key Encryption: CPA$-To-CPA Security (Sec. 2) for approximate equality of protocols;
 - Symmetric-Key Encryption: Authenticated-To-Secure Channel (Sec. 3) for approximate equality of protocols;
 - Authenticated-To-Secure Channel: Diffie-Hellman Key Exchange - DHKE (Sec. 4) for approximate equality of protocols;
+- Diffie-Hellman Key Exchange (DHKE) + One-Time Pad (OTP) (Sec. 5) for approximate equality 
+of protocols;
 - Oblivious Transfer: 1-Out-Of-2 Pre-Processing (Sec. 7) for exact equality of protocols;
 - Multi-Party Coin Toss (Sec. 8) for induction;
 - Two-Party GMW Protocol (Sec. 9) for induction.
@@ -28,7 +30,7 @@ In the [lib](https://github.com/kristinas/IPDL-Maude/tree/main/lib "lib") folder
 - `cpaSecurity.maude` for CPA Security;
 - `pseudoRandom.maude` for CPA$-To-CPA Security;
 - `secure.maude` for Authenticated-To-Secure Channel;
-- `dhke.maude` for Diffie-Hellman Key Exchange;
+- `dhke.maude` for (DHKE) and (DHKE+OTP);
 - `preProcessing.maude` for 1-Out-Of-2 Pre-Processing;
 - `multipartyCoinToss.maude` for Multi-Party Coin Toss.
 
