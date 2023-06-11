@@ -680,11 +680,15 @@ smod STRATS is
  sd foldNFFamily(Q1, Q2) := 
                  (fold-bind-new-nf-families[C:Qid  <- Q1,
                                             C':Qid <- Q2] 
+                  or-else  
+                  fold-bind-new-nf-families-zero[C:Qid  <- Q1,
+                                            C':Qid <- Q2]                         
                  )
                  *** these last 2 steps should be reusable from subst!
                  ; liftInnerBindsNFFamily(Q2) 
                  ; handleRNFFamily(Q2) 
                  ; try (pre2Nf)
+                  ; try (delete-empty-newNF)
                  .                         
  
  ***********************************
@@ -694,9 +698,9 @@ smod STRATS is
  *** get all new declarations in front
  strat moveNewToFront @ ProtocolConfig .
  sd moveNewToFront := 
-    ((CONG-NEW-NF{CONG-COMP-RIGHT{comp-new-families}}) !) 
-     ; (moveProtocolUnderNewNF !)
-     ; (lift-inner-new-nf !)
+     ((CONG-NEW-NF{CONG-COMP-RIGHT{comp-new-families}}) !) 
+   ; (moveProtocolUnderNewNF !)
+   ; (lift-inner-new-nf !)
  .    
  
   *** move the family Q2 inside the group Q1

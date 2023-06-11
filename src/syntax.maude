@@ -3072,6 +3072,23 @@ mod PROTOCOL-EQUALITY is
     )        
   . 
   
+     rl [fold-bind-new-nf-families-zero] :
+    pConfig(Sigma, Delta, 
+             newNF({ C q (bound n) : T } ltq, 
+                  (family C q (bound n) ::= R) || 
+                      (family C' q' (bound n1) ::= nf((x : T <- read (C[q'])) BRL, S, QL)), 
+                   ql),
+            I, O, A)
+    => 
+    pConfig(Sigma, Delta, 
+             newNF(ltq, (family C' q' (bound n1) ::= preNF((x : T <~ R) BRL, S, QL)), del C ql),
+            I, O, A) 
+    ***( 
+    if typeOf(Sigma, addChannels ltq (Delta ((toBound c):: T)), addDeclarations BRL emptyTypeContext, 
+            insert(toBound o, insert(toBound c, union(I, getOutputs(P)))), A, R) == T 
+    )        
+  . 
+  
      
      *** congruence rules for families
   
@@ -3847,11 +3864,11 @@ mod APPROX-EQUALITY is
  crl [SYM-APPROX] :
    aConfig(Sigma, Delta, P, I, O, A, w, l) 
    =>
-   aConfig(Sigma, Delta, Q, I, O, A, w, l)
+   aConfig(Sigma, Delta, Q, I, O, A, w', l')
    if
     aConfig(Sigma, Delta, Q, I, O, A, w, l) 
    =>
-   aConfig(Sigma, Delta, P, I, O, A, w, l)
+   aConfig(Sigma, Delta, P, I, O, A, w', l')
  [nonexec]
  .
  
@@ -3912,6 +3929,7 @@ mod APPROX-EQUALITY is
  op defMax : Nat Nat -> Nat .
  eq defMax(n, 0) = n .
  eq defMax(0, n) = n .
+ eq defMax(n, n) = n .
  eq defMax(n1, n2) = max(n1, n2) [owise] .     
       
 endm

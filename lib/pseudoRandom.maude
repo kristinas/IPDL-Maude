@@ -1,0 +1,308 @@
+***( IPDL
+
+  Copyright : (C) 2022-23, Kristina Sojakova
+  License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+Hello world-like example
+
+)
+load ../src/strategies
+
+mod PSEUDORANDOM is
+ protecting APPROX-EQUALITY .
+ 
+ op q : -> Nat .
+ 
+ op msg  : -> Type .
+ op key  : -> Type .
+ op ctxt : -> Type .
+ 
+ op zerosF : -> SigElem .
+ eq zerosF = 'zeros : unit ~> msg .
+ 
+ op unifCtxtF : -> SigElem .
+ eq unifCtxtF = 'unifCtxt : unit ~>> ctxt .
+ 
+ op genKeyF : -> SigElem .
+ eq genKeyF = 'genKey : unit ~>> key .
+ 
+ op encF : -> SigElem .
+ eq encF = 'enc : (msg * key) ~>> ctxt .
+ 
+ op sig : -> Signature .
+ eq sig = unifCtxtF encF genKeyF zerosF .
+ 
+  op lrLeft : -> Protocol .
+ eq lrLeft = 
+  new 'Key : key in
+   (
+    ('Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    ||
+    (family 'Enc 'i (bound q) ::= 
+      nf( ('ml : msg <- read ('Msg-L['i]))
+          ('mr : msg <- read ('Msg-R['i]))
+          ('k : key <- read 'Key),
+          samp ('enc < pair('ml, 'k) >),
+           'ml :: 'mr :: 'k :: emptyCNameList)
+    ) 
+   ) 
+ .
+ 
+ op lrRight : -> Protocol .
+ eq lrRight = 
+  new 'Key : key in
+   (
+    ('Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    ||
+    (family 'Enc 'i (bound q) ::= 
+      nf( ('ml : msg <- read ('Msg-L['i]))
+          ('mr : msg <- read ('Msg-R['i]))
+          ('k : key <- read 'Key),
+          samp ('enc < pair('mr, 'k) >),
+           'ml :: 'mr :: 'k :: emptyCNameList)
+    ) 
+   ) 
+ .
+ 
+ op cmLeft : -> Protocol .
+ eq cmLeft = 
+  new 'Key : key in
+   (
+    ('Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    ||
+    (family 'Enc 'i (bound q) ::= 
+      nf( ('m : msg <- read ('Msg['i]))
+          ('k : key <- read 'Key),
+          samp ('enc < pair('m, 'k) >),
+           'm :: 'k :: emptyCNameList)
+    ) 
+   ) 
+ .
+
+ 
+  op int1 : -> Protocol .
+ eq int1 = 
+     newfamily 'Msg 'i (bound q) : msg in 
+     (
+     cmLeft ||
+     (family 'Msg 'i (bound q) ::= 
+      nf(
+      ('ml : msg <- read ('Msg-L['i]))
+      ('mr : msg <- read ('Msg-R['i])),
+      return 'ml,
+      'ml :: 'mr :: emptyCNameList
+      )
+    )
+     )
+ .
+ 
+ op int2 : -> Protocol .
+ eq int2 =
+    newfamily 'Msg 'i (bound q) : msg in
+      ( 
+    (family 'Enc 'i (bound q) ::= 
+      nf( 'm : msg <- read ('Msg['i]),
+          samp ('unifCtxt < () >),
+          'm :: emptyCNameList)
+    )
+    ||
+     (family 'Msg 'i (bound q) ::= 
+      nf(
+      ('ml : msg <- read ('Msg-L['i]))
+      ('mr : msg <- read ('Msg-R['i])),
+      return 'mr,
+      'ml :: 'mr :: emptyCNameList
+      )
+    ) 
+    )      
+ .
+ 
+ op int3 : -> Protocol .
+ eq int3 =
+   newfamily 'Msg 'i (bound q) : msg in
+      (
+          (family 'Msg 'i (bound q) ::= 
+      nf(
+      ('ml : msg <- read ('Msg-L['i]))
+      ('mr : msg <- read ('Msg-R['i])),
+      return 'mr,
+      'ml :: 'mr :: emptyCNameList
+      )
+    )
+    ||
+    new 'Key : key in
+   (
+    ('Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    ||
+    (family 'Enc 'i (bound q) ::= 
+      nf( ('m : msg <- read ('Msg['i]))
+          ('k : key <- read 'Key),
+          samp ('enc < pair('m, 'k) >),
+          'm :: 'k :: emptyCNameList)
+    ) 
+   )
+
+    ) 
+ .
+ 
+ 
+endm 
+
+smod EXECUTE is
+ pr STRATS .
+ pr PSEUDORANDOM .
+ 
+ var i m ml mr k l ka kb C sk Key Enc Msg Msg-L Msg-R : Qid .
+ var Sigma : Signature .
+ var Delta Delta' : ChannelContext .
+ var Gamma : TypeContext .
+ var I O : Set{CNameBound} .
+ var li : List{NatTerm} .
+ var A : Set{BoolTerm} .
+ var wid len : Nat . 
+ var pConf : ProtocolConfig .
+ var aConf : ApproxEqConfig .
+ var P : Protocol .
+ 
+  crl [cm] : 
+    aConfig(Sigma, Delta ,
+            newNF( < Key : key >, 
+   (
+    (Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    ||
+    (family Enc i (bound q) ::= 
+      nf( (m : msg <- read (Msg[i]))
+          (k : key <- read Key),
+          samp ('enc < pair(m, k) >),
+          m :: k :: emptyCNameList)
+    ) 
+   ), Key :: emptyCNameList) , I, O, A, width wid, length len
+   )
+   =>
+   aConfig(Sigma, Delta ,
+            newNF( < Key : key >, 
+   (
+    (Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    ||
+    (family Enc i (bound q) ::= 
+      nf( (m : msg <- read (Msg[i]))
+          (k : key <- read Key),
+          samp ('enc < pair(ap 'zeros (), k) >),
+          m :: k :: emptyCNameList)
+    ) 
+   ), Key :: emptyCNameList) , I, O, A, width (wid + 1), length (len + | I | - 1)
+   )
+   
+   if
+   
+    (Msg @ q) in I 
+    
+    /\
+    
+    O == Enc @ q
+    
+   .
+   
+   strat applyCM @ ProtocolConfig .
+   sd applyCM :=
+    match aConf s.t. aConfStartsWithNew aConf
+    ? CONG-NEW-NF-APPROX{applyCM}
+    : CONG-COMP-APPROX{cm}
+     .  
+ 
+ crl [cpaD] : 
+    aConfig(Sigma, Delta ,
+            newNF( < Key : key >, 
+   (
+    (Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    ||
+    (family Enc i (bound q) ::= 
+      nf( (m : msg <- read (Msg[i]))
+          (k : key <- read Key),
+          samp ('enc < pair(m, k) >),
+          m :: k :: emptyCNameList)
+    ) 
+   ), Key :: emptyCNameList) , I, O, A, width wid, length len
+   )
+   =>
+   aConfig(Sigma, Delta ,
+           
+    family Enc i (bound q) ::= 
+      nf( m : msg <- read (Msg[i]),
+          samp ('unifCtxt < () >),
+          m :: emptyCNameList)
+    
+    , I, O, A, width (wid + 1), length (len + | I | - 1)
+   )
+   
+   if
+   
+    (Msg @ q) in I 
+    
+    /\
+    
+    O == Enc @ q
+    
+   .
+   
+   strat applyCPAD @ ProtocolConfig .
+   sd applyCPAD :=
+    match aConf s.t. aConfStartsWithNew aConf
+    ? CONG-NEW-NF-APPROX{applyCPAD}
+    : CONG-COMP-APPROX{cpaD}
+     .     
+
+endsm
+
+srew [1]
+ aConfig(sig,('Msg-L @ q :: msg) ('Msg-R @ q :: msg) ('Enc @ q :: ctxt), lrLeft, 
+         insert('Msg-L @ q, 'Msg-R @ q),   getOutputs(lrLeft), empty, width 0, length 0)
+using 
+ TRANS{
+ TRANS{
+ TRANS{
+ TRANS{
+ STRICT{
+    sugar-newNF
+    ; SYM[P1:Protocol <- int1]{
+         sugar-newNF
+     ; moveNewToFront
+     ; foldNFFamily('Msg, 'Enc)
+       }
+     ; sugar-newNF 
+ },
+ applyCPAD
+ },
+ STRICT{
+     foldNFFamily('Msg, 'Enc)
+   ; SYM[P1:Protocol <- int2]{
+       sugar-newNF
+       ; foldNFFamily('Msg, 'Enc) 
+     }
+   ; sugar-newNF  
+ }
+ },
+ SYM-APPROX[Q:Protocol <- int3]{
+  TRANS{
+      STRICT{
+         sugar-newNF
+      },
+      applyCPAD
+      }
+ }
+ },
+ STRICT{
+     sugar-newNF
+   ; moveNewToFront
+   ; foldNFFamily('Msg, 'Enc)
+   ; SYM[P1:Protocol <- lrRight]{
+       sugar-newNF
+     }  
+ }
+ }
+.   
+       
+
+
