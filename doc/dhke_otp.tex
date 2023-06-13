@@ -38,7 +38,7 @@ In addition to the assumptions from Section \ref{sec:dhke}, we will need the fac
 \end{itemize}
 Additionally, we need to know that that the distribution $\unif_\msg$ on messages is invariant under the operation of multiplication with a fixed message (a consequence of $\unif_\msg$ being uniform):
 \begin{itemize}
-\item $m : \msg \vdash \big(k \leftarrow \unif_\msg; \ 1[ m * k]\big) = \unif_\msg : \msg$
+\item $m : \msg \vdash \big(k \leftarrow \unif_\msg; \ \ret{m * k}\big) = \unif_\msg : \msg$
 \end{itemize}
 
 \subsection{The Ideal Functionality}

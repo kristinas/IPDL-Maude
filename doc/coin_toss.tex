@@ -30,7 +30,7 @@ At the expression level, we assume that the operation of Boolean sum with a fixe
 \end{itemize}
 At the distribution level, we assume that the distribution $\flip$ on bits is invariant under the operation of Boolean sum with a fixed bit (as is indeed the case when $\flip$ is uniform):
 \begin{itemize}
-\item $x : \Bool \vdash \big(y \leftarrow \flip; \ 1[x \oplus y]\big) = \flip : \Bool$
+\item $x : \Bool \vdash \big(y \leftarrow \flip; \ \ret{x \oplus y}\big) = \flip : \Bool$
 \end{itemize}
 
 \subsection{The Ideal Protocol}

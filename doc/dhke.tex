@@ -30,7 +30,7 @@ At the level of expressions, we only need to know that exponents commute:
 \end{itemize}
 At the level of distributions, we need to know that sampling a random secret key $k$ from $\unif_\key$ and returning $g^k$ is the same as sampling from $\unif_\msg$ directly (a consequence of $\unif_\key$ being uniform),
 \begin{itemize}
-\item $\cdot \vdash \big(k \leftarrow \unif_\key; \ 1[\gen^k]\big) = \unif_\msg : \msg$
+\item $\cdot \vdash \big(k \leftarrow \unif_\key; \ \ret{\gen^k}\big) = \unif_\msg : \msg$
 \end{itemize}
 Finally, at the level of protocols we need the \emph{decisional Diffie-Hellman (DDH)} cryptographic assumption: as long as the secret keys $k,l$ are generated uniformly, even if the adversary knows the values $g^k$ and $g^l$, they will be unable to distinguish $(g^k)^l$ from a uniformly generated element of $G$. The corresponding protocol-level axiom states that in the channel context $\DDH_3 : \msg \times (\msg \times \msg)$, the single-reaction no-input protocol
 \begin{itemize}
