@@ -22,9 +22,9 @@ and updated version of the syntax together with a description of the [Maude impl
 - Authenticated-To-Secure Channel: Diffie-Hellman Key Exchange - DHKE (Sec. 4) for approximate equality of protocols;
 - Diffie-Hellman Key Exchange (DHKE) + One-Time Pad (OTP) (Sec. 5) for approximate equality 
 of protocols;
-- Oblivious Transfer: 1-Out-Of-2 Pre-Processing (Sec. 7) for exact equality of protocols;
-- Multi-Party Coin Toss (Sec. 8) for induction;
-- Two-Party GMW Protocol (Sec. 9) for induction.
+- Oblivious Transfer: 1-Out-Of-2 Pre-Processing (Sec. 6) for exact equality of protocols;
+- Multi-Party Coin Toss (Sec. 7) for induction;
+- Two-Party GMW Protocol (Sec. 8) for induction.
 
 In the [lib](https://github.com/kristinas/IPDL-Maude/tree/main/lib "lib") folder  we have the formalizations of the case studies (if an item of the list above is missing here, its implementation is ongoing):
 - `cpaSecurity.maude` for CPA Security;
