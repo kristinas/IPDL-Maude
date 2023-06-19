@@ -1366,15 +1366,14 @@ The code for the initial part of the simulator is as follows:
 \end{itemize}
 
 \subsubsection{The Simulator: The Inductive Phase}
-The inductive part of the simulator $\Sim(C,K)$ is the composition of the three protocols $\Alice(C,K)$, $\Wires(C,K)$, and $\Adv(C,K)$:
+The inductive part of the simulator $\Sim(C,K)$ is the composition of the two protocols $\Alice(C,K)$ and $\Adv(C,K)$:
 
 \begin{itemize}
 \item $\Sim(\epsilon,0)$ is the protocol $\zero$
 \item $\Sim\big(C; \, \inputgate(i),K+1\big)$ is the composition of the protocol $\Sim(C,K)$ with the protocol
 \begin{itemize}
 \item $\OTBit(\A,\B,K) \coloneqq \read{\OTBit(\A,\B,K)}$
-\item $\begin{cases*} \Share(\A,K) \coloneqq \read{\InputShare(\A,\A,i)} & \text{if $i$ is an input of Alice} \\ \Share(\A,K) \coloneqq \read{\InputShare(\A,\B,i)} & \text{if $i$ is an input of Bob} \end{cases*}$
-\item $\begin{cases*} \Wire(K) \coloneqq \read{\In(\A,i)} & \text{if $i$ is an input of Alice} \\ \Wire(K) \coloneqq \read{\In(\B,i)} & \text{if $i$ is an input of Bob} \end{cases*}$\medskip
+\item $\begin{cases*} \Share(\A,K) \coloneqq \read{\InputShare(\A,\A,i)} & \text{if $i$ is an input of Alice} \\ \Share(\A,K) \coloneqq \read{\InputShare(\A,\B,i)} & \text{if $i$ is an input of Bob} \end{cases*}$\medskip
 \item {\color{blue} $\LeakOTBit(\A,\B,K)^\A_\adv \coloneqq \read{\LeakOTBit(\A,\B,K)^\A_\adv}$}
 \item {\color{blue} $\LeakShare(\A,K)^\A_\adv \coloneqq \read{\Share(\A,K)}$}\medskip
 \item {\color{blue} $\LeakOTMsg(\A,\B,K,0)^\ot_\adv \coloneqq \read{\LeakOTMsg(\A,\B,K,0)^\ot_\adv}$}
@@ -1387,8 +1386,7 @@ The inductive part of the simulator $\Sim(C,K)$ is the composition of the three 
 \item $\Sim\big(C; \, \notgate(k),K+1\big)$ is the composition of the protocol $\Sim(C,K)$ with the protocol
 \begin{itemize}
 \item $\OTBit(\A,\B,K) \coloneqq \read{\OTBit(\A,\B,K)}$
-\item $\Share(\A,K) \coloneqq \read{\Share(\A,k)}$
-\item $\Wire(K) \coloneqq x \leftarrow \Wire(k); \ \ret{\neg x}$\medskip
+\item $\Share(\A,K) \coloneqq \read{\Share(\A,k)}$\medskip
 \item {\color{blue} $\LeakOTBit(\A,\B,K)^\A_\adv \coloneqq \read{\LeakOTBit(\A,\B,K)^\A_\adv}$}
 \item {\color{blue} $\LeakShare(\A,K)^\A_\adv \coloneqq \read{\Share(\A,K)}$}\medskip
 \item {\color{blue} $\LeakOTMsg(\A,\B,K,0)^\ot_\adv \coloneqq \read{\LeakOTMsg(\A,\B,K,0)^\ot_\adv}$}
@@ -1401,8 +1399,7 @@ The inductive part of the simulator $\Sim(C,K)$ is the composition of the three 
 \item $\Sim\big(C; \, \xorgate(k,l),K+1\big)$ is the composition of the protocol $\Sim(C,K)$ with the protocol
 \begin{itemize}
 \item $\OTBit(\A,\B,K) \coloneqq \read{\OTBit(\A,\B,K)}$
-\item $\Share(\A,K) \coloneqq x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{x_A \oplus y_A}$
-\item $\Wire(K) \coloneqq x \leftarrow \Wire(k); \ y \leftarrow \Wire(l); \ \ret{x \oplus y}$\medskip
+\item $\Share(\A,K) \coloneqq x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{x_A \oplus y_A}$\medskip
 \item {\color{blue} $\LeakOTBit(\A,\B,K)^\A_\adv \coloneqq \read{\LeakOTBit(\A,\B,K)^\A_\adv}$}
 \item {\color{blue} $\LeakShare(\A,K)^\A_\adv \coloneqq \read{\Share(\A,K)}$}\medskip
 \item {\color{blue} $\LeakOTMsg(\A,\B,K,0)^\ot_\adv \coloneqq \read{\LeakOTMsg(\A,\B,K,0)^\ot_\adv}$}
@@ -1415,8 +1412,7 @@ The inductive part of the simulator $\Sim(C,K)$ is the composition of the three 
 \item $\Sim\big(C; \, \andgate(k,l),K+1\big)$ is the composition of the protocol $\Sim(C,K)$ with the protocol
 \begin{itemize}
 \item $\OTBit(\A,\B,K) \coloneqq x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \samp{\flip}$
-\item $\Share(\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{(x_A * y_A) \oplus b_A}$
-\item $\Wire(K) \coloneqq x \leftarrow \Wire(k); \ y \leftarrow \Wire(l); \ \ret{x * y}$\medskip
+\item $\Share(\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{(x_A * y_A) \oplus b_A}$\medskip
 \item {\color{blue} $\LeakOTBit(\A,\B,K)^\A_\adv \coloneqq \read{\OTBit(\A,\B,K)}$}
 \item {\color{blue} $\LeakShare(\A,K)^\A_\adv \coloneqq \read{\Share(\A,K)}$}\medskip
 \item {\color{blue} $\LeakOTMsg(\A,\B,K,0)^\ot_\adv \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A}$}
