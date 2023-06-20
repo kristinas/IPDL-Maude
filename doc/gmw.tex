@@ -1345,7 +1345,7 @@ can now be separated out as coming from the functionality, and the remainder of 
 \item $\OTBit(\A,\B,k)$ for $0 \leq k < K$,
 \item $\Share(\A,k)$ for $0 \leq k < K$, and
 \end{itemize}\smallskip
-Plugging the simulator into the ideal functionality and substituting away the channels $\LeakIn(\A,-)^\id_\adv$, $\LeakInRcvd(\B,-)^\id_\adv$, and $\LeakOut(\A,-)^\id_\adv$ that originally served as a line of communication for the adversary yields the final version of the real protocol, as desired.
+We now compose the simulator with the ideal functionality, and hide the channels $\LeakIn(\A,-)^\id_\adv$, $\LeakInRcvd(\B,-)^\id_\adv$, and $\LeakOut(\A,-)^\id_\adv$ that serve as internal communication between the functionality and the simulator. After substituting these channels away, we get precisely the final version of the real protocol.
 
 \subsubsection{The Simulator: The Initial Phase}
 The code for the initial part of the simulator is as follows:
