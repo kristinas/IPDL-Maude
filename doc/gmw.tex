@@ -281,7 +281,7 @@ As for Alice, we include the requisite vacuous OT channels to stay consistent th
 \end{itemize}
 \item $\B\big(C; \, \andgate(k,l),K+1\big)$ is the composition of the protocol $\B(C,K)$ with the protocol
 \begin{itemize}
-\item $\OTBit(\B,\A,K) \coloneqq \read{\OTOut(\A,\B,K)}$\smallskip
+\item $\OTBit(\B,\A,K) \coloneqq \read{\OTOut(\B,\A,K)}$\smallskip
 \item $\Share(\B,K) \coloneqq b_B \leftarrow \OTBit(\B,\A,K); \ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \Share(\B,l); \ \ret{b_B \oplus (x_B * y_B)}$\smallskip
 \item $\OTChoice(\B,\A,K,0) \coloneqq \read{\Share(\B,k)}$
 \item $\OTChoice(\B,\A,K,1) \coloneqq \read{\Share(\B,l)}$
@@ -310,7 +310,7 @@ For each output wire, Bob sends his share to Alice and computes the output by su
 \subsubsection{1-Out-Of-4 Oblivious Transfer Functionality}
 For each wire $0 \leq k < K$ we have a separate idealized 1-Out-Of-4 OT functionality $\ObliviousTransfer(k)$, which we now describe. The functionality starts by selecting the correct message:
 \begin{itemize}
-\item $\OTOut(\A,\B,k) \coloneqq m_0 \leftarrow \OTMsg(\A,\B,k,0); \ m_1 \leftarrow \OTMsg(\A,\B,k,1); \ m_2 \leftarrow \OTMsg(\A,\B,k,2); \\ m_3 \leftarrow \OTMsg(\A,\B,k,3); \ c_0 \leftarrow \OTChoice(\B,\A,K,0); \ c_1 \leftarrow \OTChoice(\B,\A,K,1); \\ \ifte{c_0}{\big(\ifte{c_1}{\ret{m_3}}{\ret{m_2}}\big)}{\big(\ifte{c_1}{\ret{m_1}}{\ret{m_0}}\big)}$
+\item $\OTOut(\B,\A,k) \coloneqq m_0 \leftarrow \OTMsg(\A,\B,k,0); \ m_1 \leftarrow \OTMsg(\A,\B,k,1); \ m_2 \leftarrow \OTMsg(\A,\B,k,2); \\ m_3 \leftarrow \OTMsg(\A,\B,k,3); \ c_0 \leftarrow \OTChoice(\B,\A,K,0); \ c_1 \leftarrow \OTChoice(\B,\A,K,1); \\ \ifte{c_0}{\big(\ifte{c_1}{\ret{m_3}}{\ret{m_2}}\big)}{\big(\ifte{c_1}{\ret{m_1}}{\ret{m_0}}\big)}$
 \end{itemize}
 Since Alice is semi-honest, the functionality leaks the value of all messages received from Alice:\smallskip
 \begin{itemize}
@@ -462,7 +462,7 @@ The initial part arises by composing together the initial parts for Alice and Bo
 \item $\Real\big(C; \, \andgate(k,l),K+1\big)$ is the composition of the protocol $\Real(C,K)$ with the protocol
 \begin{itemize}
 \item $\OTBit(\A,\B,K) \coloneqq x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \samp{\flip}$
-\item $\OTBit(\B,\A,K) \coloneqq \OTOut(\A,\B,K)$\smallskip
+\item $\OTBit(\B,\A,K) \coloneqq \OTOut(\B,\A,K)$\smallskip
 \item $\Share(\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{(x_A * y_A) \oplus b_A}$
 \item $\Share(\B,K) \coloneqq b_B \leftarrow \OTBit(\B,\A,K); \ x_B \leftarrow \Share(\B,k); \ y_B \leftarrow \Share(\B,l); \ \ret{b_B \oplus (x_B * y_B)}$\smallskip
 \item $\OTMsg(\A,\B,K,0) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A}$
@@ -653,7 +653,7 @@ Summarizing, we can rewrite the inductive part of the real protocol as follows:
 \item $\OTMsg(\A,\B,K,3) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A \oplus x_A \oplus y_A}$\smallskip
 \item $\OTChoice(\B,\A,K,0) \coloneqq \read{\Share(\B,k)}$
 \item $\OTChoice(\B,\A,K,1) \coloneqq \read{\Share(\B,l)}$\smallskip
-\item $\OTOut(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \\ \Share(\B,l); \ \ret{b_A \oplus (x_A * y_B) \oplus (x_B * y_A)}$\medskip
+\item $\OTOut(\B,\A,K) \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ x_B \leftarrow \Share(\B,k); \\ y_B \leftarrow \Share(\B,l); \ \ret{b_A \oplus (x_A * y_B) \oplus (x_B * y_A)}$\medskip
 \item {\color{blue} $\LeakOTBit(\A,\B,K)^\A_\adv \coloneqq \read{\OTBit(\A,\B,K)}$}
 \item {\color{blue} $\LeakShare(\A,K)^\A_\adv \coloneqq \read{\Share(\A,K)}$}\medskip
 \item {\color{blue} $\LeakOTMsg(\A,\B,K,0)^\ot_\adv \coloneqq b_A \leftarrow \OTBit(\A,\B,K); \ x_A \leftarrow \Share(\A,k); \ y_A \leftarrow \Share(\A,l); \ \ret{b_A}$}
