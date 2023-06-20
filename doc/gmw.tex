@@ -1324,7 +1324,7 @@ into the channels $\LeakSendFinalShare(\B,-)^\A_\adv$ yields the following versi
 \item {\color{blue} $\LeakOut(\A,k)^\A_\adv \coloneqq \read{\Out(\A,k)}$ for $0 \leq k < K$}
 \end{itemize}
 
-\noindent At this point we can discard all the channels coming from Bob's side:
+\noindent At this point we can discard all the remaining channels coming from Bob's side:
 \begin{itemize}
 \item $\InputShare(\B,\A,i)$ for $0 \leq i < N$,
 \item $\InputShare(\B,\B,i)$ for $0 \leq i < M$, and
@@ -1342,12 +1342,8 @@ can now be separated out as coming from the functionality, and the remainder of 
 \begin{itemize}
 \item $\InputShare(\A,\A,i)$ for $0 \leq i < N$,
 \item $\InputShare(\A,\B,i)$ for $0 \leq i < M$,
-\item $\InputShare(\B,\A,i)$ for $0 \leq i < N$,
-\item $\InputShare(\B,\B,i)$ for $0 \leq i < M$,\smallskip
 \item $\OTBit(\A,\B,k)$ for $0 \leq k < K$,
-\item $\OTBit(\B,\A,k)$ for $0 \leq k < K$,\smallskip
 \item $\Share(\A,k)$ for $0 \leq k < K$, and
-\item $\Share(\B,k)$ for $0 \leq k < K$.
 \end{itemize}\smallskip
 Plugging the simulator into the ideal functionality and substituting away the channels $\LeakIn(\A,-)^\id_\adv$, $\LeakInRcvd(\B,-)^\id_\adv$, and $\LeakOut(\A,-)^\id_\adv$ that originally served as a line of communication for the adversary yields the final version of the real protocol, as desired.
 
