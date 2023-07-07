@@ -589,9 +589,11 @@ smod STRATS is
  *** absorb a family
  strat absorbFamily : Qid @ ProtocolConfig .
  sd absorbFamily(Q) := 
-    absorb-new-nf-family-one[C:Qid <- Q] 
+    ( absorb-new-nf-family-one[C:Qid <- Q] 
     or-else
-    absorb-new-nf-family-two[C:Qid <- Q] 
+    absorb-new-nf-family-two[C:Qid <- Q])
+    ; 
+    try (delete-empty-newNF)
  .   
  
   *** add a newfamily to a named group of protocols
@@ -691,9 +693,57 @@ smod STRATS is
                   ; try (delete-empty-newNF)
                  .                         
  
+ *** do a sym-proof
+ *** applying if-ext twice in the reaction of a normal form
+ *** on the first branch for a family
+ 
+ strat applyIfExt2 : Qid Reaction Qid Qid @ ProtocolConfig .
+ sd applyIfExt2(C, R, Q1, Q2) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyIfExt2(C, R, Q1, Q2)}
+     : 
+        CASE-DISTINCTION-one-R[aQid:Qid <- C]
+         {matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+            using
+                    CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                                    P1:Protocol <- keepOne P C]{
+                       CONG-REACT-family[C:Qid <- C] { 
+                         cong-nf{
+                         sym[R1:Reaction <- R]{
+                           if-intro-ext[q:Qid <- Q1] 
+              ; cong-branch[M2:Expression <- Q1]{
+                   if-intro-ext[q:Qid <- Q2], 
+                   if-intro-ext[q:Qid <- Q2]
+                }  
+                } *** end sym
+                         }
+                       }
+                     }
+         , 
+          idle
+         }
+             
+ .             
+ 
  ***********************************
  *** pure syntactic transformations
  ***********************************
+ 
+ var bt : BoolTerm .
+ 
+ *** turn a plain family definition to a cases one with same reaction on each branch
+ strat applyAddSameCases : Qid BoolTerm @ ProtocolConfig .
+ sd applyAddSameCases(C, bt) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyAddSameCases(C, bt)}
+     : matchrew pConf s.t. 
+         pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                             P1:Protocol <- keepOne P C]
+              {add-same-cases[bt:BoolTerm <- bt]}                
+             or-else add-same-cases[bt:BoolTerm <- bt]
+             )                              
+ .   
  
  *** get all new declarations in front
  strat moveNewToFront @ ProtocolConfig .
@@ -815,6 +865,24 @@ smod STRATS is
              or-else convert-combined                
              )
  .
+ 
+ *** do an alpha-renaming on the first branch of a family
+ strat applyBranch1Alpha : Qid QidPairList @ ProtocolConfig .
+ sd  applyBranch1Alpha(q1, QL) := 
+    match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyBranch1Alpha(q1, QL)}
+    : CASE-DISTINCTION-one-R[aQid:Qid <- q1]
+         {matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+            using
+                    CONG-COMP-RIGHT[Q:Protocol  <- removeOne P q1, 
+                                    P1:Protocol <- keepOne P q1]{
+                       CONG-FAMILY-R { alphaNFOverList(QL)}
+                     }
+         , 
+          idle
+         }
+    .     
+
   
  *** do an alpha-renaming on the otherwise branch of a family
  strat applyBranch2Alpha : Qid QidPairList @ ProtocolConfig .
@@ -935,9 +1003,14 @@ smod STRATS is
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
-             {CONG-REACT[o:ChannelName <- C]{alphaNFOverList(QL)}} 
+             {CONG-REACT[o:ChannelName <- C]{alphaNFOverList(QL)}
+              or-else
+              CONG-REACT-family[C:Qid <- C]{alphaNFOverList(QL)} 
+             } 
              or-else
              CONG-REACT[o:ChannelName <- C]{alphaNFOverList(QL)}
+             or-else
+             CONG-REACT-family[C:Qid <- C]{alphaNFOverList(QL)}             
              )
   .  
  
@@ -964,7 +1037,51 @@ smod STRATS is
                     } 
         }
        )
-    .    
+    . 
+    
+********************
+*** subst with cases
+********************
+
+*** when we diverge on the otherwise branch
+
+ var ind : Qid .
+
+ strat applyCasesSubstDivergeOwise : Qid Qid Qid Type Qid @ ProtocolConfig .
+ sd applyCasesSubstDivergeOwise(C1, C2, ind, T, x) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyCasesSubstDivergeOwise(C1, C2, ind, T, x)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]
+              {
+                cases-subst{
+                  substNF(C1[ind], C2[ind]), 
+                  cases-subst-end-otherwise{ 
+                    subst-diverge[T2:Type <- T, x3:Qid <- x]
+                  }
+                } 
+              }               
+             )                
+ .
+ 
+ *** same cases and only do the substitution on first branch
+ *** TODO: can be generalized to try to do on every branch?
+ strat applySameCasesSubstFirstBranch : Qid Qid Qid @ ProtocolConfig .
+ sd applySameCasesSubstFirstBranch(C1, C2, ind) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySameCasesSubstFirstBranch(C1, C2, ind)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]
+              {
+                same-cases-subst{
+                  substNF(C1[ind], C2[ind]), 
+                  idle
+                }
+              }               
+             )                
+ .               
  
  ******************************************
  *** helpers

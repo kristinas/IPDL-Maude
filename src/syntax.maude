@@ -1013,6 +1013,15 @@ mod REACTION-EQUALITY is
      typeOf(Sigma, Delta, Gamma (b : bool), I, R) == T . 
 )
 
+   *** what we can write is the version where M is a variable
+
+   rl [if-intro-ext] :
+     rConfig(Sigma, Delta, Gamma (q : bool), R, I, A, T) 
+     => 
+     rConfig(Sigma, Delta, Gamma (q : bool),
+             if q then (R[q / True]) else (R[q / False]), I, A, T)          
+  .           
+
  crl [ret-bind] : 
      rConfig(Sigma, Delta, Gamma, x : T1 <- return M ; R , I , A, T2) 
      => 
@@ -1361,7 +1370,6 @@ mod REACTION-EQUALITY is
                            del x QL), 
             I, A, T) 
     .
-
 
 endm
 
@@ -2563,7 +2571,37 @@ mod PROTOCOL-EQUALITY is
              insert(toBound q1, insert(toBound q2, I)), A, R2) == typeInCtx(toBound q2, A, Delta)
              /\
      elem (toBound q1) T1 Delta A 
-     .    
+     .   
+     
+  var x3 : Qid .   
+     
+  crl [subst-diverge] : 
+    pConfig(Sigma, Delta, 
+              (cn1 ::= nf(x1 : T1 <- read cn1, return x1, x1 :: emptyCNameList))
+              || 
+              (cn2 ::= nf( (x2 : T1 <- read cn1) BRL , R2, QL)),
+              I, O, A
+           )    
+    =>
+    pConfig(Sigma, Delta, 
+              (cn1 ::= nf(x1 : T1 <- read cn1, return x1, x1 :: emptyCNameList))
+              || 
+              (cn2 ::= nf(x3 : T2 <- read cn2, return x3, x3 :: emptyCNameList)),
+              I, O, A
+           ) 
+   if        
+   O == insert(toBound cn1, toBound cn2)
+   /\
+     elem (toBound cn1) T1 Delta A
+     /\
+     elem (toBound cn2) T2 Delta A
+     /\
+     typeOf(Sigma, Delta, addDeclarations BRL (x2 : T1), 
+            insert(toBound cn1, insert(toBound cn2, I)), A, R2) 
+     == 
+     typeInCtx(toBound cn2, A, Delta)   
+           [nonexec] *** because x3 is new and T2 must be specified as well!
+  .                 
    
   crl [SUBST-nf] : 
      pConfig(Sigma, Delta,
@@ -2645,6 +2683,19 @@ mod PROTOCOL-EQUALITY is
  *********************
  *** rules for families
  *********************
+ 
+  crl [CONG-REACT-family] : 
+     pConfig(Sigma, Delta, family C q (bound n) ::= R, I, C @ n, A) 
+     =>
+     pConfig(Sigma, Delta, family C q (bound n) ::= R', I, C @ n, A)
+     if
+     rConfig(Sigma, Delta, emptyTypeContext, R, insert(C @ n, I), A, typeInCtx(C @ n, A, Delta))
+     =>
+     rConfig(Sigma, Delta, emptyTypeContext, R', I', A, T) 
+     /\ I' == insert(C @ n, I)
+     /\ T == typeInCtx(C @ n, A, Delta)
+     /\ occurs (C @ n) Delta A
+     . *** TODO: C @ n shouldn't be in I!
  
  *** rename variable in cases
  op alphaCases___ : Cases Qid Qid -> Cases .
@@ -2783,6 +2834,43 @@ mod PROTOCOL-EQUALITY is
    elem (toBound cn2) T Delta A 
   /\ typeOf(Sigma, Delta, addDeclarations BRL (x : T), 
             insert(toBounds C blist , I), A, R1) == typeInCtx(toBounds C blist, A, Delta)          
+  . 
+  
+   var C2 : Qid .
+  
+    crl [subst-diverge-family] : 
+    pConfig(Sigma, Delta, 
+              (family C i (bound nt1) ::= 
+                 nf(x1 : T1 <- read (C[i]), return x1, x1 :: emptyCNameList)
+              )
+              || 
+              (family C2 i (bound nt2) ::= 
+                nf( (x2 : T1 <- read (C[i])) BRL , R2, QL
+                  )
+              ),
+              I, O, A
+           )    
+    =>
+    pConfig(Sigma, Delta, 
+              (family C i (bound nt1) ::= 
+                 nf(x1 : T1 <- read (C[i]), return x1, x1 :: emptyCNameList))
+              || 
+              (family C2 i (bound nt2) ::= 
+                 nf(x3 : T2 <- read (C2[i]), return x3, x3 :: emptyCNameList)),
+              I, O, A
+           ) 
+   if        
+   O == insert(C @ nt1, C2 @ nt2)
+   /\
+     elem (C @ nt1) T1 Delta A
+     /\
+     elem (C2 @ nt2) T2 Delta A
+     /\
+     typeOf(Sigma, Delta, addDeclarations BRL (x2 : T1), 
+            insert(C @ nt1, insert(C2 @ nt2, I)), A, R2) 
+     == 
+     typeInCtx(C2 @ nt2, A, Delta) 
+           [nonexec] *** because x3 is new and T2 must be specified as well!
   . 
   
   ***( we don't use this rule!
@@ -3172,6 +3260,326 @@ mod PROTOCOL-EQUALITY is
      var aP1 aP2 : Protocol .
      var A'' : Set{BoolTerm} .
      var aQid : Qid .
+     
+     ****************************
+     **** case substitution
+     ****************************
+     
+          crl [cases-subst-end-otherwise]:
+      pConfig(Sigma, Delta, 
+               (family C q (bound n) ::= 
+                 nf( ( x : T <- read (aQid[q]) ) BRL, 
+                     R, 
+                     QL
+                   )
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 (otherwise --> R1)
+               ),
+               I, O, A
+         )
+         => 
+         pConfig(Sigma, Delta, 
+               (family C q (bound n) ::= 
+                 (otherwise --> R2) 
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 (otherwise --> R1) 
+               ),
+               I, O, A)  
+    if 
+    pConfig(Sigma, Delta, 
+             ( aQid[q] ::= R1 ) 
+             || 
+             ( C[q] ::= nf( (x : T <- read (aQid[q]) ) BRL, R, QL)
+             ),
+             I, insert(aQid[q] @ nil, C[q] @ nil), insert(q <=T n, A)
+           )
+    =>
+    pConfig(Sigma, Delta, 
+             (aQid[q] ::= R1) || (C[q] ::= R2),
+             I, O', A'
+           )       
+    /\ A' == insert(q <=T n, A)   
+    /\ O' == insert(aQid[q] @ nil, C[q] @ nil)
+    [nonexec]
+    .
+     
+     crl [cases-subst-end-when]:
+      pConfig(Sigma, Delta, 
+               (family C q (bound n) ::= 
+                 nf( ( x : T <- read (aQid[q]) ) BRL, 
+                     R, 
+                     QL
+                   )
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 (when bt --> R1)
+               ),
+               I, O, A
+         )
+         => 
+         pConfig(Sigma, Delta, 
+               (family C q (bound n) ::= 
+                 (when bt --> R2) 
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 (when bt --> R1) 
+               ),
+               I, O, A)  
+    if 
+    pConfig(Sigma, Delta, 
+             ( aQid[q] ::= R1 ) 
+             || 
+             ( C[q] ::= nf( (x : T <- read (aQid[q]) ) BRL, R, QL)
+             ),
+             I, insert(aQid[q] @ nil, C[q] @ nil), insert(q <=T n, insert(bt, A))
+           )
+    =>
+    pConfig(Sigma, Delta, 
+             (aQid[q] ::= R1) || (C[q] ::= R2),
+             I, O', A'
+           )       
+    /\ A' == insert(q <=T n, insert(bt, A))     
+    /\ O' == insert(aQid[q] @ nil, C[q] @ nil)
+    [nonexec]
+    .
+     
+     crl [cases-subst]:
+      pConfig(Sigma, Delta, 
+               (family C q (bound n) ::= 
+                 nf( ( x : T <- read (aQid[q]) ) BRL, 
+                     R, 
+                     QL
+                   )
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 (when bt --> R1) ;; whenList
+               ),
+               I, O, A
+         )
+         => 
+         pConfig(Sigma, Delta, 
+               (family C q (bound n) ::= 
+                 (when bt --> R2) 
+                 ;;
+                 whenList'
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 (when bt --> R1) 
+                 ;; 
+                 whenList
+               ),
+               I, O, A)  
+    if 
+    pConfig(Sigma, Delta, 
+             ( aQid[q] ::= R1 ) 
+             || 
+             ( C[q] ::= nf( (x : T <- read (aQid[q]) ) BRL, R, QL)
+             ),
+             I, insert(aQid[q] @ nil, C[q] @ nil), insert(q <=T n, insert(bt, A))
+           )
+    =>
+    pConfig(Sigma, Delta, 
+             (aQid[q] ::= R1) || (C[q] ::= R2),
+             I, O', A'
+           )       
+    /\ A' == insert(q <=T n, insert(bt, A))     
+    /\ O' == insert(aQid[q] @ nil, C[q] @ nil)
+    /\
+    pConfig(Sigma, Delta, 
+              (family C q (bound n) ::= 
+                 nf( ( x : T <- read (aQid[q]) ) BRL, 
+                     R, 
+                     QL
+                   )
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 whenList
+               ),
+               I, O, insert(neg bt, A) 
+           )
+   => 
+   pConfig(Sigma, Delta, 
+              (family C q (bound n) ::= 
+                 whenList'
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 whenList
+               ),
+               I, O, A''
+           )  
+    /\
+    A'' == insert(neg bt, A)              
+    [nonexec]
+    .               
+    
+    *************************
+    *** same cases subst
+    *************************
+    
+    *** ends with otherwise
+    
+    crl [same-cases-subst-end-otherwise]:
+      pConfig(Sigma, Delta, 
+               (family C q (bound n) ::= 
+                 otherwise --> R2
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 (otherwise --> R1)
+               ),
+               I, O, A
+         )
+         => 
+         pConfig(Sigma, Delta, 
+               (family C q (bound n) ::= 
+                 (otherwise --> R3) 
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 (otherwise --> R1) 
+               ),
+               I, O, A)  
+    if 
+    pConfig(Sigma, Delta, 
+             ( aQid[q] ::= R1 ) 
+             || 
+             ( C[q] ::= R2),
+             I, insert(aQid[q] @ nil, C[q] @ nil), insert(q <=T n, A)
+           )
+    =>
+    pConfig(Sigma, Delta, 
+             (aQid[q] ::= R1) || (C[q] ::= R3),
+             I, O', A'
+           )       
+    /\ A' == insert(q <=T n, A)   
+    /\ O' == insert(aQid[q] @ nil, C[q] @ nil)
+    [nonexec]
+    .
+     
+    *** ends with when 
+     
+    crl [same-cases-subst-end-when]:
+      pConfig(Sigma, Delta, 
+               (family C q (bound n) ::= 
+                 when bt --> R2
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 (when bt --> R1)
+               ),
+               I, O, A
+         )
+         => 
+         pConfig(Sigma, Delta, 
+               (family C q (bound n) ::= 
+                 (when bt --> R3) 
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 (when bt --> R1) 
+               ),
+               I, O, A)  
+    if 
+    pConfig(Sigma, Delta, 
+             ( aQid[q] ::= R1 ) 
+             || 
+             ( C[q] ::= R2),
+             I, insert(aQid[q] @ nil, C[q] @ nil), insert(bt, insert(q <=T n, A))
+           )
+    =>
+    pConfig(Sigma, Delta, 
+             (aQid[q] ::= R1) || (C[q] ::= R3),
+             I, O', A'
+           )       
+    /\ A' == insert(bt, insert(q <=T n, A))  
+    /\ O' == insert(aQid[q] @ nil, C[q] @ nil)
+    [nonexec]
+    .
+    
+    *** recursion step
+    
+    crl [same-cases-subst]:
+      pConfig(Sigma, Delta, 
+               (family C q (bound n) ::= 
+                 (when bt --> R2)
+                 ;;
+                 whenList2
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 (when bt --> R1)
+                 ;;
+                 whenList1
+               ),
+               I, O, A
+         )
+         => 
+         pConfig(Sigma, Delta, 
+               (family C q (bound n) ::= 
+                 (when bt --> R3)
+                 ;;
+                 whenList' 
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 (when bt --> R1)
+                 ;;
+                 whenList1 
+               ),
+               I, O, A)  
+    if 
+    pConfig(Sigma, Delta, 
+             ( aQid[q] ::= R1 ) 
+             || 
+             ( C[q] ::= R2),
+             I, insert(aQid[q] @ nil, C[q] @ nil), insert(bt, insert(q <=T n, A))
+           )
+    =>
+    pConfig(Sigma, Delta, 
+             (aQid[q] ::= R1) || (C[q] ::= R3),
+             I, O', A'
+           )       
+    /\ A' == insert(bt, insert(q <=T n, A))   
+    /\ O' == insert(aQid[q] @ nil, C[q] @ nil)
+    /\
+    pConfig(Sigma, Delta, 
+              (family C q (bound n) ::= 
+                 whenList2
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 whenList1
+               ),
+               I, O, insert(neg bt, A) 
+           )
+   => 
+   pConfig(Sigma, Delta, 
+              (family C q (bound n) ::= 
+                 whenList'
+               )
+                || 
+               (family aQid q (bound n) ::= 
+                 whenList1
+               ),
+               I, O, A''
+           )  
+    /\
+    A'' == insert(neg bt, A)             
+    [nonexec]
+    .
+    
+     
+     *** case distinction
      
      crl [CASE-DISTINCTION-one] :
      pConfig (Sigma, Delta, 
@@ -3752,6 +4160,17 @@ mod PROTOCOL-EQUALITY is
            P || (family C q (bound n) ::= R1) || (family C' q (bound n) ::= R2),
            I, O, A)
  .
+ 
+ rl [add-same-cases] :
+   pConfig(Sigma, Delta, family C q (bound n) ::= R, I, O, A) 
+   =>
+   pConfig(Sigma, Delta, 
+            family C q (bound n) ::= 
+              (when bt --> R)
+              ;;
+              (otherwise --> R), I, O, A) 
+ [nonexec]
+ .  
     
          
 endm

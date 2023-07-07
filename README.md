@@ -27,6 +27,8 @@ of protocols;
 - Two-Party GMW Protocol (Sec. 8) for induction.
 
 In the [lib](https://github.com/kristinas/IPDL-Maude/tree/main/lib "lib") folder  we have the formalizations of the case studies (if an item of the list above is missing here, its implementation is ongoing):
+- `helloWorld.maude` is a simple example, explained in Sec. 2.7 of the
+[Maude technical report](https://github.com/kristinas/IPDL-Maude/blob/main/doc/tech_report_maude.pdf) ;
 - `cpaSecurity.maude` for CPA Security;
 - `pseudoRandom.maude` for CPA$-To-CPA Security;
 - `secure.maude` for Authenticated-To-Secure Channel;
