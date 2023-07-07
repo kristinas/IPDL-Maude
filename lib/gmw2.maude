@@ -192,102 +192,465 @@ mod GMW2 is
 
  op wiresIdeal : -> Protocol .
  eq wiresIdeal =
-   family 'Wire 'i (bound K) ::= 
-  (when (apply 'isAliceInput 'i) --> read ('In-A[fun 'wire0 'i]))
-  ;;
-  (when (apply 'isBobInput 'i) --> read ('In-B[fun 'wire0 'i]))
-  ;;
-  (when (apply 'isNotGate 'i) --> 
-     'x : bool <- read ('Wire[fun 'wire0 'i]); 
-     return (ap 'neg 'x) 
+   family 'Wire 'k (bound K) ::= 
+  (when (apply 'isAliceInput 'k) --> 
+    nf('inA0 : bool <- read ('In-A[fun 'wire0 'k]), return 'inA0, 'inA0 :: emptyCNameList)
   )
   ;;
-  (when (apply 'isAndGate 'i) -->
-    'x : bool <- read ('Wire[fun 'wire0 'i]);
-    'y : bool <- read ('Wire[fun 'wire1 'i]);
-    return (ap 'and pair('x, 'y)) 
+  (when (apply 'isBobInput 'k) --> 
+    nf('inB0 : bool <- read ('In-B[fun 'wire0 'k]), return 'inB0, 'inB0 :: emptyCNameList)
   )
   ;;
-  (when (apply 'isXorGate 'i) -->
-    'x : bool <- read ('Wire[fun 'wire0 'i]);
-    'y : bool <- read ('Wire[fun 'wire1 'i]);
-    return (ap 'xor pair('x, 'y)) 
+  (when (apply 'isNotGate 'k) -->
+    nf( 
+     'x : bool <- read ('Wire[fun 'wire0 'k]),
+     return (ap 'neg 'x),
+     'x :: emptyCNameList
+     )
+  )
+  ;;
+  (when (apply 'isAndGate 'k) -->
+    nf(
+    ('x : bool <- read ('Wire[fun 'wire0 'k]))
+    ('y : bool <- read ('Wire[fun 'wire1 'k])),
+    return (ap 'and pair('x, 'y)),
+    'x :: 'y :: emptyCNameList 
+    )
+  )
+  ;;
+  (when (apply 'isXorGate 'k) -->
+  nf(
+    ('x : bool <- read ('Wire[fun 'wire0 'k]))
+    ('y : bool <- read ('Wire[fun 'wire1 'k])),
+    return (ap 'xor pair('x, 'y)),
+    'x :: 'y :: emptyCNameList 
+    )
   )
  .  
  
  op ideal : -> Protocol .
  eq ideal = 
-   *** newfamily 'Wire 'i (bound N) : bool in
+   newfamily 'Wire 'k (bound K) : bool in
    ( *** start new
-   (family 'In_A_id_adv 'i (bound N) ::= read ('In-A['i])) 
+   (family 'In-A_id_adv 'k (bound N) ::= 
+     nf('inA : bool <- read ('In-A['k]), return 'inA, 'inA :: emptyCNameList)
+   ) 
    ||
-   (family 'InRcvd_B_id_adv 'i (bound M) ::= 
-      'x : bool <- read ('In-B['i]) ;
-      return ())
+   (family 'InRcvd-B_id_adv 'k (bound M) ::= 
+     nf('x : bool <- read ('In-B['k]),
+        return (),
+        'x :: emptyCNameList)
+   )
    || 
    wiresIdeal
    || 
-   (family 'Out_A 'i (bound K) ::=
-      (when (apply 'isOutputWire 'i) --> read ('Wire['i]))
+   (family 'Out-A 'k (bound K) ::=
+      (when (apply 'isOutputWire 'k) --> 
+          nf( 'wi : bool <- read ('Wire['k]), return 'wi, 'wi :: emptyCNameList)
+      )
       ;;
-      (otherwise --> read ('Out_A['i]))  
+      (otherwise --> nf('oai : bool <- read ('Out-A['k]), return 'oai, 'oai :: emptyCNameList)
+      )  
     ) 
     || 
-   (family 'Out_B 'i (bound K) ::=
-      (when (apply 'isOutputWire 'i) --> read ('Wire['i]))
+   (family 'Out-B 'k (bound K) ::=
+      (when (apply 'isOutputWire 'k) --> 
+         nf( 'wi : bool <- read ('Wire['k]), return 'wi, 'wi :: emptyCNameList)
+      )
       ;;
-      (otherwise --> read ('Out_B['i]))  
+      (otherwise --> nf('obi : bool <- read ('Out-B['k]), return 'obi, 'obi :: emptyCNameList)
+      )  
     )
     ||
-    (family 'Out_A_id_adv 'i (bound K) ::= read ('Out_A['i]))     
+    (family 'Out-A_id_adv 'k (bound K) ::= 
+        nf('oai : bool <- read ('Out-A['k]), return 'oai, 'oai :: emptyCNameList)
+    )     
    ) *** end new
  . 
 
+ *** sim
+ 
+ op sim : -> Protocol .
+ eq sim = 
+     newfamily 'InputShare-A-A 'k (bound N) : bool in
+     newfamily 'InputShare-A-B 'k (bound M) : bool in
+     newfamily 'OTBit-A-B 'k (bound K) : bool in
+     newfamily 'Share-A 'k (bound K) : bool in
+     newfamily 'Share-B 'k (bound K) : bool in     
+     (simInitial || simInductive || simFinal)
+.     
+
+op simInitial : -> Protocol .
+eq simInitial = 
+ (
+ family 'In-A_A_adv 'k (bound N) ::=
+   nf('inA : bool <- read ('In-A_id_adv['k]) , return 'inA, 'inA :: emptyCNameList )
+ )
+ ||
+ (
+ family 'InRcvd-B_B_adv 'k (bound M) ::=
+   nf('inB : unit <- read ('InRcvd-B_id_adv['k]) , return 'inB, 'inB :: emptyCNameList )
+ )
+ ||
+ (
+ family 'InputShare-A-A 'k (bound N) ::=
+   nf('x : bool <- read ('In-A_id_adv['k]),
+      samp ('flip < () >) ,
+      'x :: emptyCNameList
+     )
+ )
+ ||
+ (
+ family 'InputShare-A-B 'k (bound M) ::=
+   nf('x : unit <- read ('InRcvd-B_id_adv['k]),
+      samp ('flip < () >) ,
+      'x :: emptyCNameList
+     )
+ )
+ ||
+ (
+ family 'InputShare-A-A_A_adv 'k (bound N) ::=
+   nf('inA : bool <- read ('InputShare-A-A['k]),
+      return 'inA,
+      'inA :: emptyCNameList
+     )
+ )
+ ||
+ (
+ family 'InputShare-A-B_A_adv 'k (bound M) ::=
+   nf('inB : bool <- read ('InputShare-A-B['k]),
+      return 'inB,
+      'inB :: emptyCNameList
+     )
+ )
+ ||
+ (
+ family 'SendInputShare-B-A_A_adv 'k (bound N) ::=
+   nf(('xa : bool <- read ('InputShare-A-A['k]))
+      ('x : bool <- read ('In-A_id_adv['k])),
+      return (ap 'xor pair('xa, 'x)),
+      'xa :: 'x :: emptyCNameList
+     )
+ )
+ ||
+ (
+ family 'SendInputShare-A-B_A_adv 'k (bound M) ::=
+   nf('x : bool <- read ('InputShare-A-B['k]),
+      return 'x,
+      'x :: emptyCNameList
+     )
+ )
+.
+
+
+op simFinal : -> Protocol .
+eq simFinal = 
+  (family 'SendFinalShare-A_A_adv 'k (bound K) ::=
+    (when (apply 'isOutputWire 'k) --> 
+      nf('sa : bool <- read ('Share-A['k]), return 'sa, 'sa :: emptyCNameList)
+    )
+    ;;
+    (otherwise --> 
+      nf('sa : bool <- read ('SendFinalShare-A_A_adv['k]), return 'sa, 'sa :: emptyCNameList)
+    )
+  )
+  ||
+  (family 'SendFinalShare-B_A_adv 'k (bound K) ::=
+    (when (apply 'isOutputWire 'k) --> 
+      nf(('xa : bool <- read ('Share-A['k]))
+         ('x : bool <- read ('Out-A_id_adv['k])), 
+         return (ap 'xor pair('xa, 'x)), 
+         'xa :: 'x :: emptyCNameList)
+    )
+    ;;
+    (otherwise --> 
+      nf('sa : bool <- read ('SendFinalShare-B_A_adv['k]), return 'sa, 'sa :: emptyCNameList)
+    )
+  )
+  ||
+   ( family 'Out-A_A_adv 'k (bound K) ::=
+   nf('outA : bool <- read ('Out-A_id_adv['k]),
+      return 'outA,
+      'outA :: emptyCNameList
+     )
+ )
+
+.
+
+op simInductive : -> Protocol .
+eq simInductive = 
+  (family 'OTBit-A-B 'k (bound K) ::=
+    (when (apply 'isAndGate 'k)  --> 
+          nf(
+           ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+           ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+           samp ('flip < () >),
+           'xa :: 'ya :: emptyCNameList
+           )
+    )
+    ;;
+    (otherwise -->  
+      nf( 'otb : bool <- read ('OTBit-A-B['k]), return 'otb, 'otb :: emptyCNameList )
+    )
+  )
+  ||
+  (family 'Share-A 'k (bound K) ::=
+        (when (apply 'isAliceInput 'k) --> 
+          nf('is : bool <- read ('InputShare-A-A[fun 'wire0 'k]),
+             return 'is,
+             'is :: emptyCNameList)
+        )
+        ;;
+        (when (apply 'isBobInput 'k) --> 
+          nf(
+           'is : bool <- read ('InputShare-A-B[fun 'wire0 'k]),
+           return 'is,
+           'is :: emptyCNameList
+          )
+        )
+        ;;
+        (when (apply 'isNotGate 'k) --> 
+          nf('sa : bool <- read ('Share-A[fun 'wire0 'k]),
+             return 'sa,
+             'sa :: emptyCNameList
+            )
+        )
+        ;;
+        (when (apply 'isXorGate 'k) --> 
+          nf(
+           ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+           ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+           return (ap 'xor pair('xa, 'ya)),
+           'xa :: 'ya :: emptyCNameList
+          )
+        )
+        ;;
+        (when (apply 'isAndGate 'k) -->
+          nf( 
+          ('ba : bool <- read ('OTBit-A-B['k]))
+          ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+          ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+          return (ap 'xor pair(ap 'and pair('xa, 'ya) , 'ba)),
+          'ba :: 'xa :: 'ya :: emptyCNameList
+          )
+        )
+  )
+  ||
+  (family 'OTBit-A-B_A_adv 'k (bound K) ::=
+        (when (apply 'isAndGate 'k) --> 
+          nf('otb : bool <- read ('OTBit-A-B['k]), return 'otb, 'otb :: emptyCNameList)
+        )
+        ;;
+        (otherwise --> 
+          nf('otb : bool <- read ('OTBit-A-B_A_adv['k]), return 'otb, 'otb :: emptyCNameList)
+        )
+      )
+  ||
+      (family 'Share-A_A_adv 'k (bound K) ::= 
+        nf('sa : bool <- read ('Share-A['k]), return 'sa, 'sa :: emptyCNameList)
+      ) 
+  ||
+      (family 'OTMsg-A-B-0_ot_adv 'k (bound K) ::=
+        (when (apply 'isAndGate 'k) --> 
+          nf(
+           ('ba : bool <- read ('OTBit-A-B['k]))
+           ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+           ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+           return 'ba,
+           'ba :: 'xa :: 'ya :: emptyCNameList
+          )
+        )
+        ;;
+        (otherwise --> 
+          nf('otm : bool <- read ('OTMsg-A-B-0_ot_adv['k]),
+             return 'otm,
+             'otm :: emptyCNameList
+            )
+        )    
+      )
+      ||
+      (family 'OTMsg-A-B-1_ot_adv 'k (bound K) ::=
+        (when (apply 'isAndGate 'k) --> 
+          nf(
+          ('ba : bool <- read ('OTBit-A-B['k]))
+          ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+          ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+          return (ap 'xor pair('ba, 'xa)),
+          'ba :: 'xa :: 'ya :: emptyCNameList
+          )
+        )
+        ;;
+        (otherwise --> 
+          nf('otm : bool <- read ('OTMsg-A-B-1_ot_adv['k]),
+             return 'otm,
+             'otm :: emptyCNameList
+            )
+        )
+      )   
+      ||
+      (family 'OTMsg-A-B-2_ot_adv 'k (bound K) ::=
+        (when (apply 'isAndGate 'k) --> 
+           nf(
+          ('ba : bool <- read ('OTBit-A-B['k]))
+          ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+          ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+          return (ap 'xor pair('ba, 'ya)),
+          'ba :: 'xa :: 'ya :: emptyCNameList
+          )
+        )
+        ;;
+        (otherwise --> nf('otm : bool <- read ('OTMsg-A-B-2_ot_adv['k]),
+             return 'otm,
+             'otm :: emptyCNameList
+            )
+        )
+      )
+      ||
+      (family 'OTMsg-A-B-3_ot_adv 'k (bound K) ::=
+        (when (apply 'isAndGate 'k) --> 
+          nf(
+           ('ba : bool <- read ('OTBit-A-B['k]))
+           ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+           ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+          return (ap 'xor pair('ba, ap 'xor pair('xa, 'ya))),
+          'ba :: 'xa :: 'ya :: emptyCNameList
+          )
+        )
+        ;;
+        (otherwise --> nf('otm : bool <- read ('OTMsg-A-B-3_ot_adv['k]),
+             return 'otm,
+             'otm :: emptyCNameList
+            )
+        )
+      )  
+      ||
+     (family 'OTChoiceRcvd-B-A-0_ot_adv 'k (bound K) ::=
+       (when (apply 'isAndGate 'k) --> 
+       nf(
+       'c0 : bool <- read ('Share-A[fun 'wire0 'k]),
+       return (),
+       'c0 :: emptyCNameList
+       )
+       )
+       ;;
+       (otherwise --> 
+         nf('otc : unit <- read ('OTChoiceRcvd-B-A-0_ot_adv['k]),
+            return 'otc,
+            'otc :: emptyCNameList
+           )
+       )
+     )
+     ||
+     (family 'OTChoiceRcvd-B-A-1_ot_adv 'k (bound K) ::=
+        (when (apply 'isAndGate 'k) --> 
+        nf(
+       'c1 : bool <- read ('Share-A[fun 'wire1 'k]),
+       return (),
+       'c1 :: emptyCNameList
+       )
+       )
+       ;;
+       (otherwise --> nf('otc : unit <- read ('OTChoiceRcvd-B-A-1_ot_adv['k]),
+            return 'otc,
+            'otc :: emptyCNameList
+           )
+       )
+       
+     )  
+         
+.
+
+*** idealPlusSim is just composition
+
+op idealPlusSim : -> Protocol .
+eq idealPlusSim = 
+ newfamily 'In-A_id_adv 'k (bound N) : bool in
+ newfamily 'InRcvd-B_id_adv 'k (bound M) : unit in
+ newfamily 'Out-A_id_adv 'k (bound K) : bool in
+ (ideal || sim) 
+.
+ 
 *** here we start spelling out real 
  
  *** everything from aliceInitial is typed bool
  op aliceInitial  : -> Protocol .
  eq aliceInitial = 
-    (family 'In-A_A_adv 'i (bound N) ::= read ('In-A['i]))
-    ||
-    (family 'InputShare-A-A 'i (bound N) ::= 
-       'x : bool <- read ('In-A['i]) ; 
-       samp ('flip < () >) 
+    (family 'In-A_A_adv 'k (bound N) ::= 
+       nf('inA : bool <- read ('In-A['k]), return 'inA, 'inA :: emptyCNameList)
     )
     ||
-    (family 'InputShare-A-B 'i (bound M) ::= read ('SendInputShare-A-B['i]))
-    ||
-    (family 'InputShare-A-A_A_adv 'i (bound N) ::= read ('InputShare-A-A['i]))
-    ||
-    (family 'InputShare-A-B_A_adv 'i (bound M) ::= read ('InputShare-A-B['i]))
-    ||
-    (family 'SendInputShare-B-A 'i (bound N) ::= 
-       'x : bool <- read ('In-A['i]) ; 
-       'xa : bool <- read ('InputShare-A-A['i]) ;
-       return (ap 'xor pair('x, 'xa)) 
+    (family 'InputShare-A-A 'k (bound N) ::= 
+       nf(
+       'x : bool <- read ('In-A['k]),
+       samp ('flip < () >),
+       'x :: emptyCNameList) 
     )
     ||
-    (family 'SendInputShare-B-A_A_adv 'i (bound N) ::= read ('SendInputShare-B-A['i]) )
+    (family 'InputShare-A-B 'k (bound M) ::= 
+      nf('sis : bool <- read ('SendInputShare-A-B['k]), 
+         return 'sis, 
+         'sis :: emptyCNameList)
+    )
     ||
-    (family 'SendInputShare-A-B_A_adv 'i (bound M) ::= read ('SendInputShare-A-B['i]) )
+    (family 'InputShare-A-A_A_adv 'k (bound N) ::= 
+      nf(
+       'is : bool <- read ('InputShare-A-A['k]),
+       return 'is,
+       'is :: emptyCNameList) 
+    )
+    ||
+    (family 'InputShare-A-B_A_adv 'k (bound M) ::=
+           nf(
+       'is : bool <- read ('InputShare-A-B['k]),
+       return 'is,
+       'is :: emptyCNameList) 
+    )
+    ||
+    (family 'SendInputShare-B-A 'k (bound N) ::= 
+       nf(
+       ('x : bool <- read ('In-A['k]))
+       'xa : bool <- read ('InputShare-A-A['k]),
+       return (ap 'xor pair('x, 'xa)),
+       'x :: 'xa :: emptyCNameList)
+    )
+    ||
+    (family 'SendInputShare-B-A_A_adv 'k (bound N) ::= 
+       nf('sis : bool <- read ('SendInputShare-B-A['k]), 
+         return 'sis, 
+         'sis :: emptyCNameList)
+    )
+    ||
+    (family 'SendInputShare-A-B_A_adv 'k (bound M) ::= 
+         nf('sis : bool <- read ('SendInputShare-A-B['k]), 
+         return 'sis, 
+         'sis :: emptyCNameList)
+    )
  .  
  
  *** InRcvd-B_B_adv is unit! the rest is bool
  op bobInitial : -> Protocol .
  eq bobInitial =
-    (family 'InRcvd-B_B_adv 'i (bound M) ::= 
-       'x : bool <- read ('In-B['i]) ; return () )
-    ||
-    (family 'InputShare-B-A 'i (bound N) ::= read ('SendInputShare-B-A['i]) )
-    ||
-    (family 'InputShare-B-B 'i (bound M) ::= 
-      'x : bool <- read ('In-B['i]) ; 
-      'xa : bool <- read ('SendInputShare-A-B['i]) ;
-      return (ap 'xor pair('x, 'xa)) 
+    (family 'InRcvd-B_B_adv 'k (bound M) ::= 
+       nf('x : bool <- read ('In-B['k]) , return (), 'x :: emptyCNameList)
     )
     ||
-    (family 'SendInputShare-A-B 'i (bound M) ::= 
-       'x : bool <- read ('In-B['i]) ; samp ('flip < () >)
+    (family 'InputShare-B-A 'k (bound N) ::=
+       nf('sis : bool <- read ('SendInputShare-B-A['k]), 
+         return 'sis, 
+         'sis :: emptyCNameList)
+    )
+    ||
+    (family 'InputShare-B-B 'k (bound M) ::= 
+      nf(
+       ('x : bool <- read ('In-B['k]) )
+       ('xa : bool <- read ('SendInputShare-A-B['k])),
+       return (ap 'xor pair('x, 'xa)),
+       'x :: 'xa :: emptyCNameList 
+      )
+    )
+    ||
+    (family 'SendInputShare-A-B 'k (bound M) ::= 
+       nf('x : bool <- read ('In-B['k]),  samp ('flip < () >), 'x :: emptyCNameList)
     )
  .
  
@@ -295,97 +658,138 @@ mod GMW2 is
  
  op aliceInductive : -> Protocol .
  eq aliceInductive =
-      (family 'OTBit-A-B 'i (bound K) ::= 
-         (when (apply 'isAndGate 'i) --> 
-           'xa : bool <- read ('Share-A[fun 'wire0 'i]) ;
-           'xb : bool <- read ('Share-A[fun 'wire1 'i]) ;
-           samp ('flip < () >)
+      (family 'OTBit-A-B 'k (bound K) ::= 
+         (when (apply 'isAndGate 'k) -->
+           nf( 
+            ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+            ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+           samp ('flip < () >),
+           'xa :: 'ya :: emptyCNameList
+           )
          )
          ;;
-         (otherwise --> read ('OTBit-A-B['i]))     
+         (otherwise --> 
+           nf('otb : bool <- read ('OTBit-A-B['k]), return 'otb, 'otb :: emptyCNameList)
+         )     
       )
       ||
-      (family 'OTBit-A-B_A_adv 'i (bound K) ::=
-        (when (apply 'isAndGate 'i) --> 
-          read ('OTBit-A-B['i])
+      (family 'OTBit-A-B_A_adv 'k (bound K) ::=
+        (when (apply 'isAndGate 'k) --> 
+          nf('otb : bool <- read ('OTBit-A-B['k]), return 'otb, 'otb :: emptyCNameList)
         )
         ;;
-        (otherwise --> read ('OTBit-A-B_A_adv['i]))
-      )
-      ||
-      (family 'Share-A 'i (bound K) ::=
-        (when (apply 'isAliceInput 'i) --> 
-          read ('InputShare-A-A[fun 'wire0 'i])
-        )
-        ;;
-        (when (apply 'isBobInput 'i) --> 
-          read ('InputShare-A-B[fun 'wire0 'i])
-        )
-        ;;
-        (when (apply 'isNotGate 'i) --> 
-          read ('Share-A[fun 'wire0 'i])
-        )
-        ;;
-        (when (apply 'isXorGate 'i) --> 
-          'xa : bool <- read ('Share-A[fun 'wire0 'i]) ;
-          'ya : bool <- read ('Share-A[fun 'wire1 'i]) ;
-          return (ap 'xor pair('xa, 'ya)) 
-        )
-        ;;
-        (when (apply 'isAndGate 'i) --> 
-          'ba : bool <- read ('OTBit-A-B['i]) ;
-          'xa : bool <- read ('Share-A[fun 'wire0 'i]) ;
-          'ya : bool <- read ('Share-A[fun 'wire1 'i]) ;
-          return (ap 'xor pair(ap 'and pair('xa, 'ya) , 'ba))
+        (otherwise --> 
+          nf('otb : bool <- read ('OTBit-A-B_A_adv['k]), return 'otb, 'otb :: emptyCNameList)
         )
       )
       ||
-      (family 'Share-A_A_adv 'i (bound K) ::= 
-        read ('Share-A['i])
-      )
-      ||
-      (family 'OTMsg-A-B-0 'i (bound K) ::=
-        (when (apply 'isAndGate 'i) --> 
-          'ba : bool <- read ('OTBit-A-B['i]) ;
-          'xa : bool <- read ('Share-A[fun 'wire0 'i]) ;
-          'xb : bool <- read ('Share-A[fun 'wire1 'i]) ;
-          return 'ba
+      (family 'Share-A 'k (bound K) ::=
+        (when (apply 'isAliceInput 'k) --> 
+          nf('is : bool <- read ('InputShare-A-A[fun 'wire0 'k]), 
+             return 'is, 'is :: emptyCNameList)
         )
         ;;
-        (otherwise --> read ('OTMsg-A-B-0['i]))
-      )
-      ||
-      (family 'OTMsg-A-B-1 'i (bound K) ::=
-        (when (apply 'isAndGate 'i) --> 
-          'ba : bool <- read ('OTBit-A-B['i]) ;
-          'xa : bool <- read ('Share-A[fun 'wire0 'i]) ;
-          'xb : bool <- read ('Share-A[fun 'wire1 'i]) ;
-          return (ap 'xor pair('ba, 'xa))
+        (when (apply 'isBobInput 'k) --> 
+         nf('is : bool <- read ('InputShare-A-B[fun 'wire0 'k]), 
+             return 'is, 'is :: emptyCNameList)
         )
         ;;
-        (otherwise --> read ('OTMsg-A-B-1['i]))
+        (when (apply 'isNotGate 'k) --> 
+          nf('sa : bool <- read ('Share-A[fun 'wire0 'k]), 
+             return 'sa, 'sa :: emptyCNameList)
+        )
+        ;;
+        (when (apply 'isXorGate 'k) --> 
+          nf(
+          ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+          ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+          return (ap 'xor pair('xa, 'ya)),
+          'xa :: 'ya :: emptyCNameList
+          )
+        )
+        ;;
+        (when (apply 'isAndGate 'k) --> 
+          nf(
+           ('ba : bool <- read ('OTBit-A-B['k]))
+           ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+           ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+          return (ap 'xor pair(ap 'and pair('xa, 'ya) , 'ba)),
+          'ba :: 'xa :: 'ya :: emptyCNameList
+          )
+        )
+      )
+      ||
+      (family 'Share-A_A_adv 'k (bound K) ::= 
+        nf('sa : bool <- read ('Share-A['k]), 
+             return 'sa, 'sa :: emptyCNameList)
+      )
+      ||
+      (family 'OTMsg-A-B-0 'k (bound K) ::=
+        (when (apply 'isAndGate 'k) --> 
+          nf(
+           ('ba : bool <- read ('OTBit-A-B['k]))
+           ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+           ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+          return 'ba,
+          'ba :: 'xa :: 'ya :: emptyCNameList
+          )
+        )
+        ;;
+        (otherwise --> 
+          nf('otm : bool <- read ('OTMsg-A-B-0['k]), 
+             return 'otm, 'otm :: emptyCNameList)
+        )
+      )
+      ||
+      (family 'OTMsg-A-B-1 'k (bound K) ::=
+        (when (apply 'isAndGate 'k) --> 
+          nf(
+           ('ba : bool <- read ('OTBit-A-B['k]))
+           ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+           ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+          return (ap 'xor pair('ba, 'xa)),
+          'ba :: 'xa :: 'ya :: emptyCNameList
+          )
+        )
+        ;;
+        (otherwise -->
+         nf('otm : bool <- read ('OTMsg-A-B-1['k]), 
+             return 'otm, 'otm :: emptyCNameList) 
+        )
       )   
       ||
-      (family 'OTMsg-A-B-2 'i (bound K) ::=
-        (when (apply 'isAndGate 'i) --> 
-          'ba : bool <- read ('OTBit-A-B['i]) ;
-          'xa : bool <- read ('Share-A[fun 'wire0 'i]) ;
-          'ya : bool <- read ('Share-A[fun 'wire1 'i]) ;
-          return (ap 'xor pair('ba, 'ya))
+      (family 'OTMsg-A-B-2 'k (bound K) ::=
+        (when (apply 'isAndGate 'k) --> 
+          nf(
+           ('ba : bool <- read ('OTBit-A-B['k]))
+           ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+           ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+          return (ap 'xor pair('ba, 'ya)),
+          'ba :: 'xa :: 'ya :: emptyCNameList
+          )
         )
         ;;
-        (otherwise --> read ('OTMsg-A-B-2['i]))
+        (otherwise -->
+         nf('otm : bool <- read ('OTMsg-A-B-2['k]), 
+             return 'otm, 'otm :: emptyCNameList)
+        )
       )
       ||
-      (family 'OTMsg-A-B-3 'i (bound K) ::=
-        (when (apply 'isAndGate 'i) --> 
-          'ba : bool <- read ('OTBit-A-B['i]) ;
-          'xa : bool <- read ('Share-A[fun 'wire0 'i]) ;
-          'ya : bool <- read ('Share-A[fun 'wire1 'i]) ;
-          return (ap 'xor pair('ba, ap 'xor pair('xa, 'ya)))
+      (family 'OTMsg-A-B-3 'k (bound K) ::=
+        (when (apply 'isAndGate 'k) -->
+          nf( 
+          ('ba : bool <- read ('OTBit-A-B['k]))
+          ('xa : bool <- read ('Share-A[fun 'wire0 'k]))
+          ('ya : bool <- read ('Share-A[fun 'wire1 'k])),
+          return (ap 'xor pair('ba, ap 'xor pair('xa, 'ya))),
+          'ba :: 'xa :: 'ya :: emptyCNameList
+          )
         )
         ;;
-        (otherwise --> read ('OTMsg-A-B-3['i]))
+        (otherwise --> 
+          nf('otm : bool <- read ('OTMsg-A-B-3['k]), 
+             return 'otm, 'otm :: emptyCNameList)
+        )
       )
  .
  
@@ -393,55 +797,70 @@ mod GMW2 is
  
  op bobInductive : -> Protocol .
  eq bobInductive = 
-  (family 'OTBit-B-A 'i (bound K) ::= 
-    (when (apply 'isAndGate 'i) --> 
-      read ('OTOut-A-B['i])
+  (family 'OTBit-B-A 'k (bound K) ::= 
+    (when (apply 'isAndGate 'k) --> 
+      nf('oto : bool <- read ('OTOut-B-A['k]), return 'oto, 'oto :: emptyCNameList)
     )
     ;;
-    (otherwise --> read ('OTBit-B-A['i]))
+    (otherwise --> 
+      nf('otb : bool <- read ('OTBit-B-A['k]), return 'otb, 'otb :: emptyCNameList)
+    )
   )
   ||
-  (family 'OTChoice-B-A-0 'i (bound K) ::= 
-    (when (apply 'isAndGate 'i) --> 
-      read ('Share-B[fun 'wire0 'i])
+  (family 'OTChoice-B-A-0 'k (bound K) ::= 
+    (when (apply 'isAndGate 'k) --> 
+      nf('sb : bool <- read ('Share-B[fun 'wire0 'k]), return 'sb, 'sb :: emptyCNameList)
     )
     ;;
-    (otherwise --> read ('OTChoice-B-A-0['i]))
+    (otherwise --> 
+      nf('otc : bool <- read ('OTChoice-B-A-0['k]), return 'otc, 'otc :: emptyCNameList)
+    )
   )
   ||
-  (family 'OTChoice-B-A-1 'i (bound K) ::=
-    (when (apply 'isAndGate 'i) --> 
-      read ('Share-B[fun 'wire1 'i])
+  (family 'OTChoice-B-A-1 'k (bound K) ::=
+    (when (apply 'isAndGate 'k) --> 
+      nf('sb : bool <- read ('Share-B[fun 'wire1 'k]), return 'sb, 'sb :: emptyCNameList)
     )
     ;;
-    (otherwise --> read ('OTChoice-B-A-1['i]))
+    (otherwise -->
+      nf('otc : bool <- read ('OTChoice-B-A-1['k]), return 'otc, 'otc :: emptyCNameList)
+    )
   )
   ||
-  (family 'Share-B 'i (bound K) ::= 
-    (when (apply 'isAliceInput 'i) --> 
-          read ('InputShare-B-A[fun 'wire0 'i])
+  (family 'Share-B 'k (bound K) ::= 
+    (when (apply 'isAliceInput 'k) --> 
+          nf('is : bool <- read ('InputShare-B-A[fun 'wire0 'k]), 
+             return 'is, 'is :: emptyCNameList)
         )
         ;;
-        (when (apply 'isBobInput 'i) --> 
-          read ('InputShare-B-B[fun 'wire0 'i])
+        (when (apply 'isBobInput 'k) --> 
+          nf('is : bool <- read ('InputShare-B-B[fun 'wire0 'k]), 
+             return 'is, 'is :: emptyCNameList)
         )
         ;;
-        (when (apply 'isNotGate 'i) --> 
-          'xb : bool <- read ('Share-B[fun 'wire0 'i]) ;
-          return (ap 'neg 'xb)
+        (when (apply 'isNotGate 'k) --> 
+          nf('xb : bool <- read ('Share-B[fun 'wire0 'k]),
+             return (ap 'neg 'xb),
+             'xb :: emptyCNameList)
         )
         ;;
-        (when (apply 'isXorGate 'i) --> 
-          'xb : bool <- read ('Share-B[fun 'wire0 'i]) ;
-          'yb : bool <- read ('Share-B[fun 'wire1 'i]) ;
-          return (ap 'xor pair('xb, 'yb)) 
+        (when (apply 'isXorGate 'k) --> 
+          nf(
+          ('xb : bool <- read ('Share-B[fun 'wire0 'k])) 
+          ('yb : bool <- read ('Share-B[fun 'wire1 'k])) ,
+          return (ap 'xor pair('xb, 'yb)),
+          'xb :: 'yb :: emptyCNameList 
+          )
         )
         ;;
-        (when (apply 'isAndGate 'i) --> 
-          'bb : bool <- read ('OTBit-B-A['i]) ;
-          'xb : bool <- read ('Share-B[fun 'wire0 'i]) ;
-          'yb : bool <- read ('Share-B[fun 'wire1 'i]) ;
-          return (ap 'xor pair(ap 'and pair('xb, 'xb) , 'bb))
+        (when (apply 'isAndGate 'k) --> 
+          nf(
+          ('bb : bool <- read ('OTBit-B-A['k]))
+          ('xb : bool <- read ('Share-B[fun 'wire0 'k]))
+          ('yb : bool <- read ('Share-B[fun 'wire1 'k])) ,
+          return (ap 'xor pair('bb, ap 'and pair('xb, 'yb))),
+          'bb :: 'xb :: 'yb :: emptyCNameList
+          )
         )
   )
  .
@@ -452,27 +871,46 @@ mod GMW2 is
  op aliceFinal : -> Protocol .
  eq aliceFinal =
     (family 'SendFinalShare-A 'k (bound K) ::=
-       (when (apply 'isOutputWire 'k) --> read ('Share-A['k])) 
+       (when (apply 'isOutputWire 'k) --> 
+         nf('sa : bool <- read ('Share-A['k]), 
+         return 'sa,
+         'sa :: emptyCNameList
+         )
+       ) 
        ;; 
-       (otherwise --> read ('SendFinalShare-A['k])) 
+       (otherwise --> 
+         nf('sfs : bool <- read ('SendFinalShare-A['k]), 
+         return 'sfs,
+         'sfs :: emptyCNameList
+         )
+       ) 
     )
     ||
     (family 'SendFinalShare-A_A_adv 'k (bound K) ::=
-      read ('SendFinalShare-A['k]) 
+      nf('sfs : bool <- read ('SendFinalShare-A['k]), 
+         return 'sfs,
+         'sfs :: emptyCNameList
+         )
     )
     ||
     (family 'SendFinalShare-B_A_adv 'k (bound K) ::=
-      read ('SendFinalShare-B['k]) 
+      nf('sfs : bool <- read ('SendFinalShare-B['k]), 
+         return 'sfs,
+         'sfs :: emptyCNameList
+         )
     )
     ||
     (family 'Out-A 'k (bound K) ::=
-      'xa : bool <- read ('SendFinalShare-A['k]) ;
-      'xb : bool <- read ('SendFinalShare-B['k]) ;
-      return (ap 'xor pair('xa, 'xb)) 
+      nf(
+      ('xa : bool <- read ('SendFinalShare-A['k]))
+      ('xb : bool <- read ('SendFinalShare-B['k])),
+      return (ap 'xor pair('xa, 'xb)),
+      'xa :: 'xb :: emptyCNameList
+      )
     )
     ||
     (family 'Out-A_A_adv 'k (bound K) ::= 
-      read ('Out-A['k])  
+      nf('outA : bool <- read ('Out-A['k]), return 'outA, 'outA :: emptyCNameList )
     )  
  .
  
@@ -481,72 +919,85 @@ mod GMW2 is
  op bobFinal : -> Protocol .
  eq bobFinal = 
    (family 'SendFinalShare-B 'k (bound K) ::=
-       (when (apply 'isOutputWire 'k) --> read ('Share-B['k])) 
+       (when (apply 'isOutputWire 'k) -->
+          nf('sb : bool <- read ('Share-B['k]), return 'sb, 'sb :: emptyCNameList)
+       ) 
        ;; 
-       (otherwise --> read ('SendFinalShare-B['k])) 
+       (otherwise --> 
+         nf('s : bool <- read ('SendFinalShare-B['k]), return 's, 's :: emptyCNameList)
+       ) 
     )
     ||
     (family 'Out-B 'k (bound K) ::=
-      'xa : bool <- read ('SendFinalShare-A['k]) ;
-      'xb : bool <- read ('SendFinalShare-B['k]) ;
-      return (ap 'xor pair('xa, 'xb)) 
+      nf(
+       ('xa : bool <- read ('SendFinalShare-A['k]))
+       ('xb : bool <- read ('SendFinalShare-B['k])),
+       return (ap 'xor pair('xa, 'xb)),
+       'xa :: 'xb :: emptyCNameList 
+      )
     )
  .
  
  *** 'OTChoice-B-A-0_ot_adv and 'OTChoice-B-A-1_ot_adv are unit!
  op 1OutOf4 : -> Protocol .
  eq 1OutOf4 = 
-  family '1OutOf4OT 'k (bound K) ::= 
-   (
-    (family 'OTOut-A-B 'k (bound K) ::= 
-      'm0 : bool <- read ( 'OTMsg-A-B-0['k]) ;
-      'm1 : bool <- read ( 'OTMsg-A-B-1['k]) ;
-      'm2 : bool <- read ( 'OTMsg-A-B-2['k]) ;
-      'm3 : bool <- read ( 'OTMsg-A-B-3['k]) ;
-      'c0 : bool <- read ( 'OTChoice-B-A-0['k]) ;
-      'c1 : bool <- read ( 'OTChoice-B-A-1['k]) ;
+ *** family '1OutOf4OT 'k (bound K) ::= 
+    (family 'OTOut-B-A 'k (bound K) ::= 
+      nf(
+       ('m0 : bool <- read ( 'OTMsg-A-B-0['k]))
+       ('m1 : bool <- read ( 'OTMsg-A-B-1['k]))
+       ('m2 : bool <- read ( 'OTMsg-A-B-2['k]))
+       ('m3 : bool <- read ( 'OTMsg-A-B-3['k]))
+       ('c0 : bool <- read ( 'OTChoice-B-A-0['k]))
+       ('c1 : bool <- read ( 'OTChoice-B-A-1['k])),
       if 'c0 then
         (if 'c1 then return 'm3 else return 'm2)
       else
-        (if 'c1 then return 'm1 else return 'm0)  
+        (if 'c1 then return 'm1 else return 'm0),
+       'm0 :: 'm1 :: 'm2 :: 'm3 :: 'c0 :: 'c1 :: emptyCNameList    
+      )
      )
      ||
      (family 'OTMsg-A-B-0_ot_adv 'k (bound K) ::= 
-       read ('OTMsg-A-B-0['k])
+       nf ('otm : bool <- read ('OTMsg-A-B-0['k]), return 'otm, 'otm :: emptyCNameList)
      )   
      ||
      (family 'OTMsg-A-B-1_ot_adv 'k (bound K) ::= 
-       read ('OTMsg-A-B-1['k])
+       nf ('otm : bool <- read ('OTMsg-A-B-1['k]), return 'otm, 'otm :: emptyCNameList)
      )
      ||
      (family 'OTMsg-A-B-2_ot_adv 'k (bound K) ::= 
-       read ('OTMsg-A-B-2['k])
+       nf ('otm : bool <- read ('OTMsg-A-B-2['k]), return 'otm, 'otm :: emptyCNameList)
      )
      ||
      (family 'OTMsg-A-B-3_ot_adv 'k (bound K) ::= 
-       read ('OTMsg-A-B-3['k])
+       nf ('otm : bool <- read ('OTMsg-A-B-3['k]), return 'otm, 'otm :: emptyCNameList)
      )
      ||
-     (family 'OTChoice-B-A-0_ot_adv 'k (bound K) ::=
-       'c0 : bool <- read ('OTChoice-B-A-0['k]) ;
-       return ()
+     (family 'OTChoiceRcvd-B-A-0_ot_adv 'k (bound K) ::=
+       nf(
+       'c0 : bool <- read ('OTChoice-B-A-0['k]),
+       return (),
+       'c0 :: emptyCNameList
+       )
      )
      ||
-     (family 'OTChoice-B-A-1_ot_adv 'k (bound K) ::=
-       'c1 : bool <- read ('OTChoice-B-A-1['k]) ;
-       return ()
+     (family 'OTChoiceRcvd-B-A-1_ot_adv 'k (bound K) ::=
+       nf(
+       'c1 : bool <- read ('OTChoice-B-A-1['k]),
+       return (),
+       'c1 :: emptyCNameList)
      )
-   )
  .
  
  *** alice
  
  op alice : -> Protocol .
  eq alice = 
-  newfamily 'InputShare-A-A 'i (bound N) : bool in
-  newfamily 'InputShare-A-B 'i (bound M) : bool in
-  newfamily 'OTBit-A-B 'i (bound K) : bool in
-  newfamily 'Share-A 'i (bound K) : bool in
+  newfamily 'InputShare-A-A 'k (bound N) : bool in
+  newfamily 'InputShare-A-B 'k (bound M) : bool in
+  newfamily 'OTBit-A-B 'k (bound K) : bool in
+  newfamily 'Share-A 'k (bound K) : bool in
   ( *** start new
   aliceInitial 
   ||
@@ -558,10 +1009,10 @@ mod GMW2 is
  
  op bob : -> Protocol .
  eq bob =
-  newfamily 'InputShare-B-A 'i (bound N) : bool in
-  newfamily 'InputShare-B-B 'i (bound M) : bool in
-  newfamily 'OTBit-B-A 'i (bound K) : bool in
-  newfamily 'Share-B 'i (bound K) : bool in
+  newfamily 'InputShare-B-A 'k (bound N) : bool in
+  newfamily 'InputShare-B-B 'k (bound M) : bool in
+  newfamily 'OTBit-B-A 'k (bound K) : bool in
+  newfamily 'Share-B 'k (bound K) : bool in
  ( *** start new
   bobInitial 
   ||
@@ -573,14 +1024,15 @@ mod GMW2 is
  
  op real : -> Protocol .
  eq real =
-  newfamily 'SendInputShare-A-B 'i (bound M) : bool in
-  newfamily 'SendInputShare-B-A 'i (bound N) : bool in
-  newfamily 'OTMsg-A-B-0 'i (bound K) : bool in
-  newfamily 'OTMsg-A-B-1 'i (bound K) : bool in
-  newfamily 'OTMsg-A-B-2 'i (bound K) : bool in
-  newfamily 'OTMsg-A-B-3 'i (bound K) : bool in
-  newfamily 'OTChoice-B-A-0 'i (bound K) : bool in
-  newfamily 'OTChoice-B-A-1 'i (bound K) : bool in
+  newfamily 'SendInputShare-A-B 'k (bound M) : bool in
+  newfamily 'SendInputShare-B-A 'k (bound N) : bool in
+  newfamily 'OTMsg-A-B-0 'k (bound K) : bool in
+  newfamily 'OTMsg-A-B-1 'k (bound K) : bool in
+  newfamily 'OTMsg-A-B-2 'k (bound K) : bool in
+  newfamily 'OTMsg-A-B-3 'k (bound K) : bool in
+  newfamily 'OTOut-B-A 'k (bound K) : bool in
+  newfamily 'OTChoice-B-A-0 'k (bound K) : bool in
+  newfamily 'OTChoice-B-A-1 'k (bound K) : bool in
   newfamily 'SendFinalShare-A 'k (bound K) : bool in
   newfamily 'SendFinalShare-B 'k (bound K) : bool in
   (alice || bob || 1OutOf4)
@@ -592,19 +1044,20 @@ mod GMW2 is
  
  op restrInitial : -> Protocol .
  eq restrInitial = 
-  newfamily 'SendInputShare-A-B 'i (bound M) : bool in
-  newfamily 'SendInputShare-B-A 'i (bound N) : bool in
+  newfamily 'SendInputShare-A-B 'k (bound M) : bool in
+  newfamily 'SendInputShare-B-A 'k (bound N) : bool in
    (aliceInitial || bobInitial)
  . 
  
  op restrInductive : -> Protocol .
  eq restrInductive = 
-  newfamily 'OTMsg-A-B-0 'i (bound K) : bool in
-  newfamily 'OTMsg-A-B-1 'i (bound K) : bool in
-  newfamily 'OTMsg-A-B-2 'i (bound K) : bool in
-  newfamily 'OTMsg-A-B-3 'i (bound K) : bool in
-  newfamily 'OTChoice-B-A-0 'i (bound K) : bool in
-  newfamily 'OTChoice-B-A-1 'i (bound K) : bool in
+  newfamily 'OTMsg-A-B-0 'k (bound K) : bool in
+  newfamily 'OTMsg-A-B-1 'k (bound K) : bool in
+  newfamily 'OTMsg-A-B-2 'k (bound K) : bool in
+  newfamily 'OTMsg-A-B-3 'k (bound K) : bool in
+  newfamily 'OTOut-B-A 'k (bound K) : bool in
+  newfamily 'OTChoice-B-A-0 'k (bound K) : bool in
+  newfamily 'OTChoice-B-A-1 'k (bound K) : bool in
   (aliceInductive || bobInductive || 1OutOf4)
  .
  
@@ -617,17 +1070,507 @@ mod GMW2 is
  
  op restr : -> Protocol .
  eq restr = 
-  newfamily 'InputShare-A-A 'i (bound N) : bool in
-  newfamily 'InputShare-A-B 'i (bound M) : bool in
-  newfamily 'InputShare-B-A 'i (bound N) : bool in
-  newfamily 'InputShare-B-B 'i (bound M) : bool in
-  newfamily 'OTBit-A-B 'i (bound K) : bool in
-  newfamily 'OTBit-B-A 'i (bound K) : bool in
-  newfamily 'Share-A 'i (bound K) : bool in
-  newfamily 'Share-B 'i (bound K) : bool in
+  newfamily 'InputShare-A-A 'k (bound N) : bool in
+  newfamily 'InputShare-A-B 'k (bound M) : bool in
+  newfamily 'InputShare-B-A 'k (bound N) : bool in
+  newfamily 'InputShare-B-B 'k (bound M) : bool in
+  newfamily 'OTBit-A-B 'k (bound K) : bool in
+  newfamily 'OTBit-B-A 'k (bound K) : bool in
+  newfamily 'Share-A 'k (bound K) : bool in
+  newfamily 'Share-B 'k (bound K) : bool in
   (restrInitial || restrInductive || restrFinal) 
  .
  
+ *************************************************
+ *** auxiliaries
+ *************************************************
+ 
+ op restrInitial1 : -> Protocol .
+ eq restrInitial1 =
+    newNF({'SendInputShare-A-B 'k (bound M) : bool} 
+          {'SendInputShare-B-A 'k (bound N) : bool}, 
+    (family 'In-A_A_adv 'k (bound N) ::= 
+       nf('inA : bool <- read ('In-A['k]), return 'inA, 'inA :: emptyCNameList)
+    ) 
+    || 
+    (family 'InRcvd-B_B_adv 'k (bound M) ::= 
+       nf('x : bool <- read ('In-B['k]), return (), 'x :: emptyCNameList)
+    ) 
+    || 
+    (family 'InputShare-A-A 'k (bound N) ::= 
+       nf('x : bool <- read ('In-A['k]), samp ('flip < () >), 'x :: emptyCNameList)
+    ) 
+    || 
+    (family 'InputShare-A-A_A_adv 'k (bound N) ::= 
+      nf('is : bool <- read ('InputShare-A-A['k]), return 'is, 'is :: emptyCNameList)
+    ) 
+    ||
+    (family 'InputShare-A-B 'k (bound M) ::= 
+      nf('sis : bool <- read ('SendInputShare-A-B['k]), return 'sis, 'sis :: emptyCNameList)
+    ) 
+    || 
+    (family 'InputShare-A-B_A_adv 'k (bound M) ::= 
+      nf('is : bool <- read ('InputShare-A-B['k]), return 'is, 'is :: emptyCNameList)
+    ) 
+    || 
+    (family 'InputShare-B-A 'k (bound N) ::= 
+      nf('sis : bool <- read ('SendInputShare-B-A['k]), return 'sis, 'sis :: emptyCNameList)
+    ) 
+    || 
+    (family 'InputShare-B-B 'k (bound M) ::= 
+      nf(('x : bool <- read ('In-B['k])) 
+          'xa : bool <- read ('InputShare-A-B['k]), 
+          return (ap 'xor pair('x, 'xa)), 
+          'x :: 'xa :: emptyCNameList)
+    ) 
+    || 
+    (family 'SendInputShare-A-B 'k (bound M) ::= 
+      nf('x : bool <- read ('In-B['k]), samp ('flip < () >), 'x :: emptyCNameList)
+    ) 
+    || 
+    (family 'SendInputShare-A-B_A_adv 'k (bound M) ::=  
+      nf('sis : bool <- read ('InputShare-A-B['k]), return 'sis, 'sis :: emptyCNameList)
+    ) 
+    || 
+    (family 'SendInputShare-B-A 'k (bound N) ::= 
+      nf(('x : bool <- read ('In-A['k])) 
+          'xa : bool <- read ('InputShare-A-A['k]), 
+          return (ap 'xor pair('x, 'xa)), 
+          'x :: 'xa :: emptyCNameList)
+    ) 
+    || 
+    (family 'SendInputShare-B-A_A_adv 'k (bound N) ::= 
+      nf('sis : bool <- read ('InputShare-B-A['k]), return 'sis, 'sis :: emptyCNameList)
+    )  , 
+    'SendInputShare-A-B :: 'SendInputShare-B-A :: emptyCNameList)   
+ .    
+
+********************************
+*** splitting restrInductive
+********************************
+***(
+op indAlice1 : -> Protocol .
+eq indAlice1 =
+ family 'indAlice 'k (bound K) ::=
+  (when (apply 'isAliceInput 'k) -->
+      (family 'Share-A 'k (bound K) ::=  
+       nf('is : bool <- read ('InputShare-A-A[fun 'wire0 'k]), 
+          return 'is,
+          'is :: emptyCNameList)
+      ) 
+      ||
+      (family 'OTBit-A-B 'k (bound K) ::= 
+      nf('otb : bool <- read ('OTBit-A-B['k]), 
+          return 'otb, 
+          'otb :: emptyCNameList))
+     ) 
+     ;; 
+     (when (apply 'isBobInput 'k) -->  
+       (family 'Share-A 'k (bound K) ::= 
+       nf('is : bool <- read ('InputShare-A-B[fun 'wire0 'k]), 
+          return 'is, 
+          'is :: emptyCNameList)
+       )
+       ||
+       (family 'OTBit-A-B 'k (bound K) ::= 
+      nf('otb : bool <- read ('OTBit-A-B['k]), 
+          return 'otb, 
+          'otb :: emptyCNameList))   
+     ) 
+     ;; 
+     (when (apply 'isNotGate 'k) --> 
+       (family 'Share-A 'k (bound K) ::= 
+       nf('sa : bool <- read ('Share-A[fun 'wire0 'k]), 
+          return 'sa, 
+          'sa :: emptyCNameList))
+       ||
+       (family 'OTBit-A-B 'k (bound K) ::= 
+      nf('otb : bool <- read ('OTBit-A-B['k]), 
+          return 'otb, 
+          'otb :: emptyCNameList))   
+     ) 
+     ;;
+     (when (apply 'isXorGate 'k) --> 
+       (family 'Share-A 'k (bound K) ::= 
+       nf(('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+           'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+          return (ap 'xor pair('xa, 'ya)), 
+          'xa :: 'ya :: emptyCNameList))
+          ||
+          (family 'OTBit-A-B 'k (bound K) ::= 
+      nf('otb : bool <- read ('OTBit-A-B['k]), 
+          return 'otb, 
+          'otb :: emptyCNameList))
+     )
+     ;; 
+     (when (apply 'isAndGate 'k) --> 
+       (family 'Share-A 'k (bound K) ::= 
+       nf(('ba : bool <- read ('OTBit-A-B['k])) 
+          ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+           'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+          return (ap 'xor pair(ap 'and pair('xa, 'ya), 'ba)), 
+          'ba :: 'xa :: 'ya :: emptyCNameList
+         ))
+       ||
+       (family 'OTBit-A-B 'k (bound K) ::=  
+         nf(('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+           'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+           samp ('flip < () >), 
+           'xa :: 'ya :: emptyCNameList)) 
+    )
+.
+)
+
+op indAlice : -> Protocol .
+eq indAlice = 
+family 'indAlice 'k (bound K) ::=
+ (
+  (family 'OTBit-A-B 'k (bound K) ::= 
+    (when (apply 'isAndGate 'k) --> 
+       nf(('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+           'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+           samp ('flip < () >), 
+           'xa :: 'ya :: emptyCNameList)
+    ) ;; 
+    (otherwise --> 
+       nf('otb : bool <- read ('OTBit-A-B['k]), 
+          return 'otb, 
+          'otb :: emptyCNameList)
+    )
+  ) *** end otbit
+   ||
+   (family 'Share-A 'k (bound K) ::= 
+     (when (apply 'isAliceInput 'k) --> 
+       nf('is : bool <- read ('InputShare-A-A[fun 'wire0 'k]), 
+          return 'is,
+          'is :: emptyCNameList)
+     ) 
+     ;; 
+     (when (apply 'isBobInput 'k) -->  
+       nf('is : bool <- read ('InputShare-A-B[fun 'wire0 'k]), 
+          return 'is, 
+          'is :: emptyCNameList)
+     ) 
+     ;; 
+     (when (apply 'isNotGate 'k) --> 
+       nf('sa : bool <- read ('Share-A[fun 'wire0 'k]), 
+          return 'sa, 
+          'sa :: emptyCNameList)
+     ) 
+     ;;
+     (when (apply 'isXorGate 'k) --> 
+       nf(('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+           'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+          return (ap 'xor pair('xa, 'ya)), 
+          'xa :: 'ya :: emptyCNameList)
+     )
+     ;; 
+     (when (apply 'isAndGate 'k) --> 
+       nf(('ba : bool <- read ('OTBit-A-B['k])) 
+          ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+           'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+          return (ap 'xor pair(ap 'and pair('xa, 'ya), 'ba)), 
+          'ba :: 'xa :: 'ya :: emptyCNameList
+         )
+    )
+    ) *** end share-A
+ ) *** end indAlice
+ 
+.
+
+op indBob : -> Protocol .
+eq indBob = 
+ family 'indBob 'k (bound K) ::=
+ (
+  (family 'OTBit-B-A 'k (bound K) ::= 
+   (when (apply 'isAndGate 'k) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['k])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+        ('ya : bool <- read ('Share-A[fun 'wire1 'k])) 
+        ('xb : bool <- read ('Share-B[fun 'wire0 'k])) 
+         'yb : bool <- read ('Share-B[fun 'wire1 'k]), 
+         return (ap 'xor pair('ba, 
+                               ap 'xor pair(ap 'and pair('xa, 'yb), 
+                                            ap 'and pair('xb, 'ya)))
+                ), 
+         'ba :: 'xa :: 'ya :: 'xb :: 'yb :: emptyCNameList)
+   ) 
+   ;;
+   (otherwise --> 
+      nf('otb : bool <- read ('OTBit-B-A['k]), 
+         return 'otb, 
+         'otb :: emptyCNameList)
+   )
+  ) *** end OTBit-B-A
+  ||
+  (
+  family 'Share-B 'k (bound K) ::= 
+    (when (apply 'isAliceInput 'k) --> 
+      nf('is : bool <- read ('InputShare-B-A[fun 'wire0 'k]), 
+         return 'is, 'is :: emptyCNameList)
+    ) 
+    ;; 
+    (when (apply 'isBobInput 'k) --> 
+       nf('is : bool <- read ('InputShare-B-B[fun 'wire0 'k]), 
+          return 'is, 'is :: emptyCNameList)
+    ) 
+    ;; 
+    (when (apply 'isNotGate 'k) --> 
+       nf('xb : bool <- read ('Share-B[fun 'wire0 'k]), 
+          return (ap 'neg 'xb), 'xb :: emptyCNameList)
+    ) 
+    ;; 
+    (when (apply 'isXorGate 'k) --> 
+       nf(('xb : bool <- read ('Share-B[fun 'wire0 'k])) 
+           'yb : bool <- read ('Share-B[fun 'wire1 'k]), 
+          return (ap 'xor pair('xb, 'yb)), 'xb :: 'yb :: emptyCNameList)
+    ) 
+    ;; 
+    (when (apply 'isAndGate 'k) --> 
+      nf(('bb : bool <- read ('OTBit-B-A['k])) 
+         ('xb : bool <- read ('Share-B[fun 'wire0 'k])) 
+          'yb : bool <- read ('Share-B[fun 'wire1 'k]), 
+         return (ap 'xor pair('bb, ap 'and pair('xb, 'yb))), 
+         'bb :: 'xb :: 'yb :: emptyCNameList)
+    )
+  ) *** end Share-B
+ ) *** end indBob
+.
+
+op indAdv : -> Protocol .
+eq indAdv = 
+ family 'indAdv 'k (bound K) ::=
+ (
+ (family 'OTBit-A-B_A_adv 'k (bound K) ::= 
+   (when (apply 'isAndGate 'k) --> 
+      nf('otb : bool <- read ('OTBit-A-B['k]), 
+         return 'otb, 'otb :: emptyCNameList)
+   ) 
+   ;; 
+   (otherwise --> 
+     nf('otb : bool <- read ('OTBit-A-B_A_adv['k]), 
+        return 'otb, 'otb :: emptyCNameList)
+   )
+ ) *** end OTBit
+ ||   
+ (family 'OTChoiceRcvd-B-A-0_ot_adv 'k (bound K) ::= 
+   (when (apply 'isAndGate 'k) --> 
+      nf('sb : bool <- read ('Share-B[fun 'wire0 'k]), 
+         return (), 'sb :: emptyCNameList)
+   ) 
+   ;; 
+   (otherwise --> 
+      nf('x3 : unit <- read ('OTChoiceRcvd-B-A-0_ot_adv['k]), 
+         return 'x3, 'x3 :: emptyCNameList)
+   )
+ ) *** end choiceRcvd-0  
+ || 
+ (family 'OTChoiceRcvd-B-A-1_ot_adv 'k (bound K) ::= 
+   (when (apply 'isAndGate 'k) --> 
+      nf('sb : bool <- read ('Share-B[fun 'wire1 'k]), 
+         return (), 'sb :: emptyCNameList)
+   ) 
+   ;; 
+   (otherwise --> 
+      nf('x3 : unit <- read ('OTChoiceRcvd-B-A-1_ot_adv['k]), 
+         return 'x3, 'x3 :: emptyCNameList)
+   )
+ ) *** end choiceRcvd-1
+ ||
+ (family 'OTMsg-A-B-0_ot_adv 'k (bound K) ::= 
+   (when (apply 'isAndGate 'k) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['k])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+         'ya : bool <- read ('Share-A[fun 'wire1 'k]),
+         return 'ba, 'ba :: 'xa :: 'ya :: emptyCNameList)
+   ) 
+   ;; 
+   (otherwise --> 
+     nf('x3 : bool <- read ('OTMsg-A-B-0_ot_adv['k]), 
+        return 'x3, 'x3 :: emptyCNameList)
+   )
+ ) *** end msg-0
+ ||
+ (family 'OTMsg-A-B-1_ot_adv 'k (bound K) ::= 
+   (when (apply 'isAndGate 'k) --> 
+      nf(('ba : bool <- read ('OTBit-A-B['k])) 
+         ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+          'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+          return (ap 'xor pair('ba, 'xa)), 'ba :: 'xa :: 'ya :: emptyCNameList)
+   ) 
+   ;; 
+   (otherwise --> 
+     nf('x3 : bool <- read ('OTMsg-A-B-1_ot_adv['k]), 
+        return 'x3, 'x3 :: emptyCNameList)
+   )
+ ) *** end msg-1
+ ||
+ (family 'OTMsg-A-B-2_ot_adv 'k (bound K) ::= 
+   (when (apply 'isAndGate 'k) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['k])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+         'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+         return (ap 'xor pair('ba, 'ya)), 'ba :: 'xa :: 'ya :: emptyCNameList)
+   ) 
+   ;; 
+   (otherwise --> 
+     nf('x3 : bool <- read ('OTMsg-A-B-2_ot_adv['k]), 
+        return 'x3, 'x3 :: emptyCNameList)
+   )
+ ) *** end msg-2
+ ||
+ (family 'OTMsg-A-B-3_ot_adv 'k (bound K) ::= 
+   (when (apply 'isAndGate 'k) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['k])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+         'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+        return (ap 'xor pair('ba, ap 'xor pair('xa, 'ya))), 
+        'ba :: 'xa :: 'ya :: emptyCNameList)
+   ) 
+   ;; 
+   (otherwise --> 
+     nf('x3 : bool <- read ('OTMsg-A-B-3_ot_adv['k]), 
+        return 'x3, 'x3 :: emptyCNameList)
+   )
+ ) *** end msg-3
+ ||
+ (family 'Share-A_A_adv 'k (bound K) ::= 
+    nf('sa : bool <- read ('Share-A['k]), 
+       return 'sa, 'sa :: emptyCNameList)
+ ) *** end share-A_A_adv
+ ) *** end indAdv
+. 
+
+op ind1OutOf4OT : -> Protocol .
+eq ind1OutOf4OT = 
+ family 'ind1OutOf4OT 'k (bound K) ::=
+ (
+  (family 'OTChoice-B-A-0 'k (bound K) ::= 
+    (when (apply 'isAndGate 'k) --> 
+      nf('sb : bool <- read ('Share-B[fun 'wire0 'k]), 
+         return 'sb, 'sb :: emptyCNameList)
+    ) 
+    ;; 
+    (otherwise --> 
+      nf('otc : bool <- read ('OTChoice-B-A-0['k]), 
+         return 'otc, 'otc :: emptyCNameList)
+    )
+  ) *** end OTChoice-0
+  ||
+  (family 'OTChoice-B-A-1 'k (bound K) ::= 
+   (when (apply 'isAndGate 'k) --> 
+     nf('sb : bool <- read ('Share-B[fun 'wire1 'k]), 
+        return 'sb, 'sb :: emptyCNameList)
+   ) 
+   ;; 
+   (otherwise --> 
+     nf('otc : bool <- read ('OTChoice-B-A-1['k]), return 'otc, 'otc :: emptyCNameList)
+   )
+  ) *** end OTChoice-1
+  ||
+  (family 'OTMsg-A-B-0 'k (bound K) ::= 
+    (when (apply 'isAndGate 'k) --> 
+      nf(('ba : bool <- read ('OTBit-A-B['k])) 
+         ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+          'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+         return 'ba, 'ba :: 'xa :: 'ya :: emptyCNameList)
+    ) 
+    ;; 
+    (otherwise --> 
+      nf('otm : bool <- read ('OTMsg-A-B-0['k]), return 'otm, 'otm :: emptyCNameList)
+    )
+  ) *** end msg-0
+  ||
+  (family 'OTMsg-A-B-1 'k (bound K) ::= 
+   (when (apply 'isAndGate 'k) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['k])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+         'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+        return (ap 'xor pair('ba, 'xa)), 'ba :: 'xa :: 'ya :: emptyCNameList)
+   ) 
+   ;; 
+   (otherwise --> 
+     nf('otm : bool <- read ('OTMsg-A-B-1['k]), return 'otm, 'otm :: emptyCNameList)
+   )
+  ) *** end msg-1
+  ||
+  (family 'OTMsg-A-B-2 'k (bound K) ::= 
+   (when (apply 'isAndGate 'k) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['k])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+         'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+        return (ap 'xor pair('ba, 'ya)), 'ba :: 'xa :: 'ya :: emptyCNameList)
+   ) 
+   ;; 
+   (otherwise --> 
+     nf('otm : bool <- read ('OTMsg-A-B-2['k]), return 'otm, 'otm :: emptyCNameList)
+   )
+  ) *** end msg-2
+  || 
+  (family 'OTMsg-A-B-3 'k (bound K) ::= 
+    (when (apply 'isAndGate 'k) --> 
+      nf(('ba : bool <- read ('OTBit-A-B['k])) 
+         ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+          'ya : bool <- read ('Share-A[fun 'wire1 'k]), 
+         return (ap 'xor pair('ba, ap 'xor pair('xa, 'ya))), 
+         'ba :: 'xa :: 'ya :: emptyCNameList)
+    ) 
+    ;; 
+    (otherwise --> 
+      nf('otm : bool <- read ('OTMsg-A-B-3['k]), return 'otm, 'otm :: emptyCNameList)
+    )
+  ) *** end msg-3
+  ||
+  (family 'OTOut-B-A 'k (bound K) ::= 
+    (when (apply 'isAndGate 'k) --> 
+      nf(('ba : bool <- read ('OTBit-A-B['k])) 
+         ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
+         ('xb : bool <- read ('Share-B[fun 'wire0 'k])) 
+         ('ya : bool <- read ('Share-A[fun 'wire1 'k])) 
+          'yb : bool <- read ('Share-B[fun 'wire1 'k]), 
+         return (ap 'xor pair('ba, 
+                              ap 'xor pair(ap 'and pair('xa, 'yb), 
+                                           ap 'and pair('xb, 'ya)))
+                ), 
+         'ba :: 'xa :: 'ya :: 'xb :: 'yb :: emptyCNameList)
+    ) 
+    ;;
+    (otherwise --> 
+       nf(('c0 : bool <- read ('OTChoice-B-A-0['k])) 
+          ('c1 : bool <- read ('OTChoice-B-A-1['k])) 
+          ('m0 : bool <- read ('OTMsg-A-B-0['k])) 
+          ('m1 : bool <- read ('OTMsg-A-B-1['k])) 
+          ('m2 : bool <- read ('OTMsg-A-B-2['k])) 
+           'm3 : bool <- read ('OTMsg-A-B-3['k]), 
+           if 'c0 then
+               if 'c1 then return 'm3 
+                      else return 'm2 
+                  else 
+               if 'c1 then return 'm1 
+                      else return 'm0, 
+          'm0 :: 'm1 :: 'm2 :: 'm3 :: 'c0 :: 'c1 :: emptyCNameList)
+    )
+  ) *** end out
+ ) *** end 1OutOf4OT
+.
+
+op restrIndSplit : -> Protocol .
+eq restrIndSplit =
+  newfamily 'OTMsg-A-B-0 'k (bound K) : bool in
+  newfamily 'OTMsg-A-B-1 'k (bound K) : bool in
+  newfamily 'OTMsg-A-B-2 'k (bound K) : bool in
+  newfamily 'OTMsg-A-B-3 'k (bound K) : bool in
+  newfamily 'OTOut-B-A 'k (bound K) : bool in
+  newfamily 'OTChoice-B-A-0 'k (bound K) : bool in
+  newfamily 'OTChoice-B-A-1 'k (bound K) : bool in
+    (indAlice || indBob || indAdv || ind1OutOf4OT)
+.
+
+op restrIndSplitSym : -> Protocol .
+eq restrIndSplitSym =
+  (indAlice || indBob || indAdv )
+.
+
 endm 
 
 smod EXECUTE is
@@ -655,7 +1598,12 @@ smod EXECUTE is
      
  *** x + x = False
  
- eq ap 'xor pair(x, x) = False .  
+ *** eq ap 'xor pair(x, x) = False .  
+ 
+ var e : Expression .
+ 
+ eq ap 'xor pair(e, e) = False .
+ *** TODO: would it make sense to do this for all axioms?
  
  *** x + False = x
  
@@ -668,8 +1616,22 @@ smod EXECUTE is
  *** x * False = False
  eq ap 'and pair(x, False) = False .    
  
-  *** x * True = False
+  *** x * True = x
  eq ap 'and pair(x, True) = x .
+ 
+ *** False + x = x
+ 
+  eq ap 'xor pair(False, x) = x . 
+ 
+ *** True + x = not x
+ 
+ eq ap 'xor pair(True, x) = ap 'neg x . 
+ 
+ *** False * x = False
+ eq ap 'and pair(False, x) = False .    
+ 
+  *** True * x = x
+ eq ap 'and pair(True, x) = x .
  
  rl [flip-invar-xor-r] : rConfig(Sigma, Delta, Gamma (x : bool),
             y : bool <- samp ('flip < () >) ; 
@@ -686,16 +1648,878 @@ smod EXECUTE is
             => 
             rConfig(Sigma, Delta , Gamma (y : bool),
             samp ('flip < () >), I, A, bool) .  
-   
-     
+            
+ *** strategies needed for splitting real in three parts
+ 
+ op restr0 : -> Protocol .
+ eq restr0 = restrInductive || restrFinal .
+ 
+ strat rewriteRestrInitial @ ProtocolConfig .
+ sd rewriteRestrInitial := 
+  match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{rewriteRestrInitial}
+     : 
+        matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+            using
+                    CONG-COMP-RIGHT[  *** add this for a speedup: Q:Protocol <- new2NF(restr0), 
+                                      P1:Protocol <- new2NF(restrInitial)
+                                   ]
+                    {
+     SYM[P1:Protocol <- restrInitial1]{
+         substNFFamiliesOne(
+           'InputShare-A-B, 'InputShare-B-B,
+           nf('sis : bool <- read ('SendInputShare-A-B['k]), return 'sis, 'sis :: emptyCNameList)
+       )
+     ; substNFFamiliesOne(
+           'InputShare-A-B, 'SendInputShare-A-B_A_adv,
+           nf('sis : bool <- read ('SendInputShare-A-B['k]), return 'sis, 'sis :: emptyCNameList)
+       )
+     ; substNFFamiliesOne(
+           'InputShare-B-A, 'SendInputShare-B-A_A_adv,
+           nf('sis : bool <- read ('SendInputShare-B-A['k]), return 'sis, 'sis :: emptyCNameList)
+       )
+     ; applyAlphaNFPr('InputShare-B-B, << 'sis,'xa >> emptyQidPairList)  
+    }
+      ; foldNFFamily('SendInputShare-A-B, 'InputShare-A-B)
+      ; foldNFFamily('SendInputShare-B-A, 'InputShare-B-A)
+                    }
+ .
+ 
+ strat rewriteRestrInductive @ ProtocolConfig .
+  sd rewriteRestrInductive := 
+  match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{rewriteRestrInductive}
+     : 
+        matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+            using
+                    CONG-COMP-RIGHT[  *** Q:Protocol <- new2NF(restr0), 
+                                      P1:Protocol <- new2NF(restrInductive)
+                                   ]
+                    { 
+        applyCasesSubstDivergeOwise(
+          'OTMsg-A-B-0, 'OTMsg-A-B-0_ot_adv, 'k, bool, 'x3
+        )
+      ; applyCasesSubstDivergeOwise(
+          'OTMsg-A-B-1, 'OTMsg-A-B-1_ot_adv, 'k, bool, 'x3
+        )
+      ; applyCasesSubstDivergeOwise(
+          'OTMsg-A-B-2, 'OTMsg-A-B-2_ot_adv, 'k, bool, 'x3
+        )
+      ; applyCasesSubstDivergeOwise(
+          'OTMsg-A-B-3, 'OTMsg-A-B-3_ot_adv, 'k, bool, 'x3
+        )  
+      ; applyCasesSubstDivergeOwise(
+          'OTChoice-B-A-0, 'OTChoiceRcvd-B-A-0_ot_adv, 'k, unit, 'x3
+        )
+      ; applyCasesSubstDivergeOwise(
+          'OTChoice-B-A-1, 'OTChoiceRcvd-B-A-1_ot_adv, 'k, unit, 'x3
+        )    
+      *** now we want to substitute in OTOut-B-A only for and gates
+      *** so we need to add this case distinction
+      ; applyAddSameCases('OTOut-B-A, apply 'isAndGate 'k)
+      *** now we can do the substitution on first branch
+      ; applySameCasesSubstFirstBranch('OTMsg-A-B-0, 'OTOut-B-A, 'k)      
+      ; applySameCasesSubstFirstBranch('OTMsg-A-B-1, 'OTOut-B-A, 'k)
+      ; applySameCasesSubstFirstBranch('OTMsg-A-B-2, 'OTOut-B-A, 'k)
+      ; applySameCasesSubstFirstBranch('OTMsg-A-B-3, 'OTOut-B-A, 'k)
+      ; applySameCasesSubstFirstBranch('OTChoice-B-A-0, 'OTOut-B-A, 'k)
+      ; applyBranch1Alpha('OTOut-B-A, << 'sb, 'xb >> emptyQidPairList)
+      ; applySameCasesSubstFirstBranch('OTChoice-B-A-1, 'OTOut-B-A, 'k)
+      ; applyBranch1Alpha('OTOut-B-A, << 'sb, 'yb >> emptyQidPairList)
+      ; applyIfExt2('OTOut-B-A,
+                    return (ap 'xor pair('ba, 
+                                 ap 'xor pair(ap 'and pair('xa, 'yb), 
+                                              ap 'and pair('xb, 'ya)
+                                             )
+                                 )
+                           ), 
+                     'xb, 'yb)
+      ; applySameCasesSubstFirstBranch('OTOut-B-A, 'OTBit-B-A, 'k)   
+      ; SYM[P1:Protocol <- restrIndSplit]{
+         sugar-newNF
+       ; applyDropName('indAlice)
+       ; applyDropName('indBob)
+       ; applyDropName('indAdv)
+       ; applyDropName('ind1OutOf4OT)
+      }            
+      ; sugar-newNF  
+      ; applyDropName('indAlice)
+       ; applyDropName('indBob)
+       ; applyDropName('indAdv)
+       ; applyDropName('ind1OutOf4OT)
+       ; absorbFamily('OTOut-B-A) 
+       ; absorbFamily('OTMsg-A-B-0)
+       ; absorbFamily('OTMsg-A-B-1)  
+       ; absorbFamily('OTMsg-A-B-2)
+       ; absorbFamily('OTMsg-A-B-3)
+       ; absorbFamily('OTChoice-B-A-0)
+       ; absorbFamily('OTChoice-B-A-1)
+       **** here I need to do a sym proof from the protocol without the 4th component
+      ; SYM[P1:Protocol <- restrIndSplitSym]{
+         applyDropName('indAlice)
+       ; applyDropName('indBob)
+       ; applyDropName('indAdv)
+       }
+                    }
+     .           
+  
+  strat rewriteRestrFinal @ ProtocolConfig .
+  sd rewriteRestrFinal := 
+  match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{rewriteRestrFinal}
+     : 
+        matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+            using
+                    CONG-COMP-RIGHT[  *** Q:Protocol <- new2NF(restr0), 
+                                      P1:Protocol <- new2NF(restrFinal)
+                                   ]
+                    { 
+                    applyCasesSubstDivergeOwise('SendFinalShare-A, 'Out-A, 'k, bool, 'x3)
+      ; applySameCasesSubstFirstBranch('SendFinalShare-B, 'Out-A, 'k)
+      ; applyCasesSubstDivergeOwise('SendFinalShare-A, 'Out-B, 'k, bool, 'x3)
+      ; applySameCasesSubstFirstBranch('SendFinalShare-B, 'Out-B, 'k) 
+      ; applyCasesSubstDivergeOwise('SendFinalShare-A, 'SendFinalShare-A_A_adv, 'k, bool, 'x3)
+      ; applyCasesSubstDivergeOwise('SendFinalShare-B, 'SendFinalShare-B_A_adv, 'k, bool, 'x3)
+      ; absorbFamily('SendFinalShare-A)
+      ; absorbFamily('SendFinalShare-B)
+      *** TODO: might have to do some alphas here!
+                    }
+    . 
+      
 endsm
+
+***( proof commented out for now, keep it though!
+
+*** this is idealPlusSim proof
+
+srew [1] 
+ pConfig(secSig,
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool)          
+           ('In-A_A_adv @ N :: bool) 
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B_A_adv @ M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+            ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool)
+           ('OTOut-A-B @ N + M :: bool),
+           idealPlusSim,
+           insert('In-A @ N, 'In-B @ M), *** I 
+           getOutputs(idealPlusSim),
+           empty
+        )
+using    sugar-newNF
+       ; moveNewToFront 
+       ; applySubstNFLeft('SendFinalShare-B_A_adv, 'Out-A_id_adv, 
+          nf('oai : bool <- read ('Out-A['k]), return 'oai, 'oai :: emptyCNameList)
+         )
+       ; foldNFFamily('Out-A_id_adv, 'Out-A_A_adv)
+       ; substNFFamiliesOne(
+           'In-A_id_adv, 'In-A_A_adv, 
+           nf('inA : bool <- read ('In-A['k]), return 'inA, 'inA :: emptyCNameList)
+         )
+       ; substNFFamiliesOne(
+           'In-A_id_adv, 'InputShare-A-A,
+           nf('inA : bool <- read ('In-A['k]), return 'inA, 'inA :: emptyCNameList)
+         )
+       ; foldNFFamily('In-A_id_adv, 'SendInputShare-B-A_A_adv)  
+        ; substNFFamiliesOne(
+          'InRcvd-B_id_adv, 'InRcvd-B_B_adv,
+           nf('x : bool <- read ('In-B['k]), return (), 'x :: emptyCNameList)
+         )
+        ; foldNFFamily('InRcvd-B_id_adv, 'InputShare-A-B) 
+      
+.
+
+*** real to restr
+
+srew [1] 
+ pConfig(secSig,
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool)          
+           ('In-A_A_adv @ N :: bool) 
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B_A_adv @ M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+            ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool)
+           ('OTOut-A-B @ N + M :: bool),
+           real,
+           insert('In-A @ N, 'In-B @ M), *** I 
+           getOutputs(idealPlusSim),
+           empty
+        )
+using     sugar-newNF
+        ; moveNewToFront
+        ; SYM[P1:Protocol <- restr]{
+            sugar-newNF
+        ; moveNewToFront
+         ; reorder-newNF[ql2:CNameList <- 
+        'SendInputShare-A-B :: 'SendInputShare-B-A :: 
+        'OTMsg-A-B-0 :: 'OTMsg-A-B-1 :: 'OTMsg-A-B-2 :: 'OTMsg-A-B-3 :: 
+        'OTOut-B-A :: 'OTChoice-B-A-0 :: 'OTChoice-B-A-1 :: 
+        'SendFinalShare-A :: 'SendFinalShare-B :: 
+        'InputShare-A-A :: 'InputShare-A-B :: 
+        'OTBit-A-B :: 
+        'Share-A :: 'InputShare-B-A :: 'InputShare-B-B :: 'OTBit-B-A :: 
+        'Share-B :: emptyCNameList
+       ]
+        }
+        ; sugar-newNF
+       
+        
+.
+)
+
+srew [1] 
+ pConfig(secSig,
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool)          
+           ('In-A_A_adv @ N :: bool) 
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B_A_adv @ M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+            ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool)
+           ('OTOut-A-B @ N + M :: bool),
+           restr,
+           insert('In-A @ N, 'In-B @ M), *** I 
+           getOutputs(idealPlusSim),
+           empty
+        )
+using     sugar-newNF
+        ; rewriteRestrInitial
+        ; rewriteRestrInductive
+        ; rewriteRestrFinal
+.
+
+***( here we test combined notation
+
+srew [1] pConfig(secSig,  
+                 ('OTBit-A-B @ K :: bool)
+                 ('Share-A @ K :: bool)
+                 ('InputShare-A-A @ N :: bool) 
+                 ('InputShare-A-B @ M :: bool), 
+                 indAlice1, 
+                 ('InputShare-A-A @ N,'InputShare-A-B @ M), 
+                 getOutputs(indAlice1), 
+                 empty)
+using idle .
+      applyCombine('indAlice) - does not work, this is general enough
+)
+
+***( here are the bits that we want to combine in the restr splitting proof
+set trace off .
+
+srew [1] 
+ pConfig(secSig,
+           ('OTBit-A-B @ N + M :: bool)  
+           ('OTBit-B-A @ N + M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('Share-A @ K :: bool)
+           ('Share-B @ K :: bool)          
+           ('In-A_A_adv @ N :: bool)
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A @ N :: bool)
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B @ M :: bool) 
+           ('InputShare-A-B_A_adv @ M :: bool)
+           ('InputShare-B-A @ N :: bool) 
+           ('InputShare-B-B @ M :: bool)
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+            ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A @ K :: bool) 
+           ('SendFinalShare-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool)
+           ('OTOut-A-B @ N + M :: bool),
+           restrInductive,
+           empty, *** I 
+           getOutputs(restrInductive),
+           empty
+        )
+using   sugar-newNF
+      ; applyCasesSubstDivergeOwise(
+          'OTMsg-A-B-0, 'OTMsg-A-B-0_ot_adv, 'k, bool, 'x3
+        )
+      ; applyCasesSubstDivergeOwise(
+          'OTMsg-A-B-1, 'OTMsg-A-B-1_ot_adv, 'k, bool, 'x3
+        )
+      ; applyCasesSubstDivergeOwise(
+          'OTMsg-A-B-2, 'OTMsg-A-B-2_ot_adv, 'k, bool, 'x3
+        )
+      ; applyCasesSubstDivergeOwise(
+          'OTMsg-A-B-3, 'OTMsg-A-B-3_ot_adv, 'k, bool, 'x3
+        )  
+      ; applyCasesSubstDivergeOwise(
+          'OTChoice-B-A-0, 'OTChoiceRcvd-B-A-0_ot_adv, 'k, unit, 'x3
+        )
+      ; applyCasesSubstDivergeOwise(
+          'OTChoice-B-A-1, 'OTChoiceRcvd-B-A-1_ot_adv, 'k, unit, 'x3
+        )    
+      *** now we want to substitute in OTOut-B-A only for and gates
+      *** so we need to add this case distinction
+      ; applyAddSameCases('OTOut-B-A, apply 'isAndGate 'k)
+      *** now we can do the substitution on first branch
+      ; applySameCasesSubstFirstBranch('OTMsg-A-B-0, 'OTOut-B-A, 'k)      
+      ; applySameCasesSubstFirstBranch('OTMsg-A-B-1, 'OTOut-B-A, 'k)
+      ; applySameCasesSubstFirstBranch('OTMsg-A-B-2, 'OTOut-B-A, 'k)
+      ; applySameCasesSubstFirstBranch('OTMsg-A-B-3, 'OTOut-B-A, 'k)
+      ; applySameCasesSubstFirstBranch('OTChoice-B-A-0, 'OTOut-B-A, 'k)
+      ; applyBranch1Alpha('OTOut-B-A, << 'sb, 'xb >> emptyQidPairList)
+      ; applySameCasesSubstFirstBranch('OTChoice-B-A-1, 'OTOut-B-A, 'k)
+      ; applyBranch1Alpha('OTOut-B-A, << 'sb, 'yb >> emptyQidPairList)
+      ; applyIfExt2('OTOut-B-A,
+                    return (ap 'xor pair('ba, 
+                                 ap 'xor pair(ap 'and pair('xa, 'yb), 
+                                              ap 'and pair('xb, 'ya)
+                                             )
+                                 )
+                           ), 
+                     'xb, 'yb)
+      ; applySameCasesSubstFirstBranch('OTOut-B-A, 'OTBit-B-A, 'k)   
+      ; SYM[P1:Protocol <- restrIndSplit]{
+         sugar-newNF
+       ; applyDropName('indAlice)
+       ; applyDropName('indBob)
+       ; applyDropName('indAdv)
+       ; applyDropName('ind1OutOf4OT)
+      }            
+      ; sugar-newNF  
+      ; applyDropName('indAlice)
+       ; applyDropName('indBob)
+       ; applyDropName('indAdv)
+       ; applyDropName('ind1OutOf4OT)
+       ; absorbFamily('OTOut-B-A) 
+       ; absorbFamily('OTMsg-A-B-0)
+       ; absorbFamily('OTMsg-A-B-1)  
+       ; absorbFamily('OTMsg-A-B-2)
+       ; absorbFamily('OTMsg-A-B-3)
+       ; absorbFamily('OTChoice-B-A-0)
+       ; absorbFamily('OTChoice-B-A-1)
+       **** here I need to do a sym proof from the protocol without the 4th component
+      ; SYM[P1:Protocol <- restrIndSplitSym]{
+         applyDropName('indAlice)
+       ; applyDropName('indBob)
+       ; applyDropName('indAdv)
+       } 
+                
+.
+
+srew [1] 
+ pConfig(secSig,
+           ('OTBit-A-B @ N + M :: bool)  
+           ('OTBit-B-A @ N + M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('Share-A @ K :: bool)
+           ('Share-B @ K :: bool)          
+           ('In-A_A_adv @ N :: bool)
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A @ N :: bool)
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B @ M :: bool) 
+           ('InputShare-A-B_A_adv @ M :: bool)
+           ('InputShare-B-A @ N :: bool) 
+           ('InputShare-B-B @ M :: bool)
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+            ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A @ K :: bool) 
+           ('SendFinalShare-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool)
+           ('OTOut-A-B @ N + M :: bool),
+           restrIndSplitSym,
+           empty, *** I 
+           getOutputs(restrInductive),
+           empty
+        )
+using    applyDropName('indAlice)
+       ; applyDropName('indBob)
+       ; applyDropName('indAdv)
+.
+
+
+srew [1] 
+ pConfig(secSig,
+           ('OTBit-A-B @ N + M :: bool) 
+           ('OTBit-B-A @ N + M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool)  
+           ('Share-A @ K :: bool)
+           ('Share-B @ K :: bool)          
+           ('In-A_A_adv @ N :: bool)
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A @ N :: bool)
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B @ M :: bool) 
+           ('InputShare-A-B_A_adv @ M :: bool)
+           ('InputShare-B-A @ N :: bool) 
+           ('InputShare-B-B @ M :: bool)
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+            ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A @ K :: bool) 
+           ('SendFinalShare-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool)
+           ('OTOut-A-B @ N + M :: bool),
+           restrIndSplit,
+           empty, *** I 
+           getOutputs(restrInductive),
+           empty
+        )
+using sugar-newNF
+       ; applyDropName('indAlice)
+       ; applyDropName('indBob)
+       ; applyDropName('indAdv)
+       ; applyDropName('ind1OutOf4OT)
+       ; absorbFamily('OTOut-B-A) 
+       ; absorbFamily('OTMsg-A-B-0)
+       ; absorbFamily('OTMsg-A-B-1)  
+       ; absorbFamily('OTMsg-A-B-2)
+       ; absorbFamily('OTMsg-A-B-3)
+       ; absorbFamily('OTChoice-B-A-0)
+       ; absorbFamily('OTChoice-B-A-1)
+.       
+) 
+
+***( below is restrFinal, keep
+
+srew [1] 
+ pConfig(secSig,
+           ('Share-A @ K :: bool)
+           ('Share-B @ K :: bool)          
+           ('In-A_A_adv @ N :: bool)
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A @ N :: bool)
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B @ M :: bool) 
+           ('InputShare-A-B_A_adv @ M :: bool)
+           ('InputShare-B-A @ N :: bool) 
+           ('InputShare-B-B @ M :: bool)
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+            ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A @ K :: bool) 
+           ('SendFinalShare-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool)
+           ('OTOut-A-B @ N + M :: bool),
+           restrFinal,
+           insert('Share-A @ N, 'Share-B @ M), *** I 
+           getOutputs(restrFinal),
+           empty
+        )
+using   sugar-newNF
+      ; applyCasesSubstDivergeOwise('SendFinalShare-A, 'Out-A, 'k, bool, 'x3)
+      ; applySameCasesSubstFirstBranch('SendFinalShare-B, 'Out-A, 'k)
+      ; applyCasesSubstDivergeOwise('SendFinalShare-A, 'Out-B, 'k, bool, 'x3)
+      ; applySameCasesSubstFirstBranch('SendFinalShare-B, 'Out-B, 'k) 
+      ; applyCasesSubstDivergeOwise('SendFinalShare-A, 'SendFinalShare-A_A_adv, 'k, bool, 'x3)
+      ; applyCasesSubstDivergeOwise('SendFinalShare-B, 'SendFinalShare-B_A_adv, 'k, bool, 'x3)
+      ; absorbFamily('SendFinalShare-A)
+      ; absorbFamily('SendFinalShare-B)
+      *** TODO: might have to do some renamings here!
+      .
+)      
+
+***( below is restrInitial, keep
+srew [1] 
+ pConfig(secSig,
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool)          
+           ('In-A_A_adv @ N :: bool)
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A @ N :: bool)
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B @ M :: bool) 
+           ('InputShare-A-B_A_adv @ M :: bool)
+           ('InputShare-B-A @ N :: bool) 
+           ('InputShare-B-B @ M :: bool)
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+            ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool)
+           ('OTOut-A-B @ N + M :: bool),
+           restrInitial,
+           insert('In-A @ N, 'In-B @ M), *** I 
+           getOutputs(restrInitial),
+           empty
+        )
+using   sugar-newNF
+      ; SYM[P1:Protocol <- restrInitial1]{
+         substNFFamiliesOne(
+           'InputShare-A-B, 'InputShare-B-B,
+           nf('sis : bool <- read ('SendInputShare-A-B['k]), return 'sis, 'sis :: emptyCNameList)
+       )
+     ; substNFFamiliesOne(
+           'InputShare-A-B, 'SendInputShare-A-B_A_adv,
+           nf('sis : bool <- read ('SendInputShare-A-B['k]), return 'sis, 'sis :: emptyCNameList)
+       )
+     ; substNFFamiliesOne(
+           'InputShare-B-A, 'SendInputShare-B-A_A_adv,
+           nf('sis : bool <- read ('SendInputShare-B-A['k]), return 'sis, 'sis :: emptyCNameList)
+       )
+     ; applyAlphaNFPr('InputShare-B-B, << 'sis,'xa >> emptyQidPairList)  
+      }
+      ; foldNFFamily('SendInputShare-A-B, 'InputShare-A-B)
+      ; foldNFFamily('SendInputShare-B-A, 'InputShare-B-A)    
+.
+)
+
+
+***( commented out for now, but this is the main computation!
+
+*** WARNING: OTChoiceRcvd-B-A-0_ot_adv @ N + M    'OTChoiceRcvd-B-A-1_ot_adv @ N + M 
+***          are outputs!
+
+srew [1] 
+ pConfig(secSig,
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool)          
+           ('In-A_A_adv @ N :: bool) 
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B_A_adv @ M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool)
+           ('OTOut-A-B @ N + M :: bool),
+           real,
+           insert('In-A @ N, 'In-B @ M), *** I 
+           ('In-A_A_adv @ N,
+    'InRcvd-B_B_adv @ M, 'InputShare-A-A_A_adv @ N, 'InputShare-A-B_A_adv @ M,
+    'OTBit-A-B_A_adv @ N + M, 'OTChoice-B-A-0_ot_adv @ N + M,
+    'OTChoice-B-A-1_ot_adv @ N + M, 'OTMsg-A-B-0_ot_adv @ N + M,
+    'OTMsg-A-B-1_ot_adv @ N + M, 'OTMsg-A-B-2_ot_adv @ N + M,
+    'OTMsg-A-B-3_ot_adv @ N + M, 'OTOut-A-B @ N + M, 'Out-A @ N + M,
+    'Out-A_A_adv @ N + M, 'Out-B @ N + M, 'SendFinalShare-A_A_adv @ N + M,
+    'SendFinalShare-B_A_adv @ N + M, 'SendInputShare-A-B_A_adv @ M,
+    'SendInputShare-B-A_A_adv @ N, 'Share-A_A_adv @ N + M),
+           empty
+        )
+using  sugar-newNF
+     ; moveNewToFront
+     ; SYM [P1:Protocol <- restr]{
+       sugar-newNF
+     ; moveNewToFront
+     ; reorder-newNF[ql2:CNameList <- 
+        'SendInputShare-A-B :: 'SendInputShare-B-A :: 'OTMsg-A-B-0 :: 
+        'OTMsg-A-B-1 :: 'OTMsg-A-B-2 :: 'OTMsg-A-B-3 :: 'OTChoice-B-A-0 :: 
+        'OTChoice-B-A-1 :: 'SendFinalShare-A :: 'SendFinalShare-B :: 
+        'InputShare-A-A :: 'InputShare-A-B :: 'OTBit-A-B :: 
+        'Share-A :: 'InputShare-B-A :: 'InputShare-B-B :: 'OTBit-B-A :: 
+        'Share-B :: emptyCNameList
+       ]
+     }
+     ; sugar-newNF
+.
+)
+
+
 
 *************************************
 *** from here down we have comments
 *************************************
 
-
 ***(
+
+red typeOf(secSig, 
+           ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool)          
+           ('In-A_A_adv @ N :: bool) 
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B_A_adv @ M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool) , 
+           insert('In-A @ N, 'In-B @ M), *** I 
+           empty, *** A
+           restr)
+.
+red typeOf(secSig, 
+           ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool)          
+           ('In-A_A_adv @ N :: bool) 
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B_A_adv @ M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool) , 
+           insert('In-A @ N, 'In-B @ M), *** I 
+           empty, *** A
+           idealPlusSim)
+.
+
+
+red typeOf(secSig, 
+           ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool)          
+           ('In-A_A_adv @ N :: bool) 
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B_A_adv @ M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool) , 
+           insert('In-A @ N, 'In-B @ M), *** I 
+           empty, *** A
+           real)
+.
+
+red typeOf(secSig, 
+           ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool)          
+           ('In-A_A_adv @ N :: bool) 
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B_A_adv @ M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool) , 
+           insert('In-A @ N, 'In-B @ M), *** I 
+           empty, *** A
+           idealPlusSim)
+.
+
+red typeOf(secSig, 
+           ('In-A_id_adv @ N :: bool)  
+           ('InRcvd-B_id_adv @ M :: unit)
+           ('Out-A @ N + M :: bool) 
+           ('Out-A_id_adv @ N + M :: bool) 
+           ('Out-B @ N + M :: bool)
+           ('In-A_A_adv @ N :: bool) 
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A @ N :: bool)
+           ('InputShare-A-A_A_adv @ N :: bool) 
+           ('InputShare-A-B @ M :: bool) 
+           ('InputShare-A-B_A_adv @ M :: bool)
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool)
+
+
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool),
+           insert('In-A_id_adv @ N , 'InRcvd-B_id_adv @ M), *** I 
+           empty, *** A
+           simInitial)
+.
+
+
+red typeOf(secSig, 
+           ('In-A_id_adv @ N :: bool)  
+           ('InRcvd-B_id_adv @ M :: unit)
+           ('Out-A @ N + M :: bool) 
+           ('Out-A_id_adv @ N + M :: bool) 
+           ('Out-B @ N + M :: bool)
+
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool),
+           insert('In-A @ N, 'In-B @ M), *** I 
+           empty, *** A
+           ideal)
+.
+
+red typeOf(secSig, 
+           ('In-A_id_adv @ N :: bool)  
+           ('InRcvd-B_id_adv @ M :: unit)
+           ('Out-A @ N + M :: bool) 
+           ('Out-A_id_adv @ N + M :: bool) 
+           ('Out-B @ N + M :: bool)
+           ('In-A_A_adv @ N :: bool) 
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A @ N :: bool)
+           ('InputShare-A-A_A_adv @ N :: bool) 
+           ('InputShare-A-B @ M :: bool) 
+           ('InputShare-A-B_A_adv @ M :: bool)
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool)
+
+
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool),
+           insert('In-A_id_adv @ N , 'InRcvd-B_id_adv @ M), *** I 
+           empty, *** A
+           simInitial)
+.
+
+
+*********************************
+*********************************
 
 red typeOf(secSig, 
            ('In-A @ N :: bool)
@@ -795,11 +2619,11 @@ red typeOf(
   ('OTChoice-B-A-1 @ N + M :: bool)
   ('Share-B @ N + M :: bool)
   ***inputs
-  ('OTOut-A-B @ N + M :: bool)
+  ('OTOut-B-A @ N + M :: bool)
   ('InputShare-B-A @ N :: bool)
   ('InputShare-B-B @ M :: bool) ,
   insert('InputShare-B-A @ N, insert('InputShare-B-B @ M,
-   insert('OTOut-A-B @ N + M , insert('In-A @ N, 'In-B @ M)))
+   insert('OTOut-B-A @ N + M , insert('In-A @ N, 'In-B @ M)))
   ),
     empty, ***A
     bobInductive
@@ -835,7 +2659,9 @@ red typeOf( secSig,
      ('OTMsg-A-B-1_ot_adv @ N + M :: bool) 
      ('OTMsg-A-B-2_ot_adv @ N + M :: bool)
      ('OTMsg-A-B-3_ot_adv @ N + M :: bool) 
-     ('OTOut-A-B @ N + M :: bool) 
+     ('OTOut-B-A @ N + M :: bool) 
+     ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+     ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
      *** inputs
      ('OTChoice-B-A-0 @ N + M :: bool)
      ('OTChoice-B-A-1 @ N + M :: bool)
@@ -859,6 +2685,52 @@ red typeOf( secSig,
 
 red typeOf(
      secSig,
+     ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+     ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+     ('In-A @ N :: bool)
+     ('In-B @ M :: bool)
+     ('In-A_A_adv @ N :: bool) 
+     ('InputShare-A-A_A_adv @ N :: bool)
+     ('InputShare-A-B_A_adv @ M :: bool)
+     ('SendInputShare-A-B_A_adv @ M :: bool) 
+     ('SendInputShare-B-A_A_adv @ N :: bool)
+     ('Out-A @ N + M :: bool) 
+     ('Out-A_A_adv @ N + M :: bool) 
+     ('SendFinalShare-A @ N + M :: bool)
+     ('SendFinalShare-A_A_adv @ N + M :: bool) 
+     ('SendFinalShare-B_A_adv @ N + M :: bool)
+     ('InRcvd-B_B_adv @ M :: unit)  
+     ('OTChoice-B-A-0 @ N + M :: bool)
+     ('OTChoice-B-A-1 @ N + M :: bool)
+     ('OTMsg-A-B-0 @ K :: bool) 
+     ('OTMsg-A-B-1 @ K :: bool) 
+     ('OTMsg-A-B-2 @ K :: bool)
+     ('OTMsg-A-B-3 @ K :: bool) 
+     ('Out-B @ K :: bool) 
+     ('SendFinalShare-B @ K :: bool) 
+     ('SendInputShare-A-B @ M :: bool)
+     ('SendInputShare-B-A @ N :: bool)
+     ('OTChoice-B-A-0_ot_adv @ N + M :: unit) 
+     ('OTChoice-B-A-1_ot_adv @ N + M :: unit)
+     ('OTMsg-A-B-0_ot_adv @ N + M :: bool) 
+     ('OTMsg-A-B-1_ot_adv @ N + M :: bool) 
+     ('OTMsg-A-B-2_ot_adv @ N + M :: bool)
+     ('OTMsg-A-B-3_ot_adv @ N + M :: bool)
+     ('OTBit-A-B_A_adv @ K :: bool)
+     ('Share-A_A_adv @ K :: bool)
+      ('OTOut-B-A @ N + M :: bool) ,
+     *** inputs
+     insert('In-A @ N, insert('In-B @ M, 
+       union(getOutputs(bob), getOutputs(1OutOf4)))),
+     empty,
+     alice)
+. 
+
+
+red typeOf(
+     secSig,
+     ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+     ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
      ('In-A @ N :: bool)
      ('In-B @ M :: bool)
      ('InRcvd-B_B_adv @ M :: unit)  
@@ -892,54 +2764,13 @@ red typeOf(
      ('OTMsg-A-B-1_ot_adv @ N + M :: bool) 
      ('OTMsg-A-B-2_ot_adv @ N + M :: bool)
      ('OTMsg-A-B-3_ot_adv @ N + M :: bool) 
-     ('OTOut-A-B @ N + M :: bool) ,
+     ('OTOut-B-A @ N + M :: bool) ,
      *** inputs
      insert('In-A @ N, insert('In-B @ M, 
        union(getOutputs(alice), getOutputs(1OutOf4)))),
      empty,
      bob)
-.
-
-red typeOf(
-     secSig,
-     ('In-A @ N :: bool)
-     ('In-B @ M :: bool)
-     ('In-A_A_adv @ N :: bool) 
-     ('InputShare-A-A_A_adv @ N :: bool)
-     ('InputShare-A-B_A_adv @ M :: bool)
-     ('SendInputShare-A-B_A_adv @ M :: bool) 
-     ('SendInputShare-B-A_A_adv @ N :: bool)
-     ('Out-A @ N + M :: bool) 
-     ('Out-A_A_adv @ N + M :: bool) 
-     ('SendFinalShare-A @ N + M :: bool)
-     ('SendFinalShare-A_A_adv @ N + M :: bool) 
-     ('SendFinalShare-B_A_adv @ N + M :: bool)
-     ('InRcvd-B_B_adv @ M :: unit)  
-     ('OTChoice-B-A-0 @ N + M :: bool)
-     ('OTChoice-B-A-1 @ N + M :: bool)
-     ('OTMsg-A-B-0 @ K :: bool) 
-     ('OTMsg-A-B-1 @ K :: bool) 
-     ('OTMsg-A-B-2 @ K :: bool)
-     ('OTMsg-A-B-3 @ K :: bool) 
-     ('Out-B @ K :: bool) 
-     ('SendFinalShare-B @ K :: bool) 
-     ('SendInputShare-A-B @ M :: bool)
-     ('SendInputShare-B-A @ N :: bool)
-     ('OTChoice-B-A-0_ot_adv @ N + M :: unit) 
-     ('OTChoice-B-A-1_ot_adv @ N + M :: unit)
-     ('OTMsg-A-B-0_ot_adv @ N + M :: bool) 
-     ('OTMsg-A-B-1_ot_adv @ N + M :: bool) 
-     ('OTMsg-A-B-2_ot_adv @ N + M :: bool)
-     ('OTMsg-A-B-3_ot_adv @ N + M :: bool)
-     ('OTBit-A-B_A_adv @ K :: bool)
-     ('Share-A_A_adv @ K :: bool)
-      ('OTOut-A-B @ N + M :: bool) ,
-     *** inputs
-     insert('In-A @ N, insert('In-B @ M, 
-       union(getOutputs(bob), getOutputs(1OutOf4)))),
-     empty,
-     alice)
-.     
+.    
 
 red typeOf(secSig, 
            ('In-A @ N :: bool)
@@ -963,66 +2794,12 @@ red typeOf(secSig,
            ('SendInputShare-A-B_A_adv @ M :: bool) 
            ('SendInputShare-B-A_A_adv @ N :: bool) 
            ('Share-A_A_adv @ K :: bool)
-           ('OTOut-A-B @ N + M :: bool) , 
+           ('OTOut-B-A @ N + M :: bool) , 
            insert('In-A @ N, 'In-B @ M), *** I 
            empty, *** A
            real)
 .
 )
-
-srew [1] 
- pConfig(secSig,
-           ('In-A @ N :: bool)
-           ('In-B @ M :: bool)          
-           ('In-A_A_adv @ N :: bool) 
-           ('InRcvd-B_B_adv @ M :: unit) 
-           ('InputShare-A-A_A_adv @ N :: bool)
-           ('InputShare-A-B_A_adv @ M :: bool) 
-           ('OTBit-A-B_A_adv @ K :: bool) 
-           ('OTChoice-B-A-0_ot_adv @ K :: unit)
-           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
-           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
-           ('OTMsg-A-B-1_ot_adv @ K :: bool)
-           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
-           ('OTMsg-A-B-3_ot_adv @ K :: bool)
-           ('Out-A @ K :: bool)
-           ('Out-A_A_adv @ K :: bool) 
-           ('Out-B @ K :: bool) 
-           ('SendFinalShare-A_A_adv @ K :: bool) 
-           ('SendFinalShare-B_A_adv @ K :: bool) 
-           ('SendInputShare-A-B_A_adv @ M :: bool) 
-           ('SendInputShare-B-A_A_adv @ N :: bool) 
-           ('Share-A_A_adv @ K :: bool)
-           ('OTOut-A-B @ N + M :: bool),
-           real,
-           insert('In-A @ N, 'In-B @ M), *** I 
-           ('In-A_A_adv @ N,
-    'InRcvd-B_B_adv @ M, 'InputShare-A-A_A_adv @ N, 'InputShare-A-B_A_adv @ M,
-    'OTBit-A-B_A_adv @ N + M, 'OTChoice-B-A-0_ot_adv @ N + M,
-    'OTChoice-B-A-1_ot_adv @ N + M, 'OTMsg-A-B-0_ot_adv @ N + M,
-    'OTMsg-A-B-1_ot_adv @ N + M, 'OTMsg-A-B-2_ot_adv @ N + M,
-    'OTMsg-A-B-3_ot_adv @ N + M, 'OTOut-A-B @ N + M, 'Out-A @ N + M,
-    'Out-A_A_adv @ N + M, 'Out-B @ N + M, 'SendFinalShare-A_A_adv @ N + M,
-    'SendFinalShare-B_A_adv @ N + M, 'SendInputShare-A-B_A_adv @ M,
-    'SendInputShare-B-A_A_adv @ N, 'Share-A_A_adv @ N + M),
-           empty
-        )
-using  sugar-newNF
-     ; moveNewToFront
-     ; SYM [P1:Protocol <- restr]{
-       sugar-newNF
-     ; moveNewToFront
-     ; reorder-newNF[ql2:CNameList <- 
-        'SendInputShare-A-B :: 'SendInputShare-B-A :: 'OTMsg-A-B-0 :: 
-        'OTMsg-A-B-1 :: 'OTMsg-A-B-2 :: 'OTMsg-A-B-3 :: 'OTChoice-B-A-0 :: 
-        'OTChoice-B-A-1 :: 'SendFinalShare-A :: 'SendFinalShare-B :: 
-        'InputShare-A-A :: 'InputShare-A-B :: 'OTBit-A-B :: 
-        'Share-A :: 'InputShare-B-A :: 'InputShare-B-B :: 'OTBit-B-A :: 
-        'Share-B :: emptyCNameList
-       ]
-     }
-     ; sugar-newNF
-.
 
 ***(
 srew [1] 
@@ -1074,4 +2851,41 @@ using  sugar-newNF
        ]
 .
  
- )          
+ )  
+ 
+***( restrInitial   
+
+srew [1] 
+ pConfig(secSig,
+           ('In-A @ N :: bool)
+           ('In-B @ M :: bool)          
+           ('In-A_A_adv @ N :: bool) 
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B_A_adv @ M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool)
+           ('OTOut-A-B @ N + M :: bool),
+           restrInitial,
+           insert('In-A @ N, 'In-B @ M), *** I 
+           getOutputs(restrInitial),
+           empty
+        )
+using  sugar-newNF
+
+.
+)
+     

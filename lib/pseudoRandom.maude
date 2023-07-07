@@ -5,7 +5,9 @@
   Authors   : Mihai Codescu <mscodescu@gmail.com>
               Kristina Sojakova <sojakova.kristina@gmail.com>
 
-Hello world-like example
+Symmetric-Key Encryption: CPA $ -To-CPA Security
+Sec. 2 of doc/case_studies.pdf
+
 
 )
 load ../src/strategies
