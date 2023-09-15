@@ -1332,6 +1332,7 @@ smod EXECUTE is
      ? CONG-NEW-NF{applyIndStep1(Q)} 
      : INDUCTION-when-two[
          C:Qid <- Q, 
+         *** idx:Qid <- 'k,
          cases':Cases <-
            nf('x : unit <- read ('AllCommitted1['j]), return 'x, 'x :: emptyCNameList)
         ]
@@ -1363,7 +1364,8 @@ smod EXECUTE is
      match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{applyIndStep2(Q)} 
      : INDUCTION-when-two[
-         C:Qid <- Q, 
+         C:Qid <- Q,
+         *** index:Qid <- 'k,
          cases':Cases <-
            nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x :: emptyCNameList)
         ]
@@ -1384,7 +1386,8 @@ smod EXECUTE is
      ? CONG-NEW-NF{applyIndStep3(Q, pr7, pr8)} 
      : 
       INDUCTION-when-one[
-         C:Qid <- Q, 
+         C:Qid <- Q,
+         *** index:Qid <- 'k,
          cases':Cases <-
            nf('sc : bool <- read ('SumCommit['i]), 
               return (), 
@@ -1426,7 +1429,8 @@ smod EXECUTE is
      ? CONG-NEW-NF{applyIndStep4(Q, pr9, pr10)} 
      : 
       INDUCTION-when-one[
-         C:Qid <- Q, 
+         C:Qid <- Q,
+         *** index:Qid <- 'k,
          cases':Cases <-
            nf(('ao : unit <- read ('AllOpen['i])) 
                           ('sc : bool <- read ('SumCommit['i])),
@@ -1486,6 +1490,8 @@ smod EXECUTE is
       
 endsm
 
+set trace off .
+
 *** this is the main proof
 srew [1] pConfig(secSig, 
                  ('AdvCommit_adv_party @ (n + 1) :: bool) 
@@ -1509,10 +1515,14 @@ srew [1] pConfig(secSig,
                 )
              , 'Commitment
              , 'AllCommitted1   
-            )           
+            )      
+                 
         ; applyCaseDistInd('Party, 'Commitment, 'AllCommitted, r1)    
+        ***( 
         ; applyCaseDistSubst('Party, 'Commitment, 'Open, 'AllCommitted, r2)  
-        ; applyCaseDistAbsorb('Party, 'Commitment, 'AllCommitted, r3)                     
+        
+        ; applyCaseDistAbsorb('Party, 'Commitment, 'AllCommitted, r3) 
+                           
         ; addNewFamilyToGroup(
              newfamily 'SumOpened1 'j (bound (n + 2)) : bool in
               family 'SumOpened1 'j (bound (n + 2)) ::= 
@@ -1644,5 +1654,7 @@ srew [1] pConfig(secSig,
          ; merge-cases[C:Qid <- 'SumCommit]
          ; applyReorderNF('Out, 'ao :: 'sc :: emptyCNameList)
             }
+            
+            ) *** end comment
 .
 

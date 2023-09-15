@@ -237,7 +237,8 @@ smod EXECUTE is
                                R4:Reaction <- nf(('in : msg <- read ('In['i])) 
                                                   'k : key <- read 'Key, 
                                                   samp ('enc < pair('in, 'k) >), 
-                                                  'in :: 'k :: emptyCNameList)
+                                                  'in :: 'k :: emptyCNameList),
+                               idx:Qid <- 'k                   
                               ]{
          applyEDC( 'Key, 'Enc[0], 'Dec[0]),
          applyEDC( 'Key, 'Enc['k ++ 1], 'Dec['k ++ 1]) 

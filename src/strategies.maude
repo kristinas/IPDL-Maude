@@ -307,7 +307,7 @@ smod STRATS is
              ; (SYM[P1:Protocol <- pr]{COMP-NEW-newNF})
              }
          , idle
-         } . 
+         } .         
          
   *** sub-strategy
                                                
@@ -533,6 +533,44 @@ smod STRATS is
    ************************
    *** drop
    ************************    
+  
+  *** drop-nf-family-channel
+  strat applyDropNFCF : Qid ChannelName @ ProtocolConfig .
+  sd applyDropNFCF(C1, C2) :=
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyDropNFCF(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (
+         CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                         P1:Protocol <- keepTwo P C1 C2]{
+              DROP-nf-cf[C:ChannelName <- C1, 
+                         cn:ChannelName <- C2]
+         }
+         or-else DROP-nf-cf[C:ChannelName <- C1, 
+                         cn:ChannelName <- C2]
+                                   
+       )
+  .
+  
+  *** drop-nf-channel-family with cases
+  strat applyDropNFCFCases : Qid ChannelName BoolTerm @ ProtocolConfig .
+  sd applyDropNFCFCases(C1, C2, bt) :=
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyDropNFCFCases(C1, C2, bt)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (
+         CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                         P1:Protocol <- keepTwo P C1 C2]{
+              DROP-nf-cf-cases[C:ChannelName <- C1, 
+                         cn:ChannelName <- C2,
+                         bt:BoolTerm <- bt]
+         }
+         or-else DROP-nf-cf-cases[C:ChannelName <- C1, 
+                         cn:ChannelName <- C2,
+                         bt:BoolTerm <- bt]
+                                   
+       )
+  .
        
   *** DROP-NF
   
@@ -574,8 +612,161 @@ smod STRATS is
                    o2:ChannelName <- C2]
               ) 
                    
- .                        
+ .      
+ 
+ *** apply drop for families
+ 
+ strat applyDropNFFamilies : Qid Qid @ ProtocolConfig .
+ sd applyDropNFFamilies(q1, q2) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyDropNFFamilies(q1, q2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P q1 q2, 
+                             P1:Protocol <- keepTwo P q1 q2]{DROP-nf-families}
+              or-else  DROP-nf-families
+             )
+ .       
+ 
+ *** apply drop for channels, several reads before samp
+ 
+  strat applyDropNFChannels : ChannelName ChannelName @ ProtocolConfig .
+ sd applyDropNFChannels(C1, C2) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyDropNFChannels(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{DROP-nf-channels}
+              or-else  DROP-nf-channels
+             )
+ .                     
   
+  *********************
+  *** subsume
+  *********************
+  
+ strat applyDropSubsumeRevFamilies : Qid Qid @ ProtocolConfig .
+ sd applyDropSubsumeRevFamilies(q1, q2) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyDropSubsumeRevFamilies(q1, q2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P q1 q2, 
+                             P1:Protocol <- keepTwo P q1 q2]{
+                             DROP-SUBSUME-families
+                             }
+              or-else DROP-SUBSUME-families
+             )
+ . 
+ 
+  strat applyDropSubsumeRevChannels : Qid Qid @ ProtocolConfig .
+ sd applyDropSubsumeRevChannels(C1, C2) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyDropSubsumeRevChannels(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{
+                             DROP-SUBSUME-channels
+                             }
+              or-else DROP-SUBSUME-channels
+             )
+ . 
+  
+ strat applySubsumeRevFamilies : Qid Qid Qid @ ProtocolConfig .
+ sd applySubsumeRevFamilies(q1, q2, x) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubsumeRevFamilies(q1, q2, x)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P q1 q2, 
+                             P1:Protocol <- keepTwo P q1 q2]{
+                             subsume-families-one-rev[x0:ChannelName <- x]
+                             }
+              or-else  (subsume-families-one-rev[x0:ChannelName <- x])
+             )
+ . 
+ 
+ strat applySubsumeRevChannels : ChannelName ChannelName Qid @ ProtocolConfig .
+ sd applySubsumeRevChannels(C1, C2, x) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubsumeRevChannels(C1, C2, x)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{
+                             subsume-channels-one-rev[x0:ChannelName <- x]
+                             }
+              or-else  (subsume-channels-one-rev[x0:ChannelName <- x])
+             )
+ . 
+ 
+ strat applySubsumeRevFamilyChannel : Qid ChannelName Qid @ ProtocolConfig .
+ sd applySubsumeRevFamilyChannel(q1, C2, x) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubsumeRevChannels(q1, C2, x)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P q1 C2, 
+                             P1:Protocol <- keepTwo P q1 C2]{
+                             subsume-channels-family-one-rev[x0:ChannelName <- x]
+                             }
+              or-else  (subsume-channels-family-one-rev[x0:ChannelName <- x])
+             )
+ . 
+ 
+ strat applySubsumeRevFamiliesList : Qid Qid CNameList @ ProtocolConfig .
+ sd applySubsumeRevFamiliesList(q1, q2, emptyCNameList) := idle .
+ sd applySubsumeRevFamiliesList(q1, q2, x :: ql) :=
+     applySubsumeRevFamilies(q1, q2, x)
+   ; applySubsumeRevFamiliesList(q1, q2, ql)
+ .  
+   
+ strat applySubsumeRevChannelsList : ChannelName ChannelName CNameList @ ProtocolConfig .
+ sd applySubsumeRevChannelsList(C1, C2, emptyCNameList) := idle .
+ sd applySubsumeRevChannelsList(C1, C2, x :: ql) :=
+     applySubsumeRevChannels(C1, C2, x)
+   ; applySubsumeRevChannelsList(C1, C2, ql)
+ .  
+ 
+ strat applySubsumeFamilyCasesChannelList : ChannelName ChannelName CNameList @ ProtocolConfig .
+ sd applySubsumeFamilyCasesChannelList(C1, C2, emptyCNameList) := idle .
+ sd applySubsumeFamilyCasesChannelList(C1, C2, x :: ql) :=
+     applySubsumeFamilyCasesChannel(C1, C2, x)
+   ; applySubsumeFamilyCasesChannelList(C1, C2, ql)
+ .  
+ 
+ strat applySubsumeFamilyCasesChannel : ChannelName ChannelName ChannelName @ ProtocolConfig .
+ sd applySubsumeFamilyCasesChannel(C1, C2, x) :=
+      ( match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubsumeFamilyCasesChannel(C1, C2, x)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{
+                             subsume-family-cases-channel{
+       subsume-channels-one-rev[x0:ChannelName <- x]
+       }
+                             }
+              or-else  (subsume-family-cases-channel{
+                          subsume-channels-one-rev[x0:ChannelName <- x]
+                        }
+                       )
+             )
+       )
+       ; 
+       removeDuplicateReadsNF(C2)      
+ . 
+ 
+ strat applyDropFamilyCasesChannel : ChannelName ChannelName @ ProtocolConfig .
+ sd applyDropFamilyCasesChannel(C1, C2) :=
+      match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyDropFamilyCasesChannel(C1, C2)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{
+                             subsume-family-cases-channel{
+       DROP-nf-channels
+       }
+                             }
+              or-else DROP-nf-channels 
+             )
+ .
+
+   
   *********************
   *** absorb
   *********************
@@ -589,13 +780,17 @@ smod STRATS is
  *** absorb a family
  strat absorbFamily : Qid @ ProtocolConfig .
  sd absorbFamily(Q) := 
-    ( absorb-new-nf-family-one[C:Qid <- Q] 
+    absorb-new-nf-family-one[C:Qid <- Q] 
     or-else
-    absorb-new-nf-family-two[C:Qid <- Q])
+    absorb-new-nf-family-two[C:Qid <- Q]    
+ . 
+ 
+ strat absorbFamilyDeleteEmpty : Qid @ ProtocolConfig .
+ sd absorbFamilyDeleteEmpty(Q) := 
+    absorbFamily(Q) 
     ; 
     try (delete-empty-newNF)
  .   
- 
   *** add a newfamily to a named group of protocols
  strat addNewFamilyToGroup : Protocol Qid Qid @ ProtocolConfig .
  sd addNewFamilyToGroup(P, Q1, Q2) :=
@@ -625,7 +820,7 @@ smod STRATS is
     : CASE-DISTINCTION-one[aQid:Qid <- q1]
          { use-family-p[C:Qid <- q2]
              { COMP-NEW-newNF
-             ; absorbFamily(q3)
+             ; absorbFamilyDeleteEmpty(q3)
              ; (SYM[P1:Protocol <- pr]{COMP-NEW-newNF})
              }
          , idle
@@ -729,6 +924,22 @@ smod STRATS is
  *** pure syntactic transformations
  ***********************************
  
+ strat applyGetChannel : ChannelName @ ProtocolConfig .
+ sd applyGetChannel(C1) :=
+    get-channel[cn:ChannelName <- C1]
+ .    
+ 
+ strat removeDuplicateReadsNF : ChannelName @ ProtocolConfig .
+ sd removeDuplicateReadsNF(C1) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{removeDuplicateReadsNF(C1)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using
+        CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C1, 
+                        P1:Protocol <- keepOne P C1]{
+         CONG-REACT[cn:ChannelName <- C1]{read-det-nf !}
+       } . 
+ 
  var bt : BoolTerm .
  
  *** turn a plain family definition to a cases one with same reaction on each branch
@@ -767,6 +978,22 @@ smod STRATS is
              )
  . 
  
+ *** change order of reads in a normal form on a branch of a channel
+ strat applyChangeOrderBranch : ChannelName BoolTerm CNameList @ ProtocolConfig .
+    sd applyChangeOrderBranch(cn, bt, ql) := 
+        match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyChangeOrderBranch(cn, bt, ql)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+          using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P cn, 
+                                 P1:Protocol <- keepOne P cn]{
+                                 cong-cases-reaction[cn:ChannelName <- cn, bt:BoolTerm <- bt]{
+         
+                   CONG-REACT[cn:ChannelName <- cn]{change-order[QL':CNameList <- ql]}
+                 }
+                                 }
+                )
+    .
+ 
  *** change order of reads in a normal form or a pre-normal form                        
  strat changeOrder : ChannelName CNameList @ ProtocolConfig .
  sd changeOrder(C, ql) :=
@@ -780,6 +1007,12 @@ smod STRATS is
           or-else
           change-order-pre[QL':CNameList <- ql]
          }
+         or-else
+         CONG-REACT-family[C:Qid <- C]
+         {change-order[QL':CNameList <- ql]
+          or-else
+          change-order-pre[QL':CNameList <- ql]
+         }
        }
        or-else
         CONG-REACT[o:ChannelName <- C]
@@ -787,6 +1020,12 @@ smod STRATS is
           or-else
           change-order-pre[QL':CNameList <- ql]
          }
+       or-else
+         CONG-REACT-family[C:Qid <- C]
+         {change-order[QL':CNameList <- ql]
+          or-else
+          change-order-pre[QL':CNameList <- ql]
+         }  
        )
  .
  
@@ -849,8 +1088,8 @@ smod STRATS is
      :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P Q, 
                              P1:Protocol <- keepOne P Q]
-                             {drop-group-name}
-               or-else drop-group-name
+                     {drop-group-name[C:Qid <- Q]}
+               or-else (drop-group-name[C:Qid <- Q])
              )
  .
  
@@ -866,21 +1105,53 @@ smod STRATS is
              )
  .
  
- *** do an alpha-renaming on the first branch of a family
- strat applyBranch1Alpha : Qid QidPairList @ ProtocolConfig .
- sd  applyBranch1Alpha(q1, QL) := 
+ var whenCond : WhenCond .
+ var q : Qid .
+ var cn : ChannelName .
+ 
+ *** do an alpha-renaming on a branch of a family, identified by its condition
+ strat applyAlphaBranchCond : ChannelName Qid Qid WhenCond @ ProtocolConfig .
+ sd applyAlphaBranchCond(cn, q1, q2, whenCond) :=
+   match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyAlphaBranchCond(cn, q1, q2, whenCond)}
+    : 
+    alpha-branch[C:Qid <- cn, q1:Qid <- q1, q2:Qid <- q2, whenCond:WhenCond <- whenCond]
+    or-else
+    alpha-branch-channel[cn:ChannelName <- cn, 
+      q1:Qid <- q1, q2:Qid <- q2, whenCond:WhenCond <- whenCond
+    ]
+ .
+ 
+ *** do an alpha-renaming on the first branch of a family or a channel!
+ strat applyBranch1Alpha : ChannelName QidPairList @ ProtocolConfig .
+ sd  applyBranch1Alpha(cn, QL) := 
     match pConf s.t. startsWithNew pConf
-    ? CONG-NEW-NF{applyBranch1Alpha(q1, QL)}
-    : CASE-DISTINCTION-one-R[aQid:Qid <- q1]
+    ? CONG-NEW-NF{applyBranch1Alpha(cn, QL)}
+    : (
+       (CASE-DISTINCTION-one-R[aQid:Qid <- cn]
          {matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
             using
-                    CONG-COMP-RIGHT[Q:Protocol  <- removeOne P q1, 
-                                    P1:Protocol <- keepOne P q1]{
+                    CONG-COMP-RIGHT[Q:Protocol  <- removeOne P cn, 
+                                    P1:Protocol <- keepOne P cn]{
                        CONG-FAMILY-R { alphaNFOverList(QL)}
                      }
          , 
           idle
          }
+       )
+       or-else
+       (CASE-DISTINCTION-channel[cn:ChannelName <- cn]
+         {matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+            using
+                    CONG-COMP-RIGHT[Q:Protocol  <- removeOne P cn, 
+                                    P1:Protocol <- keepOne P cn]{
+                       CONG-REACT { alphaNFOverList(QL)}
+                     }
+         , 
+          idle
+         }
+       )
+      )   
     .     
 
   
@@ -905,6 +1176,22 @@ smod STRATS is
                   }
          } 
          . 
+         
+  *** if a channel has same reaction on all branch, remove the branching
+  strat applyAllSameCases : ChannelName @ ProtocolConfig .
+  sd applyAllSameCases(C) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyAllSameCases(C)}
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+        using
+        (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+                         P1:Protocol <- keepOne P C]{
+                   all-same-cases or-else all-same-cases-family
+         }
+         or-else 
+         (all-same-cases or-else all-same-cases-family)
+        )
+     .   
          
   *** substrategy and helpers
    sort QidPair .
@@ -1039,9 +1326,98 @@ smod STRATS is
        )
     . 
     
+    *******************************
+    *** congruence for cases
+    *******************************
+    
+    strat applyCongCases : ChannelName BoolTerm @ ProtocolConfig .
+    sd applyCongCases(cn, bt) := 
+        match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyCongCases(cn, bt)} 
+     : cong-cases-reaction[cn:ChannelName <- cn, bt:BoolTerm <- bt]{
+         idle *** the real reaction goes here, for now just a pattern
+       }
+    .
+    
 ********************
 *** subst with cases
 ********************
+ var cn1 cn2 : ChannelName .
+
+ strat applySubstFamilyCase : ChannelName ChannelName Qid Reaction @ ProtocolConfig .
+ sd applySubstFamilyCase(cn1, cn2, ind, R) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubstFamilyCase(cn1, cn2, ind, R)}
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using ((CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P cn1 cn2, 
+                             P1:Protocol <- keepTwo P cn1 cn2]
+              {subst-family-case[R':Reaction <- R]{ *** TODO: I need two reactions here???
+                substNFFamilyOne(cn1, cn2[ind], R)
+               }
+              }
+              )
+              or-else 
+              subst-family-case[R':Reaction <- R]{
+                substNFFamilyOne(cn1, cn2[ind], R)
+               }
+             ) .
+             
+ strat applySubstFamilyCase2 : ChannelName ChannelName Qid Reaction Reaction @ ProtocolConfig .
+ sd applySubstFamilyCase2(cn1, cn2, ind, R1, R2) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubstFamilyCase2(cn1, cn2, ind, R1, R2)}
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using ((CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P cn1 cn2, 
+                             P1:Protocol <- keepTwo P cn1 cn2]
+              {subst-family-case[R':Reaction <- R2]{ *** TODO: I need two reactions here???
+                substNFFamilyOne(cn1, cn2[ind], R1)
+               }
+              }
+              )
+              or-else 
+              subst-family-case[R':Reaction <- R2]{
+                substNFFamilyOne(cn1, cn2[ind], R1)
+               }
+             ) .  
+             
+ strat applySubstFamilyCase3 : ChannelName ChannelName Qid  
+                               Reaction Reaction BoolTerm @ ProtocolConfig .
+ sd applySubstFamilyCase3(cn1, cn2, ind, R1, R2, bt) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubstFamilyCase3(cn1, cn2, ind, R1, R2, bt)}
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using ((CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P cn1 cn2, 
+                             P1:Protocol <- keepTwo P cn1 cn2]
+              {subst-family-case[R':Reaction <- R2, bt:BoolTerm <- bt]{ 
+                 substNFFamilyOne(cn1, cn2[ind], R1)
+               }
+              }
+              )
+              or-else 
+              subst-family-case[R':Reaction <- R2, bt:BoolTerm <- bt]{
+                substNFFamilyOne(cn1, cn2[ind], R1)
+               }
+             ) .  
+             
+ strat applySubstChannelCase3 : ChannelName ChannelName  
+                               Reaction Reaction BoolTerm @ ProtocolConfig .
+ sd applySubstChannelCase3(cn1, cn2, R1, R2, bt) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubstChannelCase3(cn1, cn2, R1, R2, bt)}
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using ((CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P cn1 cn2, 
+                             P1:Protocol <- keepTwo P cn1 cn2]
+              {subst-channel-case[R':Reaction <- R2, bt:BoolTerm <- bt]{ 
+                 substNFFamilyOne(cn1, cn2, R1)
+               }
+              }
+              )
+              or-else 
+              subst-channel-case[R':Reaction <- R2, bt:BoolTerm <- bt]{
+                substNFFamilyOne(cn1, cn2, R1)
+               }
+             ) .                                            
+
 
 *** when we diverge on the otherwise branch
 
@@ -1055,7 +1431,7 @@ smod STRATS is
        using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
                              P1:Protocol <- keepTwo P C1 C2]
               {
-                cases-subst{
+                cases-subst[C:Qid <- C2, aQid:Qid <- C1]{
                   substNF(C1[ind], C2[ind]), 
                   cases-subst-end-otherwise{ 
                     subst-diverge[T2:Type <- T, x3:Qid <- x]
@@ -1064,6 +1440,119 @@ smod STRATS is
               }               
              )                
  .
+ 
+ strat applyCasesSubstChannelDivergeOwise : ChannelName ChannelName Type Qid @ ProtocolConfig .
+ sd applyCasesSubstChannelDivergeOwise(cn1, cn2, T, x) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyCasesSubstChannelDivergeOwise(cn1, cn2, T, x)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (
+              (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P cn1 cn2, 
+                             P1:Protocol <- keepTwo P cn1 cn2]
+              {
+                channel-cases-subst[cn1:ChannelName <- cn1, cn2:ChannelName <- cn2]{
+                  substNF(cn2, cn1), 
+                  channel-cases-subst-end-otherwise{ 
+                   subst-diverge[T2:Type <- T, x3:Qid <- x]
+                  }
+                } 
+              }               
+             )
+             or-else
+              (channel-cases-subst[cn1:ChannelName <- cn1, cn2:ChannelName <- cn2]{
+                  substNF(cn2, cn1), 
+                  channel-cases-subst-end-otherwise{ 
+                   subst-diverge[T2:Type <- T, x3:Qid <- x]
+                  }
+                } )
+              )                 
+ .
+ 
+  strat applyCasesSubsumeDropDivergeOwise : Qid Qid CNameList Qid Type Qid @ ProtocolConfig .
+  sd applyCasesSubsumeDropDivergeOwise(C1, C2, ql, ind, T, x) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyCasesSubsumeDropDivergeOwise(C1, C2, ql, ind, T, x)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]
+              {
+                channel-cases-subst[C:Qid <- C2, aQid:Qid <- C1]{
+                     applySubsumeRevChannelsList(C1[ind], C2[ind], ql)
+                   ; applyDropNFChannels(C1[ind], C2[ind])
+                   , 
+                  cases-subst-end-otherwise{ 
+                    subst-diverge[T2:Type <- T, x3:Qid <- x] ***TODO: do we need x3?
+                  }
+                } 
+              }               
+             )                
+ .
+ 
+  strat applyCasesSubsumeDropDivergeOwiseC : 
+             Qid ChannelName CNameList Type Qid @ ProtocolConfig .
+  sd applyCasesSubsumeDropDivergeOwiseC(C1, q[nt], ql, T, x) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyCasesSubsumeDropDivergeOwiseC(C1, q[nt], ql, T, x)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (
+             (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 (q[nt]), 
+                             P1:Protocol <- keepTwo P C1 (q[nt])]
+              {
+                fc-cases-subst[cn:ChannelName <- q[nt], aQid:Qid <- C1]{
+                     applySubsumeFamilyCasesChannelList(C1, q[nt], ql)
+                   ; applyDropNFCF(C1, q[nt])
+                   , 
+                  fc-cases-subst-end-otherwise{ 
+                    subst-diverge-family-channel[T2:Type <- T, x3:Qid <- x]
+                  }
+                } 
+              }               
+             )
+             or-else
+              (fc-cases-subst[cn:ChannelName <- q[nt], aQid:Qid <- C1]{
+                     applySubsumeFamilyCasesChannelList(C1, q[nt], ql)
+                   ; applyDropNFCF(C1, q[nt])
+                   , 
+                  fc-cases-subst-end-otherwise{ 
+                    subst-diverge-family-channel[T2:Type <- T, x3:Qid <- x]
+                  }
+                } 
+              )  
+            )   
+             
+ .                                      
+         
+  strat applyCasesSubstFC : 
+             Qid ChannelName Reaction Type Qid @ ProtocolConfig .
+  sd applyCasesSubstFC(C1, q[nt], R, T, x) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyCasesSubstFC(C1, q[nt], R, T, x)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (
+             (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 (q[nt]), 
+                             P1:Protocol <- keepTwo P C1 (q[nt])]
+              {
+                fc-cases-subst[cn:ChannelName <- q[nt], aQid:Qid <- C1]{
+                     substNFFamilyOne(C1, q[nt], R)
+                   , 
+                  fc-cases-subst-end-otherwise{ 
+                    subst-diverge-family-channel[T2:Type <- T, x3:Qid <- x]
+                  }
+                } 
+              }               
+             )
+             or-else
+              (fc-cases-subst[cn:ChannelName <- q[nt], aQid:Qid <- C1]{
+                     substNFFamilyOne(C1, q[nt], R)
+                   , 
+                  fc-cases-subst-end-otherwise{ 
+                    subst-diverge-family-channel[T2:Type <- T, x3:Qid <- x]
+                  }
+                }
+              )  
+            )   
+             
+ .  
  
  *** same cases and only do the substitution on first branch
  *** TODO: can be generalized to try to do on every branch?
@@ -1081,7 +1570,77 @@ smod STRATS is
                 }
               }               
              )                
- .               
+ .  
+ 
+ strat applySameCasesSubstFC : Qid ChannelName NatTerm @ ProtocolConfig .     
+ sd applySameCasesSubstFC(C1, cn, ind) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySameCasesSubstFC(C1, cn, ind)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 cn, 
+                             P1:Protocol <- keepTwo P C1 cn]
+              { fc-same-cases-subst-end-otherwise{
+                  substNF(C1[ind], cn)
+                }
+                or-else
+                fc-same-cases-subst-end-when{
+                  substNF(C1[ind], cn)
+                }
+                or-else
+                fc-same-cases-subst{
+                  substNF(C1[ind], cn), 
+                  applySameCasesSubstFC(C1, cn, ind)
+                }
+              }               
+             ) 
+ . 
+ 
+ *** if we can deduce the condition of a branch in a channel
+ *** use that to do the substitution
+ 
+ strat applySelectCaseSubst : ChannelName ChannelName BoolTerm @ ProtocolConfig .
+ sd applySelectCaseSubst(cn1, cn2, bt) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySelectCaseSubst(cn1, cn2, bt)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using ((CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P cn1 cn2, 
+                             P1:Protocol <- keepTwo P cn1 cn2]
+              {select-case-subst[bt:BoolTerm <- bt]{substNF(cn1, cn2)}
+              }
+             ) or-else
+                (select-case-subst[bt:BoolTerm <- bt]{substNF(cn1, cn2)})
+             ) 
+ .
+ 
+ *** apply subst on every branch using cases-subst
+ *** we assume it ends with when
+ *** TODO: also try otherwise before recursion
+ 
+ strat applyCasesSubst : Qid Qid Qid @ ProtocolConfig .
+ sd applyCasesSubst(C1, C2, ind) := 
+   match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyCasesSubst(C1, C2, ind)}
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{applyCasesSubstRec(C1, C2, ind)}
+              or-else
+              applyCasesSubstRec(C1, C2, ind))
+ .
+ 
+ *** this is a helper for the strategy above! 
+ strat applyCasesSubstRec : Qid Qid Qid @ ProtocolConfig .
+ sd applyCasesSubstRec(C1, C2, ind) :=                            
+    *** first try to apply the end case for when
+    cases-subst-end-when[aQid:Qid <- C1, C:Qid <- C2]{substNF(C1[ind], C2[ind])}
+    *** TODO: we need R2 as argument above
+    or-else
+    cases-subst-end-otherwise{substNF(C1[ind], C2[ind])}
+    or-else *** TODO: we might want to try diverge in both subproofs above!
+     cases-subst{
+                  substNF(C1[ind], C2[ind]), *** subst on first branch
+                  applyCasesSubstRec(C1, C2, ind) *** recursive call for the rest
+                }  
+ .      
  
  ******************************************
  *** helpers
@@ -1168,9 +1727,13 @@ smod UNUSED-STRATS is
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{applyAlphaPr(C, QL) } 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
+       using (
+              CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
                              P1:Protocol <- keepOne P C]
-             {CONG-REACT[o:ChannelName <- C]{alphaOverList(QL)}} . 
+             {CONG-REACT[o:ChannelName <- C]{alphaOverList(QL)}}
+             or-else
+             CONG-REACT[o:ChannelName <- C]{alphaOverList(QL)
+             ) . 
  
 
  *** checks that a certain channel is the first in a new/newfamily/newnf
