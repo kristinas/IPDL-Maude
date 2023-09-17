@@ -66,7 +66,9 @@ mod GMW2 is
  ops N M K : -> Nat .
  eq K = M + N .
  
- *** op isOutputWire : Nat -> Bool .
+ *** underspecified predicate
+ op isOutputWire : Nat -> Bool .
+ 
  op isAliceInput : Nat -> Bool .
  op isBobInput : Nat -> Bool .
  op isNotGate : Nat -> Bool .
@@ -159,8 +161,10 @@ mod GMW2 is
   if (evalTerm nt f) : Nat .
  eq evalTerm (fun 'wire1 nt) f = fun 'wire1 nt [owise] . 
   
- *** here we connect 'isAliceInput with isAliceInput
+ *** here we connect 'isAliceInput with isAliceInput etc.
  var A : Set{BoolTerm} .
+ eq evalBoolTerm(apply 'isOutputWire nt, A, f) = 
+    isOutputWire(evalTerm nt f) . 
  eq evalBoolTerm(apply 'isAliceInput nt, A, f) = 
     isAliceInput(evalTerm nt f) . 
  eq evalBoolTerm(apply 'isBobInput nt, A, f) = 

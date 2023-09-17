@@ -34,7 +34,8 @@ In the [lib](https://github.com/kristinas/IPDL-Maude/tree/main/lib "lib") folder
 - `secure.maude` for Authenticated-To-Secure Channel;
 - `dhke.maude` for (DHKE) and (DHKE+OTP);
 - `preProcessing.maude` for 1-Out-Of-2 Pre-Processing;
-- `multipartyCoinToss.maude` for Multi-Party Coin Toss.
+- `multipartyCoinToss.maude` for Multi-Party Coin Toss;
+- `gmw.maude` for Two-Party GMW Protocol.
 
 To run the examples, call
 `Maude> load lib/FILENAME`
