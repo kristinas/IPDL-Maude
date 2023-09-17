@@ -80,54 +80,54 @@ mod GMW2 is
  op isAliceInputAux : Circuit Nat -> Bool .
  eq isAliceInputAux(emptyCircuit, 0) = false .
  eq isAliceInputAux(emptyCircuit, s(i)) = false .
- eq isAliceInputAux(circuit gate, s(i)) = isAliceInputAux(circuit, i) .
- eq isAliceInputAux(circuit input-gate(k, 0), 0) = true .
- eq isAliceInputAux(circuit gate, 0) = false [owise] .
+ eq isAliceInputAux(gate circuit, s(i)) = isAliceInputAux(circuit, i) .
+ eq isAliceInputAux(input-gate(k, 0) circuit, 0) = true .
+ eq isAliceInputAux(gate circuit, 0) = false [owise] .
  
  eq isBobInput(i) = isBobInputAux(C, i) .
  
  op isBobInputAux : Circuit Nat -> Bool .
  eq isBobInputAux(emptyCircuit, 0) = false .
  eq isBobInputAux(emptyCircuit, s(i)) = false .
- eq isBobInputAux(circuit gate, s(i)) = isBobInputAux(circuit, i) .
- eq isBobInputAux(circuit input-gate(k, 1), 0) = true .
- eq isBobInputAux(circuit gate, 0) = false [owise] .
+ eq isBobInputAux(gate circuit, s(i)) = isBobInputAux(circuit, i) .
+ eq isBobInputAux(input-gate(k, 1) circuit, 0) = true .
+ eq isBobInputAux(gate circuit, 0) = false [owise] .
  
  eq isNotGate(i) = isNotGateAux(C, i) .
  
  op isNotGateAux : Circuit Nat -> Bool .
  eq isNotGateAux(emptyCircuit, 0) = false .
  eq isNotGateAux(emptyCircuit, s(i)) = false .
- eq isNotGateAux(circuit gate, s(i)) = isNotGateAux(circuit, i) .
- eq isNotGateAux(circuit not-gate(k), 0) = true .
- eq isNotGateAux(circuit gate, 0) = false [owise] .
+ eq isNotGateAux(gate circuit, s(i)) = isNotGateAux(circuit, i) .
+ eq isNotGateAux(not-gate(k) circuit, 0) = true .
+ eq isNotGateAux(gate circuit, 0) = false [owise] .
  
  eq isXorGate(i) = isXorGateAux(C, i) .
  
  op isXorGateAux : Circuit Nat -> Bool .
  eq isXorGateAux(emptyCircuit, 0) = false .
  eq isXorGateAux(emptyCircuit, s(i)) = false .
- eq isXorGateAux(circuit gate, s(i)) = isXorGateAux(circuit, i) .
- eq isXorGateAux(circuit xor-gate(k, l), 0) = true .
- eq isXorGateAux(circuit gate, 0) = false [owise] .
+ eq isXorGateAux(gate circuit, s(i)) = isXorGateAux(circuit, i) .
+ eq isXorGateAux(xor-gate(k, l) circuit, 0) = true .
+ eq isXorGateAux(gate circuit, 0) = false [owise] .
  
  op isAndGateAux : Circuit Nat -> Bool .
  eq isAndGateAux(emptyCircuit, 0) = false .
  eq isAndGateAux(emptyCircuit, s(i)) = false .
- eq isAndGateAux(circuit gate, s(i)) = isAndGateAux(circuit, i) .
- eq isAndGateAux(circuit and-gate(k, l), 0) = true .
- eq isAndGateAux(circuit gate, 0) = false [owise] .
+ eq isAndGateAux(gate circuit, s(i)) = isAndGateAux(circuit, i) .
+ eq isAndGateAux(and-gate(k, l) circuit, 0) = true .
+ eq isAndGateAux(gate circuit, 0) = false [owise] .
  
  *** helpers
- *** get the gate at the end of the circuit, after i pops
+ *** get the gate at the start of the circuit, after i pops
  *** i must be at most the length of circuit
  *** the circuit must be non-empty
  
  var gate : Gate .
  
  op gateAt : Circuit Nat -> Gate .
- eq gateAt(circuit gate, 0) = gate .
- eq gateAt(circuit gate, s(n)) = gateAt(circuit, n) .
+ eq gateAt(gate circuit, 0) = gate .
+ eq gateAt(gate circuit, s(n)) = gateAt(circuit, n) .
  
  *** the wires of a gate, as a list
  op wiresOf : Gate -> List{NatPairs} .
