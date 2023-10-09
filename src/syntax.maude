@@ -7,7 +7,6 @@
 
 )
 
-
 fmod TYPES is
  protecting NAT .
 
@@ -77,7 +76,7 @@ fmod SIGNATURE is
 
  sort SigElem .
 
- op _:_~>_  : Qid Type Type -> SigElem [ctor] . *** function symbol
+ op _:_~>_  : Qid Type Type -> SigElem [ctor format(d d r d r d)]  . *** function symbol
  op _:_~>>_ : Qid Type Type -> SigElem [ctor] . *** distribution
 
  vars Q1 Q2 : Qid .
@@ -95,7 +94,7 @@ fmod SIGNATURE is
  sort Signature . 
  op emptySig : -> Signature [ctor] .
  subsort SigElem < Signature . 
- op __ : Signature Signature -> Signature [ctor assoc comm id: emptySig] .
+ op __ : Signature Signature -> Signature [ctor assoc comm id: emptySig format(d n d)] .
 
  vars Sig1 Sig2 : Signature .
 
@@ -413,6 +412,38 @@ fmod CHANNEL-NAME is
  
  *** we need these because we want names with indices
  
+ sort NameWithIndices .
+ subsort Qid < NameWithIndices .
+ op _<<_>> : Qid List{NatTerm} -> NameWithIndices [ctor] .
+ 
+ sort OptionalNameWithIndices .
+ subsort NameWithIndices < OptionalNameWithIndices .
+ op None : -> OptionalNameWithIndices [ctor] .
+ 
+ ***(
+ sort NameWithScripts .
+ subsort Qid < NameWithScripts .
+ op _^^_._ :  Qid   *** fixed part
+              OptionalNameWithIndices *** superscript, may change
+              OptionalNameWithIndices *** subscript, may change 
+           -> NameWithScripts [ctor] .  
+ )
+           
+ sort NameWithScripts2 .
+ subsort Qid < NameWithScripts2 .
+ op _~_~_ :  Qid   *** fixed part
+              OptionalNameWithIndices *** superscript, may change
+              OptionalNameWithIndices *** subscript, may change 
+           -> NameWithScripts2 [ctor] .          
+ 
+*** sort ChannelNameS .
+*** subsort NameWithIndices < ChannelNameS .
+*** op _[[_]] : NameWithScripts List{NatTerm} -> ChannelNameS [ctor] .
+ 
+ sort ChannelNameS2 .
+ subsort NameWithIndices < ChannelNameS2 .
+ op _{{_}} : NameWithScripts2 List{NatTerm} -> ChannelNameS2 [ctor] .
+  
  sort ChannelName .
  subsort Qid < ChannelName .
  op _[_] : Qid List{NatTerm} -> ChannelName [ctor] .
@@ -517,7 +548,8 @@ fmod CHANNEL is
  sort ChannelContext .
  subsort TypedChannel < ChannelContext .
  op emptyChannelCtx : -> ChannelContext [ctor].
- op __ : ChannelContext ChannelContext -> ChannelContext [ctor assoc comm id: emptyChannelCtx] .
+ op __ : ChannelContext ChannelContext -> ChannelContext 
+         [ctor assoc comm id: emptyChannelCtx format(d n d)] .
 
  vars Q Q1 Q2 : Qid .
  var T T1 T2 : Type .
@@ -526,10 +558,10 @@ fmod CHANNEL is
  var A : Set{BoolTerm} .
  var cn cn1 cn2 : ChannelName .
  var nlist nlist1 nlist2 : List{NatTerm} .
- var nt nt1 nt2 nt' nt'' : NatTerm .
+ var nt nt1 nt2 nt3 nt' nt'' : NatTerm .
  var x y : Nat .
  var bn : CNameBound .
- var b b1 b2 : NatTerm .
+ var b b1 b2 b3 : NatTerm .
  
  *** this function checks whether a bounded name fits the context and the assumptions
  *** no type, we will use it for inputs/outputs
@@ -548,6 +580,13 @@ fmod CHANNEL is
   A |= nt1 <=T b1 with empty and 
   A |= nt2 <=T b2 with empty .
  eq occurs (Q[nt1 nt2] @ nil) Delta A = false [owise] .
+ 
+  eq occurs (Q[nt1 nt2 nt3] @ nil) (((Q[nt1 nt2 nt3] @ nil) :: T) Delta) A = true .
+ eq occurs (Q[nt1 nt2 nt3] @ nil) (((Q @ (b1 b2 b3)) :: T) Delta) A = 
+  A |= nt1 <=T b1 with empty and 
+  A |= nt2 <=T b2 with empty and
+  A |= nt3 <=T b3 with empty .
+ eq occurs (Q[nt1 nt2 nt3] @ nil) Delta A = false [owise] .
 
  eq occurs (Q @ nlist) (((Q @ nlist) :: T) Delta) A = true .
  ceq occurs (Q @ nt) ( (Q @ b :: T) Delta) A = true
@@ -570,6 +609,9 @@ fmod CHANNEL is
  eq elem (Q[nt1 nt2] @ nil) T (Delta ((Q[nt1 nt2] @ nil) :: T)) A = true .
  eq elem (Q[nt1 nt2] @ nil) T (((Q @ (b1 b2)) :: T) Delta) A = true .
  eq elem (Q[nt1 nt2] @ nil) T Delta A = false [owise] .
+ eq elem (Q[nt1 nt2 nt3] @ nil) T (Delta ((Q[nt1 nt2 nt3] @ nil) :: T)) A = true .
+ eq elem (Q[nt1 nt2 nt3] @ nil) T (((Q @ (b1 b2 b3)) :: T) Delta) A = true .
+ eq elem (Q[nt1 nt2 nt3] @ nil) T Delta A = false [owise] .
  eq elem (Q @ nlist) T (((Q @ nlist) :: T) Delta) A = true .
  eq elem (Q @ nlist) T Delta A = false [owise] .    
      
@@ -593,6 +635,9 @@ fmod CHANNEL is
  eq typeInCtx(Q[nt] @ nil, A, Delta ((Q @ b) :: T)) = T .
  eq typeInCtx(Q[nt1 nt2] @ nil, A, Delta ((Q[nt1 nt2] @ nil) :: T)) = T .
  eq typeInCtx(Q[nt1 nt2] @ nil, A, Delta ((Q @ (b1 b2)) :: T)) = T .
+ eq typeInCtx(Q[nt1 nt2 nt3] @ nil, A, Delta ((Q[nt1 nt2 nt3] @ nil) :: T)) = T .
+ eq typeInCtx(Q[nt1 nt2 nt3] @ nil, A, Delta ((Q @ (b1 b2 b3)) :: T)) = T .
+
  eq typeInCtx(Q @ nlist, A, Delta (Q @ nlist :: T)) = T .
  ceq typeInCtx(Q @ nt1, A, Delta (Q @ nt2 :: T)) = T if A |= nt1 <=T nt2 with empty .
  ceq typeInCtx(Q @ (nt1 nt2), A, Delta (Q @ (b1 b2) :: T)) = T if 
@@ -828,14 +873,14 @@ fmod REACTION-TYPING is
  vars T T1 T2 T3 : Type .
  var M M1 M2 : Expression .
  var I : Set{CNameBound} . 
- var d i x q : Qid .
+ var d i x q f : Qid .
  var c : ChannelName .
  var D : Distribution .
  var QL : CNameList .
  var BRL : BRList .
  var BL : BindList .
  var nlist : List{NatTerm} .
- var nt b nt1 nt2 b1 b2 : NatTerm .
+ var nt b nt1 nt2 nt3 b1 b2 b3 : NatTerm .
  var n : Nat .
  var A : Set{BoolTerm} .
  
@@ -844,17 +889,37 @@ fmod REACTION-TYPING is
  *** with the right type
  op validForCtx : BRList ChannelContext Set{BoolTerm} -> Bool .
  eq validForCtx(emptyBRList, Delta, A) = true .
+ 
  eq validForCtx((x : T <- read q) BRL, Delta (q @ nil :: T), A) = validForCtx(BRL, Delta, A) .
+ 
  eq validForCtx((x : T <- read (q[nt])) BRL, Delta (q[nt] @ nil :: T), A) = validForCtx(BRL, Delta, A) .
  ceq validForCtx((x : T <- read (q[nt])) BRL, Delta (q @ b :: T), A) = 
      validForCtx(BRL, Delta (q @ b :: T), A) *** if q is a family, read more than once
      if A |= (nt <=T b) with empty .
+ 
   eq validForCtx((x : T <- read (q[nt1 nt2])) BRL, Delta (q[nt1 nt2] @ nil :: T), A) = 
      validForCtx(BRL, Delta, A) .
+ ceq validForCtx((x : T <- read (q[nt1 nt2])) BRL, Delta (q @ (b1 f) :: T), A) = 
+     validForCtx(BRL, Delta (q @ (b1 f) :: T), A)
+     if A |= (nt1 <=T b1 ) with empty  and A |= (nt2 <=T fun f nt1) with empty .
  ceq validForCtx((x : T <- read (q[nt1 nt2])) BRL, Delta (q @ (b1 b2) :: T), A) = 
      validForCtx(BRL, Delta (q @ (b1 b2) :: T), A)
      if A |= (nt1 <=T b1 ) with empty  and A |= (nt2 <=T b2) with empty .
- 
+  
+  eq validForCtx((x : T <- read (q[nt1 nt2 nt3])) BRL, Delta (q[nt1 nt2 nt3] @ nil :: T), A) = 
+     validForCtx(BRL, Delta, A) .
+  ceq validForCtx((x : T <- read (q[nt1 nt2 nt3])) BRL, Delta (q @ (b1 b2 f) :: T), A) = 
+     validForCtx(BRL, Delta (q @ (b1 b2 f) :: T), A)
+     if  A |= (nt1 <=T b1) with empty  
+     and A |= (nt2 <=T b2) with empty  
+     and A |= (nt3 <=T fun f nt2) with empty .   
+  ceq validForCtx((x : T <- read (q[nt1 nt2 nt3])) BRL, Delta (q @ (b1 b2 b3) :: T), A) = 
+     validForCtx(BRL, Delta (q @ (b1 b2 b3) :: T), A)
+     if  A |= (nt1 <=T b1) with empty  
+     and A |= (nt2 <=T b2) with empty  
+     and A |= (nt3 <=T b3) with empty .   
+     
+  
   eq validForCtx(BRL, Delta, A) = false [owise] .
 
  *** extend a var context with the vars in a bind list
@@ -1420,7 +1485,8 @@ fmod BOUNDS is
  sort Bounds .
  op bound_ : NatTerm -> Bounds [ctor] .
  op uniformBound_ : NatTerm -> Bounds [ctor] . 
- op dependentBound_ : List{NatPairs} -> Bounds [ctor] . 
+ op dependentBound_ : Qid -> Bounds [ctor] . 
+  *** takes as argument the name of the function giving the bound for each value
  
 endfm
 
@@ -1515,6 +1581,62 @@ fmod PROTOCOL is
  eq getChannel (newfamily q nlist blist : T in P) cn = getChannel P cn .
  eq getChannel newNF(ltq, P, ql) cn = getChannel P cn .
  
+ sort ProtocolStructure .
+ subsort ChannelName < ProtocolStructure .   *** for ::=
+ op emptyS : -> ProtocolStructure [ctor] .   *** for emptyProtocol
+ op _||_ : ProtocolStructure ProtocolStructure -> ProtocolStructure [ctor assoc comm] .  
+    *** for ||
+ op new_in_ : ChannelName ProtocolStructure -> ProtocolStructure [ctor] . *** for new
+ op newfamily_in_ : Qid ProtocolStructure -> ProtocolStructure [ctor] . *** for newfamily
+ op newNFS : ProtocolStructure CNameList -> ProtocolStructure [ctor] . *** for newNF
+ op _:=_ : Qid ProtocolStructure -> ProtocolStructure [ctor] . *** for groups
+  
+ op pStructure_ : Protocol -> ProtocolStructure .
+ eq pStructure emptyProtocol = emptyS .
+ eq pStructure (cn ::= cases) = cn .
+ eq pStructure (P1 || P2) = (pStructure P1) || (pStructure P2) .
+ eq pStructure (new cn : T in P) = new cn in (pStructure P) .
+ eq pStructure (newfamily q nlist blist : T in P) = newfamily q in (pStructure P) .
+ eq pStructure (newNF(ltq, P, ql)) = newNFS(pStructure P, ql) .
+ eq pStructure (family cn nlist blist ::= P) = cn := (pStructure P) .
+ eq pStructure (family cn nlist blist ::= cases) = cn [owise] .
+  
+ *** functions on protocols, for sym proofs
+ 
+ op addInternalChannel_typed_assigned_in_ : ChannelName Type Cases Protocol -> Protocol .
+ eq addInternalChannel cn typed T assigned cases in newNF(ltq, P, ql) = 
+    newNF(< cn : T > ltq, P || cn ::= cases, cn :: ql) .
+ eq addInternalChannel cn typed T assigned cases in P =  
+    new cn : T in P || cn ::= cases [owise] .
+    
+ op addInternalFamily_typed_params__assigned_in_ : 
+      Qid Type Qid List{Bounds} Cases Protocol -> Protocol .   
+ eq addInternalFamily C typed T params q (bound nt) assigned cases in newNF(ltq, P, ql) =
+    newNF({ C q (bound nt) : T } ltq, P || family C q (bound nt) ::= cases, C :: ql) .
+ eq addInternalFamily C typed T params q (bound nt) assigned cases in P =
+    newfamily C q (bound nt) : T in (P || family C q (bound nt) ::= cases) [owise] .
+ 
+ var cases' : Cases .
+    
+ op change_with_in_ : ChannelName Cases Protocol -> Protocol .
+ eq change cn with cases in (cn ::= cases') = cn ::= cases .
+ eq change C with cases in (family C q (bound nt) ::= cases') = 
+      family C q (bound nt) ::= cases . 
+ eq change cn with cases in (P || cn ::= cases') = P || cn ::= cases .
+ eq change C with cases in (P || family C q (bound nt) ::= cases') = 
+      P || family C q (bound nt) ::= cases . 
+ eq change C with cases in (newNF(ltq, P, ql) || P2) = 
+    (change C with cases in newNF(ltq, P, ql)) || (change C with cases in P2) .
+ eq change cn with cases in newNF(ltq, P, ql) =
+    newNF(ltq, change cn with cases in P, ql) .
+ eq change cn with cases in (family C q (bound nt) ::= P) =   
+    family C q (bound nt) ::= change cn with cases in P .
+ eq change cn with cases in ((family C q (bound nt) ::= P) || P2) =   
+    (family C q (bound nt) ::= change cn with cases in P) 
+    ||
+    change cn with cases in P2 .
+ eq change cn with cases in P = P [owise] .       
+  
  *** the bare structure of a protocol
  op getStructure_ : Protocol -> Protocol .
  eq getStructure emptyProtocol = emptyProtocol .
@@ -1567,8 +1689,9 @@ fmod PROTOCOL is
  op nf2p : Protocol -> Protocol . 
  eq nf2p(newfamily C q (bound n) : T in P) = genNew1 C n T P 0 .
  eq nf2p(newfamily C (q q') ((bound n1)(uniformBound n2)) : T in P) = genNew2 C n1 n2 T P 0 0 .
- eq nf2p(newfamily C (q q') ((bound n1)(dependentBound plist)) : T in P) = 
-    gen2Dep C n1 plist T P 0 0 . 
+ *** commented this out for now because we won't do this in practice
+ *** eq nf2p(newfamily C (q q') ((bound n1)(dependentBound plist)) : T in P) = 
+ ***   gen2Dep C n1 plist T P 0 0 . 
 
  op genNew1_____ : Qid Nat Type Protocol Nat -> Protocol .
  ceq genNew1 C n T P x = P if x == n + 1 .                     *** TODO: desugar family as well?
@@ -1889,8 +2012,13 @@ eq chansInList ({c nlist blist : T} ltq) = insert(toBounds c blist, chansInList 
   *** convert a qid and a list of bounds to a bounded name
   *** we do this for families
   op toBounds__ : Qid List{Bounds} -> CNameBound .
-  eq toBounds c (bound b1) = c @ b1 .
-  eq toBounds c ((bound b1)(uniformBound b2)) = c @ (b1 b2) .               
+  eq toBounds c blist = c @ (toBound1 blist) .
+    
+  op toBound1_ : List{Bounds} -> List{NatTerm} .
+  eq toBound1 nil = nil .
+  eq toBound1 ((bound b1) blist) = b1 (toBound1 blist) .
+  eq toBound1 ((uniformBound b1) blist) = b1 (toBound1 blist) .
+  eq toBound1 ((dependentBound q) blist) = q (toBound1 blist) .
 
 
  *** the outputs of a protocol can be computed
@@ -1929,28 +2057,51 @@ fmod PROTOCOL-TYPING is
  var n n0 : Nat .
  var nlist : List{NatTerm} .
  var blist : List{Bounds} .
+ 
+ sort BoolWithError .
+ subsort Bool < BoolWithError .
+ op err_ : String -> BoolWithError [ctor] .
+ 
 
  *** a predicate to check that a protocol typechecks
- op typeOf : Signature ChannelContext Set{CNameBound} Set{BoolTerm} Protocol -> Bool .
+ op typeOf : Signature ChannelContext Set{CNameBound} Set{BoolTerm} Protocol -> BoolWithError .
  
+ ceq typeOf(Sigma, Delta, I, A, P) = 
+     err ("I invalid for Delta")
+ if not (validChanSet I Delta A) .
+  
  eq typeOf(Sigma, Delta, I, A, P) = 
-    validChanSet I Delta A 
-    and 
+    *** validChanSet I Delta A 
+    *** and 
     typeOfAux(Sigma, Delta, I, A, P)
+    [owise]
  .
- 
+  
  op typeOfAux : Signature ChannelContext Set{CNameBound} 
                 Set{BoolTerm} Protocol 
-             -> Bool .
+             -> BoolWithError .
  
  eq typeOfAux(Sigma, Delta, I, A, emptyProtocol) = true .
+
+ ceq typeOfAux(Sigma, Delta, I, A, cn ::= R) = 
+     err "can't assign to an input" 
+ if  isElemB(cn, I, A) .
+ 
+ ceq typeOfAux(Sigma, Delta, I, A, cn ::= R) = 
+     err ("type mismatch:" + string(cn))
+ if  not(
+     typeOf(Sigma, Delta, emptyTypeContext, I, A, R) 
+     == 
+     typeInCtx(toBound cn, A, Delta)    
+     )
+ .    
 
  eq typeOfAux(Sigma, Delta, I, A, cn ::= R) = 
     typeOf(Sigma, Delta, emptyTypeContext, I, A, R) 
      == 
     typeInCtx(toBound cn, A, Delta)
     and
-    not isElemB(cn, I, A) .
+    not isElemB(cn, I, A) [owise].
   
  eq typeOfAux(Sigma, Delta, I, A, P1 || P2) =
      typeOfAux(Sigma, Delta, union(I, getOutputs(P2)), A, P1) 
@@ -1958,25 +2109,33 @@ fmod PROTOCOL-TYPING is
      typeOfAux(Sigma, Delta, union(I,  getOutputs(P1)), A, P2)
      .
 
+ ceq typeOfAux(Sigma, Delta, I, A, new o : T in P) =
+     err (string(o) + " already present in Delta")
+     if occurs (toBound o) Delta A .
+
  eq typeOfAux(Sigma, Delta, I, A, new o : T in P) =
      not occurs (toBound o) Delta A
      and
      typeOfAux(Sigma, Delta ((o @ nil) :: T), I, A, P)
-     [label typeOfNew] . 
+     [owise] . 
 
+ ceq typeOfAux(Sigma, Delta, I, A, newfamily c nlist blist : T in P) =
+     err ("family already occurs in Delta:" + string(c))
+ if  occurs (toBounds c blist) Delta A .
     
  eq typeOfAux(Sigma, Delta, I, A, newfamily c nlist blist : T in P) =
     not occurs (toBounds c blist) Delta A
     and
     typeOfAux(Sigma, Delta ((toBounds c blist) :: T), I, A, P) 
+    [owise]
   .
   
  var cases : Cases . 
  var whenCond : WhenCond .
  var whenList : WhenList .
  
- var ind1 ind2 : Qid .
- var nt1 nt2 : NatTerm .
+ var ind1 ind2 ind3 : Qid .
+ var nt1 nt2 nt3 : NatTerm .
  
  var bt : BoolTerm .
  
@@ -1987,18 +2146,47 @@ fmod PROTOCOL-TYPING is
  *** are within bounds
  op addAssumptions___ : Set{BoolTerm} List{NatTerm} List{Bounds} -> Set{BoolTerm} .
  eq addAssumptions A ind1 (bound nt1) = insert(ind1 <=T nt1, A) .
+ eq addAssumptions A (ind1 ind2) ((bound nt1)(bound nt2)) =
+     insert(ind2 <=T nt2, insert(ind1 <=T nt1, A)) .
  eq addAssumptions A (ind1 ind2) ((bound nt1)(uniformBound nt2)) =
      insert(ind2 <=T nt2, insert(ind1 <=T nt1, A)) .
+ eq addAssumptions A (ind1 ind2) ((bound nt1)(dependentBound q)) =
+     insert(ind1 <=T nt1, insert(ind2 <=T fun q ind1, A)) .
+ eq addAssumptions A (ind1 ind2 ind3) ((bound nt1)(bound nt2) (bound nt3)) =
+     insert(ind3 <=T nt3,
+     insert(ind2 <=T nt2, insert(ind1 <=T nt1, A))
+     ) .  
+ eq addAssumptions A (ind1 ind2 ind3) ((bound nt1)(bound nt2) (uniformBound nt3)) =
+     insert(ind3 <=T nt3,
+     insert(ind2 <=T nt2, insert(ind1 <=T nt1, A))
+     ) .   
+ eq addAssumptions A (ind1 ind2 ind3) ((bound nt1)(bound nt2) (dependentBound q)) =
+     insert(ind3 <=T fun q ind2,
+     insert(ind2 <=T nt2, insert(ind1 <=T nt1, A))
+     ) .                 
+ ***(     
+ ceq typeOfAux(Sigma, Delta, I, A, family c nlist blist ::= R) = 
+     err ("type mismatch family:" + string(c))
+ if 
+     typeOf(Sigma, Delta, emptyTypeContext, insert(toBounds c blist, I), 
+            addAssumptions A nlist blist, R) == 
+     typeInCtx(toBounds c blist, addAssumptions A nlist blist, Delta)
+     
+    . 
+ 
+ ceq typeOfAux(Sigma, Delta, I, A, family c nlist blist ::= R) = 
+     err ("missing family" + string(c))   
+ if not (occurs (toBounds c blist) Delta A) .     
+ ) 
   
  eq typeOfAux(Sigma, Delta, I, A, family c nlist blist ::= R) = 
      occurs (toBounds c blist) Delta A
      and *** here is where we add the assumptions about the vars in nlist for R!
      typeOf(Sigma, Delta, emptyTypeContext, insert(toBounds c blist, I), 
             addAssumptions A nlist blist, R) == 
-     typeInCtx(toBounds c blist, addAssumptions A nlist blist, Delta) 
+     typeInCtx(toBounds c blist, addAssumptions A nlist blist, Delta) [owise]
  .
      
-
  eq typeOfAux(Sigma, Delta, I, A, family c nlist blist ::= P) = 
     typeOfAux(Sigma, Delta, I, A, P) . 
     
@@ -2022,13 +2210,18 @@ fmod PROTOCOL-TYPING is
      typeInCtx(toBounds c blist, addAssumptions A nlist blist, Delta) 
   .    
      
-   eq typeOfAux(Sigma, Delta , I, A, family c nlist blist ::= (whenCond --> P)) = 
-      typeOfAux(Sigma, Delta , I, A, P) .      
+   eq typeOfAux(Sigma, Delta , I, A, family c nlist blist ::= (otherwise --> P)) = 
+      typeOfAux(Sigma, Delta , I, A, P) .
+     
+   eq typeOfAux(Sigma, Delta , I, A, family c nlist blist ::= (when bt --> P)) = 
+      typeOfAux(Sigma, Delta , I, insert(bt, A), P) .       
     
  eq typeOfAux(Sigma, Delta, I, A, family c nlist blist ::= (when bt --> R) ;; whenList) = 
-    typeOfAux(Sigma, Delta, I, addAssumptions A nlist blist , family c nlist blist ::= (when bt --> R))
+    typeOfAux(Sigma, Delta, I, addAssumptions A nlist blist , 
+              family c nlist blist ::= (when bt --> R))
     and
-    typeOfAux(Sigma, Delta, I, insert(neg bt, addAssumptions A nlist blist), family c nlist blist ::= whenList) 
+    typeOfAux(Sigma, Delta, I, insert(neg bt, addAssumptions A nlist blist), 
+              family c nlist blist ::= whenList) 
     .
  
  eq typeOfAux(Sigma, Delta, I, A, family c nlist blist ::= (when bt --> P) ;; whenList) = 
