@@ -517,6 +517,38 @@ smod STRATS is
                 ]
                    )
  .  
+ 
+*** subst-nf for families with three indices
+ strat substNFFamilyThree : ChannelName ChannelName Reaction @ ProtocolConfig .
+ sd substNFFamilyThree(C1, C2, R) :=
+     nTimesSubstNFFamilyThree(C1, C2, R)
+  ; liftInnerBindsNF(C2)
+  ; handleRNF(C2)
+  ; (pre2Nf or-else idle)  
+ .   
+ 
+ *** similar sub-strategy as for channels
+ strat nTimesSubstNFFamilyThree : ChannelName ChannelName Reaction @ ProtocolConfig .
+ sd nTimesSubstNFFamilyThree(C1, C2, R) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubstNFFamilyThree(C1, C2, R)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{
+          subst-families-three[
+                   C:ChannelName <- C1, 
+                   cn2:ChannelName <- C2,
+                   R2:Reaction <- R
+                ]
+                   } 
+                   or-else
+                   subst-families-three[
+                   C:ChannelName <- C1, 
+                   cn2:ChannelName <- C2,
+                   R2:Reaction <- R
+                ]
+                   )
+ .  
                    
  *** subst on the left branch of a family
  strat applySubstNFLeft : Qid Qid Reaction @ ProtocolConfig .
@@ -978,6 +1010,27 @@ smod STRATS is
              )
  . 
  
+  *** move the family Q2 on each case inside the group Q1
+ strat applyAddToGroupCases : Qid Qid @ ProtocolConfig .
+ sd applyAddToGroupCases(Q1, Q2) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyAddToGroupCases(Q1, Q2)}
+     : matchrew pConf s.t. 
+         pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q1 Q2, 
+                             P1:Protocol <- keepTwo P Q1 Q2]
+             {applyAddToGroupCasesAux}                
+             or-else applyAddToGroupCasesAux
+             )
+ . 
+ 
+ strat applyAddToGroupCasesAux @ ProtocolConfig .
+ sd applyAddToGroupCasesAux :=
+  addToGroupCases-end
+   or-else
+  addToGroupCases{applyAddToGroupCasesAux}
+ . 
+ 
  *** change order of reads in a normal form on a branch of a channel
  strat applyChangeOrderBranch : ChannelName BoolTerm CNameList @ ProtocolConfig .
     sd applyChangeOrderBranch(cn, bt, ql) := 
@@ -1397,7 +1450,28 @@ smod STRATS is
               subst-family-case[R':Reaction <- R2, bt:BoolTerm <- bt]{
                 substNFFamilyOne(cn1, cn2[ind], R1)
                }
-             ) .  
+             ) . 
+ 
+ var i1 i2 i3 : Qid .           
+             
+ strat applySubstFamily3IdxCase : ChannelName ChannelName Qid Qid Qid 
+                               Reaction Reaction BoolTerm @ ProtocolConfig .
+ sd applySubstFamily3IdxCase(cn1, cn2, i1, i2, i3, R1, R2, bt) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubstFamily3IdxCase(cn1, cn2, i1, i2, i3, R1, R2, bt)}
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using ((CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P cn1 cn2, 
+                             P1:Protocol <- keepTwo P cn1 cn2]
+              {subst-family-case-three[R':Reaction <- R2, bt:BoolTerm <- bt]{ 
+                 substNFFamilyThree(cn1, cn2[i1 i2 i3], R1)
+               }
+              }
+              )
+              or-else 
+              subst-family-case-three[R':Reaction <- R2, bt:BoolTerm <- bt]{
+                substNFFamilyThree(cn1, cn2[i1 i2 i3], R1)
+               }
+             ) .                
              
  strat applySubstChannelCase3 : ChannelName ChannelName  
                                Reaction Reaction BoolTerm @ ProtocolConfig .

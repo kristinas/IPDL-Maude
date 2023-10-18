@@ -14475,7 +14475,8 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
                  'ba :: 'ya :: 'xa :: 'xb :: emptyCNameList),
             apply 'isAndGate ('B ++ 1)
         )                     
-    *** now for Share-B      
+    *** now for Share-B   
+        
     ; CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B ++ 1]]{
        applySelectCaseSubst(
          'Share-B['B ++ 1], 'Wire['B ++ 1], apply 'isAliceInput ('B ++ 1)
@@ -14603,7 +14604,10 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
    ; applyAlphaBranchCond('Share-B['B ++ 1], 'sa, 'xa, 
                            when (apply 'isNotGate ('B ++ 1))
                          )       
-   *** for xor gate
+   *** for xor gate 
+   
+   *** _ <- read C instead of x : T <- read C
+   
    ; applyAlphaBranchCond('Share-B['B ++ 1], 'xa, 'aa, 
                            when (apply 'isXorGate ('B ++ 1))
                          )
@@ -16762,6 +16766,7 @@ using     sugar-newNF
         ; sugar-newNF
        ; (moveProtocolUnderNewNF !)
        ; (lift-inner-new-nf !)
+        *** substitute InputShare-B-A in InputShareOK-B-A
        ; substNFFamiliesOne('InputShare-B-A, 'InputShareOK-B-A,
            nf(('x : bool <- read ('In-A['k])) 
                'xa : bool <- read ('InputShare-A-A['k]), 
@@ -17428,6 +17433,7 @@ using     sugar-newNF
         ; applyDropName('Sim)
         ; applyDropName('Wires)
         ; applySameCasesSubstFirstBranch('Out-A, 'SendFinalShare-B_A_adv, 'k)
-      }      
+      }    
+        
 .
 

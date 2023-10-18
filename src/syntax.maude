@@ -76,8 +76,8 @@ fmod SIGNATURE is
 
  sort SigElem .
 
- op _:_~>_  : Qid Type Type -> SigElem [ctor format(d d r d r d)]  . *** function symbol
- op _:_~>>_ : Qid Type Type -> SigElem [ctor] . *** distribution
+ op _:_~>_  : Qid Type Type -> SigElem [ctor format(b o r o r o)]  . *** function symbol
+ op _:_~>>_ : Qid Type Type -> SigElem [ctor format(b o r o r o)] . *** distribution
 
  vars Q1 Q2 : Qid .
  vars T T1 T2 : Type . 
@@ -265,8 +265,9 @@ fmod NAT-TERM is
  op _=T=_ : NatTerm NatTerm -> BoolTerm [ctor comm] .
  op _<T_ : NatTerm NatTerm -> BoolTerm [ctor] .
  op _<=T_ : NatTerm NatTerm -> BoolTerm [ctor] .
+ op _conj_ : BoolTerm BoolTerm -> BoolTerm [ctor assoc comm] .
  
- var bt : BoolTerm .
+ var bt bt' : BoolTerm .
  
  op subst : BoolTerm Qid NatTerm -> BoolTerm .
  *** substitute a var with a nat term in a bool term
@@ -275,6 +276,7 @@ fmod NAT-TERM is
  eq subst(nt1 <=T nt2, q, nt) = subst(nt1, q, nt) <=T subst(nt2, q, nt) .
  eq subst(neg bt, q, nt) = neg subst(bt, q, nt) .
  eq subst(apply q' nt1, q, nt) = apply q' subst(nt1, q, nt) .
+ eq subst(bt conj bt', q, nt) = (subst(bt, q, nt)) conj (subst(bt', q, nt)) .
  
 endfm
 
@@ -294,7 +296,7 @@ fmod NAT-TERM-EVAL is
   var n n1 n2 n3 : Nat .
   var t t1 t2 t3 t4 : NatTerm .
   var A : Set{BoolTerm} .
-  var bt : BoolTerm .
+  var bt bt' : BoolTerm .
   
  var f : Map{Qid, NatTerm} .
  var q : Qid .
@@ -313,6 +315,9 @@ fmod NAT-TERM-EVAL is
  
  ceq evalBoolTerm(bt, A, f) = true if bt in A .
  ceq evalBoolTerm(bt, A, f) = false if (neg bt) in A .
+ 
+ eq evalBoolTerm(bt conj bt', A, f) =
+    evalBoolTerm(bt, A, f) and evalBoolTerm(bt', A, f) .
  
  ceq evalBoolTerm(neg bt, A, f) = false if bt in A .
  ceq evalBoolTerm(neg bt, A, f) = true if neg bt in A .
@@ -384,25 +389,35 @@ fmod BOOL-TERM-ENTAILS is
  var n1 n2 : Nat . 
  var q1 q2 : Qid .
  var f : Map{Qid,NatTerm} .
- var bt : BoolTerm .
+ var bt bt' : BoolTerm .
  
  ceq A |= apply q1 nt1 with f = true 
   if (apply q1 (evalTerm nt1 (extendWithAssums A f))) in A .
- 
- *** !!!! TODO: use extendWithAssums below too!
- 
- ceq A |= nt1 =T= nt2 with f = true if evalBoolTerm(evalTerm nt1 f =T= evalTerm nt2 f, A, f) .
+  
+ ceq A |= nt1 =T= nt2 with f = true 
+   if evalBoolTerm(evalTerm nt1 (extendWithAssums A f) =T= evalTerm nt2 (extendWithAssums A f),
+                   A , f) .
  eq A |= nt1 =T= nt2 with f = false [owise] .
  
- ceq A |= nt1 <T nt2 with f = true if evalBoolTerm(evalTerm nt1 f <T evalTerm nt2 f, A, f) .
+ ceq A |= nt1 <T nt2 with f = true 
+  if evalBoolTerm(evalTerm nt1 (extendWithAssums A f) <T evalTerm nt2 (extendWithAssums A f),
+                  A, f) .
  eq A |= nt1 <T nt2 with f = false [owise] .
  
- ceq A |= nt1 <=T nt2 with f = true if evalBoolTerm(evalTerm nt1 f <=T evalTerm nt2 f, A, f) .
+ ceq A |= nt1 <=T nt2 with f = true 
+  if evalBoolTerm(evalTerm nt1 (extendWithAssums A f) <=T evalTerm nt2 (extendWithAssums A f),
+                  A, f) .
  eq A |= nt1 <=T nt2 with f = false [owise] .
  
  *** actually we also want to check f(bt)!
- ceq A |= neg bt with f = true if evalBoolTerm(substInBoolTerm (neg bt) f, A, f) .
+ ceq A |= neg bt with f = true 
+  if evalBoolTerm(substInBoolTerm (neg bt) (extendWithAssums A f), A, f) .
  eq A |= neg bt with f = false [owise] . 
+ 
+ eq A |= bt conj bt' with f = 
+    A |= bt with f and A |= bt' with f .
+    
+ eq (A, bt conj bt') |= bt with f = true .
  
 endfm
 
@@ -514,7 +529,7 @@ fmod CNAMEBOUND-SET is
  op isElemB : ChannelName Set{CNameBound} Set{BoolTerm} -> Bool .
  
  var q : Qid .
- var nt1 nt2 b1 b2 : NatTerm .
+ var nt1 nt2 nt3 b1 b2 b3 : NatTerm .
  var S : Set{CNameBound} .
  var A : Set{BoolTerm} .
  
@@ -530,6 +545,15 @@ fmod CNAMEBOUND-SET is
   and
   A |= nt2 <=T b2 with empty .
  eq isElemB(q[nt1 nt2], S, A) = false [owise] .
+ 
+ eq isElemB(q[nt1 nt2 nt3], (S, q[nt1 nt2 nt3] @ nil ), A) = true .
+ eq isElemB(q[nt1 nt2 nt3], (S, q @ (b1 b2 b3) ), A) = 
+  A |= nt1 <=T b1 with empty
+  and
+  A |= nt2 <=T b2 with empty 
+  and
+  A |= nt3 <=T b3 with empty .
+ eq isElemB(q[nt1 nt2 nt3], S, A) = false [owise] .
 
 endfm
 
@@ -541,7 +565,7 @@ fmod CHANNEL is
  *** typed bounded channel names
  
  sort TypedChannel .
- op _::_ : CNameBound Type -> TypedChannel [ctor] .
+ op _::_ : CNameBound Type -> TypedChannel [ctor format(b o r o)] .
 
  
  *** a channel context is a commutative list of them
@@ -1217,7 +1241,8 @@ mod REACTION-EQUALITY is
     rConfig(Sigma, Delta, Gamma, preNF(BL (x : T1 <~ read i), R , QL), I, A, T) 
     =>
     rConfig(Sigma, Delta, Gamma, preNF(BL (x : T1 <- read i), R , QL), I, A, T) 
-    if isElemB(i, I, A)  and elem (toBound i) T1 Delta A .
+    if isElemB(i, I, A) and elem (toBound i) T1 Delta A 
+ .
     
  crl [pre2Nf] : preNF(BRL, R, QL) => nf(BRL, R, QL) if R : BindFreeReaction .
  
@@ -1483,9 +1508,12 @@ fmod BOUNDS is
  *** so dependent bounds aren't fully supported
 
  sort Bounds .
- op bound_ : NatTerm -> Bounds [ctor] .
- op uniformBound_ : NatTerm -> Bounds [ctor] . 
- op dependentBound_ : Qid -> Bounds [ctor] . 
+ op bound_ : NatTerm -> Bounds [ctor] .       *** all values from 0 to bound-1
+ op fixedBound_ : NatTerm -> Bounds [ctor] .  *** always the specified value
+ op dependentBound_ : Qid -> Bounds [ctor] .  *** name F of a function
+                                              *** ranges from 0 to F(x)-1 
+                                              *** where x is the argument provided 
+                                              *** for the previous bound
   *** takes as argument the name of the function giving the bound for each value
  
 endfm
@@ -1522,25 +1550,29 @@ fmod PROTOCOL is
  sort Protocol .
 
  op emptyProtocol : -> Protocol [ctor] .
- op _::=_ : ChannelName Cases -> Protocol [ctor] .
- op _||_ : Protocol Protocol -> Protocol [ctor assoc comm] .
- op new_:_in_ : ChannelName Type Protocol -> Protocol [ctor] .
- op newfamily___:_in_ : Qid List{NatTerm} List{Bounds} Type Protocol -> Protocol [ctor] . 
+ op _::=_ : ChannelName Cases -> Protocol [ctor format(b o g oni)] .
+ op _||_ : Protocol Protocol -> Protocol [ctor assoc comm format(d ni ni o)] .
+ op new_:_in_ : ChannelName Type Protocol -> Protocol 
+    [ctor format(o b o r nio n+i o)] .
+ op newfamily___:_in_ : Qid List{NatTerm} List{Bounds} Type Protocol -> Protocol 
+     [ctor format(o b r nig o b nio ni o)] . 
  op newNF : TypedCNameList Protocol CNameList -> Protocol [ctor] .
- op family___::=_ : ChannelName List{NatTerm} List{Bounds} Cases -> Protocol [ctor] .
+ op family___::=_ : ChannelName List{NatTerm} List{Bounds} Cases -> Protocol 
+   [ctor format(o b r nb o ng oni)] .
     *** put channelname here only to deal with Comp[A B], but we don't want to allow it otherwise!
  
  sort When .
  sort WhenCond .
 
- op when_ : BoolTerm -> WhenCond [ctor] .
- op otherwise : -> WhenCond [ctor] .
- op _-->_ : WhenCond Cases -> When [ctor] .
+ op when_ : BoolTerm -> WhenCond [ctor format(o r d)] .
+ op otherwise : -> WhenCond [ctor format(o d)] .
+ op _-->_ : WhenCond Cases -> When [ctor format(d o nb d)] .
  
  sort WhenList .
  subsort When < WhenList .
  op emptyWhen : -> WhenList [ctor] .
- op _;;_ : WhenList WhenList -> WhenList [ctor assoc id: emptyWhen] .
+ op _;;_ : WhenList WhenList -> WhenList 
+    [ctor assoc id: emptyWhen format(d no ni d)] .
  
  sort Cases .
  subsort Reaction < Cases . *** for C[i] ::= R(i)
@@ -1575,7 +1607,11 @@ fmod PROTOCOL is
  eq getChannel ((family cn nlist blist ::= cases) || P) cn = family cn nlist blist ::= cases .
  eq getChannel (newNF(ltq < cn : T >, P1, ql) || P) cn = getChannel P1 cn .
  eq getChannel (newNF(ltq { cn nlist blist : T }, P1, ql) || P) cn = getChannel P1 cn .
- eq getChannel (P1 || P2) cn = emptyProtocol [owise] .
+ eq getChannel (P1 || P2) cn = 
+    if getChannel P1 cn == emptyProtocol 
+     then getChannel P2 cn 
+     else getChannel P1 cn
+    fi [owise] .
    *** this will not find cn hidden in a list of new/newfamily, works with normal forms only!
  eq getChannel (new cn' : T in P ) cn = getChannel P cn .
  eq getChannel (newfamily q nlist blist : T in P) cn = getChannel P cn .
@@ -1641,8 +1677,14 @@ fmod PROTOCOL is
  op getStructure_ : Protocol -> Protocol .
  eq getStructure emptyProtocol = emptyProtocol .
  eq getStructure (cn ::= cases) = emptyProtocol .
+ eq getStructure (family cn nlist blist ::= newfamily q nlist' blist' : T in P)
+    = family cn nlist blist ::= newfamily q nlist' blist' : T in (getStructure P) .
+ eq getStructure (family cn nlist blist ::= newNF(ltq, P, ql)) 
+    = (family cn nlist blist ::= newNF(ltq, getStructure P, ql)) .
  eq getStructure (family cn nlist blist ::= P) =
                  (family cn nlist blist ::= getStructure P) .
+ eq getStructure (family cn nlist blist ::= (whenCond --> P) ;; whenList) =   
+      family cn nlist blist ::= emptyProtocol .              
  eq getStructure (family cn nlist blist ::= cases) = emptyProtocol [owise] .
  eq getStructure newNF(ltq, P, ql) = newNF(emptyTypedCNameList, getStructure P, ql) .
  eq getStructure (new cn : T in P) = new cn : T in (getStructure P) .
@@ -1688,7 +1730,7 @@ fmod PROTOCOL is
  *** desugar newfamily, but we never need this 
  op nf2p : Protocol -> Protocol . 
  eq nf2p(newfamily C q (bound n) : T in P) = genNew1 C n T P 0 .
- eq nf2p(newfamily C (q q') ((bound n1)(uniformBound n2)) : T in P) = genNew2 C n1 n2 T P 0 0 .
+ eq nf2p(newfamily C (q q') ((bound n1)(bound n2)) : T in P) = genNew2 C n1 n2 T P 0 0 .
  *** commented this out for now because we won't do this in practice
  *** eq nf2p(newfamily C (q q') ((bound n1)(dependentBound plist)) : T in P) = 
  ***   gen2Dep C n1 plist T P 0 0 . 
@@ -1736,12 +1778,12 @@ fmod PROTOCOL is
        || (f2p1 cn evalMap C q n R (x + 1)) 
   fi .
  eq f2p1 cn evalMap C q n (D [q] ::= R) x = parComp cn evalMap n (D [q] ::= R) 0 .
- eq f2p1 cn evalMap C q n (family D q' (uniformBound m) ::= cases) x = 
+ eq f2p1 cn evalMap C q n (family D q' (bound m) ::= cases) x = 
    if x == n then
     f2p1 (D [q q']) (q |-> x, evalMap) D q' m cases 0 
    else
     (f2p1 (D [q q']) (q |-> x, evalMap) D q' m cases 0) || 
-    (f2p1 (D [q q']) evalMap C q n (family D q' (uniformBound m) ::= cases) (x + 1))
+    (f2p1 (D [q q']) evalMap C q n (family D q' (bound m) ::= cases) (x + 1))
    fi   .
  eq f2p1 cn evalMap C q n ((D [q] ::= R) || P) x = 
      (parComp cn evalMap n (D [q] ::= R) 0) || f2p1 cn evalMap C q n P x .
@@ -2017,8 +2059,11 @@ eq chansInList ({c nlist blist : T} ltq) = insert(toBounds c blist, chansInList 
   op toBound1_ : List{Bounds} -> List{NatTerm} .
   eq toBound1 nil = nil .
   eq toBound1 ((bound b1) blist) = b1 (toBound1 blist) .
-  eq toBound1 ((uniformBound b1) blist) = b1 (toBound1 blist) .
+ *** eq toBound1 ((uniformBound b1) blist) = b1 (toBound1 blist) .
   eq toBound1 ((dependentBound q) blist) = q (toBound1 blist) .
+  eq toBound1 ((fixedBound b1) blist) = b1 (toBound1 blist) . 
+      *** ^ this is wrong but we will likely never use this
+      *** should we refactor?
 
 
  *** the outputs of a protocol can be computed
@@ -2148,22 +2193,42 @@ fmod PROTOCOL-TYPING is
  eq addAssumptions A ind1 (bound nt1) = insert(ind1 <=T nt1, A) .
  eq addAssumptions A (ind1 ind2) ((bound nt1)(bound nt2)) =
      insert(ind2 <=T nt2, insert(ind1 <=T nt1, A)) .
- eq addAssumptions A (ind1 ind2) ((bound nt1)(uniformBound nt2)) =
-     insert(ind2 <=T nt2, insert(ind1 <=T nt1, A)) .
+ eq addAssumptions A (ind1 ind2) ((bound nt1)(fixedBound nt2)) =
+     insert(ind2 =T= nt2, insert(ind1 <=T nt1, A)) .
+ eq addAssumptions A (ind1 ind2) ((fixedBound nt1)(bound nt2)) =
+     insert(ind2 <=T nt2, insert(ind1 =T= nt1, A)) .          
  eq addAssumptions A (ind1 ind2) ((bound nt1)(dependentBound q)) =
      insert(ind1 <=T nt1, insert(ind2 <=T fun q ind1, A)) .
+ eq addAssumptions A (ind1 ind2) ((fixedBound nt1)(dependentBound q)) =
+     insert(ind1 =T= nt1, insert(ind2 <=T fun q ind1, A)) .    
  eq addAssumptions A (ind1 ind2 ind3) ((bound nt1)(bound nt2) (bound nt3)) =
      insert(ind3 <=T nt3,
      insert(ind2 <=T nt2, insert(ind1 <=T nt1, A))
-     ) .  
- eq addAssumptions A (ind1 ind2 ind3) ((bound nt1)(bound nt2) (uniformBound nt3)) =
+     ) . 
+ eq addAssumptions A (ind1 ind2 ind3) ((fixedBound nt1)(bound nt2) (bound nt3)) =
      insert(ind3 <=T nt3,
-     insert(ind2 <=T nt2, insert(ind1 <=T nt1, A))
+     insert(ind2 <=T nt2, insert(ind1 =T= nt1, A))
      ) .   
+ eq addAssumptions A (ind1 ind2 ind3) ((bound nt1)(fixedBound nt2) (bound nt3)) =
+     insert(ind3 <=T nt3,
+     insert(ind2 =T= nt2, insert(ind1 <=T nt1, A))
+     ) .  
+ eq addAssumptions A (ind1 ind2 ind3) ((bound nt1)(bound nt2) (fixedBound nt3)) =
+     insert(ind3 =T= nt3,
+     insert(ind2 <=T nt2, insert(ind1 <=T nt1, A))
+     ) .            
  eq addAssumptions A (ind1 ind2 ind3) ((bound nt1)(bound nt2) (dependentBound q)) =
      insert(ind3 <=T fun q ind2,
      insert(ind2 <=T nt2, insert(ind1 <=T nt1, A))
-     ) .                 
+     ) .  
+ eq addAssumptions A (ind1 ind2 ind3) ((fixedBound nt1)(bound nt2) (dependentBound q)) =
+     insert(ind3 <=T fun q ind2,
+     insert(ind2 <=T nt2, insert(ind1 =T= nt1, A))
+     ) . 
+ eq addAssumptions A (ind1 ind2 ind3) ((bound nt1)(fixedBound nt2) (dependentBound q)) =
+     insert(ind3 <=T fun q ind2,
+     insert(ind2 =T= nt2, insert(ind1 <=T nt1, A))
+     ) .                        
  ***(     
  ceq typeOfAux(Sigma, Delta, I, A, family c nlist blist ::= R) = 
      err ("type mismatch family:" + string(c))
@@ -2279,9 +2344,9 @@ mod PROTOCOL-EQUALITY is
     var C C' q' : Qid .
     var m : Nat .
   var nt nt1 nt2 : NatTerm .
-  var nlist : List{NatTerm} .
+  var nlist nlist' : List{NatTerm} .
  var cases : Cases .
- var blist : List{Bounds} .
+ var blist blist' : List{Bounds} .
  var cn : ChannelName .
  var bn : CNameBound .   
 
@@ -2303,7 +2368,8 @@ mod PROTOCOL-EQUALITY is
  *** similar to reactions, we write configurations
 
  sort ProtocolConfig . 
- op pConfig : Signature ChannelContext Protocol 
+ op pConfig : 
+              Signature ChannelContext Protocol 
               Set{CNameBound} Set{CNameBound} Set{BoolTerm} -> 
               ProtocolConfig [ctor] .
 
@@ -3063,10 +3129,58 @@ mod PROTOCOL-EQUALITY is
  .
   
  rl [addToGroup] :
-   pConfig(Sigma, Delta, (family C q (bound nt) ::= P) || family C' q' (bound nt1) ::= cases, I, O, A)
+   pConfig(Sigma, Delta, (family C q (bound nt) ::= P) || family C' q' (bound nt1) ::= cases, 
+           I, O, A)
    => 
-   pConfig(Sigma, Delta, family C q (bound nt) ::= (P || family C' q' (bound nt1) ::= cases), I, O, A)
- .  
+   pConfig(Sigma, Delta, family C q (bound nt) ::= (P || family C' q' (bound nt1) ::= cases), 
+           I, O, A)
+ . 
+ 
+  rl [addToGroupCases-end] : 
+   pConfig(Sigma, Delta, 
+           (family C nlist blist ::= (whenCond --> P)) 
+           ||
+           (family C' nlist' blist' ::= cases), I, O, A)
+   =>
+   pConfig(Sigma, Delta, 
+           (family C nlist blist ::= 
+             (whenCond --> (P || (family C' nlist' blist' ::= cases))
+             )
+           ) 
+           ,
+           I, O, A 
+           ) 
+ . 
+ 
+ crl [addToGroupCases] :
+   pConfig(Sigma, Delta, 
+           (family C nlist blist ::= (whenCond --> P) ;; whenList) 
+           ||
+           (family C' nlist' blist' ::= cases), I, O, A)
+   =>
+   pConfig(Sigma, Delta, 
+           (family C nlist blist ::= 
+             (whenCond --> P || (family C' nlist' blist' ::= cases)) ;; 
+             whenList'
+           ) 
+           ,
+           I, O, A 
+           )
+   if 
+   pConfig(Sigma, Delta, 
+           (family C nlist blist ::= whenList) 
+           ||
+           (family C' nlist' blist' ::= cases), I, O, A)
+   =>
+   pConfig(Sigma, Delta, 
+           (family C nlist blist ::= 
+             whenList'
+           ) 
+           ,
+           I, O, A 
+           )       
+ .                          
+    
  
   *** TODO: old idea, perhaps remove it
   crl [proof-composition] :
@@ -3099,16 +3213,16 @@ mod PROTOCOL-EQUALITY is
  
  crl [absorb-new-nf-family-two] : 
      pConfig(Sigma, Delta, 
-             newNF({C (q q')((bound n) (uniformBound nt)) : T }  ltq, 
-                   P || (family C (q q')((bound n) (uniformBound nt)) ::= cases), ql), 
+             newNF({C (q q')((bound n) (bound nt)) : T }  ltq, 
+                   P || (family C (q q')((bound n) (bound nt)) ::= cases), ql), 
              I, O, A) 
      => 
      pConfig(Sigma, Delta, newNF(ltq, P, del C ql), I, O, A) 
  if typeOf(Sigma, 
-           addChannels ({C (q q')((bound n) (uniformBound nt)) : T } ltq) Delta, 
+           addChannels ({C (q q')((bound n) (bound nt)) : T } ltq) Delta, 
            insert(C @ (n nt), union(I, getOutputs(P))), 
            A, 
-           family C (q q')((bound n) (uniformBound nt)) ::= cases
+           family C (q q')((bound n) (bound nt)) ::= cases
           )
      /\
      typeOf(Sigma, addChannels ltq Delta, I, A, P)       
@@ -3483,6 +3597,35 @@ mod PROTOCOL-EQUALITY is
      [nonexec] 
      .
      
+    crl [subst-families-three] :
+     pConfig(Sigma, Delta, 
+             (family C (q q' q'') (b1 b2 b3) ::= cases)
+             ||
+             (cn2 ::= nf((x : T <- read (C[t1 t2 t3])) BRL, R, ql)),
+             I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+             (family C (q q' q'') (b1 b2 b3) ::= cases)
+             ||
+             (cn2 ::= preNF((x : T <~ R2) BRL, R, ql))
+             ,
+             I, O, A) 
+     if 
+      typeOf(Sigma, Delta, addDeclarations BRL (x : T), 
+            insert(toBounds C (b1 b2 b3), insert(toBound cn2 , I)), A, R) 
+     == 
+     typeInCtx(toBound cn2, A, Delta) 
+     /\ 
+     typeInCtx(toBounds C (b1 b2 b3), A, Delta) == T 
+     /\ 
+     (projectIndex (family C (q q' q'') (b1 b2 b3) ::= cases) (t1 t2 t3) 
+          insert(q =T= t1, insert(q' =T= t2, insert(q'' =T= t3, A))) empty) 
+     == 
+     (C[t1 t2 t3] ::= R2)      
+     [nonexec] 
+     
+     .
+     
     crl [subst-families-one-cases] :
      pConfig(Sigma, Delta, 
              (family C q (bound nt) ::= cases)
@@ -3588,21 +3731,24 @@ mod PROTOCOL-EQUALITY is
      [nonexec] 
      .
      
+     var nj' : NatTerm .
+     
      crl [subst-families-two] :
      pConfig(Sigma, Delta, 
-             (family C (q q') ((bound n) (uniformBound nt)) ::= cases')
+             (family C (q q') ((bound n) (bound nt)) ::= cases')
              ||
              (cn2 ::= cases),
              I, O, A)
      => 
     pConfig(Sigma, Delta, 
-             (family C (q q') ((bound n) (uniformBound nt))  ::= cases')
+             (family C (q q') ((bound n) (bound nt))  ::= cases')
              ||
-             (cn2 ::= nf('x : T <- read (C[q nj]), return 'x, 'x :: emptyCNameList)),
+             (cn2 ::= nf('x : T <- read (C[nj nj']), return 'x, 'x :: emptyCNameList)),
              I, O, A) 
-     if (projectIndex (family C (q q') ((bound n) (uniformBound nt)) ::= cases') nj A empty) 
+     if (projectIndex (family C (q q') ((bound n) (bound nt)) ::= cases') 
+                      (nj nj') A empty) 
         == 
-        (C[q nj] ::= cases)
+        (C[nj nj'] ::= cases)
      [nonexec] .
      
      rl [subst-rev-families] :
@@ -3647,13 +3793,13 @@ mod PROTOCOL-EQUALITY is
      
      rl [SUBST-nf-read-family-two] : 
      pConfig(Sigma, Delta ,
-             (family q1 (q q') ((bound n1) (uniformBound nt)) ::= 
+             (family q1 (q q') ((bound n1) (bound nt)) ::= 
                  nf((x2 : T1 <- read cn1), return x2, x2 :: emptyCNameList )) || 
              (cn2 ::= nf( (x1 : T1 <- read (q1[q nj])) BRL , R2, QL) ),
              I, O, A)  
      => 
      pConfig(Sigma, Delta,
-             (family q1 (q q') ((bound n1) (uniformBound nt)) ::= 
+             (family q1 (q q') ((bound n1) (bound nt)) ::= 
                 nf((x2 : T1 <- read cn1), return x2, x2 :: emptyCNameList ))  || 
              (cn2 ::= nf((x2 : T1 <- read (evalCName cn1 (q' |-> nj))) BRL , R2 [x1 / x2], replace x1 x2 QL)),
              I, O, A) 
@@ -3670,14 +3816,14 @@ mod PROTOCOL-EQUALITY is
      
      rl [SUBST-nf-read-family-two-family] : 
      pConfig(Sigma, Delta ,
-             (family q1 (q q') ((bound n1) (uniformBound nt)) ::= 
+             (family q1 (q q') ((bound n1) (bound nt)) ::= 
                  nf((x2 : T1 <- read cn1), return x2, x2 :: emptyCNameList )) || 
              (family q2 q'' (bound nt2) ::= 
                  nf( (x1 : T1 <- read (q1[q nj])) BRL , R2, QL) ),
              I, O, A)  
      => 
      pConfig(Sigma, Delta,
-             (family q1 (q q') ((bound n1) (uniformBound nt)) ::= 
+             (family q1 (q q') ((bound n1) (bound nt)) ::= 
                 nf((x2 : T1 <- read cn1), return x2, x2 :: emptyCNameList ))  || 
              (family q2 q'' (bound nt2) ::= 
                 nf((x2 : T1 <- read (evalCName cn1 (q' |-> nj))) BRL , 
@@ -4672,7 +4818,40 @@ mod PROTOCOL-EQUALITY is
      I' == insert( C2 @ nt2, I)
      /\
      A' == insert(i <=T nt2, insert(bt, A))
+    
     .
+   
+   *** same rule for families with three indices
+   
+    crl [subst-family-case-three] :
+       pConfig(Sigma, Delta, 
+               (family C1 (q q' q'') (b1 b2 b3) ::= cases) || 
+               (family C2 (q q' q'') (b1 b2 b3) ::= 
+                whenList1 ;;
+                (when bt --> nf((x : T <- read (C1[t1 t2 t3]) ) BRL, R, ql)
+                ) ;;
+                whenList2), I, O, A)
+       =>    
+       pConfig(Sigma, Delta, 
+               emptyProtocol
+               , I, O, A)
+       if          
+       pConfig(Sigma, Delta, 
+               (family C1 (q q' q'') (b1 b2 b3) ::= cases) || 
+               (C2[q q' q''] ::= nf((x : T <- read (C1[t1 t2 t3]) ) BRL, R, ql)), 
+               insert(toBounds C2 (b1 b2 b3) , I), O, 
+               ( insert(bt, A), addAssumptions A (q q' q'') (b1 b2 b3) )
+              )
+      =>
+      pConfig(Sigma, Delta, 
+               (family C1 (q q' q'') (b1 b2 b3) ::= cases) || 
+               (C2[q q' q''] ::= R'), 
+               I', O, A')
+     /\
+     I' == insert(toBounds C2 (b1 b2 b3) , I)
+     /\
+     A' == ( insert(bt, A), addAssumptions A (q q' q'') (b1 b2 b3) )
+    .  
    
    *** same rules for channels
    
@@ -5017,7 +5196,7 @@ mod PROTOCOL-EQUALITY is
      .
      )
      
-     *** only interested in C[idx ++ 1], so no families
+     *** only interested in C[idx], so no families
      op isSubprotocolOf__ : Protocol Protocol -> Bool .
      eq isSubprotocolOf (cn ::= cases) P = 
         (cn ::= cases) == keepOne P cn .
@@ -5025,6 +5204,7 @@ mod PROTOCOL-EQUALITY is
         (cn ::= cases) == keepOne P cn 
         and
         isSubprotocolOf P1 P . 
+         
         
      *** auxiliary for induction 
      op adjustIndex__ : Protocol NatTerm -> Protocol .
@@ -5032,6 +5212,20 @@ mod PROTOCOL-EQUALITY is
                      family C q (bound idx) ::= cases .   
      eq adjustIndex ((family C q (bound nt) ::= cases) || P) idx = 
                      (family C q (bound idx) ::= cases) || adjustIndex P idx .
+                     
+     *** for families with two indices
+     op adjustIndex1__ : Protocol NatTerm -> Protocol .
+     eq adjustIndex1 (family C (q q') (b1 b2) ::= cases) idx = 
+                     family C (q q') ((bound idx) b2) ::= cases .
+     eq adjustIndex1 ((family C (q q') (b1 b2) ::= cases) || P) idx = 
+                     (family C (q q') ((bound idx) b2) ::= cases) || adjustIndex1 P idx .
+     
+     
+     op adjustIndex2__ : Protocol NatTerm -> Protocol .
+     eq adjustIndex2 (family C (q q') (b1 b2) ::= cases) idx = 
+                     family C (q q') (b1 (bound idx)) ::= cases .
+     eq adjustIndex2 ((family C (q q') (b1 b2) ::= cases) || P) idx = 
+                     (family C (q q') (b1 (bound idx)) ::= cases) || adjustIndex2 P idx .
      
      op getInductionBase____ : Protocol Protocol Qid Set{BoolTerm} -> Protocol .
      eq getInductionBase (newfamily C q (bound nt) : T in P) P2 idx A =
@@ -5063,6 +5257,58 @@ mod PROTOCOL-EQUALITY is
         isSubprotocolOf (substIndex P2 (idx ++ 1) A) P3
         [nonexec]
         .
+        
+     crl [NESTED-INDUCTION-2] :
+      pConfig(Sigma, Delta, 
+               P || family C (q q') (b1 b2) ::= P1, 
+               I, O, A)
+      =>          
+      pConfig(Sigma, Delta, 
+               P || family C (q q') (b1 b2) ::= P2, 
+               I, O, A)
+     if 
+      pConfig(Sigma, Delta, 
+               P || (family C (q q') (b1 (bound idx)) ::= (adjustIndex2 P2 idx)) 
+                 || substIndex2 P2 idx A, 
+               I, O, addAssumptions A (q idx) (b1 b2))       
+        =>  
+      pConfig(Sigma, Delta, 
+               P3,
+               I, O, A')
+        /\
+        A' == addAssumptions A (q idx) (b1 b2)
+        /\
+        isSubprotocolOf (substIndex2 P2 idx A) P3
+      [nonexec]
+     .   
+     
+     crl [NESTED-INDUCTION-1] :
+      pConfig(Sigma, Delta, 
+               P || family C (q q') (b1 b2) ::= P1, 
+               I, O, A)
+      =>          
+      pConfig(Sigma, Delta, 
+               P || family C (q q') (b1 b2) ::= P2, 
+               I, O, A)
+     if 
+      pConfig(Sigma, Delta, 
+               P || (family C (q q') ((bound idx) b2) ::= (adjustIndex1 P2 idx)) 
+                 || substIndex1 P2 idx A, 
+               I, O, addAssumptions A (idx q') (b1 b2))       
+        =>  
+      pConfig(Sigma, Delta, 
+               P3,
+               I, O, A')
+        /\
+        A' == addAssumptions A (q idx) (b1 b2)
+        /\
+        isSubprotocolOf (substIndex1 P2 idx A) P3
+      [nonexec]
+     .
+     
+     *** todo: implement these, set the bound to fixedBound idx
+     op substIndex1___ : Protocol NatTerm Set{BoolTerm} -> Protocol .
+     op substIndex2___ : Protocol NatTerm Set{BoolTerm} -> Protocol .
      
      
      crl [INDUCTION-P] : 
@@ -5140,10 +5386,10 @@ mod PROTOCOL-EQUALITY is
        
      crl [INDUCTION-R-two] :
      pConfig(Sigma, Delta ((C @ (n1 n2)) :: T), 
-       P || (family C (q q') ((bound n1) (uniformBound n2)) ::= R), I, O, A)
+       P || (family C (q q') ((bound n1) (bound n2)) ::= R), I, O, A)
      =>
      pConfig(Sigma, Delta ((C @ (n1 n2)) :: T), 
-       P || (family C (q q') ((bound n1) (uniformBound n2)) ::= R'), I, O, A)
+       P || (family C (q q') ((bound n1) (bound n2)) ::= R'), I, O, A)
      if 
      pConfig(Sigma, Delta ((C @ (n1 n2)) :: T), 
        P || (C[q 0] ::= replaceVars(R, q' |-> 0)), I, insert(C[q 0] @ nil, getOutputs(P)), A) 
@@ -5155,13 +5401,13 @@ mod PROTOCOL-EQUALITY is
      R2 == replaceVars(R', q' |-> 0)
      /\
      pConfig(Sigma, Delta ((C @ (n1 n2)) :: T), 
-       P || (family C (q q') ((bound n1) (uniformBound idx)) ::= R') 
+       P || (family C (q q') ((bound n1) (bound idx)) ::= R') 
        || (C[q (idx ++ 1)] ::= replaceVars(R, q' |-> idx ++ 1 )), I, 
        insert(C @ (n1 idx),  
                 insert(C[q (idx ++ 1)] @ nil, getOutputs(P))), A) 
      => *** TODO: check inputs!!!
      pConfig(Sigma, Delta ((C @ (n1 n2)) :: T), 
-       P || (family C (q q') ((bound n1) (uniformBound idx)) ::= R')
+       P || (family C (q q') ((bound n1) (bound idx)) ::= R')
          || (C[q (idx ++ 1)] ::= R3), I, O'', A) 
      /\
      O'' == insert(C @ (n1 idx),  
@@ -5274,14 +5520,14 @@ mod PROTOCOL-EQUALITY is
        
      crl [INDUCTION-when-two] : ***TODO: add a condition that q <=T n1!
      pConfig(Sigma, Delta, 
-       P || (family C (q q') ((bound n1) (uniformBound n2)) ::= cases), I, O, A)
+       P || (family C (q q') ((bound n1) (bound n2)) ::= cases), I, O, A)
      =>
      pConfig(Sigma, Delta , 
-       P || (family C (q q') ((bound n1) (uniformBound n2)) ::= cases'), I, O, A)
+       P || (family C (q q') ((bound n1) (bound n2)) ::= cases'), I, O, A)
      if 
      pConfig(Sigma, Delta , 
        P || 
-       (projectIndex (family C (q q') ((bound n1) (uniformBound n2)) ::= cases) 0 A empty ), 
+       (projectIndex (family C (q q') ((bound n1) (bound n2)) ::= cases) (q 0) A empty ), 
        I, 
        union (O \ (C @ (n1 n2)), C[q 0] @ nil), 
        insert(q' =T= 0, insert(q <=T n1, A))
@@ -5294,12 +5540,12 @@ mod PROTOCOL-EQUALITY is
      /\
      A' == insert(q' =T= 0, insert(q <=T n1, A))
      /\
-     P2 == projectIndex (family C (q q') ((bound n1) (uniformBound n2)) ::= cases') 0 A empty
+     P2 == projectIndex (family C (q q') ((bound n1) (bound n2)) ::= cases') (q 0) A empty
      /\
      pConfig(Sigma, Delta , 
-       P || (family C (q q') ((bound n1) (uniformBound idx)) ::= cases') || 
-       (projectIndex (family C (q q') ((bound n1) (uniformBound n2)) ::= cases) 
-                     (idx ++ 1) A empty), 
+       P || (family C (q q') ((bound n1) (bound idx)) ::= cases') || 
+       (projectIndex (family C (q q') ((bound n1) (bound n2)) ::= cases) 
+                     (q (idx ++ 1)) A empty), 
              I, 
              insert( C @ (n1 idx) , 
                      insert( 
@@ -5323,9 +5569,9 @@ mod PROTOCOL-EQUALITY is
      /\
      P4 == 
            P || 
-           (family C (q q') ((bound n1) (uniformBound idx)) ::= cases') || 
-           (projectIndex (family C (q q') ((bound n1) (uniformBound n2)) ::= cases') 
-                         (idx ++ 1) A empty)
+           (family C (q q') ((bound n1) (bound idx)) ::= cases') || 
+           (projectIndex (family C (q q') ((bound n1) (bound n2)) ::= cases') 
+                         (q (idx ++ 1)) A empty)
        [nonexec] .  
                               
     rl [convert-combined] :
@@ -5529,6 +5775,7 @@ mod PROTOCOL-EQUALITY is
     pConfig(Sigma, Delta, P2, I, O, A) [nonexec] .
     
     
+     
    *** switch to combined notation
    *** family 'Group i n ::= 
    ***   when bt -->    C[i] ::= R1
@@ -5541,17 +5788,17 @@ mod PROTOCOL-EQUALITY is
    op combine_____ : Qid NatTerm BoolTerm Protocol Protocol -> Protocol .
    eq combine q n bt (C' [q] ::= R1) (C' [q] ::= R2) = 
       family C' q (bound n) ::= ((when bt --> R1) ;; (otherwise --> R2)) .
-   eq combine q n bt (family C' q' (uniformBound m) ::= R1) (family C' q' (uniformBound m) ::= R2) = 
-      family C' (q q') ((bound n) (uniformBound m)) ::= ((when bt --> R1) ;; (otherwise --> R2)) .
+   eq combine q n bt (family C' q' (bound m) ::= R1) (family C' q' (bound m) ::= R2) = 
+      family C' (q q') ((bound n) (bound m)) ::= ((when bt --> R1) ;; (otherwise --> R2)) .
    eq combine q n bt (family C' q (bound m) ::= R1) (family C' q (bound m) ::= R2) = 
       family C' q (bound m) ::= ((when bt --> R1) ;; (otherwise --> R2)) .   
    eq combine q n bt (P1 || C' [q] ::= R1) (P2 || C' [q] ::= R2) = 
       (family C' q (bound n) ::= ((when bt --> R1) ;; (otherwise --> R2)))
       ||
       combine q n bt P1 P2 . 
-   eq combine q n bt (P1 || family C' q' (uniformBound m) ::= R1) 
-                     (P2 || family C' q' (uniformBound m) ::= R2) = 
-      (family C' (q q') ((bound n) (uniformBound m)) ::= ((when bt --> R1) ;; (otherwise --> R2)) )
+   eq combine q n bt (P1 || family C' q' (bound m) ::= R1) 
+                     (P2 || family C' q' (bound m) ::= R2) = 
+      (family C' (q q') ((bound n) (bound m)) ::= ((when bt --> R1) ;; (otherwise --> R2)) )
       ||
       combine q n bt P1 P2 .
     eq combine q n bt (P1 || family C' q (bound m) ::= R1) 
@@ -5568,12 +5815,14 @@ mod PROTOCOL-EQUALITY is
    
    *** given a family C and an index i, return C[i] ::= the correspoding case
    *** we might get more than one case, but often we get just a reaction or a protocol
-   op projectIndex____ : Protocol NatTerm Set{BoolTerm} Map{Qid, NatTerm} -> Protocol .
+   op projectIndex____ : Protocol List{NatTerm} Set{BoolTerm} Map{Qid, NatTerm} -> Protocol .
    *** projectIndex (family C i n ::= cases) nj A f = C[nj] ::= cases(nj)
    eq projectIndex (family C q (bound nt) ::= cases) nj A f = 
        projectIndexAux (family C q (bound nt) ::= cases) nj A f emptyWhen .
-   eq projectIndex (family C (q q') ((bound n1) (uniformBound nt)) ::= cases) nj A f = 
-       projectIndexAux2 (family C (q q') ((bound n1) (uniformBound nt)) ::= cases) nj A f emptyWhen . 
+   eq projectIndex (family C (q q') (b1 b2) ::= cases) (t1 t2) A f = 
+       projectIndexAux2 (family C (q q') (b1 b2) ::= cases) (t1 t2) A f emptyWhen .
+   eq projectIndex (family C (q q' q'') (b1 b2 b3) ::= cases) (t1 t2 t3) A f =
+      projectIndexAux3 (family C (q q' q'') (b1 b2 b3) ::= cases) (t1 t2 t3) A f emptyWhen .    
    
    eq projectIndex (family 'Comp[C C'] q (bound nt) ::= 
                       ( (C[q] ::= R1) || (C'[q] ::= R2) )
@@ -5623,41 +5872,107 @@ mod PROTOCOL-EQUALITY is
         C[nj] ::= cases ;; (otherwise --> replaceVars(R, insert(q, nj, f)))
     [owise] .
     
-    op projectIndexAux2_____ : Protocol NatTerm Set{BoolTerm} Map{Qid, NatTerm} Cases -> Protocol .   
-    eq projectIndexAux2 (family C (q q') ((bound nt1) (uniformBound nt))  ::= R ) 
-        nj A f cases =
+    var b1 b2 b3 : Bounds .
+    
+    op projectIndexAux2_____ : 
+         Protocol List{NatTerm} Set{BoolTerm} Map{Qid, NatTerm} Cases -> Protocol .   
+    eq projectIndexAux2 (family C (q q') (b1 b2)  ::= R ) 
+        (t1 t2) A f cases =
       projectIndexAux2  
-         (family C (q q') ((bound nt1) (uniformBound nt))  ::= otherwise --> R ) 
-        nj A f cases .
+         (family C (q q') (b1 b2)  ::= otherwise --> R ) 
+        (t1 t2) A f cases .
     ceq projectIndexAux2 
-        (family C (q q') ((bound nt1) (uniformBound nt))  ::= (when bt --> R) ;; whenList) 
-        nj A f cases = 
-        C[q nj] ::= replaceVars(R, ((q' |-> nj), f)) 
-    if A |= bt with (f, q' |-> nj) .
+        (family C (q q') (b1 b2)  ::= (when bt --> R) ;; whenList) 
+        (t1 t2) A f cases = 
+        C[t1 t2] ::= replaceVars(R, ((q |-> t1), (q' |-> t2), f)) 
+    if A |= bt with (f, q |-> t1, q' |-> t2) .
    ceq projectIndexAux2 
-        (family C (q q') ((bound nt1) (uniformBound nt))  ::= (when bt --> R) ;; whenList) 
-        nj A f cases = 
+        (family C (q q') (b1 b2)  ::= (when bt --> R) ;; whenList) 
+        (t1 t2) A f cases = 
         projectIndexAux2 
-        (family C (q q') ((bound nt1) (uniformBound nt))  ::= whenList) 
-        nj A f cases
-    if A |= neg bt with (f, q' |-> nj) .
+        (family C (q q') (b1 b2)  ::= whenList) 
+        (t1 t2) A f cases
+    if A |= neg bt with (f, q |-> t1, q' |-> t2) .
     eq projectIndexAux2 
-        (family C (q q') ((bound nt1) (uniformBound nt)) ::= (when bt --> R) ;; whenList) 
-        nj A f cases = 
+        (family C (q q') (b1 b2) ::= (when bt --> R) ;; whenList) 
+        (t1 t2) A f cases = 
         projectIndexAux2 
-        (family C (q q') ((bound nt1) (uniformBound nt))  ::= whenList) 
-        nj A f (cases ;; when subst(bt, q', nj) --> replaceVars(R, ((q |-> nj), f)))
+        (family C (q q') (b1 b2)  ::= whenList) 
+        (t1 t2) A f 
+         (cases ;; 
+           when subst(subst(bt, q, t1), q', t2) --> 
+             replaceVars(R, ((q |-> t1), (q' |-> t2), f)) 
+         )
     [owise] .
     ceq projectIndexAux2 
-        (family C (q q') ((bound nt1) (uniformBound nt))  ::= (otherwise --> R)) 
-        nj A f cases = 
-        C[q nj] ::= replaceVars(R, ((q' |-> nj), f)) 
+        (family C (q q') (b1 b2)  ::= (otherwise --> R)) 
+        (t1 t2) A f cases = 
+        C[t1 t2] ::= replaceVars(R, ((q |-> t1), (q' |-> t2), f)) 
     if cases == emptyWhen .
     eq projectIndexAux2 
-        (family C (q q') ((bound nt1) (uniformBound nt))  ::= (otherwise --> R)) 
-        nj A f cases = 
-        C[q nj] ::= cases ;; (otherwise --> replaceVars(R, ((q |-> nj), f)))
+        (family C (q q') (b1 b2)  ::= (otherwise --> R)) 
+        (t1 t2) A f cases = 
+        C[t1 t2] ::= cases ;; (otherwise --> replaceVars(R, ((q |-> t1), (q' |-> t2), f)) )
     [owise] .
+    eq projectIndexAux2 
+        (family C (q q') (b1 b2)  ::= emptyWhen) 
+        (t1 t2) A f cases = 
+        C[t1 t2] ::= cases .
+        
+    
+    var nt3 t1 t2 t3 : NatTerm .
+    
+    op projectIndexAux3_____ 
+         : Protocol List{NatTerm} Set{BoolTerm} 
+           Map{Qid, NatTerm} Cases -> Protocol .        
+    eq projectIndexAux3 (family C (q q' q'') (b1 b2 b3)  ::= R ) 
+        (t1 t2 t3) A f cases' =
+      projectIndexAux3  
+         (family C (q q' q'') (b1 b2 b3)  ::= otherwise --> R ) 
+        (t1 t2 t3) A f cases' .
+    ceq projectIndexAux3 
+        (family C (q q' q'') (b1 b2 b3)  ::= (when bt --> R) ;; whenList) 
+        (t1 t2 t3) A f cases' = 
+        C[t1 t2 t3] ::= replaceVars(R, ((q |-> t1),(q' |-> t2),(q'' |-> t3), f)) 
+    if A |= bt with (f, q |-> t1, q' |-> t2, q'' |-> t3)  .
+   ceq projectIndexAux3 
+        (family C (q q' q'') (b1 b2 b3)  ::= (when bt --> R) ;; whenList) 
+        (t1 t2 t3) A f cases' = 
+        projectIndexAux3 
+        (family C (q q' q'') (b1 b2 b3)  ::= whenList) 
+        (t1 t2 t3) A f cases'
+    if A |= neg bt with (f, q |-> t1, q' |-> t2, q'' |-> t3) .
+    eq projectIndexAux3 
+        (family C (q q' q'') (b1 b2 b3) ::= (when bt --> R) ;; whenList) 
+        (t1 t2 t3) A f cases' = 
+        projectIndexAux3
+        (family C (q q' q'') (b1 b2 b3)  ::= whenList) 
+        (t1 t2 t3) A f 
+        (cases' ;; when subst(
+                         subst(subst(bt, q, t1), q', t2), 
+                         q'', t3) --> 
+                         replaceVars(R, ((q |-> t1),(q' |-> t2),(q'' |-> t3), f)) 
+        )
+    [owise] .
+    ceq projectIndexAux3 
+        (family C (q q' q'') (b1 b2 b3)  ::= (otherwise --> R)) 
+        (t1 t2 t3) A f cases' = 
+        C[t1 t2 t3] ::= replaceVars(R, ((q |-> t1),(q' |-> t2),(q'' |-> t3), f)) 
+    if cases' == emptyWhen .
+    eq projectIndexAux3 
+        (family C (q q' q'') (b1 b2 b3)  ::= (otherwise --> R)) 
+        (t1 t2 t3) A f cases' = 
+        C[t1 t2 t3] ::= 
+          cases' ;; 
+          (otherwise --> 
+            replaceVars(R, ((q |-> t1),(q' |-> t2),(q'' |-> t3), f)) 
+          )
+    [owise] .
+    eq projectIndexAux3 
+        (family C (q q' q'') (b1 b2 b3) ::= emptyWhen) 
+        (t1 t2 t3) A f cases' = 
+         C[t1 t2 t3] ::= cases' .      
+          
    
     *** rules for grouping and ungrouping families  
  
@@ -5792,8 +6107,8 @@ mod APPROX-EQUALITY is
   eq | newNF(ltq, P, QL) | = | P | . 
   eq | family c q (bound n) ::= R | = n * | R | .
   eq | family c q (bound n) ::= P | = n * | P | .
-  eq | family c (q q') ((bound n1) (uniformBound n2))  ::= R | = n1 * n2 * | R | .
-  eq | family c (q q') ((bound n1) (uniformBound n2))  ::= P | = n1 * n2 * | P | .
+  eq | family c (q q') ((bound n1) (bound n2))  ::= R | = n1 * n2 * | R | .
+  eq | family c (q q') ((bound n1) (bound n2))  ::= P | = n1 * n2 * | P | .
   
   eq | family c q (bound n) ::= when bt --> R | = n * | R | .
   eq | family c q (bound n) ::= otherwise --> R | = n * | R | . 
