@@ -1,6 +1,6 @@
 ***( IPDL
 
-  Copyright : (C) 2022-23, Kristina Sojakova
+  Copyright : (C) 2022-23, Kristina Sojakova, Mihai Codescu
   License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
   Authors   : Mihai Codescu <mscodescu@gmail.com>
               Kristina Sojakova <sojakova.kristina@gmail.com>
@@ -124,33 +124,35 @@ mod GMWN is
  var q : Qid .
  var A : Set{BoolTerm} .
  
- ceq A |= fun 'wire0 nt <=T N + 1 with f = true 
+ ceq A |= fun 'wire0 nt <T N + 2 with f = true 
    if (apply 'isInputGate (evalTerm nt f)) in A .
- ceq A |= (fun 'wire1 nt <=T fun 'I (fun 'wire0 nt)) with f = true 
+ ceq A |= (fun 'wire1 nt <T fun 'I (fun 'wire0 nt)) with f = true 
     if (apply 'isInputGate (evalTerm nt f)) in A [label depBounds] .
  
- ceq A |= fun 'wire0 nt <=T K with f = true 
+ ceq A |= fun 'wire0 nt <T K with f = true 
     if (apply 'isNotGate (evalTerm nt f)) in A [label notIndex].
  
- ceq A |= fun 'wire0 nt <=T K with f = true 
+ ceq A |= fun 'wire0 nt <T K with f = true 
     if (apply 'isXorGate (evalTerm nt f)) in A .
- ceq A |= fun 'wire1 nt <=T K with f = true 
+ ceq A |= fun 'wire1 nt <T K with f = true 
     if (apply 'isXorGate (evalTerm nt f)) in A .   
  
- ceq A |= fun 'wire0 nt <=T K with f = true 
+ ceq A |= fun 'wire0 nt <T K with f = true 
     if (apply 'isAndGate (evalTerm nt f)) in A [label andIndex] .
- ceq A |= fun 'wire1 nt <=T K with f = true 
+ ceq A |= fun 'wire1 nt <T K with f = true 
     if (apply 'isAndGate (evalTerm nt f)) in A .
     
- eq A |= fun 'wire0 i <=T n with f = (A |= i <=T n with f) .
+ eq A |= fun 'wire0 i <T n with f = (A |= i <T n with f) .
+ *** where do we need this? is this N?
  
   *** generic assumptions shared by both proofs
  op genA : -> Set{BoolTerm} .
  eq genA = ( neg (apply 'isXorGate 0), 
              neg (apply 'isAndGate 0), 
              neg (apply 'isNotGate 0),
-             0 <=T K,
-             0 <=T N + 1 )
+             0 <T K,
+             0 <T N + 2,
+             N <T N + 1 )
  . 
   
   *** ideal protocol
@@ -163,7 +165,7 @@ mod GMWN is
   
   op leakageIdeal : -> Protocol .
   eq leakageIdeal = 
-     (family 'In_id_adv ('n 'i) ((bound (N + 1))(dependentBound 'I)) ::=
+     (family 'In_id_adv ('n 'i) ((bound (N + 2))(dependentBound 'I)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('in : bool <- read ('In['n 'i]), return 'in, 'in :: emptyCNameList)
        )
@@ -173,7 +175,7 @@ mod GMWN is
        )
      ) 
      ||
-     (family 'InRcvd_id_adv ('n 'i) ((bound (N + 1))(dependentBound 'I)) ::=
+     (family 'InRcvd_id_adv ('n 'i) ((bound (N + 2))(dependentBound 'I)) ::=
        (when (apply 'isHonest 'n) --> 
          nf('in : bool <- read ('In['n 'i]), return (), 'in :: emptyCNameList)
        )
@@ -216,7 +218,7 @@ mod GMWN is
   
   op finalIdeal : -> Protocol .
   eq finalIdeal =
-     (family 'Out_id_adv ('n 'k) ((bound (N + 1))(bound K)) ::=
+     (family 'Out_id_adv ('n 'k) ((bound (N + 2))(bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('out : bool <- read ('Out['n 'k]), return 'out, 'out :: emptyCNameList)
        )
@@ -226,7 +228,7 @@ mod GMWN is
        )
      )
      ||
-     (family 'Out ('n 'k) ((bound (N + 1))(bound K)) ::=
+     (family 'Out ('n 'k) ((bound (N + 2))(bound K)) ::=
        (when (apply 'isOutputWire 'k) --> 
          nf('out : bool <- read ('Wire['k]), return 'out, 'out :: emptyCNameList)
        )
@@ -245,44 +247,44 @@ mod GMWN is
   op real : -> Protocol .
   eq real = 
    newfamily 'SendInShare ('m 'n 'i) 
-             ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) : bool in
+             ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) : bool in
    newfamily 'OTMsg-0 ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in  
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in  
    newfamily 'OTMsg-1 ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in 
    newfamily 'OTMsg-2 ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in 
    newfamily 'OTMsg-3 ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in 
-   newfamily 'OTChoice-0 ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in  
-   newfamily 'OTChoice-1 ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in                             
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in 
+   newfamily 'OTChoice-0 ('m 'n 'k) 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in  
+   newfamily 'OTChoice-1 ('m 'n 'k) 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in                             
    newfamily 'OTOut ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in          
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in          
    newfamily 'SendOutShare ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in          
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in          
    (parties || 1OutOf4 )
   .
   
   op parties : -> Protocol .
   eq parties = 
    newfamily 'InShare ('n 'm 'i) 
-             ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) : bool in   
+             ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) : bool in   
    newfamily 'Share ('n 'k) 
-             ((bound (N + 1)) (bound K) ) : bool in
+             ((bound (N + 2)) (bound K) ) : bool in
    partyInitial || partyInductive || partyFinal           
   .
   
   op partyInitial : -> Protocol .
   eq partyInitial = 
-  newfamily 'InShare$ ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) : bool in
-  newfamily 'InShare$Sum ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) : bool in
+  newfamily 'InShareGen ('m 'n 'i)  
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) : bool in
+  newfamily 'InShareGen-Sum ('m 'n 'i)  
+            ((bound (N + 1)) (bound (N + 2)) (dependentBound 'I)) : bool in
   ( *** start new
     (family 'In_party_adv ('n 'i)
-             ( (bound (N + 1)) (dependentBound 'I)) ::=
+             ( (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('in : bool <- read ('In['n 'i]), return 'in, 'in :: emptyCNameList)
        ) 
@@ -293,7 +295,7 @@ mod GMWN is
      )
      ||
      (family 'InRcvd_party_adv ('n 'i)
-             ( (bound (N + 1)) (dependentBound 'I)) ::=
+             ( (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isHonest 'n) --> 
          nf('x : bool <- read ('In['n 'i]), return (), 'x :: emptyCNameList)
        ) 
@@ -303,11 +305,11 @@ mod GMWN is
        )       
      )
      ||
-     (family 'InShare$ ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+     (family 'InShareGen ('m 'n 'i)  
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
        (when ('m =T= N + 1) --> 
           nf(('x : bool <- read ('In['n 'i]))
-             ('s : bool <- read ('InShare$Sum[N 'n 'i])), 
+             ('s : bool <- read ('InShareGen-Sum[N 'n 'i])), 
              return (ap 'xor pair('x, 's)), 'x :: 's :: emptyCNameList)
        )
        ;;
@@ -316,51 +318,51 @@ mod GMWN is
        )      
      )
      ||
-     (family 'InShare$Sum ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
-        (when ('m =T= 0) --> 
-          nf('in : bool <- read ('InShare$[0 'n 'i]), 
-             return 'in, 'in :: emptyCNameList)
-        )
-        ;;
-        (otherwise --> 
-          nf(('x : bool <- read ('InShare$['m 'n 'i]))
-             ('s : bool <- read ('InShare$Sum[('m -- 1) 'n 'i])), 
-             return (ap 'xor pair('s, 'x)), 's :: 'x :: emptyCNameList)
-        )    
-     )
-     ||
-      (family 'InShare$_party_adv ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+      (family 'InShareGen_party_adv ('m 'n 'i)  
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isSemiHonest 'n) --> 
-          nf('in : bool <- read ('InShare$['m 'n 'i]), return 'in, 'in :: emptyCNameList)
+          nf('in : bool <- read ('InShareGen['m 'n 'i]), return 'in, 'in :: emptyCNameList)
        )
        ;;
        (when (apply 'isHonest 'n)  --> 
-         nf('in : bool <- read ('InShare$_party_adv['m 'n 'i]), 
+         nf('in : bool <- read ('InShareGen_party_adv['m 'n 'i]), 
             return 'in, 'in :: emptyCNameList)
        )      
      )
      ||
-     (family 'InShare$Sum_party_adv ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+     (family 'InShareGen-Sum ('m 'n 'i)  
+            ((bound (N + 1)) (bound (N + 2)) (dependentBound 'I)) ::=
+        (when ('m =T= 0) --> 
+          nf('in : bool <- read ('InShareGen[0 'n 'i]), 
+             return 'in, 'in :: emptyCNameList)
+        )
+        ;;
+        (otherwise --> 
+          nf(('x : bool <- read ('InShareGen['m 'n 'i]))
+             ('s : bool <- read ('InShareGen-Sum[('m -- 1) 'n 'i])), 
+             return (ap 'xor pair('s, 'x)), 's :: 'x :: emptyCNameList)
+        )    
+     )
+     ||
+     (family 'InShareGen-Sum_party_adv ('m 'n 'i)  
+            ((bound (N + 1)) (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isSemiHonest 'n) --> 
-         nf('s : bool <- read ('InShare$Sum['m 'n 'i]), return 's, 's :: emptyCNameList)
+         nf('s : bool <- read ('InShareGen-Sum['m 'n 'i]), return 's, 's :: emptyCNameList)
        ) 
        ;; 
        (when (apply 'isHonest 'n)  --> 
-         nf('s : bool <- read ('InShare$Sum_party_adv['m 'n 'i]), 
+         nf('s : bool <- read ('InShareGen-Sum_party_adv['m 'n 'i]), 
             return 's, 's :: emptyCNameList)
        )       
      )
      ||
      (family 'SendInShare ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
-        nf('in : bool <- read ('InShare['m 'n 'i]), return 'in, 'in :: emptyCNameList)    
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
+        nf('in : bool <- read ('InShareGen['m 'n 'i]), return 'in, 'in :: emptyCNameList)    
      )  
      ||
      (family 'SendInShare_party_adv ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('SendInShare['m 'n 'i]), return 's, 's :: emptyCNameList)
        ) 
@@ -372,7 +374,7 @@ mod GMWN is
      )   
      ||
      (family 'RcvdInShare_party_adv ('n 'm 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('SendInShare['n 'm 'i]), return 's, 's :: emptyCNameList)
        ) 
@@ -384,12 +386,12 @@ mod GMWN is
      ) 
      ||
      (family 'InShare ('n 'm 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
         nf('s : bool <- read ('SendInShare['n 'm 'i]), return 's, 's :: emptyCNameList)    
      )        
      ||
      (family 'InShare_party_adv ('n 'm 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('InShare['n 'm 'i]), return 's, 's :: emptyCNameList)
        ) 
@@ -405,56 +407,61 @@ mod GMWN is
   op partyInductive : -> Protocol .
   eq partyInductive =
    newfamily 'SendBit ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in
    newfamily 'RcvdBit ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in
    newfamily 'Bit ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in
    newfamily 'BitSum ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in   
-  family 'Circuit ('n 'k) ((bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in   
+  family 'Circuit ('n 'k) ((bound (N + 2)) (bound K)) ::= 
    (when (apply 'isInputGate 'k) -->          
       ( *** start new
-       ( family 'SendBit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+       ( family 'SendBit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('sb : bool <- read ('SendBit['n 'm 'k]), return 'sb, 'sb :: emptyCNameList)
  )
  ||
  (family 'SendBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('sb : bool <- read ('SendBit_party_adv['n 'm 'k]), 
        return 'sb, 'sb :: emptyCNameList) 
  )               
  ||
- ( family 'RcvdBit ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'RcvdBit ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('rb : bool <- read ('RcvdBit['m 'n 'k]), return 'rb, 'rb :: emptyCNameList)
  )
  ||
  (family 'RcvdBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    nf('rb : bool <- read ('RcvdBit_party_adv['n 'm 'k]), 
       return 'rb, 'rb :: emptyCNameList)          
  ) 
  ||
- ( family 'Bit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'Bit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('b : bool <- read ('Bit['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
  )
  ||
- (family 'BitSum ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ (family 'Bit_party_adv ('n 'm 'k) 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
+  nf('b : bool <- read ('Bit_party_adv['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
+ )  
+ ||
+ (family 'BitSum ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    nf('b : bool <- read ('BitSum['n 'm 'k]), return 'b, 'b :: emptyCNameList)  
  )
  ||
  (family 'BitSum_party_adv ('n 'm 'k) 
-           ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
   nf('b : bool <- read ('BitSum_party_adv['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
  )  
  ||
-     ( family 'Share ('n 'k) ((bound (N + 1)) (bound K)) ::= 
+     ( family 'Share ('n 'k) ((bound (N + 2)) (bound K)) ::= 
        nf('in : bool <- read ('InShare['n (fun 'wire0 'k) (fun 'wire1 'k)]),
           return 'in, 'in :: emptyCNameList)
      )
      ||
      (family 'Share_party_adv ('n 'k)  
-             ((bound (N + 1)) (bound K)) ::=
+             ((bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('Share['n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -465,32 +472,32 @@ mod GMWN is
        )        
      )
      ||
-     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-0['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-1['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-2['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-3['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('oc : bool <- read ('OTChoice-0['m 'n 'k]),
           return 'oc, 'oc :: emptyCNameList)
      )
      ||
-     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('oc : bool <- read ('OTChoice-1['m 'n 'k]),
           return 'oc, 'oc :: emptyCNameList)
      )
@@ -499,40 +506,45 @@ mod GMWN is
    ;;
    (when (apply 'isNotGate 'k) -->    
       ( *** start new
-       ( family 'SendBit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+       ( family 'SendBit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('sb : bool <- read ('SendBit['n 'm 'k]), return 'sb, 'sb :: emptyCNameList)
  )
  ||
  (family 'SendBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('sb : bool <- read ('SendBit_party_adv['n 'm 'k]), 
        return 'sb, 'sb :: emptyCNameList) 
  )               
  ||
- ( family 'RcvdBit ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'RcvdBit ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('rb : bool <- read ('RcvdBit['m 'n 'k]), return 'rb, 'rb :: emptyCNameList)
  )
  ||
  (family 'RcvdBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    nf('rb : bool <- read ('RcvdBit_party_adv['n 'm 'k]), 
       return 'rb, 'rb :: emptyCNameList)          
  ) 
  ||
- ( family 'Bit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'Bit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('b : bool <- read ('Bit['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
  )
  ||
- (family 'BitSum ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ (family 'Bit_party_adv ('n 'm 'k) 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
+  nf('b : bool <- read ('Bit_party_adv['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
+ )  
+ ||
+ (family 'BitSum ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    nf('b : bool <- read ('BitSum['n 'm 'k]), return 'b, 'b :: emptyCNameList)  
  )
  ||
  (family 'BitSum_party_adv ('n 'm 'k) 
-           ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
   nf('b : bool <- read ('BitSum_party_adv['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
  )  
  ||
-     ( family 'Share ('n 'k) ((bound (N + 1)) (bound K)) ::= 
+     ( family 'Share ('n 'k) ((bound (N + 2)) (bound K)) ::= 
         (when ('n =T= N + 1) --> 
           nf( ('x : bool <- read ('Share['n (fun 'wire0 'k)])),
               return (ap 'neg 'x), 'x :: emptyCNameList
@@ -547,7 +559,7 @@ mod GMWN is
      )
      ||
      (family 'Share_party_adv ('n 'k)  
-             ((bound (N + 1)) (bound K)) ::=
+             ((bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('Share['n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -558,32 +570,32 @@ mod GMWN is
        )        
      )
      ||
-     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-0['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-1['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-2['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-3['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('oc : bool <- read ('OTChoice-0['m 'n 'k]),
           return 'oc, 'oc :: emptyCNameList)
      )
      ||
-     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('oc : bool <- read ('OTChoice-1['m 'n 'k]),
           return 'oc, 'oc :: emptyCNameList)
      )
@@ -592,47 +604,52 @@ mod GMWN is
    ;;
    (when (apply 'isXorGate 'k) --> 
       ( *** start new
-       ( family 'SendBit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+       ( family 'SendBit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('sb : bool <- read ('SendBit['n 'm 'k]), return 'sb, 'sb :: emptyCNameList)
  )
  ||
  (family 'SendBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('sb : bool <- read ('SendBit_party_adv['n 'm 'k]), 
        return 'sb, 'sb :: emptyCNameList) 
  )               
  ||
- ( family 'RcvdBit ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'RcvdBit ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('rb : bool <- read ('RcvdBit['m 'n 'k]), return 'rb, 'rb :: emptyCNameList)
  )
  ||
  (family 'RcvdBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    nf('rb : bool <- read ('RcvdBit_party_adv['n 'm 'k]), 
       return 'rb, 'rb :: emptyCNameList)          
  ) 
  ||
- ( family 'Bit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'Bit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('b : bool <- read ('Bit['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
  )
  ||
- (family 'BitSum ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ (family 'Bit_party_adv ('n 'm 'k) 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
+  nf('b : bool <- read ('Bit_party_adv['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
+ )  
+ ||
+ (family 'BitSum ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    nf('b : bool <- read ('BitSum['n 'm 'k]), return 'b, 'b :: emptyCNameList)  
  )
  ||
  (family 'BitSum_party_adv ('n 'm 'k) 
-           ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
   nf('b : bool <- read ('BitSum_party_adv['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
  )          
  ||
-     ( family 'Share ('n 'k) ((bound (N + 1)) (bound K)) ::= 
+     ( family 'Share ('n 'k) ((bound (N + 2)) (bound K)) ::= 
        nf(('x : bool <- read ('Share['n (fun 'wire0 'k)]))
           ('y : bool <- read ('Share['n (fun 'wire1 'k)])),
           return (ap 'xor pair('x, 'y)), 'x :: 'y :: emptyCNameList)
      )
      ||
      (family 'Share_party_adv ('n 'k)  
-             ((bound (N + 1)) (bound K)) ::=
+             ((bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('Share['n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -643,32 +660,32 @@ mod GMWN is
        )        
      )
      ||
-     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-0['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-1['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-2['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-3['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('oc : bool <- read ('OTChoice-0['m 'n 'k]),
           return 'oc, 'oc :: emptyCNameList)
      )
      ||
-     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('oc : bool <- read ('OTChoice-1['m 'n 'k]),
           return 'oc, 'oc :: emptyCNameList)
      )   
@@ -677,7 +694,7 @@ mod GMWN is
      ;;
    (when (apply 'isAndGate 'k) -->
      ( *** start new
-     ( family 'SendBit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'SendBit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when ('n <T 'm) --> 
          nf( 
              ('x : bool <- read ('Share['n (fun 'wire0 'k)]))
@@ -694,7 +711,7 @@ mod GMWN is
      )
      ||
       (family 'SendBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('SendBit['n 'm 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -705,7 +722,7 @@ mod GMWN is
        )        
      )
      ||
-     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when ('n <T 'm) --> 
          nf( ('b : bool <- read ('SendBit['n 'm 'k]))
              ('x : bool <- read ('Share['n (fun 'wire0 'k)]))
@@ -720,7 +737,7 @@ mod GMWN is
        )   
      )
      ||
-     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when ('n <T 'm) --> 
          nf( ('b : bool <- read ('SendBit['n 'm 'k]))
              ('x : bool <- read ('Share['n (fun 'wire0 'k)]))
@@ -735,7 +752,7 @@ mod GMWN is
        )   
      )
      ||
-     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when ('n <T 'm) --> 
          nf( ('b : bool <- read ('SendBit['n 'm 'k]))
              ('x : bool <- read ('Share['n (fun 'wire0 'k)]))
@@ -750,7 +767,7 @@ mod GMWN is
        )   
      )
      ||
-     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when ('n <T 'm) --> 
          nf( ('b : bool <- read ('SendBit['n 'm 'k]))
              ('x : bool <- read ('Share['n (fun 'wire0 'k)]))
@@ -766,7 +783,7 @@ mod GMWN is
        )   
      )
      ||
-     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
       (when ('n <T 'm) --> 
          nf( ('x : bool <- read ('Share['n (fun 'wire0 'k)])),
           return 'x, 'x :: emptyCNameList
@@ -779,7 +796,7 @@ mod GMWN is
        )   
      )
      ||
-     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when ('n <T 'm) --> 
          nf( ('x : bool <- read ('Share['n (fun 'wire1 'k)])),
           return 'x, 'x :: emptyCNameList
@@ -792,14 +809,14 @@ mod GMWN is
        )   
      )
      ||
-     ( family 'RcvdBit ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'RcvdBit ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
           nf( ('out : bool <- read ('OTOut['m 'n 'k])),
               return 'out, 'out :: emptyCNameList
           )     
     )
     ||
      (family 'RcvdBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('RcvdBit['n 'm 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -810,7 +827,7 @@ mod GMWN is
        )        
      )
       ||
-      ( family 'Bit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+      ( family 'Bit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
       (when ('n <T 'm) --> 
          nf( ('r : bool <- read ('RcvdBit['m 'n 'k])),
           return 'r, 'r :: emptyCNameList
@@ -831,8 +848,20 @@ mod GMWN is
           )
        )   
      )
+     ||
+ (family 'Bit_party_adv ('n 'm 'k) 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
+  (when (apply 'isSemiHonest 'n) --> 
+         nf('s : bool <- read ('Bit['n 'm 'k]), return 's, 's :: emptyCNameList)
+       ) 
+       ;; 
+       (when (apply 'isHonest 'n)  --> 
+         nf('s : bool <- read ('Bit_party_adv['n 'm 'k]), 
+            return 's, 's :: emptyCNameList)
+       )               
+ )  
       ||
-      (family 'BitSum ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+      (family 'BitSum ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    (when ('m =T= 0) --> 
      nf( ('b : bool <- read ('Bit['n 0 'k])),
           return 'b, 'b :: emptyCNameList
@@ -848,7 +877,7 @@ mod GMWN is
  )
  ||
  (family 'BitSum_party_adv ('n 'm 'k) 
-           ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('BitSum['n 'm 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -859,14 +888,14 @@ mod GMWN is
        )        
      )
       ||   
- ( family 'Share ('n 'k) ((bound (N + 1)) (bound K)) ::= 
+ ( family 'Share ('n 'k) ((bound (N + 2)) (bound K)) ::= 
           nf( ('bs : bool <- read ('BitSum['n (N + 1) 'k])),
               return 'bs, 'bs :: emptyCNameList
           )     
  )   
  ||
      (family 'Share_party_adv ('n 'k)  
-             ((bound (N + 1)) (bound K)) ::=
+             ((bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('Share['n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -884,12 +913,12 @@ mod GMWN is
   op partyFinal : -> Protocol .
   eq partyFinal = 
    newfamily 'OutShare ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) : bool in
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in
    newfamily 'OutShareSum ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) : bool in
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in
    ( *** start new
      (family 'SendOutShare ('m 'n 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::=
        (when (apply 'isOutputWire 'k) --> 
          nf('s : bool <- read ('Share['n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -900,7 +929,7 @@ mod GMWN is
      )
      ||
      (family 'SendOutShare_party_adv ('m 'n 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('SendOutShare['m 'n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -912,7 +941,7 @@ mod GMWN is
      )
      ||
      (family 'RcvdOutShare_party_adv ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('SendOutShare['n 'm 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -924,12 +953,12 @@ mod GMWN is
      )
      || 
      (family 'OutShare ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
       nf('s : bool <- read ('SendOutShare['n 'm 'k]), return 's, 's :: emptyCNameList)       
      )
      ||
      (family 'OutShare_party_adv ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('OutShare['n 'm 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -941,7 +970,7 @@ mod GMWN is
      )
      ||
      (family 'OutShareSum ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
        (when ('m =T= 0) --> 
          nf('s : bool <- read ('OutShare['n 0 'k]), 
             return 's, 's :: emptyCNameList)
@@ -957,7 +986,7 @@ mod GMWN is
      )        
      ||
      (family 'OutShareSum_party_adv ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('OutShareSum['n 'm 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -969,13 +998,13 @@ mod GMWN is
      )
      ||
      (family 'Out ('n 'k)
-             ((bound (N + 1)) (bound K)) ::=
+             ((bound (N + 2)) (bound K)) ::=
       nf('s : bool <- read ('OutShareSum['n (N + 1) 'k]),
          return 's, 's :: emptyCNameList)       
      )
      ||
      (family 'Out_party_adv ('n 'k)
-             (bound (N + 1) (bound K)) ::=
+             (bound (N + 2) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('Out['n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -992,7 +1021,7 @@ mod GMWN is
   op 1OutOf4 : -> Protocol .
   eq 1OutOf4 =
    (family 'OTMsg-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-0['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1003,7 +1032,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-1['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1014,7 +1043,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-2_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-2['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1025,7 +1054,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-3_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-3['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1036,7 +1065,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m0 : bool <- read ('OTMsg-0['n 'm 'k]), return (), 'm0 :: emptyCNameList)
      ) 
@@ -1047,7 +1076,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m1 : bool <- read ('OTMsg-1['n 'm 'k]), return (), 'm1 :: emptyCNameList)
      ) 
@@ -1058,7 +1087,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-2_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m2 : bool <- read ('OTMsg-2['n 'm 'k]), return (), 'm2 :: emptyCNameList)
      ) 
@@ -1069,7 +1098,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-3_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m3 : bool <- read ('OTMsg-3['n 'm 'k]), return (), 'm3 :: emptyCNameList)
      ) 
@@ -1080,7 +1109,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoice-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('oc : bool <- read ('OTChoice-0['n 'm 'k]), return 'oc, 'oc :: emptyCNameList)
      ) 
@@ -1091,7 +1120,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoice-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('oc : bool <- read ('OTChoice-1['n 'm 'k]), return 'oc, 'oc :: emptyCNameList)
      ) 
@@ -1102,7 +1131,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoiceRcvd-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'm) --> 
        nf('c0 : bool <- read ('OTChoice-0['n 'm 'k]), return (), 'c0 :: emptyCNameList)
      ) 
@@ -1114,19 +1143,19 @@ mod GMWN is
    )
    ||
    (family 'OTChoiceRcvd-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
-     (when (apply 'isHonest 'n) --> 
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
+     (when (apply 'isHonest 'm) --> 
        nf('c1 : bool <- read ('OTChoice-1['n 'm 'k]), return (), 'c1 :: emptyCNameList)
      ) 
      ;;
-     (when (apply 'isSemiHonest 'n) --> 
+     (when (apply 'isSemiHonest 'm) --> 
        nf('oc : unit <- read ('OTChoiceRcvd-1_ot_adv['n 'm 'k]), 
           return 'oc, 'oc :: emptyCNameList)
      )   
    )
    ||
    (family 'OTOut_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('out : bool <- read ('OTOut['n 'm 'k]), return 'out, 'out :: emptyCNameList)
      ) 
@@ -1137,7 +1166,7 @@ mod GMWN is
    )
    ||
    (family 'OTOut ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      nf( ('m0 : bool <- read ('OTMsg-0['n 'm 'k]))
          ('m1 : bool <- read ('OTMsg-1['n 'm 'k]))
          ('m2 : bool <- read ('OTMsg-2['n 'm 'k]))
@@ -1158,23 +1187,23 @@ mod GMWN is
   op restr : -> Protocol .
   eq restr =
    newfamily 'InShare ('n 'm 'i) 
-             ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) : bool in   
+             ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) : bool in   
    newfamily 'Share ('n 'k) 
-             ((bound (N + 1)) (bound K) ) : bool in
+             ((bound (N + 2)) (bound K) ) : bool in
      restrInitial || restrInductive || restrFinal
   .
   
   op restrInitial : -> Protocol .
   
   eq restrInitial = 
-   newfamily 'InShare$ ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) : bool in
-   newfamily 'InShare$Sum ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) : bool in         
+   newfamily 'InShareGen ('m 'n 'i)  
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) : bool in
+   newfamily 'InShareGen-Sum ('m 'n 'i)  
+            ((bound (N + 1)) (bound (N + 2)) (dependentBound 'I)) : bool in         
    newfamily 'SendInShare ('m 'n 'i) 
-             ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) : bool in
+             ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) : bool in
    ( *** start new
-     (family 'In_party_adv ('n 'i) ((bound (N + 1)) (dependentBound 'I)) ::=
+     (family 'In_party_adv ('n 'i) ((bound (N + 2)) (dependentBound 'I)) ::=
         (when (apply 'isSemiHonest 'n) -->
            nf('in : bool <- read ('In['n 'i]), 
               return 'in, 'in :: emptyCNameList)
@@ -1187,7 +1216,7 @@ mod GMWN is
     )
     ||
      (family 'InRcvd_party_adv ('n 'i)
-             ( (bound (N + 1)) (dependentBound 'I)) ::=
+             ( (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isHonest 'n) --> 
          nf('x : bool <- read ('In['n 'i]), return (), 'x :: emptyCNameList)
        ) 
@@ -1197,11 +1226,11 @@ mod GMWN is
        )       
      )
     ||
-     (family 'InShare$ ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+     (family 'InShareGen ('m 'n 'i)  
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
        (when ('m =T= N + 1) --> 
           nf(('x : bool <- read ('In['n 'i]))
-             ('s : bool <- read ('InShare$Sum[N 'n 'i])), 
+             ('s : bool <- read ('InShareGen-Sum[N 'n 'i])), 
              return (ap 'xor pair('x, 's)), 'x :: 's :: emptyCNameList)
        )
        ;;
@@ -1210,51 +1239,51 @@ mod GMWN is
        )      
      )
      ||
-     (family 'InShare$Sum ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+     (family 'InShareGen-Sum ('m 'n 'i)  
+            ((bound (N + 1)) (bound (N + 2)) (dependentBound 'I)) ::=
         (when ('m =T= 0) --> 
-          nf('in : bool <- read ('InShare$[0 'n 'i]), 
+          nf('in : bool <- read ('InShareGen[0 'n 'i]), 
              return 'in, 'in :: emptyCNameList)
         )
         ;;
         (otherwise --> 
-          nf(('x : bool <- read ('InShare$['m 'n 'i]))
-             ('s : bool <- read ('InShare$Sum[('m -- 1) 'n 'i])), 
+          nf(('x : bool <- read ('InShareGen['m 'n 'i]))
+             ('s : bool <- read ('InShareGen-Sum[('m -- 1) 'n 'i])), 
              return (ap 'xor pair('s, 'x)), 's :: 'x :: emptyCNameList)
         )    
      )
      ||
-      (family 'InShare$_party_adv ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+      (family 'InShareGen_party_adv ('m 'n 'i)  
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isSemiHonest 'n) --> 
-          nf('in : bool <- read ('InShare$['m 'n 'i]), return 'in, 'in :: emptyCNameList)
+          nf('in : bool <- read ('InShareGen['m 'n 'i]), return 'in, 'in :: emptyCNameList)
        )
        ;;
        (when (apply 'isHonest 'n)  --> 
-         nf('in : bool <- read ('InShare$_party_adv['m 'n 'i]), 
+         nf('in : bool <- read ('InShareGen_party_adv['m 'n 'i]), 
             return 'in, 'in :: emptyCNameList)
        )      
      )
      ||
-     (family 'InShare$Sum_party_adv ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+     (family 'InShareGen-Sum_party_adv ('m 'n 'i)  
+            ((bound (N + 1)) (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isSemiHonest 'n) --> 
-         nf('s : bool <- read ('InShare$Sum['m 'n 'i]), return 's, 's :: emptyCNameList)
+         nf('s : bool <- read ('InShareGen-Sum['m 'n 'i]), return 's, 's :: emptyCNameList)
        ) 
        ;; 
        (when (apply 'isHonest 'n)  --> 
-         nf('s : bool <- read ('InShare$Sum_party_adv['m 'n 'i]), 
+         nf('s : bool <- read ('InShareGen-Sum_party_adv['m 'n 'i]), 
             return 's, 's :: emptyCNameList)
        )       
      ) 
      ||
      (family 'SendInShare ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
-        nf('in : bool <- read ('InShare['m 'n 'i]), return 'in, 'in :: emptyCNameList)    
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
+        nf('in : bool <- read ('InShareGen['m 'n 'i]), return 'in, 'in :: emptyCNameList)    
      )  
      ||
      (family 'SendInShare_party_adv ('m 'n 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('SendInShare['m 'n 'i]), return 's, 's :: emptyCNameList)
        ) 
@@ -1266,7 +1295,7 @@ mod GMWN is
      )
      ||
      (family 'RcvdInShare_party_adv ('n 'm 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('SendInShare['n 'm 'i]), return 's, 's :: emptyCNameList)
        ) 
@@ -1278,12 +1307,12 @@ mod GMWN is
      )
      ||
      (family 'InShare ('n 'm 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
         nf('s : bool <- read ('SendInShare['n 'm 'i]), return 's, 's :: emptyCNameList)    
      )        
      ||
      (family 'InShare_party_adv ('n 'm 'i)  
-            ((bound (N + 1)) (bound (N + 1)) (dependentBound 'I)) ::=
+            ((bound (N + 2)) (bound (N + 2)) (dependentBound 'I)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('InShare['n 'm 'i]), return 's, 's :: emptyCNameList)
        ) 
@@ -1299,73 +1328,78 @@ mod GMWN is
   op restrInductive : -> Protocol .
   
   eq restrInductive = 
-   newfamily 'OTMsg-0 ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in  
+    newfamily 'OTMsg-0 ('n 'm 'k) 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in  
    newfamily 'OTMsg-1 ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in 
    newfamily 'OTMsg-2 ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in 
    newfamily 'OTMsg-3 ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in 
-   newfamily 'OTChoice-0 ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in  
-   newfamily 'OTChoice-1 ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in                             
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in 
+   newfamily 'OTChoice-0 ('m 'n 'k) 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in  
+   newfamily 'OTChoice-1 ('m 'n 'k) 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in                             
    newfamily 'OTOut ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in
    newfamily 'SendBit ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in
    newfamily 'RcvdBit ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in
    newfamily 'Bit ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in
    newfamily 'BitSum ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in 
    ( *** start new
    
-   family 'Circuit ('n 'k) ((bound (N + 1)) (bound K)) ::= 
+   family 'Circuit ('n 'k) ((bound (N + 2)) (bound K)) ::= 
    (when (apply 'isInputGate 'k) --> 
    *** for input gate
- ( family 'SendBit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'SendBit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('sb : bool <- read ('SendBit['n 'm 'k]), return 'sb, 'sb :: emptyCNameList)
  )
  ||
  (family 'SendBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('sb : bool <- read ('SendBit_party_adv['n 'm 'k]), 
        return 'sb, 'sb :: emptyCNameList) 
  )               
  ||
- ( family 'RcvdBit ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'RcvdBit ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('rb : bool <- read ('RcvdBit['m 'n 'k]), return 'rb, 'rb :: emptyCNameList)
  )
  ||
  (family 'RcvdBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    nf('rb : bool <- read ('RcvdBit_party_adv['n 'm 'k]), 
       return 'rb, 'rb :: emptyCNameList)          
  ) 
  ||
- ( family 'Bit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'Bit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('b : bool <- read ('Bit['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
  )
  ||
- (family 'BitSum ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ (family 'Bit_party_adv ('n 'm 'k) 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
+  nf('b : bool <- read ('Bit_party_adv['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
+ )  
+ ||
+ (family 'BitSum ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    nf('b : bool <- read ('BitSum['n 'm 'k]), return 'b, 'b :: emptyCNameList)  
  )
  ||
  (family 'BitSum_party_adv ('n 'm 'k) 
-           ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
   nf('b : bool <- read ('BitSum_party_adv['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
  )  
  ||
-     ( family 'Share ('n 'k) ((bound (N + 1)) (bound K)) ::= 
+     ( family 'Share ('n 'k) ((bound (N + 2)) (bound K)) ::= 
        nf('in : bool <- read ('InShare['n (fun 'wire0 'k) (fun 'wire1 'k)]),
           return 'in, 'in :: emptyCNameList)
      )
      ||
      (family 'Share_party_adv ('n 'k)  
-             ((bound (N + 1)) (bound K)) ::=
+             ((bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('Share['n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -1376,38 +1410,38 @@ mod GMWN is
        )        
      )
      ||
-     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-0['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-1['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-2['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-3['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('oc : bool <- read ('OTChoice-0['m 'n 'k]),
           return 'oc, 'oc :: emptyCNameList)
      )
      ||
-     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('oc : bool <- read ('OTChoice-1['m 'n 'k]),
           return 'oc, 'oc :: emptyCNameList)
      )
      ||
      (family 'OTMsg-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-0['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1418,7 +1452,7 @@ mod GMWN is
      )
 ||
    (family 'OTMsg-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-1['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1429,7 +1463,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-2_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-2['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1440,7 +1474,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-3_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-3['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1451,7 +1485,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m0 : bool <- read ('OTMsg-0['n 'm 'k]), return (), 'm0 :: emptyCNameList)
      ) 
@@ -1462,7 +1496,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m1 : bool <- read ('OTMsg-1['n 'm 'k]), return (), 'm1 :: emptyCNameList)
      ) 
@@ -1473,7 +1507,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-2_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m2 : bool <- read ('OTMsg-2['n 'm 'k]), return (), 'm2 :: emptyCNameList)
      ) 
@@ -1484,7 +1518,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-3_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m3 : bool <- read ('OTMsg-3['n 'm 'k]), return (), 'm3 :: emptyCNameList)
      ) 
@@ -1495,7 +1529,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoice-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('oc : bool <- read ('OTChoice-0['n 'm 'k]), return 'oc, 'oc :: emptyCNameList)
      ) 
@@ -1506,7 +1540,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoice-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('oc : bool <- read ('OTChoice-1['n 'm 'k]), return 'oc, 'oc :: emptyCNameList)
      ) 
@@ -1517,7 +1551,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoiceRcvd-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'm) --> 
        nf('c0 : bool <- read ('OTChoice-0['n 'm 'k]), return (), 'c0 :: emptyCNameList)
      ) 
@@ -1529,19 +1563,19 @@ mod GMWN is
    )
    ||
    (family 'OTChoiceRcvd-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
-     (when (apply 'isHonest 'n) --> 
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
+     (when (apply 'isHonest 'm) --> 
        nf('c1 : bool <- read ('OTChoice-1['n 'm 'k]), return (), 'c1 :: emptyCNameList)
      ) 
      ;;
-     (when (apply 'isSemiHonest 'n) --> 
+     (when (apply 'isSemiHonest 'm) --> 
        nf('oc : unit <- read ('OTChoiceRcvd-1_ot_adv['n 'm 'k]), 
           return 'oc, 'oc :: emptyCNameList)
      )   
    )
    ||
    (family 'OTOut_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('out : bool <- read ('OTOut['n 'm 'k]), return 'out, 'out :: emptyCNameList)
      ) 
@@ -1552,7 +1586,7 @@ mod GMWN is
    )
    ||
    (family 'OTOut ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      nf( ('m0 : bool <- read ('OTMsg-0['n 'm 'k]))
          ('m1 : bool <- read ('OTMsg-1['n 'm 'k]))
          ('m2 : bool <- read ('OTMsg-2['n 'm 'k]))
@@ -1570,40 +1604,45 @@ mod GMWN is
    ;;
    (when (apply 'isNotGate 'k) -->
   *** for not gate   
- ( family 'SendBit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'SendBit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('sb : bool <- read ('SendBit['n 'm 'k]), return 'sb, 'sb :: emptyCNameList)
  )
  ||
  (family 'SendBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('sb : bool <- read ('SendBit_party_adv['n 'm 'k]), 
        return 'sb, 'sb :: emptyCNameList) 
  )               
  ||
- ( family 'RcvdBit ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'RcvdBit ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('rb : bool <- read ('RcvdBit['m 'n 'k]), return 'rb, 'rb :: emptyCNameList)
  )
  ||
  (family 'RcvdBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    nf('rb : bool <- read ('RcvdBit_party_adv['n 'm 'k]), 
       return 'rb, 'rb :: emptyCNameList)          
  ) 
  ||
- ( family 'Bit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'Bit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('b : bool <- read ('Bit['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
  )
  ||
- (family 'BitSum ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ (family 'Bit_party_adv ('n 'm 'k) 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
+  nf('b : bool <- read ('Bit_party_adv['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
+ )  
+ ||
+ (family 'BitSum ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    nf('b : bool <- read ('BitSum['n 'm 'k]), return 'b, 'b :: emptyCNameList)  
  )
  ||
  (family 'BitSum_party_adv ('n 'm 'k) 
-           ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
   nf('b : bool <- read ('BitSum_party_adv['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
  )  
  ||
-     ( family 'Share ('n 'k) ((bound (N + 1)) (bound K)) ::= 
+     ( family 'Share ('n 'k) ((bound (N + 2)) (bound K)) ::= 
         (when ('n =T= N + 1) --> 
           nf( ('x : bool <- read ('Share['n (fun 'wire0 'k)])),
               return (ap 'neg 'x), 'x :: emptyCNameList
@@ -1618,7 +1657,7 @@ mod GMWN is
      )
      ||
      (family 'Share_party_adv ('n 'k)  
-             ((bound (N + 1)) (bound K)) ::=
+             ((bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('Share['n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -1629,38 +1668,38 @@ mod GMWN is
        )        
      )
      ||
-     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-0['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-1['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-2['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-3['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('oc : bool <- read ('OTChoice-0['m 'n 'k]),
           return 'oc, 'oc :: emptyCNameList)
      )
      ||
-     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('oc : bool <- read ('OTChoice-1['m 'n 'k]),
           return 'oc, 'oc :: emptyCNameList)
      )
      ||  
   (family 'OTMsg-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-0['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1671,7 +1710,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-1['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1682,7 +1721,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-2_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-2['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1693,7 +1732,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-3_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-3['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1704,7 +1743,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m0 : bool <- read ('OTMsg-0['n 'm 'k]), return (), 'm0 :: emptyCNameList)
      ) 
@@ -1715,7 +1754,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m1 : bool <- read ('OTMsg-1['n 'm 'k]), return (), 'm1 :: emptyCNameList)
      ) 
@@ -1726,7 +1765,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-2_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m2 : bool <- read ('OTMsg-2['n 'm 'k]), return (), 'm2 :: emptyCNameList)
      ) 
@@ -1737,7 +1776,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-3_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m3 : bool <- read ('OTMsg-3['n 'm 'k]), return (), 'm3 :: emptyCNameList)
      ) 
@@ -1748,7 +1787,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoice-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('oc : bool <- read ('OTChoice-0['n 'm 'k]), return 'oc, 'oc :: emptyCNameList)
      ) 
@@ -1759,7 +1798,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoice-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('oc : bool <- read ('OTChoice-1['n 'm 'k]), return 'oc, 'oc :: emptyCNameList)
      ) 
@@ -1770,7 +1809,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoiceRcvd-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'm) --> 
        nf('c0 : bool <- read ('OTChoice-0['n 'm 'k]), return (), 'c0 :: emptyCNameList)
      ) 
@@ -1782,19 +1821,19 @@ mod GMWN is
    )
    ||
    (family 'OTChoiceRcvd-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
-     (when (apply 'isHonest 'n) --> 
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
+     (when (apply 'isHonest 'm) --> 
        nf('c1 : bool <- read ('OTChoice-1['n 'm 'k]), return (), 'c1 :: emptyCNameList)
      ) 
      ;;
-     (when (apply 'isSemiHonest 'n) --> 
+     (when (apply 'isSemiHonest 'm) --> 
        nf('oc : unit <- read ('OTChoiceRcvd-1_ot_adv['n 'm 'k]), 
           return 'oc, 'oc :: emptyCNameList)
      )   
    )
    ||
    (family 'OTOut_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('out : bool <- read ('OTOut['n 'm 'k]), return 'out, 'out :: emptyCNameList)
      ) 
@@ -1805,7 +1844,7 @@ mod GMWN is
    )
    ||
    (family 'OTOut ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      nf( ('m0 : bool <- read ('OTMsg-0['n 'm 'k]))
          ('m1 : bool <- read ('OTMsg-1['n 'm 'k]))
          ('m2 : bool <- read ('OTMsg-2['n 'm 'k]))
@@ -1822,47 +1861,52 @@ mod GMWN is
    ;;
    (when (apply 'isXorGate 'k) --> 
     *** for xor gate 
- ( family 'SendBit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'SendBit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('sb : bool <- read ('SendBit['n 'm 'k]), return 'sb, 'sb :: emptyCNameList)
  )
  ||
  (family 'SendBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('sb : bool <- read ('SendBit_party_adv['n 'm 'k]), 
        return 'sb, 'sb :: emptyCNameList) 
  )               
  ||
- ( family 'RcvdBit ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'RcvdBit ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('rb : bool <- read ('RcvdBit['m 'n 'k]), return 'rb, 'rb :: emptyCNameList)
  )
  ||
  (family 'RcvdBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    nf('rb : bool <- read ('RcvdBit_party_adv['n 'm 'k]), 
       return 'rb, 'rb :: emptyCNameList)          
  ) 
  ||
- ( family 'Bit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ ( family 'Bit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
     nf('b : bool <- read ('Bit['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
  )
  ||
- (family 'BitSum ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+ (family 'Bit_party_adv ('n 'm 'k) 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
+  nf('b : bool <- read ('Bit_party_adv['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
+ )  
+ ||
+ (family 'BitSum ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    nf('b : bool <- read ('BitSum['n 'm 'k]), return 'b, 'b :: emptyCNameList)  
  )
  ||
  (family 'BitSum_party_adv ('n 'm 'k) 
-           ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
   nf('b : bool <- read ('BitSum_party_adv['n 'm 'k]), return 'b, 'b :: emptyCNameList)           
  )          
  ||
-     ( family 'Share ('n 'k) ((bound (N + 1)) (bound K)) ::= 
+     ( family 'Share ('n 'k) ((bound (N + 2)) (bound K)) ::= 
        nf(('x : bool <- read ('Share['n (fun 'wire0 'k)]))
           ('y : bool <- read ('Share['n (fun 'wire1 'k)])),
           return (ap 'xor pair('x, 'y)), 'x :: 'y :: emptyCNameList)
      )
      ||
      (family 'Share_party_adv ('n 'k)  
-             ((bound (N + 1)) (bound K)) ::=
+             ((bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('Share['n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -1873,38 +1917,38 @@ mod GMWN is
        )        
      )
      ||
-     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-0['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-1['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-2['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('om : bool <- read ('OTMsg-3['n 'm 'k]),
           return 'om, 'om :: emptyCNameList)
      )
      ||
-     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('oc : bool <- read ('OTChoice-0['m 'n 'k]),
           return 'oc, 'oc :: emptyCNameList)
      )
      ||
-     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        nf('oc : bool <- read ('OTChoice-1['m 'n 'k]),
           return 'oc, 'oc :: emptyCNameList)
      )
       ||  
   (family 'OTMsg-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-0['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1915,7 +1959,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-1['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1926,7 +1970,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-2_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-2['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1937,7 +1981,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-3_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-3['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -1948,7 +1992,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m0 : bool <- read ('OTMsg-0['n 'm 'k]), return (), 'm0 :: emptyCNameList)
      ) 
@@ -1959,7 +2003,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m1 : bool <- read ('OTMsg-1['n 'm 'k]), return (), 'm1 :: emptyCNameList)
      ) 
@@ -1970,7 +2014,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-2_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m2 : bool <- read ('OTMsg-2['n 'm 'k]), return (), 'm2 :: emptyCNameList)
      ) 
@@ -1981,7 +2025,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-3_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m3 : bool <- read ('OTMsg-3['n 'm 'k]), return (), 'm3 :: emptyCNameList)
      ) 
@@ -1992,7 +2036,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoice-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('oc : bool <- read ('OTChoice-0['n 'm 'k]), return 'oc, 'oc :: emptyCNameList)
      ) 
@@ -2003,7 +2047,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoice-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('oc : bool <- read ('OTChoice-1['n 'm 'k]), return 'oc, 'oc :: emptyCNameList)
      ) 
@@ -2014,7 +2058,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoiceRcvd-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'm) --> 
        nf('c0 : bool <- read ('OTChoice-0['n 'm 'k]), return (), 'c0 :: emptyCNameList)
      ) 
@@ -2026,19 +2070,19 @@ mod GMWN is
    )
    ||
    (family 'OTChoiceRcvd-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
-     (when (apply 'isHonest 'n) --> 
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
+     (when (apply 'isHonest 'm) --> 
        nf('c1 : bool <- read ('OTChoice-1['n 'm 'k]), return (), 'c1 :: emptyCNameList)
      ) 
      ;;
-     (when (apply 'isSemiHonest 'n) --> 
+     (when (apply 'isSemiHonest 'm) --> 
        nf('oc : unit <- read ('OTChoiceRcvd-1_ot_adv['n 'm 'k]), 
           return 'oc, 'oc :: emptyCNameList)
      )   
    )
    ||
    (family 'OTOut_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('out : bool <- read ('OTOut['n 'm 'k]), return 'out, 'out :: emptyCNameList)
      ) 
@@ -2049,7 +2093,7 @@ mod GMWN is
    )
    ||
    (family 'OTOut ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      nf( ('m0 : bool <- read ('OTMsg-0['n 'm 'k]))
          ('m1 : bool <- read ('OTMsg-1['n 'm 'k]))
          ('m2 : bool <- read ('OTMsg-2['n 'm 'k]))
@@ -2066,7 +2110,7 @@ mod GMWN is
      ;;
    (when (apply 'isAndGate 'k) -->
      *** for and gate
-     ( family 'SendBit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'SendBit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when ('n <T 'm) --> 
          nf( 
              ('x : bool <- read ('Share['n (fun 'wire0 'k)]))
@@ -2083,7 +2127,7 @@ mod GMWN is
      )
      ||
       (family 'SendBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('SendBit['n 'm 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -2094,7 +2138,7 @@ mod GMWN is
        )        
      )
      ||
-     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-0 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when ('n <T 'm) --> 
          nf( ('b : bool <- read ('SendBit['n 'm 'k]))
              ('x : bool <- read ('Share['n (fun 'wire0 'k)]))
@@ -2109,7 +2153,7 @@ mod GMWN is
        )   
      )
      ||
-     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-1 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when ('n <T 'm) --> 
          nf( ('b : bool <- read ('SendBit['n 'm 'k]))
              ('x : bool <- read ('Share['n (fun 'wire0 'k)]))
@@ -2124,7 +2168,7 @@ mod GMWN is
        )   
      )
      ||
-     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-2 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when ('n <T 'm) --> 
          nf( ('b : bool <- read ('SendBit['n 'm 'k]))
              ('x : bool <- read ('Share['n (fun 'wire0 'k)]))
@@ -2139,7 +2183,7 @@ mod GMWN is
        )   
      )
      ||
-     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTMsg-3 ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when ('n <T 'm) --> 
          nf( ('b : bool <- read ('SendBit['n 'm 'k]))
              ('x : bool <- read ('Share['n (fun 'wire0 'k)]))
@@ -2155,7 +2199,7 @@ mod GMWN is
        )   
      )
      ||
-     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-0 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
       (when ('n <T 'm) --> 
          nf( ('x : bool <- read ('Share['n (fun 'wire0 'k)])),
           return 'x, 'x :: emptyCNameList
@@ -2168,7 +2212,7 @@ mod GMWN is
        )   
      )
      ||
-     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'OTChoice-1 ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when ('n <T 'm) --> 
          nf( ('x : bool <- read ('Share['n (fun 'wire1 'k)])),
           return 'x, 'x :: emptyCNameList
@@ -2181,14 +2225,14 @@ mod GMWN is
        )   
      )
      ||
-     ( family 'RcvdBit ('m 'n 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+     ( family 'RcvdBit ('m 'n 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
           nf( ('out : bool <- read ('OTOut['m 'n 'k])),
               return 'out, 'out :: emptyCNameList
           )     
     )
     ||
      (family 'RcvdBit_party_adv ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('RcvdBit['n 'm 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -2199,7 +2243,7 @@ mod GMWN is
        )        
      )
       ||
-      ( family 'Bit ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+      ( family 'Bit ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
       (when ('n <T 'm) --> 
          nf( ('r : bool <- read ('RcvdBit['m 'n 'k])),
           return 'r, 'r :: emptyCNameList
@@ -2220,8 +2264,19 @@ mod GMWN is
           )
        )   
      )
+     ||
+     (family 'Bit_party_adv ('n 'm 'k) 
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) ::=
+       (when (apply 'isSemiHonest 'n) -->
+             nf('s : bool <- read ('Bit['n 'm 'k]), return 's, 's :: emptyCNameList)
+       )
+       ;;
+       (when (apply 'isHonest 'n) -->
+             nf('s : bool <- read ('Bit_party_adv['n 'm 'k]), return 's, 's :: emptyCNameList)
+       ) 
+     )
       ||
-      (family 'BitSum ('n 'm 'k) ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+      (family 'BitSum ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
    (when ('m =T= 0) --> 
      nf( ('b : bool <- read ('Bit['n 0 'k])),
           return 'b, 'b :: emptyCNameList
@@ -2237,7 +2292,7 @@ mod GMWN is
  )
  ||
  (family 'BitSum_party_adv ('n 'm 'k) 
-           ((bound (N + 1)) (bound (N + 1)) (bound K)) ::= 
+           ((bound (N + 2)) (bound (N + 2)) (bound K)) ::= 
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('BitSum['n 'm 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -2248,14 +2303,14 @@ mod GMWN is
        )        
      )
       ||   
- ( family 'Share ('n 'k) ((bound (N + 1)) (bound K)) ::= 
+ ( family 'Share ('n 'k) ((bound (N + 2)) (bound K)) ::= 
           nf( ('bs : bool <- read ('BitSum['n (N + 1) 'k])),
               return 'bs, 'bs :: emptyCNameList
           )     
  )   
  ||
      (family 'Share_party_adv ('n 'k)  
-             ((bound (N + 1)) (bound K)) ::=
+             ((bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('Share['n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -2267,7 +2322,7 @@ mod GMWN is
      )
      ||
      (family 'OTMsg-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-0['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -2278,7 +2333,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-1['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -2289,7 +2344,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-2_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-2['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -2300,7 +2355,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsg-3_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'n) --> 
        nf('om : bool <- read ('OTMsg-3['n 'm 'k]), return 'om, 'om :: emptyCNameList)
      ) 
@@ -2311,7 +2366,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m0 : bool <- read ('OTMsg-0['n 'm 'k]), return (), 'm0 :: emptyCNameList)
      ) 
@@ -2322,7 +2377,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m1 : bool <- read ('OTMsg-1['n 'm 'k]), return (), 'm1 :: emptyCNameList)
      ) 
@@ -2333,7 +2388,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-2_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m2 : bool <- read ('OTMsg-2['n 'm 'k]), return (), 'm2 :: emptyCNameList)
      ) 
@@ -2344,7 +2399,7 @@ mod GMWN is
    )
    ||
    (family 'OTMsgRcvd-3_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'n) --> 
        nf('m3 : bool <- read ('OTMsg-3['n 'm 'k]), return (), 'm3 :: emptyCNameList)
      ) 
@@ -2355,7 +2410,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoice-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('oc : bool <- read ('OTChoice-0['n 'm 'k]), return 'oc, 'oc :: emptyCNameList)
      ) 
@@ -2366,7 +2421,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoice-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('oc : bool <- read ('OTChoice-1['n 'm 'k]), return 'oc, 'oc :: emptyCNameList)
      ) 
@@ -2377,7 +2432,7 @@ mod GMWN is
    )
    ||
    (family 'OTChoiceRcvd-0_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isHonest 'm) --> 
        nf('c0 : bool <- read ('OTChoice-0['n 'm 'k]), return (), 'c0 :: emptyCNameList)
      ) 
@@ -2389,19 +2444,19 @@ mod GMWN is
    )
    ||
    (family 'OTChoiceRcvd-1_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
-     (when (apply 'isHonest 'n) --> 
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
+     (when (apply 'isHonest 'm) --> 
        nf('c1 : bool <- read ('OTChoice-1['n 'm 'k]), return (), 'c1 :: emptyCNameList)
      ) 
      ;;
-     (when (apply 'isSemiHonest 'n) --> 
+     (when (apply 'isSemiHonest 'm) --> 
        nf('oc : unit <- read ('OTChoiceRcvd-1_ot_adv['n 'm 'k]), 
           return 'oc, 'oc :: emptyCNameList)
      )   
    )
    ||
    (family 'OTOut_ot_adv ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      (when (apply 'isSemiHonest 'm) --> 
        nf('out : bool <- read ('OTOut['n 'm 'k]), return 'out, 'out :: emptyCNameList)
      ) 
@@ -2412,7 +2467,7 @@ mod GMWN is
    )
    ||
    (family 'OTOut ('n 'm 'k) 
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
      nf( ('m0 : bool <- read ('OTMsg-0['n 'm 'k]))
          ('m1 : bool <- read ('OTMsg-1['n 'm 'k]))
          ('m2 : bool <- read ('OTMsg-2['n 'm 'k]))
@@ -2437,14 +2492,14 @@ mod GMWN is
   
   eq restrFinal = 
    newfamily 'SendOutShare ('n 'm 'k) 
-             ((bound (N + 1)) (bound (N + 1)) (bound K)) : bool in          
+             ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in          
    newfamily 'OutShare ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) : bool in
+             (bound (N + 2) (bound (N + 2)) (bound K)) : bool in
    newfamily 'OutShareSum ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) : bool in
+             (bound (N + 2) (bound (N + 2)) (bound K)) : bool in
    ( *** start new
      (family 'SendOutShare ('m 'n 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
        (when (apply 'isOutputWire 'k) --> 
          nf('s : bool <- read ('Share['n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -2455,7 +2510,7 @@ mod GMWN is
      )
      ||
      (family 'SendOutShare_party_adv ('m 'n 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('SendOutShare['m 'n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -2467,7 +2522,7 @@ mod GMWN is
      )
      ||
      (family 'RcvdOutShare_party_adv ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('SendOutShare['n 'm 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -2479,12 +2534,12 @@ mod GMWN is
      )
      || 
      (family 'OutShare ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
       nf('s : bool <- read ('SendOutShare['n 'm 'k]), return 's, 's :: emptyCNameList)       
      )
      ||
      (family 'OutShare_party_adv ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('OutShare['n 'm 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -2496,7 +2551,7 @@ mod GMWN is
      )
      ||
      (family 'OutShareSum ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
        (when ('m =T= 0) --> 
          nf('s : bool <- read ('OutShare['n 0 'k]), 
             return 's, 's :: emptyCNameList)
@@ -2512,7 +2567,7 @@ mod GMWN is
      )        
      ||
      (family 'OutShareSum_party_adv ('n 'm 'k)
-             (bound (N + 1) (bound (N + 1)) (bound K)) ::=
+             (bound (N + 2) (bound (N + 2)) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('OutShareSum['n 'm 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -2524,13 +2579,13 @@ mod GMWN is
      )
      ||
      (family 'Out ('n 'k)
-             ((bound (N + 1)) (bound K)) ::=
+             ((bound (N + 2)) (bound K)) ::=
       nf('s : bool <- read ('OutShareSum['n (N + 1) 'k]),
          return 's, 's :: emptyCNameList)       
      )
      ||
      (family 'Out_party_adv ('n 'k)
-             (bound (N + 1) (bound K)) ::=
+             (bound (N + 2) (bound K)) ::=
        (when (apply 'isSemiHonest 'n) --> 
          nf('s : bool <- read ('Out['n 'k]), return 's, 's :: emptyCNameList)
        ) 
@@ -2553,49 +2608,53 @@ smod EXECUTE is
 endsm 
 
 
-***
+*** KEEP!
 set trace off .
 
 srew [1] pConfig(sig,
-           ('InRcvd_party_adv @ (N + 1) 'I :: unit) 
-           ('InShare$Sum_party_adv @ (N + 1) (N + 1) 'I :: bool)
-           ('InShare$_party_adv @ (N + 1) (N + 1) 'I :: bool)
-           ('InShare_party_adv @ (N + 1) (N + 1) 'I :: bool)
-           ('In_party_adv @ (N + 1) 'I :: bool)  
-           ('OTChoice-0_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OTChoice-1_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OTChoiceRcvd-0_ot_adv @ (N + 1) (N + 1) K :: unit) 
-           ('OTChoiceRcvd-1_ot_adv @ (N + 1) (N + 1) K :: unit) 
-           ('OTMsg-0_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OTMsg-1_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OTMsg-2_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OTMsg-3_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OTMsgRcvd-0_ot_adv @ (N + 1) (N + 1) K :: unit)
-           ('OTMsgRcvd-1_ot_adv @ (N + 1) (N + 1) K :: unit) 
-           ('OTMsgRcvd-2_ot_adv @ (N + 1) (N + 1) K :: unit) 
-           ('OTMsgRcvd-3_ot_adv @ (N + 1) (N + 1) K :: unit) 
-           ('OTOut_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('Out @ (N + 1) K :: bool)    
-           ('OutShareSum_party_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OutShare_party_adv @ (N + 1) (N + 1) K :: bool)
-           ('Out_party_adv @ (N + 1) K :: bool)  
-           ('RcvdInShare_party_adv @ (N + 1) (N + 1) 'I :: bool)  
-           ('RcvdOutShare_party_adv @ (N + 1) (N + 1) K :: bool) 
-           ('SendInShare_party_adv @ (N + 1) (N + 1) 'I :: bool) 
-           ('SendOutShare_party_adv @ (N + 1) (N + 1) K :: bool)  
-           ('Share_party_adv @ (N + 1) K :: bool)
-           ('RcvdBit_party_adv @ (N + 1) (N + 1) K :: bool) 
-           ('SendBit_party_adv @ (N + 1) (N + 1) K :: bool)
-           ('BitSum_party_adv @ (N + 1) (N + 1) K :: bool)  
-           ('In @ (N + 1) 'I :: bool)
+          ('InRcvd_party_adv @ (N + 2) 'I :: unit) 
+           ('InShareGen-Sum_party_adv @ (N + 1) (N + 2) 'I :: bool)
+           ('InShareGen_party_adv @ (N + 2) (N + 2) 'I :: bool)
+           ('InShare_party_adv @ (N + 2) (N + 2) 'I :: bool)
+           ('In_party_adv @ (N + 2) 'I :: bool)  
+           ('OTChoice-0_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTChoice-1_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTChoiceRcvd-0_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTChoiceRcvd-1_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTMsg-0_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsg-1_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsg-2_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsg-3_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsgRcvd-0_ot_adv @ (N + 2) (N + 2) K :: unit)
+           ('OTMsgRcvd-1_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTMsgRcvd-2_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTMsgRcvd-3_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTOut_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('Out @ (N + 2) K :: bool)    
+           ('OutShareSum_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OutShare_party_adv @ (N + 2) (N + 2) K :: bool)
+           ('Out_party_adv @ (N + 2) K :: bool)  
+           ('RcvdInShare_party_adv @ (N + 2) (N + 2) 'I :: bool)  
+           ('RcvdOutShare_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('SendInShare_party_adv @ (N + 2) (N + 2) 'I :: bool) 
+           ('SendOutShare_party_adv @ (N + 2) (N + 2) K :: bool)  
+           ('Share_party_adv @ (N + 2) K :: bool)
+           ('Bit_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('RcvdBit_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('SendBit_party_adv @ (N + 2) (N + 2) K :: bool)
+           ('BitSum_party_adv @ (N + 2) (N + 2) K :: bool)  
+           ('In @ (N + 2) 'I :: bool)
              ,
              real,
-             'In @ (N + 1) 'I, 
+             'In @ (N + 2) 'I, 
              getOutputs(real),
              genA) 
 using    sugar-newNF
        ; (moveProtocolUnderNewNF !)
-       ; (lift-inner-new-nf !)
+       ; (lift-inner-new-nf !) 
+       
+       *** ; get-structure
+
        ; applyAddToGroupCases('OTChoice-0_ot_adv, 'Circuit)
        ; applyAddToGroupCases('OTChoice-1_ot_adv, 'Circuit)
        ; applyAddToGroupCases('OTChoiceRcvd-0_ot_adv, 'Circuit)
@@ -2610,58 +2669,170 @@ using    sugar-newNF
        ; applyAddToGroupCases('OTMsgRcvd-3_ot_adv, 'Circuit)
        ; applyAddToGroupCases('OTOut, 'Circuit)
        ; applyAddToGroupCases('OTOut_ot_adv, 'Circuit)
+
        ; SYM[P1:Protocol <- restr]{
          sugar-newNF
-       ; (moveProtocolUnderNewNF !)
-       ; (lift-inner-new-nf !) 
-       ; reorder-newNF[ql2:CNameList <- 
-          'SendInShare :: 'OTMsg-0 :: 'OTMsg-1 :: 'OTMsg-2 :: 'OTMsg-3 :: 'OTChoice-0 :: 'OTChoice-1 :: 'OTOut :: 'SendOutShare :: 'InShare :: 'Share :: 'InShare$ :: 'InShare$Sum :: 'OutShare :: 'OutShareSum :: 'SendBit :: 'RcvdBit :: 'Bit :: 'BitSum :: emptyCNameList  
-         ]
+        ; moveNewToFront
+        ; reorder-newNF[ql2:CNameList <-
+        'SendInShare :: 'OTMsg-0 :: 'OTMsg-1 :: 'OTMsg-2 :: 'OTMsg-3 :: 'OTChoice-0 :: 'OTChoice-1 :: 'OTOut :: 'SendOutShare
+    :: 'InShare :: 'Share :: 'InShareGen :: 'InShareGen-Sum :: 'OutShare :: 'OutShareSum :: 'SendBit :: 'RcvdBit :: 'Bit
+    :: 'BitSum :: emptyCNameList]
        }
-       
-      ; applyGetChannel('InShare)
-       
+        *** ; applyGetChannel('SendInShare_party_adv)
+       ; sugar-newNF
+       ; moveNewToFront
+       ; applySubstFamily3IdxCase('SendInShare, 'SendInShare_party_adv, 'm, 'n, 'i, 
+         nf('in : bool <- read ('InShareGen['m 'n 'i]), 
+                              return 'in, 'in :: emptyCNameList),
+         nf('in : bool <- read ('InShareGen['m 'n 'i]), 
+                              return 'in, 'in :: emptyCNameList),
+         apply 'isSemiHonest 'n)
+       ; alpha-family-three[
+           C:Qid <- 'SendInShare, 
+           q1:Qid <- 'm,
+           q2:Qid <- 'n,
+           q3:Qid <- 'i,
+           q4:Qid <- 'n,
+           q5:Qid <- 'm,
+           q6:Qid <- 'i]
+       ; applySubstFamily3IdxCase('SendInShare, 'RcvdInShare_party_adv, 'n, 'm, 'i, 
+         nf('in : bool <- read ('InShareGen['n 'm 'i]), 
+                              return 'in, 'in :: emptyCNameList),
+         nf('in : bool <- read ('InShareGen['n 'm 'i]), 
+                              return 'in, 'in :: emptyCNameList),
+         apply 'isSemiHonest 'n)    
+       ; substNFFamiliesThree('SendInShare, 'InShare, 
+                            nf('in : bool <- read ('InShareGen['n 'm 'i]), 
+                               return 'in, 'in :: emptyCNameList)
+                           )                      
+        
+       ; absorbFamily('SendInShare) 
+       ; select-branch-family-p[bt:BoolTerm <- apply 'isInputGate 'k]{
+          applyDivergeChannel3FamilyBranch('OTMsg-0, 'OTMsg-0_ot_adv, 
+                                           apply 'isSemiHonest 'n, 'om, bool)
+         ; applyAllSameCases('OTMsg-0_ot_adv)
+         
+         ; applyDivergeChannel3FamilyBranch('OTMsg-0, 'OTMsgRcvd-0_ot_adv, 
+                                            apply 'isHonest 'n, 'om, unit)
+         ; applyAllSameCases('OTMsgRcvd-0_ot_adv)
+         ; applyDivergeChannel3FamilyBranch('OTMsg-1, 'OTMsg-1_ot_adv, 
+                                           apply 'isSemiHonest 'n, 'om, bool)
+         ; applyAllSameCases('OTMsg-1_ot_adv)
+         
+         ; applyDivergeChannel3FamilyBranch('OTMsg-1, 'OTMsgRcvd-1_ot_adv, 
+                                            apply 'isHonest 'n, 'om, unit)
+         ; applyAllSameCases('OTMsgRcvd-1_ot_adv)
+         ; applyDivergeChannel3FamilyBranch('OTMsg-2, 'OTMsg-2_ot_adv, 
+                                           apply 'isSemiHonest 'n, 'om, bool)
+         ; applyAllSameCases('OTMsg-2_ot_adv)
+         
+         ; applyDivergeChannel3FamilyBranch('OTMsg-2, 'OTMsgRcvd-2_ot_adv, 
+                                            apply 'isHonest 'n, 'om, unit)
+         ; applyAllSameCases('OTMsgRcvd-2_ot_adv)
+         ; applyDivergeChannel3FamilyBranch('OTMsg-3, 'OTMsg-3_ot_adv, 
+                                           apply 'isSemiHonest 'n, 'om, bool)
+         ; applyAllSameCases('OTMsg-3_ot_adv)
+         
+         ; applyDivergeChannel3FamilyBranch('OTMsg-3, 'OTMsgRcvd-3_ot_adv, 
+                                            apply 'isHonest 'n, 'om, unit)
+         ; applyAllSameCases('OTMsgRcvd-3_ot_adv)
+         
+         ; alpha-family-three[
+           C:Qid <- 'OTChoice-0, 
+           q1:Qid <- 'm,
+           q2:Qid <- 'n,
+           q3:Qid <- 'k,
+           q4:Qid <- 'n,
+           q5:Qid <- 'm,
+           q6:Qid <- 'k]  
+         
+          ; applyDivergeChannel3FamilyBranch('OTChoice-0, 'OTChoice-0_ot_adv, 
+                                             apply 'isSemiHonest 'm, 'oc, bool)
+          ; applyAllSameCases('OTChoice-0_ot_adv)
+          ; applyDivergeChannel3FamilyBranch('OTChoice-0, 'OTChoiceRcvd-0_ot_adv, 
+                                             apply 'isHonest 'm, 'oc, unit)
+          ; applyAllSameCases('OTChoiceRcvd-0_ot_adv)
+          ; alpha-family-three[
+           C:Qid <- 'OTChoice-1, 
+           q1:Qid <- 'm,
+           q2:Qid <- 'n,
+           q3:Qid <- 'k,
+           q4:Qid <- 'n,
+           q5:Qid <- 'm,
+           q6:Qid <- 'k]  
+        
+          ; applyDivergeChannel3FamilyBranch('OTChoice-1, 'OTChoice-1_ot_adv, 
+                                             apply 'isSemiHonest 'm, 'oc, bool)
+                                               
+          ; applyAllSameCases('OTChoice-1_ot_adv)
+          
+          ; applyDivergeChannel3FamilyBranch('OTChoice-1, 'OTChoiceRcvd-1_ot_adv, 
+                                             apply 'isHonest 'm, 'oc, unit)
+                                             
+          ; applyAllSameCases('OTChoiceRcvd-1_ot_adv)
+          
+          ; applySubstDivergeFamily('OTMsg-0, 'OTOut, 'o, bool)
+          
+          ; applyDivergeChannel3FamilyBranch('OTOut, 'OTOut_ot_adv, 
+                                           apply 'isSemiHonest 'm, 'out, bool)
+          ; applyAllSameCases('OTOut_ot_adv)                                 
+          
+         }   
+         ; applyGetChannel('Circuit)   
+             
 .
+
 
 ***(
 srew [1] pConfig(sig,
-           ('InRcvd_party_adv @ (N + 1) 'I :: unit) 
-           ('InShare$Sum_party_adv @ (N + 1) (N + 1) 'I :: bool)
-           ('InShare$_party_adv @ (N + 1) (N + 1) 'I :: bool)
-           ('InShare_party_adv @ (N + 1) (N + 1) 'I :: bool)
-           ('In_party_adv @ (N + 1) 'I :: bool)  
-           ('OTChoice-0_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OTChoice-1_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OTChoiceRcvd-0_ot_adv @ (N + 1) (N + 1) K :: unit) 
-           ('OTChoiceRcvd-1_ot_adv @ (N + 1) (N + 1) K :: unit) 
-           ('OTMsg-0_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OTMsg-1_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OTMsg-2_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OTMsg-3_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OTMsgRcvd-0_ot_adv @ (N + 1) (N + 1) K :: unit)
-           ('OTMsgRcvd-1_ot_adv @ (N + 1) (N + 1) K :: unit) 
-           ('OTMsgRcvd-2_ot_adv @ (N + 1) (N + 1) K :: unit) 
-           ('OTMsgRcvd-3_ot_adv @ (N + 1) (N + 1) K :: unit) 
-           ('OTOut_ot_adv @ (N + 1) (N + 1) K :: bool) 
-           ('Out @ (N + 1) K :: bool)    
-           ('OutShareSum_party_adv @ (N + 1) (N + 1) K :: bool) 
-           ('OutShare_party_adv @ (N + 1) (N + 1) K :: bool)
-           ('Out_party_adv @ (N + 1) K :: bool)  
-           ('RcvdInShare_party_adv @ (N + 1) (N + 1) 'I :: bool)  
-           ('RcvdOutShare_party_adv @ (N + 1) (N + 1) K :: bool) 
-           ('SendInShare_party_adv @ (N + 1) (N + 1) 'I :: bool) 
-           ('SendOutShare_party_adv @ (N + 1) (N + 1) K :: bool)  
-           ('Share_party_adv @ (N + 1) K :: bool)
-           ('RcvdBit_party_adv @ (N + 1) (N + 1) K :: bool) 
-           ('SendBit_party_adv @ (N + 1) (N + 1) K :: bool)
-           ('BitSum_party_adv @ (N + 1) (N + 1) K :: bool)  
-           ('In @ (N + 1) 'I :: bool)
+           ('InRcvd_party_adv @ (N + 2) 'I :: unit) 
+           ('InShareGen-Sum_party_adv @ (N + 1) (N + 2) 'I :: bool)
+           ('InShareGen_party_adv @ (N + 2) (N + 2) 'I :: bool)
+           ('InShare_party_adv @ (N + 2) (N + 2) 'I :: bool)
+           ('In_party_adv @ (N + 2) 'I :: bool)  
+           ('OTChoice-0_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTChoice-1_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTChoiceRcvd-0_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTChoiceRcvd-1_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTMsg-0_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsg-1_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsg-2_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsg-3_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsgRcvd-0_ot_adv @ (N + 2) (N + 2) K :: unit)
+           ('OTMsgRcvd-1_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTMsgRcvd-2_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTMsgRcvd-3_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTOut_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('Out @ (N + 2) K :: bool)    
+           ('OutShareSum_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OutShare_party_adv @ (N + 2) (N + 2) K :: bool)
+           ('Out_party_adv @ (N + 2) K :: bool)  
+           ('RcvdInShare_party_adv @ (N + 2) (N + 2) 'I :: bool)  
+           ('RcvdOutShare_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('SendInShare_party_adv @ (N + 2) (N + 2) 'I :: bool) 
+           ('SendOutShare_party_adv @ (N + 2) (N + 2) K :: bool)  
+           ('Share_party_adv @ (N + 2) K :: bool)
+           ('Bit_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('RcvdBit_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('SendBit_party_adv @ (N + 2) (N + 2) K :: bool)
+           ('BitSum_party_adv @ (N + 2) (N + 2) K :: bool)  
+           ('In @ (N + 2) 'I :: bool)
              ,
              restr,
              'In @ (N + 1) 'I, 
              getOutputs(real),
              genA) 
-using    sugar-newNF
+using     sugar-newNF
+        ; moveNewToFront
+        ; reorder-newNF[ql2:CNameList <-
+        'SendInShare :: 'OTMsg-0 :: 'OTMsg-1 :: 'OTMsg-2 :: 'OTMsg-3 :: 'OTChoice-0 :: 'OTChoice-1 :: 'OTOut :: 'SendOutShare
+    :: 'InShare :: 'Share :: 'InShareGen :: 'InShareGen-Sum :: 'OutShare :: 'OutShareSum :: 'SendBit :: 'RcvdBit :: 'Bit
+    :: 'BitSum :: emptyCNameList]
+.
+)
+  
+       
+***(
        ; (moveProtocolUnderNewNF !)
        ; (lift-inner-new-nf !) 
        ; reorder-newNF[ql2:CNameList <- 
@@ -2673,12 +2844,13 @@ using    sugar-newNF
        *** ; applyAddToGroupCases('OTChoice-0_ot_adv, 'Circuit)
        *** ; applyGetChannel('Circuit)
 .
+)
 
-***
+***(
 red typeOf(sig,
            ('InRcvd_party_adv @ (N + 1) 'I :: unit) 
-           ('InShare$Sum_party_adv @ (N + 1) (N + 1) 'I :: bool)
-           ('InShare$_party_adv @ (N + 1) (N + 1) 'I :: bool)
+           ('InShareGen-Sum_party_adv @ (N + 1) (N + 1) 'I :: bool)
+           ('InShareGen_party_adv @ (N + 1) (N + 1) 'I :: bool)
            ('InShare_party_adv @ (N + 1) (N + 1) 'I :: bool)
            ('In_party_adv @ (N + 1) 'I :: bool)  
            ('OTChoice-0_ot_adv @ (N + 1) (N + 1) K :: bool) 
@@ -2703,20 +2875,63 @@ red typeOf(sig,
            ('SendInShare_party_adv @ (N + 1) (N + 1) 'I :: bool) 
            ('SendOutShare_party_adv @ (N + 1) (N + 1) K :: bool)  
            ('Share_party_adv @ (N + 1) K :: bool)
+           ('Bit_party_adv @ (N + 1) (N + 1) K :: bool) 
            ('RcvdBit_party_adv @ (N + 1) (N + 1) K :: bool) 
            ('SendBit_party_adv @ (N + 1) (N + 1) K :: bool)
            ('BitSum_party_adv @ (N + 1) (N + 1) K :: bool)  
            ('In @ (N + 1) 'I :: bool)
              ,
              'In @ (N + 1) 'I, genA, real) .
-           
+) 
+
+
+***(
+set trace off .
+
+red typeOf(sig,
+           ('InRcvd_party_adv @ (N + 2) 'I :: unit) 
+           ('InShareGen-Sum_party_adv @ (N + 1) (N + 2) 'I :: bool)
+           ('InShareGen_party_adv @ (N + 2) (N + 2) 'I :: bool)
+           ('InShare_party_adv @ (N + 2) (N + 2) 'I :: bool)
+           ('In_party_adv @ (N + 2) 'I :: bool)  
+           ('OTChoice-0_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTChoice-1_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTChoiceRcvd-0_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTChoiceRcvd-1_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTMsg-0_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsg-1_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsg-2_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsg-3_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsgRcvd-0_ot_adv @ (N + 2) (N + 2) K :: unit)
+           ('OTMsgRcvd-1_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTMsgRcvd-2_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTMsgRcvd-3_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTOut_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('Out @ (N + 2) K :: bool)    
+           ('OutShareSum_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OutShare_party_adv @ (N + 2) (N + 2) K :: bool)
+           ('Out_party_adv @ (N + 2) K :: bool)  
+           ('RcvdInShare_party_adv @ (N + 2) (N + 2) 'I :: bool)  
+           ('RcvdOutShare_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('SendInShare_party_adv @ (N + 2) (N + 2) 'I :: bool) 
+           ('SendOutShare_party_adv @ (N + 2) (N + 2) K :: bool)  
+           ('Share_party_adv @ (N + 2) K :: bool)
+           ('Bit_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('RcvdBit_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('SendBit_party_adv @ (N + 2) (N + 2) K :: bool)
+           ('BitSum_party_adv @ (N + 2) (N + 2) K :: bool)  
+           ('In @ (N + 2) 'I :: bool)
+             ,
+             'In @ (N + 2) 'I, genA, real) .          
+
 
 red typeOf(sig, 
-           ('Out @ (N + 1) K :: bool)
-           ('Out_id_adv @ (N + 1) K :: bool)
-           ('In_id_adv @ (N + 1) 'I :: bool)
-           ('InRcvd_id_adv @ (N + 1) 'I :: unit)
-           ('In @ (N + 1) 'I :: bool)
-           , 'In @ (N + 1) 'I, genA, ideal) .
-)           
-         
+           ('Out @ (N + 2) K :: bool)
+           ('Out_id_adv @ (N + 2) K :: bool)
+           ('In_id_adv @ (N + 2) 'I :: bool)
+           ('InRcvd_id_adv @ (N + 2) 'I :: unit)
+           ('In @ (N + 2) 'I :: bool)
+           , 'In @ (N + 2) 'I, genA, ideal) .
+          
+)   
+

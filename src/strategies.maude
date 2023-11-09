@@ -1,6 +1,6 @@
 ***( IPDL
 
-  Copyright : (C) 2022-23, Kristina Sojakova
+  Copyright : (C) 2022-23, Kristina Sojakova, Mihai Codescu
   License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
   Authors   : Mihai Codescu <mscodescu@gmail.com>
               Kristina Sojakova <sojakova.kristina@gmail.com>
@@ -195,6 +195,16 @@ smod STRATS is
        ? (cong-branch-refl{ret-bind, ret-bind} ? idle : idle) 
        : ret-bind) 
        .   
+ 
+ *** similar to substNF, but for families with three indices
+ strat substNFFamiliesThree : ChannelName ChannelName Reaction @ ProtocolConfig .
+ sd substNFFamiliesThree(C1, C2, R) :=
+     nTimesSubstNFFamiliesThree(C1, C2, R)
+  ; liftInnerBindsNFFamily(C2)
+  ; handleRNFFamily(C2)
+  ; (pre2Nf or-else idle)  
+ .
+ 
    
  *** similar to substNF, but for families with one index
  strat substNFFamiliesOne : ChannelName ChannelName Reaction @ ProtocolConfig .
@@ -221,6 +231,28 @@ smod STRATS is
                    } 
                 or-else
                 subst-families-one-family[
+                   C:Qid <- Q1, 
+                   C1:Qid <- Q2,
+                   R2:Reaction <- R
+                ]
+       )
+ .
+ 
+ strat nTimesSubstNFFamiliesThree :  Qid Qid Reaction @ ProtocolConfig .
+ sd nTimesSubstNFFamiliesThree(Q1, Q2, R) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{nTimesSubstNFFamiliesThree(Q1, Q2, R)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P Q1 Q2, 
+                             P1:Protocol <- keepTwo P Q1 Q2]{
+          subst-families-three-family[
+                   C:Qid <- Q1, 
+                   C1:Qid <- Q2,
+                   R2:Reaction <- R
+                ]
+                   } 
+                or-else
+                subst-families-three-family[
                    C:Qid <- Q1, 
                    C1:Qid <- Q2,
                    R2:Reaction <- R
@@ -812,9 +844,13 @@ smod STRATS is
  *** absorb a family
  strat absorbFamily : Qid @ ProtocolConfig .
  sd absorbFamily(Q) := 
+  ***(
     absorb-new-nf-family-one[C:Qid <- Q] 
     or-else
-    absorb-new-nf-family-two[C:Qid <- Q]    
+    absorb-new-nf-family-two[C:Qid <- Q]
+    or-else
+    )
+    absorb-new-nf-family[C:Qid <- Q]      
  . 
  
  strat absorbFamilyDeleteEmpty : Qid @ ProtocolConfig .
@@ -991,9 +1027,19 @@ smod STRATS is
  *** get all new declarations in front
  strat moveNewToFront @ ProtocolConfig .
  sd moveNewToFront := 
-     ((CONG-NEW-NF{CONG-COMP-RIGHT{comp-new-families}}) !) 
+     *** ((CONG-NEW-NF{CONG-COMP-RIGHT{comp-new-families}}) !) 
+     applyCompNewFamilies
    ; (moveProtocolUnderNewNF !)
    ; (lift-inner-new-nf !)
+ .  
+ 
+ *** compose new families in a parallel composition
+ 
+ strat applyCompNewFamilies @ ProtocolConfig .
+ sd applyCompNewFamilies :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyCompNewFamilies}
+     : ((CONG-COMP-RIGHT{comp-new-families} or-else comp-new-families) !)
  .    
  
   *** move the family Q2 inside the group Q1
@@ -1561,6 +1607,39 @@ smod STRATS is
               }               
              )                
  .
+ 
+ strat applySubstDivergeFamily : Qid Qid Qid Type @ ProtocolConfig .
+ sd applySubstDivergeFamily(C1, C2, x, T) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applySubstDivergeFamily(C1, C2, x, T)}
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (
+             (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C1 C2, 
+                             P1:Protocol <- keepTwo P C1 C2]{
+                 subst-diverge-family[x3:Qid <- x, T2:Type <- T]            
+              }
+             ) or-else subst-diverge-family[x3:Qid <- x, T2:Type <- T]
+             )
+ .
+  
+ strat applyDivergeChannel3FamilyBranch : Qid ChannelName BoolTerm Qid Type @ ProtocolConfig .
+ sd applyDivergeChannel3FamilyBranch(C, cn, bt, x, T) := 
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyDivergeChannel3FamilyBranch(C, cn, bt, x, T)}
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using (
+             (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P C cn, 
+                             P1:Protocol <- keepTwo P C cn]
+              {subst-family-case-three[bt:BoolTerm <- bt]{
+                subst-diverge-family-channel[x3:Qid <- x, T2:Type <- T]
+               }
+              })
+              or-else
+              subst-family-case-three[bt:BoolTerm <- bt]{
+                subst-diverge-family-channel[x3:Qid <- x, T2:Type <- T]
+               }
+             )
+     .
  
   strat applyCasesSubsumeDropDivergeOwiseC : 
              Qid ChannelName CNameList Type Qid @ ProtocolConfig .

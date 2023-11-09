@@ -1,6 +1,6 @@
 ***( IPDL
 
-  Copyright : (C) 2022-23, Kristina Sojakova
+  Copyright : (C) 2022-23, Kristina Sojakova, Mihai Codescu
   License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
   Authors   : Mihai Codescu <mscodescu@gmail.com>
               Kristina Sojakova <sojakova.kristina@gmail.com>
@@ -284,6 +284,37 @@ smod EXECUTE is
     : CONG-COMP-APPROX{lr}
      .     
    
+   *** this will get generated from the proof language
+   strat applySym1 @ ProtocolConfig .
+   sd applySym1 :=
+      matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using 
+       SYM[P1:Protocol <- 
+       addInternalFamily 'Msg-L 
+       typed msg 
+       params 'i (bound q) 
+       assigned nf('m : msg <- read ('Msg['i]),
+                   return 'm,
+                   'm :: emptyCNameList
+                  ) 
+       in
+  (addInternalFamily 'Msg-R 
+       typed msg 
+       params 'i (bound q) 
+       assigned nf(emptyBRList, return (ap 'zeros ()), emptyCNameList) 
+       in 
+       (change 'Enc 
+        with nf(('k : key <- read 'Key) 
+                ('ml : msg <- read ('Msg-L['i])) 
+                 'mr : msg <- read ('Msg-R['i]), 
+                 samp ('enc < pair('ml, 'k) >), 
+                 'ml :: 'mr :: 'k :: emptyCNameList)
+        in P)
+    )]{
+       foldNFFamily('Msg-L, 'Enc)
+     ; foldNFFamily('Msg-R, 'Enc)
+    }
+   .
    
 endsm
 
@@ -362,4 +393,29 @@ using
    } 
    }    
 .
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*** test
+srew [1]
+ aConfig(sig, ('Msg @ q :: msg) ('Enc @ q :: ctxt), cmLeft, insert('Msg @ q, empty),   getOutputs(cmLeft), empty, width 0, length 0)
+using 
+      STRICT{
+        sugar-newNF
+      ; applySym1
+     } 
+.      
 

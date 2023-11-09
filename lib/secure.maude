@@ -1,6 +1,6 @@
 ***( IPDL
 
-  Copyright : (C) 2022-23, Kristina Sojakova
+  Copyright : (C) 2022-23, Kristina Sojakova, Mihai Codescu
   License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
   Authors   : Mihai Codescu <mscodescu@gmail.com>
               Kristina Sojakova <sojakova.kristina@gmail.com>
@@ -35,6 +35,9 @@ mod SECURE is
  eq secSig = muKeySym encF decF zerosF .
  
  op n : -> Nat .
+ 
+ op genA : -> Set{BoolTerm} .
+ eq genA = 0 <T n .
  
  op idealPlusSim : -> Protocol .
  eq idealPlusSim = 
@@ -339,7 +342,7 @@ srew [1]
          real,
          insert('In @ n, 'OkCtxt_adv_net @ n), 
          insert('Out @ n, 'LeakCtxt_net_adv @ n),
-         empty,
+         genA,
          width 0,
          length 0)
 using

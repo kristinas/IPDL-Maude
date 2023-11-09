@@ -1,6 +1,6 @@
 ***( IPDL
 
-  Copyright : (C) 2022-23, Kristina Sojakova
+  Copyright : (C) 2022-23, Kristina Sojakova, Mihai Codescu
   License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
   Authors   : Mihai Codescu <mscodescu@gmail.com>
               Kristina Sojakova <sojakova.kristina@gmail.com>
@@ -179,28 +179,28 @@ mod GMW2 is
  *** here we record the assumptions on indices
  var q : Qid .
  
- ceq A |= fun 'wire0 nt <=T N with f = true 
+ ceq A |= fun 'wire0 nt <T N with f = true 
    if (apply 'isAliceInput (evalTerm nt f)) in A [label aliceIndex].
- ceq A |= fun 'wire0 nt <=T M with f = true 
+ ceq A |= fun 'wire0 nt <T M with f = true 
     if (apply 'isBobInput (evalTerm nt f)) in A .
- ceq A |= fun 'wire0 nt <=T N + M with f = true 
+ ceq A |= fun 'wire0 nt <T N + M with f = true 
     if (apply 'isNotGate (evalTerm nt f)) in A [label notIndex].
- ceq A |= fun 'wire0 nt <=T N + M with f = true 
+ ceq A |= fun 'wire0 nt <T N + M with f = true 
     if (apply 'isXorGate (evalTerm nt f)) in A .
- ceq A |= fun 'wire1 nt <=T N + M with f = true 
+ ceq A |= fun 'wire1 nt <T N + M with f = true 
     if (apply 'isXorGate (evalTerm nt f)) in A .   
- ceq A |= fun 'wire0 nt <=T N + M with f = true 
+ ceq A |= fun 'wire0 nt <T N + M with f = true 
     if (apply 'isAndGate (evalTerm nt f)) in A [label andIndex] .
- ceq A |= fun 'wire1 nt <=T N + M with f = true 
+ ceq A |= fun 'wire1 nt <T N + M with f = true 
     if (apply 'isAndGate (evalTerm nt f)) in A .
- eq A |= fun 'wire0 i <=T n with f = (A |= i <=T n with f) .
+ eq A |= fun 'wire0 i <T n with f = (A |= i <T n with f) .
  
  *** generic assumptions shared by both proofs
  op genA : -> Set{BoolTerm} .
  eq genA = ( neg (apply 'isXorGate 0), 
              neg (apply 'isAndGate 0), 
              neg (apply 'isNotGate 0),
-             0 <=T K )
+             0 <T K )
  .            
  
  
@@ -2298,37 +2298,37 @@ eq new2 =
      )
    )
    ||
-   ('ShareOK-B['B ++ 1] ::=
-      (when (apply 'isAliceInput ('B ++ 1)) --> 
-          nf('is : unit <- read ('InputShareOK-B-A[fun 'wire0 ('B ++ 1)]), 
+   ('ShareOK-B['B] ::=
+      (when (apply 'isAliceInput 'B) --> 
+          nf('is : unit <- read ('InputShareOK-B-A[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
         )
         ;;
-        (when (apply 'isBobInput ('B ++ 1)) --> 
-          nf('is : unit <- read ('InputShareOK-B-B[fun 'wire0 ('B ++ 1)]), 
+        (when (apply 'isBobInput 'B) --> 
+          nf('is : unit <- read ('InputShareOK-B-B[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
         )
         ;;
-        (when (apply 'isNotGate ('B ++ 1)) --> 
-          nf('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)]),
+        (when (apply 'isNotGate 'B) --> 
+          nf('xb : unit <- read ('ShareOK-B[fun 'wire0 'B]),
              return 'xb,
              'xb :: emptyCNameList)
         )
         ;;
-        (when (apply 'isXorGate ('B ++ 1)) --> 
+        (when (apply 'isXorGate 'B) --> 
           nf(
-          ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-          ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])) ,
+          ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+          ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])) ,
           return (),
           'xb :: 'yb :: emptyCNameList 
           )
         )
         ;;
-        (when (apply 'isAndGate ('B ++ 1)) --> 
+        (when (apply 'isAndGate 'B) --> 
           nf(
-          ('bb : unit <- read ('OTBitOK-B-A[('B ++ 1)]))
-          ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)]))
-          ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])) ,
+          ('bb : unit <- read ('OTBitOK-B-A['B]))
+          ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B]))
+          ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])) ,
           return (),
           'bb :: 'xb :: 'yb :: emptyCNameList
           )
@@ -2455,43 +2455,43 @@ eq new2 =
 
 op bobOKOT : -> Protocol .
 eq bobOKOT =  
-   ('OTBitOK-B-A[ 'B ++ 1 ] ::= 
-      nf('bb : bool <- read ('OTBit-B-A['B ++ 1]), 
+   ('OTBitOK-B-A[ 'B ] ::= 
+      nf('bb : bool <- read ('OTBit-B-A['B]), 
         return (),
         'bb :: emptyCNameList)
    )
    ||
-   ('ShareOK-B[ 'B ++ 1] ::= 
-              (when (apply 'isAliceInput ('B ++ 1)) --> 
-          nf('is : unit <- read ('InputShareOK-B-A[fun 'wire0 ('B ++ 1)]), 
+   ('ShareOK-B[ 'B] ::= 
+              (when (apply 'isAliceInput 'B) --> 
+          nf('is : unit <- read ('InputShareOK-B-A[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
         )
         ;;
-        (when (apply 'isBobInput ('B ++ 1)) --> 
-          nf('is : unit <- read ('InputShareOK-B-B[fun 'wire0 ('B ++ 1)]), 
+        (when (apply 'isBobInput 'B) --> 
+          nf('is : unit <- read ('InputShareOK-B-B[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
         )
         ;;
-        (when (apply 'isNotGate ('B ++ 1)) --> 
-          nf('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)]),
+        (when (apply 'isNotGate 'B) --> 
+          nf('xb : unit <- read ('ShareOK-B[fun 'wire0 'B]),
              return 'xb,
              'xb :: emptyCNameList)
         )
         ;;
-        (when (apply 'isXorGate ('B ++ 1)) --> 
+        (when (apply 'isXorGate 'B) --> 
           nf(
-          ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-          ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])) ,
+          ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+          ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])) ,
           return (),
           'xb :: 'yb :: emptyCNameList 
           )
         )
         ;;
-        (when (apply 'isAndGate ('B ++ 1)) --> 
+        (when (apply 'isAndGate 'B) --> 
           nf(
-          ('bb : unit <- read ('OTBitOK-B-A['B ++ 1]))
-          ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)]))
-          ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])) ,
+          ('bb : unit <- read ('OTBitOK-B-A['B]))
+          ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B]))
+          ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])) ,
           return (),
           'bb :: 'xb :: 'yb :: emptyCNameList
           )
@@ -2517,54 +2517,54 @@ eq bobOKOT =
 
 op bobOKOT3IndStart : -> Protocol .
 eq bobOKOT3IndStart  =  
-   ('OTBitOK-B-A[ 'B ++ 1 ] ::= 
-      (when (apply 'isAndGate ('B ++ 1)) --> 
-      nf(('ba : unit <- read ('OTBitOK-A-B['B ++ 1])) 
-         ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-         ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)]))
-         ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])) 
-         ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])), 
+   ('OTBitOK-B-A[ 'B ] ::= 
+      (when (apply 'isAndGate 'B) --> 
+      nf(('ba : unit <- read ('OTBitOK-A-B['B])) 
+         ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+         ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B]))
+         ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])) 
+         ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])), 
          return (), 
          'ba :: 'xa :: 'ya :: 'xb :: 'yb :: emptyCNameList)
     ) 
     ;; 
     (otherwise --> 
-      nf('ot : unit <- read ('OTBitOK-B-A['B ++ 1]), 
+      nf('ot : unit <- read ('OTBitOK-B-A['B]), 
          return 'ot, 'ot :: emptyCNameList)
     )
    )
    ||
-   ('ShareOK-B[ 'B ++ 1] ::= 
-              (when (apply 'isAliceInput ('B ++ 1)) --> 
-          nf('is : unit <- read ('InputShareOK-B-A[fun 'wire0 ('B ++ 1)]), 
+   ('ShareOK-B[ 'B] ::= 
+              (when (apply 'isAliceInput 'B) --> 
+          nf('is : unit <- read ('InputShareOK-B-A[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
         )
         ;;
-        (when (apply 'isBobInput ('B ++ 1)) --> 
-          nf('is : unit <- read ('InputShareOK-B-B[fun 'wire0 ('B ++ 1)]), 
+        (when (apply 'isBobInput 'B) --> 
+          nf('is : unit <- read ('InputShareOK-B-B[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
         )
         ;;
-        (when (apply 'isNotGate ('B ++ 1)) --> 
-          nf('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)]),
+        (when (apply 'isNotGate 'B) --> 
+          nf('xb : unit <- read ('ShareOK-B[fun 'wire0 'B]),
              return 'xb,
              'xb :: emptyCNameList)
         )
         ;;
-        (when (apply 'isXorGate ('B ++ 1)) --> 
+        (when (apply 'isXorGate 'B) --> 
           nf(
-          ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-          ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])) ,
+          ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+          ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])) ,
           return (),
           'xb :: 'yb :: emptyCNameList 
           )
         )
         ;;
-        (when (apply 'isAndGate ('B ++ 1)) --> 
+        (when (apply 'isAndGate 'B) --> 
           nf(
-          ('bb : unit <- read ('OTBitOK-B-A['B ++ 1]))
-          ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)]))
-          ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])) ,
+          ('bb : unit <- read ('OTBitOK-B-A['B]))
+          ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B]))
+          ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])) ,
           return (),
           'bb :: 'xb :: 'yb :: emptyCNameList
           )
@@ -2841,14 +2841,14 @@ eq new3OTIndStart =
 
 op bobOKOT3IndEnd : -> Protocol .
 eq bobOKOT3IndEnd  =  
-   ('OTBitOK-B-A[ 'B ++ 1 ] ::= 
-      nf('bb : bool <- read ('OTBit-B-A['B ++ 1]), 
+   ('OTBitOK-B-A[ 'B ] ::= 
+      nf('bb : bool <- read ('OTBit-B-A['B]), 
         return (),
         'bb :: emptyCNameList)
    )
    ||
-   ('ShareOK-B[ 'B ++ 1] ::= 
-             nf('xb : bool <- read ('Share-B['B ++ 1]), 
+   ('ShareOK-B[ 'B] ::= 
+             nf('xb : bool <- read ('Share-B['B]), 
      return (), 'xb :: emptyCNameList)
    )
    ||
@@ -3375,14 +3375,14 @@ eq new3OT =
 
 op bobOKOTInd : -> Protocol .
 eq bobOKOTInd =  
-   ('OTBitOK-B-A[ 'B ++ 1 ] ::= 
-      nf('bb : bool <- read ('OTBit-B-A['B ++ 1]), 
+   ('OTBitOK-B-A[ 'B ] ::= 
+      nf('bb : bool <- read ('OTBit-B-A['B]), 
         return (),
         'bb :: emptyCNameList)
    )
    ||
-   ('ShareOK-B[ 'B ++ 1] ::= 
-       nf('xb : bool <- read ('Share-B['B ++ 1]), 
+   ('ShareOK-B[ 'B] ::= 
+       nf('xb : bool <- read ('Share-B['B]), 
           return (), 'xb :: emptyCNameList)       
    )
    ||
@@ -4029,8 +4029,8 @@ op new3Base0 : -> Protocol .
 
 op new3Ind0 : -> Protocol .
  eq new3Ind0 =
-  ('ShareOK-B['B ++ 1] ::= 
-  nf('xb : bool <- read ('Share-B['B ++ 1]), 
+  ('ShareOK-B['B] ::= 
+  nf('xb : bool <- read ('Share-B['B]), 
      return (), 'xb :: emptyCNameList)
 )
 ||
@@ -4746,8 +4746,8 @@ eq new5base =
 op new5step : -> Protocol .
 eq new5step =
  
- ('ShareOK-A['B ++ 1] ::= 
-   nf('xa : bool <- read ('Share-A['B ++ 1]), 
+ ('ShareOK-A['B] ::= 
+   nf('xa : bool <- read ('Share-A['B]), 
       return (), 'xa :: emptyCNameList
      )
  )
@@ -5048,10 +5048,10 @@ eq new5step =
 op new4Intstep : -> Protocol .
 eq new4Intstep =
  
- ('ShareOK-A['B ++ 1] ::= 
-     nf(('ba : unit <- read ('OTBitOK-A-B['B ++ 1 ])) 
-       ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-        'ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+ ('ShareOK-A['B] ::= 
+     nf(('ba : unit <- read ('OTBitOK-A-B['B ])) 
+       ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+        'ya : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
         return (), 'ba :: 'xa :: 'ya :: emptyCNameList)
  )
  ||
@@ -5408,47 +5408,47 @@ eq new4Intstep =
 
 op aliceOKIndInt : -> Protocol .
 eq aliceOKIndInt = 
-  ('OTBitOK-A-B['B ++ 1] ::=
-    nf('ba : bool <- read ('OTBit-A-B['B ++ 1]), 
+  ('OTBitOK-A-B['B] ::=
+    nf('ba : bool <- read ('OTBit-A-B['B]), 
         return (), 'ba :: emptyCNameList)
   )
   ||
-  ('ShareOK-A['B ++ 1] ::= 
-        (when (apply 'isAliceInput ('B ++ 1)) --> 
-          nf('is : unit <- read ('InputShareOK-A-A[fun 'wire0 ('B ++ 1)]),
+  ('ShareOK-A['B] ::= 
+        (when (apply 'isAliceInput 'B) --> 
+          nf('is : unit <- read ('InputShareOK-A-A[fun 'wire0 'B]),
              return 'is,
              'is :: emptyCNameList)
         )
         ;;
-        (when (apply 'isBobInput ('B ++ 1)) --> 
+        (when (apply 'isBobInput 'B) --> 
           nf(
-           'is : unit <- read ('InputShareOK-A-B[fun 'wire0 ('B ++ 1)]),
+           'is : unit <- read ('InputShareOK-A-B[fun 'wire0 'B]),
            return 'is,
            'is :: emptyCNameList
           )
         )
         ;;
-        (when (apply 'isNotGate ('B ++ 1)) --> 
-          nf('sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]),
+        (when (apply 'isNotGate 'B) --> 
+          nf('sa : unit <- read ('ShareOK-A[fun 'wire0 'B]),
              return 'sa,
              'sa :: emptyCNameList
             )
         )
         ;;
-        (when (apply 'isXorGate ('B ++ 1)) --> 
+        (when (apply 'isXorGate 'B) --> 
           nf(
-           ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]))
-           ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])),
+           ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B]))
+           ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])),
            return (),
            'xa :: 'ya :: emptyCNameList
           )
         )
         ;;
-        (when (apply 'isAndGate ('B ++ 1)) -->
+        (when (apply 'isAndGate 'B) -->
           nf( 
-          ('ba : unit <- read ('OTBitOK-A-B['B ++ 1]))
-          ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]))
-          ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])),
+          ('ba : unit <- read ('OTBitOK-A-B['B]))
+          ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B]))
+          ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])),
           return (),
           'ba :: 'xa :: 'ya :: emptyCNameList
           )
@@ -5520,58 +5520,58 @@ eq aliceOKIndInt =
 
 op aliceOKIndStart : -> Protocol .
 eq aliceOKIndStart = 
-  ('OTBitOK-A-B['B ++ 1] ::=
-    (when (apply 'isAndGate ('B ++ 1)) -->
+  ('OTBitOK-A-B['B] ::=
+    (when (apply 'isAndGate 'B) -->
        nf( 
-           ('ak : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]))
-           ('al : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])),
+           ('ak : unit <- read ('ShareOK-A[fun 'wire0 'B]))
+           ('al : unit <- read ('ShareOK-A[fun 'wire1 'B])),
            return (),
            'ak :: 'al :: emptyCNameList
          )
      ) 
      ;;
-     (otherwise --> nf('ot : unit <- read ('OTBitOK-A-B['B ++ 1]), 
+     (otherwise --> nf('ot : unit <- read ('OTBitOK-A-B['B]), 
                       return 'ot,
                       'ot :: emptyCNameList)
      )
   )
   ||
-  ('ShareOK-A['B ++ 1] ::= 
-        (when (apply 'isAliceInput ('B ++ 1)) --> 
-          nf('is : unit <- read ('InputShareOK-A-A[fun 'wire0 ('B ++ 1)]),
+  ('ShareOK-A['B] ::= 
+        (when (apply 'isAliceInput 'B) --> 
+          nf('is : unit <- read ('InputShareOK-A-A[fun 'wire0 'B]),
              return 'is,
              'is :: emptyCNameList)
         )
         ;;
-        (when (apply 'isBobInput ('B ++ 1)) --> 
+        (when (apply 'isBobInput 'B) --> 
           nf(
-           'is : unit <- read ('InputShareOK-A-B[fun 'wire0 ('B ++ 1)]),
+           'is : unit <- read ('InputShareOK-A-B[fun 'wire0 'B]),
            return 'is,
            'is :: emptyCNameList
           )
         )
         ;;
-        (when (apply 'isNotGate ('B ++ 1)) --> 
-          nf('sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]),
+        (when (apply 'isNotGate 'B) --> 
+          nf('sa : unit <- read ('ShareOK-A[fun 'wire0 'B]),
              return 'sa,
              'sa :: emptyCNameList
             )
         )
         ;;
-        (when (apply 'isXorGate ('B ++ 1)) --> 
+        (when (apply 'isXorGate 'B) --> 
           nf(
-           ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]))
-           ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])),
+           ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B]))
+           ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])),
            return (),
            'xa :: 'ya :: emptyCNameList
           )
         )
         ;;
-        (when (apply 'isAndGate ('B ++ 1)) -->
+        (when (apply 'isAndGate 'B) -->
           nf( 
-          ('ba : unit <- read ('OTBitOK-A-B['B ++ 1]))
-          ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]))
-          ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])),
+          ('ba : unit <- read ('OTBitOK-A-B['B]))
+          ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B]))
+          ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])),
           return (),
           'ba :: 'xa :: 'ya :: emptyCNameList
           )
@@ -5643,13 +5643,13 @@ eq aliceOKIndStart =
 *** new5IndEnd
 op aliceOKIndEnd : -> Protocol .
 eq aliceOKIndEnd = 
-  ('OTBitOK-A-B['B ++ 1] ::=
-     nf('ba : bool <- read ('OTBit-A-B['B ++ 1]), 
+  ('OTBitOK-A-B['B] ::=
+     nf('ba : bool <- read ('OTBit-A-B['B]), 
         return (), 'ba :: emptyCNameList)
   )
   ||
-  ('ShareOK-A['B ++ 1] ::= 
-     nf('xa : bool <- read ('Share-A['B ++ 1]), 
+  ('ShareOK-A['B] ::= 
+     nf('xa : bool <- read ('Share-A['B]), 
         return (), 'xa :: emptyCNameList)  
   )
   ||
@@ -5717,13 +5717,13 @@ eq aliceOKIndEnd =
 *** new5Ind0
 op aliceOKInd0 : -> Protocol .
 eq aliceOKInd0 = 
-  ('OTBitOK-A-B['B ++ 1] ::=
-     nf('ba : bool <- read ('OTBit-A-B['B ++ 1]), 
+  ('OTBitOK-A-B['B] ::=
+     nf('ba : bool <- read ('OTBit-A-B['B]), 
         return (), 'ba :: emptyCNameList)
   )
   ||
-  ('ShareOK-A['B ++ 1] ::= 
-     nf('xa : bool <- read ('Share-A['B ++ 1]), 
+  ('ShareOK-A['B] ::= 
+     nf('xa : bool <- read ('Share-A['B]), 
         return (), 'xa :: emptyCNameList)  
   )
   ||
@@ -6177,54 +6177,54 @@ eq aliceOKInd0 =
 
 op bobOK7IndStart : -> Protocol .
 eq bobOK7IndStart =  
-   ('OTBitOK-B-A[ 'B ++ 1 ] ::= 
-      (when (apply 'isAndGate ('B ++ 1)) --> 
-      nf(('ba : unit <- read ('OTBitOK-A-B['B ++ 1])) 
-         ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-         ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-         ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])) 
-          'yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)]), 
+   ('OTBitOK-B-A[ 'B ] ::= 
+      (when (apply 'isAndGate 'B) --> 
+      nf(('ba : unit <- read ('OTBitOK-A-B['B])) 
+         ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+         ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+         ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])) 
+          'yb : unit <- read ('ShareOK-B[fun 'wire1 'B]), 
          return (), 
          'ba :: 'xa :: 'ya :: 'xb :: 'yb :: emptyCNameList)
       ) 
       ;; 
       (otherwise --> 
-        nf('ot : unit <- read ('OTBitOK-B-A[('B ++ 1)]), 
+        nf('ot : unit <- read ('OTBitOK-B-A['B]), 
            return 'ot, 'ot :: emptyCNameList)
       )
    )
    ||
-   ('ShareOK-B[ 'B ++ 1] ::= 
-        (when (apply 'isAliceInput ('B ++ 1)) --> 
-          nf('is : unit <- read ('InputShareOK-B-A[fun 'wire0 ('B ++ 1)]), 
+   ('ShareOK-B[ 'B] ::= 
+        (when (apply 'isAliceInput 'B) --> 
+          nf('is : unit <- read ('InputShareOK-B-A[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
         )
         ;;
-        (when (apply 'isBobInput ('B ++ 1)) --> 
-          nf('is : unit <- read ('InputShareOK-B-B[fun 'wire0 ('B ++ 1)]), 
+        (when (apply 'isBobInput 'B) --> 
+          nf('is : unit <- read ('InputShareOK-B-B[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
         )
         ;;
-        (when (apply 'isNotGate ('B ++ 1)) --> 
-          nf('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)]),
+        (when (apply 'isNotGate 'B) --> 
+          nf('xb : unit <- read ('ShareOK-B[fun 'wire0 'B]),
              return 'xb,
              'xb :: emptyCNameList)
         )
         ;;
-        (when (apply 'isXorGate ('B ++ 1)) --> 
+        (when (apply 'isXorGate 'B) --> 
           nf(
-          ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-          ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])) ,
+          ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+          ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])) ,
           return (),
           'xb :: 'yb :: emptyCNameList 
           )
         )
         ;;
-        (when (apply 'isAndGate ('B ++ 1)) --> 
+        (when (apply 'isAndGate 'B) --> 
           nf(
-          ('bb : unit <- read ('OTBitOK-B-A['B ++ 1]))
-          ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)]))
-          ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])) ,
+          ('bb : unit <- read ('OTBitOK-B-A['B]))
+          ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B]))
+          ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])) ,
           return (),
           'bb :: 'xb :: 'yb :: emptyCNameList
           )
@@ -6296,13 +6296,13 @@ eq new7IndStart =
 
 op bobOK7IndEnd : -> Protocol .
 eq bobOK7IndEnd =  
-   ('OTBitOK-B-A[ 'B ++ 1 ] ::= 
-      nf('ot : unit <- read ('OTBitOK-A-B['B ++ 1]), 
+   ('OTBitOK-B-A[ 'B ] ::= 
+      nf('ot : unit <- read ('OTBitOK-A-B['B]), 
         return 'ot, 'ot :: emptyCNameList)
    )
    ||
-   ('ShareOK-B[ 'B ++ 1] ::= 
-        nf('sa : unit <- read ('ShareOK-A['B ++ 1]), 
+   ('ShareOK-B[ 'B] ::= 
+        nf('sa : unit <- read ('ShareOK-A['B]), 
         return 'sa, 'sa :: emptyCNameList)
    )
    ||
@@ -6372,25 +6372,25 @@ eq new7IndEnd =
 
 op bobOK7Ind0 : -> Protocol .
 eq bobOK7Ind0 =  
-   ('OTBitOK-B-A[ 'B ++ 1 ] ::= 
-      (when (apply 'isAndGate ('B ++ 1)) --> 
-  nf(('ba : unit <- read ('OTBitOK-A-B[('B ++ 1)])) 
-     ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-     ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-     ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])) 
-      'yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)]), 
+   ('OTBitOK-B-A[ 'B ] ::= 
+      (when (apply 'isAndGate 'B) --> 
+  nf(('ba : unit <- read ('OTBitOK-A-B['B])) 
+     ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+     ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+     ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])) 
+      'yb : unit <- read ('ShareOK-B[fun 'wire1 'B]), 
       return (), 
       'ba :: 'xa :: 'ya :: 'xb :: 'yb :: emptyCNameList)
 ) 
 ;; 
  (otherwise --> 
-   nf('ot : unit <- read ('OTBitOK-B-A[('B ++ 1)]),  
+   nf('ot : unit <- read ('OTBitOK-B-A['B]),  
       return 'ot, 'ot :: emptyCNameList)
  )
    )
    ||
-   ('ShareOK-B[ 'B ++ 1] ::= 
-        nf('sa : unit <- read ('ShareOK-A['B ++ 1]), 
+   ('ShareOK-B[ 'B] ::= 
+        nf('sa : unit <- read ('ShareOK-A['B]), 
         return 'sa, 'sa :: emptyCNameList)
    )
    ||
@@ -7289,8 +7289,8 @@ eq new7step =
    nf('sa : unit <- read ('ShareOK-A['k]), return 'sa, 'sa :: emptyCNameList)
  )
  ||
- ('ShareOK-B['B ++ 1] ::= 
-    nf('sa : unit <- read ('ShareOK-A['B ++ 1]), return 'sa, 'sa :: emptyCNameList)
+ ('ShareOK-B['B] ::= 
+    nf('sa : unit <- read ('ShareOK-A['B]), return 'sa, 'sa :: emptyCNameList)
  )
 .
 
@@ -8686,8 +8686,8 @@ eq new7step =
     nf('sa : unit <- read ('ShareOK-A['k]), return 'sa, 'sa :: emptyCNameList)
    )
 
-|| ('ShareOK-A['B ++ 1] ::= 
-   nf('xa : bool <- read ('Share-A['B ++ 1]), 
+|| ('ShareOK-A['B] ::= 
+   nf('xa : bool <- read ('Share-A['B]), 
       return (), 'xa :: emptyCNameList
      )
  )
@@ -9340,9 +9340,9 @@ eq new15step =
       return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
 )
 || 
-('Share-B['B ++ 1] ::= 
-   nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-       'x : bool <- read ('Wire['B ++ 1]), 
+('Share-B['B] ::= 
+   nf(('xa : bool <- read ('Share-A['B])) 
+       'x : bool <- read ('Wire['B]), 
       return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
 ) 
 .
@@ -10237,13 +10237,13 @@ eq new15step =
  )
  *** induction step
  ||
- ('OTBit-B-A ['B ++ 1]::= 
-   (when (apply 'isAndGate ('B ++ 1)) --> 
-     nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-        ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+ ('OTBit-B-A ['B]::= 
+   (when (apply 'isAndGate 'B) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+        ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('ba, 
                                ap 'xor pair(ap 'and pair('xa, 'yb), 
                                             ap 'and pair('xb, 'ya)))
@@ -10252,85 +10252,85 @@ eq new15step =
    ) 
    ;;
    (otherwise --> 
-      nf('otb : bool <- read ('OTBit-B-A['B ++ 1]), 
+      nf('otb : bool <- read ('OTBit-B-A['B]), 
          return 'otb, 
          'otb :: emptyCNameList)
    )
   ) *** end OTBit-B-A
  ||
-  ( 'Share-B['B ++ 1] ::= 
+  ( 'Share-B['B] ::= 
      *** we know this, and we want to get it to the one reaction
-    (when (apply 'isAliceInput ('B ++ 1)) --> 
-      nf(('is : bool <- read ('InputShare-B-A[fun 'wire0 ('B ++ 1)]))
-         ('xa : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)])), 
+    (when (apply 'isAliceInput 'B) --> 
+      nf(('is : bool <- read ('InputShare-B-A[fun 'wire0 'B]))
+         ('xa : bool <- read ('InputShare-A-A[fun 'wire0 'B])), 
          return 'is, 'xa :: 'is :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isBobInput ('B ++ 1)) --> 
-       nf(('is : bool <- read ('InputShare-B-B[fun 'wire0 ('B ++ 1)]))
-          ('xa : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)])), 
+    (when (apply 'isBobInput 'B) --> 
+       nf(('is : bool <- read ('InputShare-B-B[fun 'wire0 'B]))
+          ('xa : bool <- read ('InputShare-A-B[fun 'wire0 'B])), 
           return 'is, 'xa :: 'is :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isNotGate ('B ++ 1)) --> 
-       nf(('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]))
-          ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])), 
+    (when (apply 'isNotGate 'B) --> 
+       nf(('xb : bool <- read ('Share-B[fun 'wire0 'B]))
+          ('xa : bool <- read ('Share-A[fun 'wire0 'B])), 
           return (ap 'neg 'xb), 'xa :: 'xb :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isXorGate ('B ++ 1)) --> 
-       nf(('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]))
-          ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-          ('yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]))
-          ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])), 
+    (when (apply 'isXorGate 'B) --> 
+       nf(('xb : bool <- read ('Share-B[fun 'wire0 'B]))
+          ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+          ('yb : bool <- read ('Share-B[fun 'wire1 'B]))
+          ('ya : bool <- read ('Share-A[fun 'wire1 'B])), 
           return (ap 'xor pair('xb, 'yb)), 'xb :: 'xa :: 'yb :: 'ya :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isAndGate ('B ++ 1)) --> 
-      nf(('bb : bool <- read ('OTBit-B-A['B ++ 1])) 
-         ('ba : bool <- read ('OTBit-A-B['B ++ 1]))
-         ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]))
-         ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-         ('yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]))
-         ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])), 
+    (when (apply 'isAndGate 'B) --> 
+      nf(('bb : bool <- read ('OTBit-B-A['B])) 
+         ('ba : bool <- read ('OTBit-A-B['B]))
+         ('xb : bool <- read ('Share-B[fun 'wire0 'B]))
+         ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+         ('yb : bool <- read ('Share-B[fun 'wire1 'B]))
+         ('ya : bool <- read ('Share-A[fun 'wire1 'B])), 
          return (ap 'xor pair('bb, ap 'and pair('xb, 'yb))), 
          'bb :: 'ba :: 'xb :: 'xa :: 'yb :: 'ya :: emptyCNameList)
     )
   ) *** end Share-B
   ||
-  ('Wire['B ++ 1] ::=
+  ('Wire['B] ::=
       *** and here we know that it is the one reaction 5 times
-       (when (apply 'isAliceInput ('B ++ 1)) --> 
-      nf( ('xa : bool <- read ('Share-A[('B ++ 1)]))
-           ('xb : bool <- read ('Share-B[('B ++ 1)])), 
+       (when (apply 'isAliceInput 'B) --> 
+      nf( ('xa : bool <- read ('Share-A['B]))
+           ('xb : bool <- read ('Share-B['B])), 
            return (ap 'xor pair('xa, 'xb)),
            'xa :: 'xb :: emptyCNameList
          )
     ) ;;     
-       (when (apply 'isBobInput ('B ++ 1)) --> 
-      nf( ('xa : bool <- read ('Share-A[('B ++ 1)]))
-           ('xb : bool <- read ('Share-B[('B ++ 1)])), 
+       (when (apply 'isBobInput 'B) --> 
+      nf( ('xa : bool <- read ('Share-A['B]))
+           ('xb : bool <- read ('Share-B['B])), 
            return (ap 'xor pair('xa, 'xb)),
            'xa :: 'xb :: emptyCNameList
          )
     ) ;;
-       (when (apply 'isNotGate ('B ++ 1)) --> 
-      nf( ('xa : bool <- read ('Share-A[('B ++ 1)]))
-           ('xb : bool <- read ('Share-B[('B ++ 1)])), 
+       (when (apply 'isNotGate 'B) --> 
+      nf( ('xa : bool <- read ('Share-A['B]))
+           ('xb : bool <- read ('Share-B['B])), 
            return (ap 'xor pair('xa, 'xb)),
            'xa :: 'xb :: emptyCNameList
          )
     ) ;;
-       (when (apply 'isXorGate ('B ++ 1)) --> 
-      nf( ('xa : bool <- read ('Share-A[('B ++ 1)]))
-           ('xb : bool <- read ('Share-B[('B ++ 1)])), 
+       (when (apply 'isXorGate 'B) --> 
+      nf( ('xa : bool <- read ('Share-A['B]))
+           ('xb : bool <- read ('Share-B['B])), 
            return (ap 'xor pair('xa, 'xb)),
            'xa :: 'xb :: emptyCNameList
          )
     ) ;;
-       (when (apply 'isAndGate ('B ++ 1)) --> 
-      nf( ('xa : bool <- read ('Share-A[('B ++ 1)]))
-           ('xb : bool <- read ('Share-B[('B ++ 1)])), 
+       (when (apply 'isAndGate 'B) --> 
+      nf( ('xa : bool <- read ('Share-A['B]))
+           ('xb : bool <- read ('Share-B['B])), 
            return (ap 'xor pair('xa, 'xb)),
            'xa :: 'xb :: emptyCNameList
          )
@@ -10572,13 +10572,13 @@ eq new15step =
  )
  *** induction step
  ||
- ('OTBit-B-A ['B ++ 1]::= 
-   (when (apply 'isAndGate ('B ++ 1)) --> 
-     nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-        ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+ ('OTBit-B-A ['B]::= 
+   (when (apply 'isAndGate 'B) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+        ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('ba, 
                                ap 'xor pair(ap 'and pair('xa, 'yb), 
                                             ap 'and pair('xb, 'ya)))
@@ -10587,82 +10587,82 @@ eq new15step =
    ) 
    ;;
    (otherwise --> 
-      nf('otb : bool <- read ('OTBit-B-A['B ++ 1]), 
+      nf('otb : bool <- read ('OTBit-B-A['B]), 
          return 'otb, 
          'otb :: emptyCNameList)
    )
   ) *** end OTBit-B-A
  ||
-  ( 'Share-B['B ++ 1] ::= 
+  ( 'Share-B['B] ::= 
      *** for the sym proof we write the reaction 5 times
-    (when (apply 'isAliceInput ('B ++ 1)) --> 
-        nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-            'x : bool <- read ('Wire['B ++ 1]), 
+    (when (apply 'isAliceInput 'B) --> 
+        nf(('xa : bool <- read ('Share-A['B])) 
+            'x : bool <- read ('Wire['B]), 
             return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isBobInput ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-            'x : bool <- read ('Wire['B ++ 1]), 
+    (when (apply 'isBobInput 'B) --> 
+       nf(('xa : bool <- read ('Share-A['B])) 
+            'x : bool <- read ('Wire['B]), 
             return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isNotGate ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-            'x : bool <- read ('Wire['B ++ 1]), 
+    (when (apply 'isNotGate 'B) --> 
+       nf(('xa : bool <- read ('Share-A['B])) 
+            'x : bool <- read ('Wire['B]), 
             return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isXorGate ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-            'x : bool <- read ('Wire['B ++ 1]), 
+    (when (apply 'isXorGate 'B) --> 
+       nf(('xa : bool <- read ('Share-A['B])) 
+            'x : bool <- read ('Wire['B]), 
             return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isAndGate ('B ++ 1)) --> 
-      nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-            'x : bool <- read ('Wire['B ++ 1]), 
+    (when (apply 'isAndGate 'B) --> 
+      nf(('xa : bool <- read ('Share-A['B])) 
+            'x : bool <- read ('Wire['B]), 
             return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
     )
   ) *** end Share-B
   ||
-  ('Wire['B ++ 1] ::= 
-    (when (apply 'isAliceInput ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)])) 
-           'xb : bool <- read ('InputShare-B-A[fun 'wire0 ('B ++ 1)]), 
+  ('Wire['B] ::= 
+    (when (apply 'isAliceInput 'B) --> 
+       nf(('xa : bool <- read ('InputShare-A-A[fun 'wire0 'B])) 
+           'xb : bool <- read ('InputShare-B-A[fun 'wire0 'B]), 
            return (ap 'xor pair('xa, 'xb)), 
            'xa :: 'xb :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isBobInput ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)])) 
-           'xb : bool <- read ('InputShare-B-B[fun 'wire0 ('B ++ 1)]), 
+    (when (apply 'isBobInput 'B) --> 
+       nf(('xa : bool <- read ('InputShare-A-B[fun 'wire0 'B])) 
+           'xb : bool <- read ('InputShare-B-B[fun 'wire0 'B]), 
            return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isNotGate ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-           'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+    (when (apply 'isNotGate 'B) --> 
+       nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+           'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
            return (ap 'xor pair('xa, ap 'neg 'xb)), 
            'xa :: 'xb :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isXorGate ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-          ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-          ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-           'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    (when (apply 'isXorGate 'B) --> 
+       nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+          ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+          ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+           'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
            return (ap 'xor pair(ap 'xor pair('xa, 'ya), ap 'xor pair('xb, 'yb))),
            'xa :: 'yb :: 'ya :: 'xb :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isAndGate 'B ++ 1) --> 
-       nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-          ('bb : bool <- read ('OTBit-B-A['B ++ 1])) 
-          ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)]))
-          ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-          ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-           'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    (when (apply 'isAndGate 'B) --> 
+       nf(('ba : bool <- read ('OTBit-A-B['B])) 
+          ('bb : bool <- read ('OTBit-B-A['B])) 
+          ('xa : bool <- read ('Share-A[fun 'wire0 'B]))
+          ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+          ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+           'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
            return (ap 'xor pair(ap 'xor pair(ap 'and pair('xa, 'ya), 'ba), 
                                 ap 'xor pair('bb, ap 'and pair('xb, 'yb)))), 
            'bb :: 'ba :: 'xa :: 'yb :: 'ya :: 'xb :: emptyCNameList)    
@@ -10906,7 +10906,7 @@ eq new15step =
  )
  *** induction step
  ||
- ('OTBit-B-A ['B ++ 1]::= 
+ ('OTBit-B-A ['B]::= 
    (when (apply 'isAndGate 'k) --> 
      nf(('ba : bool <- read ('OTBit-A-B['k])) 
         ('xa : bool <- read ('Share-A[fun 'wire0 'k])) 
@@ -10927,42 +10927,42 @@ eq new15step =
    )
   ) *** end OTBit-B-A
  ||
-  ( 'Share-B['B ++ 1] ::= 
-    nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-            'x : bool <- read ('Wire['B ++ 1]), 
+  ( 'Share-B['B] ::= 
+    nf(('xa : bool <- read ('Share-A['B])) 
+            'x : bool <- read ('Wire['B]), 
             return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
   ) *** end Share-B
   ||
-  ('Wire['B ++ 1] ::=
-     (when (apply 'isAliceInput ('B ++ 1)) --> 
-    nf('inA0 : bool <- read ('In-A[fun 'wire0 ('B ++ 1)]), return 'inA0, 'inA0 :: emptyCNameList)
+  ('Wire['B] ::=
+     (when (apply 'isAliceInput 'B) --> 
+    nf('inA0 : bool <- read ('In-A[fun 'wire0 'B]), return 'inA0, 'inA0 :: emptyCNameList)
   )
   ;;
-  (when (apply 'isBobInput ('B ++ 1)) --> 
-    nf('inB0 : bool <- read ('In-B[fun 'wire0 ('B ++ 1)]), return 'inB0, 'inB0 :: emptyCNameList)
+  (when (apply 'isBobInput 'B) --> 
+    nf('inB0 : bool <- read ('In-B[fun 'wire0 'B]), return 'inB0, 'inB0 :: emptyCNameList)
   )
   ;;
-  (when (apply 'isNotGate ('B ++ 1)) -->
+  (when (apply 'isNotGate 'B) -->
     nf( 
-     'x : bool <- read ('Wire[fun 'wire0 ('B ++ 1)]),
+     'x : bool <- read ('Wire[fun 'wire0 'B]),
      return (ap 'neg 'x),
      'x :: emptyCNameList
      )
   )
   ;;
-  (when (apply 'isAndGate ('B ++ 1)) -->
+  (when (apply 'isAndGate 'B) -->
     nf(
-    ('x : bool <- read ('Wire[fun 'wire0 ('B ++ 1)]))
-    ('y : bool <- read ('Wire[fun 'wire1 ('B ++ 1)])),
+    ('x : bool <- read ('Wire[fun 'wire0 'B]))
+    ('y : bool <- read ('Wire[fun 'wire1 'B])),
     return (ap 'and pair('x, 'y)),
     'x :: 'y :: emptyCNameList 
     )
   )
   ;;
-  (when (apply 'isXorGate ('B ++ 1)) -->
+  (when (apply 'isXorGate 'B) -->
   nf(
-    ('x : bool <- read ('Wire[fun 'wire0 ('B ++ 1)]))
-    ('y : bool <- read ('Wire[fun 'wire1 ('B ++ 1)])),
+    ('x : bool <- read ('Wire[fun 'wire0 'B]))
+    ('y : bool <- read ('Wire[fun 'wire1 'B])),
     return (ap 'xor pair('x, 'y)),
     'x :: 'y :: emptyCNameList 
     )
@@ -11504,13 +11504,13 @@ eq restr16GIndStart =
    ) *** end group
    )
    ||
-    ('OTBit-B-A['B ++ 1] ::= 
-   (when (apply 'isAndGate ('B ++ 1)) --> 
-     nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-        ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    ('OTBit-B-A['B] ::= 
+   (when (apply 'isAndGate 'B) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+        ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('ba, 
                                ap 'xor pair(ap 'and pair('xa, 'yb), 
                                             ap 'and pair('xb, 'ya)))
@@ -11519,48 +11519,48 @@ eq restr16GIndStart =
    ) 
    ;;
    (otherwise --> 
-      nf('otb : bool <- read ('OTBit-B-A['B ++ 1]), 
+      nf('otb : bool <- read ('OTBit-B-A['B]), 
          return 'otb, 
          'otb :: emptyCNameList)
    )
   ) *** end OTBit-B-A
   ||
-  ('Share-B['B ++ 1] ::= 
-    nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-       'x : bool <- read ('Wire['B ++ 1]), 
+  ('Share-B['B] ::= 
+    nf(('xa : bool <- read ('Share-A['B])) 
+       'x : bool <- read ('Wire['B]), 
       return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
   ) *** end Share-B
   ||
-    ('Wire['B ++ 1]  ::= 
-  (when (apply 'isAliceInput ('B ++ 1)) --> 
-    nf('inA0 : bool <- read ('In-A[fun 'wire0 ('B ++ 1)]), return 'inA0, 'inA0 :: emptyCNameList)
+    ('Wire['B]  ::= 
+  (when (apply 'isAliceInput 'B) --> 
+    nf('inA0 : bool <- read ('In-A[fun 'wire0 'B]), return 'inA0, 'inA0 :: emptyCNameList)
   )
   ;;
-  (when (apply 'isBobInput ('B ++ 1)) --> 
-    nf('inB0 : bool <- read ('In-B[fun 'wire0 ('B ++ 1)]), return 'inB0, 'inB0 :: emptyCNameList)
+  (when (apply 'isBobInput 'B) --> 
+    nf('inB0 : bool <- read ('In-B[fun 'wire0 'B]), return 'inB0, 'inB0 :: emptyCNameList)
   )
   ;;
-  (when (apply 'isNotGate ('B ++ 1)) -->
+  (when (apply 'isNotGate 'B) -->
     nf( 
-     'x : bool <- read ('Wire[fun 'wire0 ('B ++ 1)]),
+     'x : bool <- read ('Wire[fun 'wire0 'B]),
      return (ap 'neg 'x),
      'x :: emptyCNameList
      )
   )
   ;;
-  (when (apply 'isXorGate ('B ++ 1)) -->
+  (when (apply 'isXorGate 'B) -->
   nf(
-    ('x : bool <- read ('Wire[fun 'wire0 ('B ++ 1)]))
-    ('y : bool <- read ('Wire[fun 'wire1 ('B ++ 1)])),
+    ('x : bool <- read ('Wire[fun 'wire0 'B]))
+    ('y : bool <- read ('Wire[fun 'wire1 'B])),
     return (ap 'xor pair('x, 'y)),
     'x :: 'y :: emptyCNameList 
     )
   )
   ;;
-  (when (apply 'isAndGate ('B ++ 1)) -->
+  (when (apply 'isAndGate 'B) -->
     nf(
-    ('x : bool <- read ('Wire[fun 'wire0 ('B ++ 1)]))
-    ('y : bool <- read ('Wire[fun 'wire1 ('B ++ 1)])),
+    ('x : bool <- read ('Wire[fun 'wire0 'B]))
+    ('y : bool <- read ('Wire[fun 'wire1 'B])),
     return (ap 'and pair('x, 'y)),
     'x :: 'y :: emptyCNameList 
     )
@@ -11796,13 +11796,13 @@ eq restr16GIndEnd =
    ) *** end group
    )
    ||
-    ('OTBit-B-A['B ++ 1] ::= 
-   (when (apply 'isAndGate ('B ++ 1)) --> 
-     nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-        ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    ('OTBit-B-A['B] ::= 
+   (when (apply 'isAndGate 'B) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+        ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('ba, 
                                ap 'xor pair(ap 'and pair('xa, 'yb), 
                                             ap 'and pair('xb, 'ya)))
@@ -11811,54 +11811,54 @@ eq restr16GIndEnd =
    ) 
    ;;
    (otherwise --> 
-      nf('otb : bool <- read ('OTBit-B-A['B ++ 1]), 
+      nf('otb : bool <- read ('OTBit-B-A['B]), 
          return 'otb, 
          'otb :: emptyCNameList)
    )
   ) *** end OTBit-B-A
   ||
-  ('Share-B['B ++ 1] ::= 
-    (when (apply 'isAliceInput ('B ++ 1)) --> 
-      nf(('is : bool <- read ('InputShare-B-A[fun 'wire0 ('B ++ 1)]))
-         ('xa : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)])), 
+  ('Share-B['B] ::= 
+    (when (apply 'isAliceInput 'B) --> 
+      nf(('is : bool <- read ('InputShare-B-A[fun 'wire0 'B]))
+         ('xa : bool <- read ('InputShare-A-A[fun 'wire0 'B])), 
          return 'is, 'xa :: 'is :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isBobInput ('B ++ 1)) --> 
-       nf(('is : bool <- read ('InputShare-B-B[fun 'wire0 ('B ++ 1)]))
-          ('xa : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)])), 
+    (when (apply 'isBobInput 'B) --> 
+       nf(('is : bool <- read ('InputShare-B-B[fun 'wire0 'B]))
+          ('xa : bool <- read ('InputShare-A-B[fun 'wire0 'B])), 
           return 'is, 'xa :: 'is :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isNotGate ('B ++ 1)) --> 
-       nf(('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]))
-          ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])), 
+    (when (apply 'isNotGate 'B) --> 
+       nf(('xb : bool <- read ('Share-B[fun 'wire0 'B]))
+          ('xa : bool <- read ('Share-A[fun 'wire0 'B])), 
           return (ap 'neg 'xb), 'xa :: 'xb :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isXorGate ('B ++ 1)) --> 
-       nf(('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]))
-          ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-          ('yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]))
-          ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])), 
+    (when (apply 'isXorGate 'B) --> 
+       nf(('xb : bool <- read ('Share-B[fun 'wire0 'B]))
+          ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+          ('yb : bool <- read ('Share-B[fun 'wire1 'B]))
+          ('ya : bool <- read ('Share-A[fun 'wire1 'B])), 
           return (ap 'xor pair('xb, 'yb)), 'xb :: 'xa :: 'yb :: 'ya :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isAndGate ('B ++ 1)) --> 
-      nf(('bb : bool <- read ('OTBit-B-A[('B ++ 1)])) 
-         ('ba : bool <- read ('OTBit-A-B[('B ++ 1)]))
-         ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]))
-         ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-         ('yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]))
-         ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])), 
+    (when (apply 'isAndGate 'B) --> 
+      nf(('bb : bool <- read ('OTBit-B-A['B])) 
+         ('ba : bool <- read ('OTBit-A-B['B]))
+         ('xb : bool <- read ('Share-B[fun 'wire0 'B]))
+         ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+         ('yb : bool <- read ('Share-B[fun 'wire1 'B]))
+         ('ya : bool <- read ('Share-A[fun 'wire1 'B])), 
          return (ap 'xor pair('bb, ap 'and pair('xb, 'yb))), 
          'bb :: 'ba :: 'xb :: 'xa :: 'yb :: 'ya :: emptyCNameList)
     )
   ) *** end Share-B
   ||
-    ('Wire['B ++ 1]  ::= 
-       nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-         'xb : bool <- read ('Share-B['B ++ 1]), 
+    ('Wire['B]  ::= 
+       nf(('xa : bool <- read ('Share-A['B])) 
+         'xb : bool <- read ('Share-B['B]), 
          return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
     )
 
@@ -12090,13 +12090,13 @@ eq restr16GIndSymShare =
    ) *** end group
    )
    ||
-    ('OTBit-B-A['B ++ 1] ::= 
-   (when (apply 'isAndGate ('B ++ 1)) --> 
-     nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-        ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    ('OTBit-B-A['B] ::= 
+   (when (apply 'isAndGate 'B) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+        ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('ba, 
                                ap 'xor pair(ap 'and pair('xa, 'yb), 
                                             ap 'and pair('xb, 'ya)))
@@ -12105,80 +12105,80 @@ eq restr16GIndSymShare =
    ) 
    ;;
    (otherwise --> 
-      nf('otb : bool <- read ('OTBit-B-A['B ++ 1]), 
+      nf('otb : bool <- read ('OTBit-B-A['B]), 
          return 'otb, 
          'otb :: emptyCNameList)
    )
   ) *** end OTBit-B-A
   ||
- ( 'Share-B['B ++ 1] ::= 
+ ( 'Share-B['B] ::= 
      *** for the sym proof we write the reaction 5 times
-    (when (apply 'isAliceInput ('B ++ 1)) --> 
-        nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-            'x : bool <- read ('Wire['B ++ 1]), 
+    (when (apply 'isAliceInput 'B) --> 
+        nf(('xa : bool <- read ('Share-A['B])) 
+            'x : bool <- read ('Wire['B]), 
             return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isBobInput ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-            'x : bool <- read ('Wire['B ++ 1]), 
+    (when (apply 'isBobInput 'B) --> 
+       nf(('xa : bool <- read ('Share-A['B])) 
+            'x : bool <- read ('Wire['B]), 
             return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isNotGate ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-            'x : bool <- read ('Wire['B ++ 1]), 
+    (when (apply 'isNotGate 'B) --> 
+       nf(('xa : bool <- read ('Share-A['B])) 
+            'x : bool <- read ('Wire['B]), 
             return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isXorGate ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-            'x : bool <- read ('Wire['B ++ 1]), 
+    (when (apply 'isXorGate 'B) --> 
+       nf(('xa : bool <- read ('Share-A['B])) 
+            'x : bool <- read ('Wire['B]), 
             return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isAndGate ('B ++ 1)) --> 
-      nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-            'x : bool <- read ('Wire['B ++ 1]), 
+    (when (apply 'isAndGate 'B) --> 
+      nf(('xa : bool <- read ('Share-A['B])) 
+            'x : bool <- read ('Wire['B]), 
             return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
     )
   ) *** end Share-B
   ||
-    ('Wire['B ++ 1] ::= 
- (when (apply 'isAliceInput ('B ++ 1)) --> 
-   nf(('xa : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)])) 
-       'xb : bool <- read ('InputShare-B-A[fun 'wire0 ('B ++ 1)]), 
+    ('Wire['B] ::= 
+ (when (apply 'isAliceInput 'B) --> 
+   nf(('xa : bool <- read ('InputShare-A-A[fun 'wire0 'B])) 
+       'xb : bool <- read ('InputShare-B-A[fun 'wire0 'B]), 
         return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
  ) 
  ;; 
- (when (apply 'isBobInput ('B ++ 1)) --> 
-   nf(('xa : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)])) 
-       'xb : bool <- read ('InputShare-B-B[fun 'wire0 ('B ++ 1)]), 
+ (when (apply 'isBobInput 'B) --> 
+   nf(('xa : bool <- read ('InputShare-A-B[fun 'wire0 'B])) 
+       'xb : bool <- read ('InputShare-B-B[fun 'wire0 'B]), 
         return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
  ) 
  ;; 
- (when (apply 'isNotGate ('B ++ 1)) -->
-   nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-       'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+ (when (apply 'isNotGate 'B) -->
+   nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+       'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
        return (ap 'neg ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
  ) 
  ;; 
- (when (apply 'isXorGate ('B ++ 1)) --> 
-   nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-      ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-      ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-       'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+ (when (apply 'isXorGate 'B) --> 
+   nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+      ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+      ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+       'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
        return (ap 'xor pair(ap 'xor pair('xa, 'ya), ap 'xor pair('xb, 'yb))),
        'xa :: 'yb :: 'ya :: 'xb :: emptyCNameList)
  ) 
  ;; 
- (when (apply 'isAndGate ('B ++ 1)) --> 
-  nf(('ba : bool <- read ('OTBit-A-B[('B ++ 1)])) 
-     ('bb : bool <- read ('OTBit-B-A[('B ++ 1)])) 
-     ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)]))
-     ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-     ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-      'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+ (when (apply 'isAndGate 'B) --> 
+  nf(('ba : bool <- read ('OTBit-A-B['B])) 
+     ('bb : bool <- read ('OTBit-B-A['B])) 
+     ('xa : bool <- read ('Share-A[fun 'wire0 'B]))
+     ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+     ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+      'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
       return (ap 'xor pair(ap 'xor pair(ap 'and pair('xa, 'ya), 'ba), 
                            ap 'xor pair('bb, ap 'and pair('xb, 'yb)))), 
       'bb :: 'ba :: 'xa :: 'yb :: 'ya :: 'xb :: emptyCNameList)
@@ -12415,13 +12415,13 @@ eq restr16GSymAlice =
    ) *** end group
    )
    ||
-    ('OTBit-B-A['B ++ 1] ::= 
-   (when (apply 'isAndGate ('B ++ 1)) --> 
-     nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-        ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    ('OTBit-B-A['B] ::= 
+   (when (apply 'isAndGate 'B) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+        ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('ba, 
                                ap 'xor pair(ap 'and pair('xa, 'yb), 
                                             ap 'and pair('xb, 'ya)))
@@ -12430,21 +12430,21 @@ eq restr16GSymAlice =
    ) 
    ;;
    (otherwise --> 
-      nf('otb : bool <- read ('OTBit-B-A['B ++ 1]), 
+      nf('otb : bool <- read ('OTBit-B-A['B]), 
          return 'otb, 
          'otb :: emptyCNameList)
    )
   ) *** end OTBit-B-A
   ||
-  ('Share-B['B ++ 1] ::= 
-    nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-       'x : bool <- read ('Wire['B ++ 1]), 
+  ('Share-B['B] ::= 
+    nf(('xa : bool <- read ('Share-A['B])) 
+       'x : bool <- read ('Wire['B]), 
       return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
   ) *** end Share-B
   ||
-    ('Wire['B ++ 1]  ::= 
+    ('Wire['B]  ::= 
   
-    nf('inA0 : bool <- read ('In-A[fun 'wire0 ('B ++ 1)]), return 'inA0, 'inA0 :: emptyCNameList)
+    nf('inA0 : bool <- read ('In-A[fun 'wire0 'B]), return 'inA0, 'inA0 :: emptyCNameList)
   
   )
 
@@ -12676,13 +12676,13 @@ eq restr16GSymBob =
    ) *** end group
    )
    ||
-    ('OTBit-B-A['B ++ 1] ::= 
-   (when (apply 'isAndGate ('B ++ 1)) --> 
-     nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-        ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    ('OTBit-B-A['B] ::= 
+   (when (apply 'isAndGate 'B) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+        ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('ba, 
                                ap 'xor pair(ap 'and pair('xa, 'yb), 
                                             ap 'and pair('xb, 'ya)))
@@ -12691,21 +12691,21 @@ eq restr16GSymBob =
    ) 
    ;;
    (otherwise --> 
-      nf('otb : bool <- read ('OTBit-B-A['B ++ 1]), 
+      nf('otb : bool <- read ('OTBit-B-A['B]), 
          return 'otb, 
          'otb :: emptyCNameList)
    )
   ) *** end OTBit-B-A
   ||
-  ('Share-B['B ++ 1] ::= 
-    nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-       'x : bool <- read ('Wire['B ++ 1]), 
+  ('Share-B['B] ::= 
+    nf(('xa : bool <- read ('Share-A['B])) 
+       'x : bool <- read ('Wire['B]), 
       return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
   ) *** end Share-B
   ||
-    ('Wire['B ++ 1]  ::= 
+    ('Wire['B]  ::= 
   
-    nf('inB0 : bool <- read ('In-B[fun 'wire0 ('B ++ 1)]), 
+    nf('inB0 : bool <- read ('In-B[fun 'wire0 'B]), 
        return 'inB0, 'inB0 :: emptyCNameList)
   
   )
@@ -12937,13 +12937,13 @@ eq restr16GSymNot =
    ) *** end group
    )
    ||
-    ('OTBit-B-A['B ++ 1] ::= 
-   (when (apply 'isAndGate ('B ++ 1)) --> 
-     nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-        ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    ('OTBit-B-A['B] ::= 
+   (when (apply 'isAndGate 'B) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+        ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('ba, 
                                ap 'xor pair(ap 'and pair('xa, 'yb), 
                                             ap 'and pair('xb, 'ya)))
@@ -12952,22 +12952,22 @@ eq restr16GSymNot =
    ) 
    ;;
    (otherwise --> 
-      nf('otb : bool <- read ('OTBit-B-A['B ++ 1]), 
+      nf('otb : bool <- read ('OTBit-B-A['B]), 
          return 'otb, 
          'otb :: emptyCNameList)
    )
   ) *** end OTBit-B-A
   ||
-  ('Share-B['B ++ 1] ::= 
-    nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-       'x : bool <- read ('Wire['B ++ 1]), 
+  ('Share-B['B] ::= 
+    nf(('xa : bool <- read ('Share-A['B])) 
+       'x : bool <- read ('Wire['B]), 
       return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
   ) *** end Share-B
   ||
-    ('Wire['B ++ 1]  ::= 
+    ('Wire['B]  ::= 
   
      nf( 
-     'x : bool <- read ('Wire[fun 'wire0 ('B ++ 1)]),
+     'x : bool <- read ('Wire[fun 'wire0 'B]),
      return (ap 'neg 'x),
      'x :: emptyCNameList
      )
@@ -13202,13 +13202,13 @@ eq restr16GSymXor =
    ) *** end group
    )
    ||
-    ('OTBit-B-A['B ++ 1] ::= 
-   (when (apply 'isAndGate ('B ++ 1)) --> 
-     nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-        ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    ('OTBit-B-A['B] ::= 
+   (when (apply 'isAndGate 'B) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+        ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('ba, 
                                ap 'xor pair(ap 'and pair('xa, 'yb), 
                                             ap 'and pair('xb, 'ya)))
@@ -13217,23 +13217,23 @@ eq restr16GSymXor =
    ) 
    ;;
    (otherwise --> 
-      nf('otb : bool <- read ('OTBit-B-A['B ++ 1]), 
+      nf('otb : bool <- read ('OTBit-B-A['B]), 
          return 'otb, 
          'otb :: emptyCNameList)
    )
   ) *** end OTBit-B-A
   ||
-  ('Share-B['B ++ 1] ::= 
-    nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-       'x : bool <- read ('Wire['B ++ 1]), 
+  ('Share-B['B] ::= 
+    nf(('xa : bool <- read ('Share-A['B])) 
+       'x : bool <- read ('Wire['B]), 
       return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
   ) *** end Share-B
   ||
-    ('Wire['B ++ 1]  ::= 
+    ('Wire['B]  ::= 
   
      nf(
-    ('x : bool <- read ('Wire[fun 'wire0 ('B ++ 1)]))
-    ('y : bool <- read ('Wire[fun 'wire1 ('B ++ 1)])),
+    ('x : bool <- read ('Wire[fun 'wire0 'B]))
+    ('y : bool <- read ('Wire[fun 'wire1 'B])),
     return (ap 'xor pair('x, 'y)),
     'x :: 'y :: emptyCNameList 
     )
@@ -13468,13 +13468,13 @@ eq restr16GSymAnd =
    ) *** end group
    )
    ||
-    ('OTBit-B-A['B ++ 1] ::= 
-   (when (apply 'isAndGate ('B ++ 1)) --> 
-     nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-        ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    ('OTBit-B-A['B] ::= 
+   (when (apply 'isAndGate 'B) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+        ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('ba, 
                                ap 'xor pair(ap 'and pair('xa, 'yb), 
                                             ap 'and pair('xb, 'ya)))
@@ -13483,23 +13483,23 @@ eq restr16GSymAnd =
    ) 
    ;;
    (otherwise --> 
-      nf('otb : bool <- read ('OTBit-B-A['B ++ 1]), 
+      nf('otb : bool <- read ('OTBit-B-A['B]), 
          return 'otb, 
          'otb :: emptyCNameList)
    )
   ) *** end OTBit-B-A
   ||
-  ('Share-B['B ++ 1] ::= 
-    nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-       'x : bool <- read ('Wire['B ++ 1]), 
+  ('Share-B['B] ::= 
+    nf(('xa : bool <- read ('Share-A['B])) 
+       'x : bool <- read ('Wire['B]), 
       return (ap 'xor pair('xa, 'x)), 'xa :: 'x :: emptyCNameList)
   ) *** end Share-B
   ||
-    ('Wire['B ++ 1]  ::= 
+    ('Wire['B]  ::= 
   
    nf(
-    ('x : bool <- read ('Wire[fun 'wire0 ('B ++ 1)]))
-    ('y : bool <- read ('Wire[fun 'wire1 ('B ++ 1)])),
+    ('x : bool <- read ('Wire[fun 'wire0 'B]))
+    ('y : bool <- read ('Wire[fun 'wire1 'B])),
     return (ap 'and pair('x, 'y)),
     'x :: 'y :: emptyCNameList 
     )
@@ -13735,13 +13735,13 @@ eq restr16GIndEnd5 =
    ) *** end group
    )
    ||
-    ('OTBit-B-A['B ++ 1] ::= 
-   (when (apply 'isAndGate ('B ++ 1)) --> 
-     nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-        ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    ('OTBit-B-A['B] ::= 
+   (when (apply 'isAndGate 'B) --> 
+     nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+        ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('ba, 
                                ap 'xor pair(ap 'and pair('xa, 'yb), 
                                             ap 'and pair('xb, 'ya)))
@@ -13750,79 +13750,79 @@ eq restr16GIndEnd5 =
    ) 
    ;;
    (otherwise --> 
-      nf('otb : bool <- read ('OTBit-B-A['B ++ 1]), 
+      nf('otb : bool <- read ('OTBit-B-A['B]), 
          return 'otb, 
          'otb :: emptyCNameList)
    )
   ) *** end OTBit-B-A
   ||
-  ('Share-B['B ++ 1] ::= 
-    (when (apply 'isAliceInput ('B ++ 1)) --> 
-      nf(('is : bool <- read ('InputShare-B-A[fun 'wire0 ('B ++ 1)]))
-         ('xa : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)])), 
+  ('Share-B['B] ::= 
+    (when (apply 'isAliceInput 'B) --> 
+      nf(('is : bool <- read ('InputShare-B-A[fun 'wire0 'B]))
+         ('xa : bool <- read ('InputShare-A-A[fun 'wire0 'B])), 
          return 'is, 'xa :: 'is :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isBobInput ('B ++ 1)) --> 
-       nf(('is : bool <- read ('InputShare-B-B[fun 'wire0 ('B ++ 1)]))
-          ('xa : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)])), 
+    (when (apply 'isBobInput 'B) --> 
+       nf(('is : bool <- read ('InputShare-B-B[fun 'wire0 'B]))
+          ('xa : bool <- read ('InputShare-A-B[fun 'wire0 'B])), 
           return 'is, 'xa :: 'is :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isNotGate ('B ++ 1)) --> 
-       nf(('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]))
-          ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])), 
+    (when (apply 'isNotGate 'B) --> 
+       nf(('xb : bool <- read ('Share-B[fun 'wire0 'B]))
+          ('xa : bool <- read ('Share-A[fun 'wire0 'B])), 
           return (ap 'neg 'xb), 'xa :: 'xb :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isXorGate ('B ++ 1)) --> 
-       nf(('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]))
-          ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-          ('yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]))
-          ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])), 
+    (when (apply 'isXorGate 'B) --> 
+       nf(('xb : bool <- read ('Share-B[fun 'wire0 'B]))
+          ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+          ('yb : bool <- read ('Share-B[fun 'wire1 'B]))
+          ('ya : bool <- read ('Share-A[fun 'wire1 'B])), 
           return (ap 'xor pair('xb, 'yb)), 'xb :: 'xa :: 'yb :: 'ya :: emptyCNameList)
     ) 
     ;; 
-    (when (apply 'isAndGate ('B ++ 1)) --> 
-      nf(('bb : bool <- read ('OTBit-B-A[('B ++ 1)])) 
-         ('ba : bool <- read ('OTBit-A-B[('B ++ 1)]))
-         ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]))
-         ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-         ('yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]))
-         ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])), 
+    (when (apply 'isAndGate 'B) --> 
+      nf(('bb : bool <- read ('OTBit-B-A['B])) 
+         ('ba : bool <- read ('OTBit-A-B['B]))
+         ('xb : bool <- read ('Share-B[fun 'wire0 'B]))
+         ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+         ('yb : bool <- read ('Share-B[fun 'wire1 'B]))
+         ('ya : bool <- read ('Share-A[fun 'wire1 'B])), 
          return (ap 'xor pair('bb, ap 'and pair('xb, 'yb))), 
          'bb :: 'ba :: 'xb :: 'xa :: 'yb :: 'ya :: emptyCNameList)
     )
   ) *** end Share-B
   ||
-    ('Wire['B ++ 1]  ::= 
-      ( when (apply 'isAliceInput ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-         'xb : bool <- read ('Share-B['B ++ 1]), 
+    ('Wire['B]  ::= 
+      ( when (apply 'isAliceInput 'B) --> 
+       nf(('xa : bool <- read ('Share-A['B])) 
+         'xb : bool <- read ('Share-B['B]), 
          return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
       )   
       ;;
-      ( when (apply 'isBobInput ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-         'xb : bool <- read ('Share-B['B ++ 1]), 
+      ( when (apply 'isBobInput 'B) --> 
+       nf(('xa : bool <- read ('Share-A['B])) 
+         'xb : bool <- read ('Share-B['B]), 
          return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
       )   
       ;;
-      ( when (apply 'isNotGate ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-         'xb : bool <- read ('Share-B['B ++ 1]), 
+      ( when (apply 'isNotGate 'B) --> 
+       nf(('xa : bool <- read ('Share-A['B])) 
+         'xb : bool <- read ('Share-B['B]), 
          return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
       )   
       ;;
-      ( when (apply 'isXorGate ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-         'xb : bool <- read ('Share-B['B ++ 1]), 
+      ( when (apply 'isXorGate 'B) --> 
+       nf(('xa : bool <- read ('Share-A['B])) 
+         'xb : bool <- read ('Share-B['B]), 
          return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
       )   
       ;;
-      ( when (apply 'isAndGate ('B ++ 1)) --> 
-       nf(('xa : bool <- read ('Share-A['B ++ 1])) 
-         'xb : bool <- read ('Share-B['B ++ 1]), 
+      ( when (apply 'isAndGate 'B) --> 
+       nf(('xa : bool <- read ('Share-A['B])) 
+         'xb : bool <- read ('Share-B['B]), 
          return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
       )   
       
@@ -14136,238 +14136,238 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
        applyDropName('BobOK)
      *** first we remove the group name, then we will add it back in a sym proof
      ; applySubstChannelCase3(
-         'OTBitOK-A-B, 'OTBitOK-B-A['B ++ 1], 
-         nf('ba : bool <- read ('OTBit-A-B['B ++ 1]), return (), 'ba :: emptyCNameList), 
-         nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-                   ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-                   ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-                   ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])) 
-                   ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])), 
+         'OTBitOK-A-B, 'OTBitOK-B-A['B], 
+         nf('ba : bool <- read ('OTBit-A-B['B]), return (), 'ba :: emptyCNameList), 
+         nf(('ba : bool <- read ('OTBit-A-B['B])) 
+                   ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+                   ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+                   ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])) 
+                   ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])), 
                    return (), 
                    'ba :: 'xa :: 'ya :: 'xb :: 'yb :: emptyCNameList), 
-         apply 'isAndGate ('B ++ 1)
+         apply 'isAndGate 'B
        ) 
      ; applySubstChannelCase3(
             'ShareOK-A, 
-            'OTBitOK-B-A['B ++ 1], 
-             nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)]), 
+            'OTBitOK-B-A['B], 
+             nf('xa : bool <- read ('Share-A[fun 'wire0 'B]), 
                 return (), 'xa :: emptyCNameList),
-          nf( ('ba : bool <- read ('OTBit-A-B['B ++ 1]))
-              ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-              ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-              ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])) 
-              ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])), 
+          nf( ('ba : bool <- read ('OTBit-A-B['B]))
+              ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+              ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+              ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])) 
+              ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])), 
                return (), 
                'ba :: 'xa :: 'ya :: 'xb :: 'yb :: emptyCNameList
             ),
-            apply 'isAndGate ('B ++ 1)
+            apply 'isAndGate 'B
         ) 
      ; applySubstChannelCase3(
             'ShareOK-B, 
-            'OTBitOK-B-A['B ++ 1], 
-             nf('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+            'OTBitOK-B-A['B], 
+             nf('xb : bool <- read ('Share-B[fun 'wire0 'B]), 
                 return (), 'xb :: emptyCNameList),
-          nf( ('ba : bool <- read ('OTBit-A-B['B ++ 1]))
-              ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-              ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-              ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])) 
-              ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])), 
+          nf( ('ba : bool <- read ('OTBit-A-B['B]))
+              ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+              ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+              ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])) 
+              ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])), 
                return (), 
                'ba :: 'xa :: 'ya :: 'xb :: 'yb :: emptyCNameList
             ),
-            apply 'isAndGate ('B ++ 1)
+            apply 'isAndGate 'B
         ) 
-        ; applyBranch1Alpha('OTBitOK-B-A['B ++ 1], 
+        ; applyBranch1Alpha('OTBitOK-B-A['B], 
                            << 'xa, 'sa >> emptyQidPairList) 
         ; applySubstChannelCase3(
             'ShareOK-A, 
-            'OTBitOK-B-A['B ++ 1], 
-             nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+            'OTBitOK-B-A['B], 
+             nf('xa : bool <- read ('Share-A[fun 'wire1 'B]), 
                 return (), 'xa :: emptyCNameList),
-          nf( ('ba : bool <- read ('OTBit-A-B['B ++ 1]))
-              ('sa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-              ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-              ('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-              ('yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])), 
+          nf( ('ba : bool <- read ('OTBit-A-B['B]))
+              ('sa : bool <- read ('Share-A[fun 'wire0 'B])) 
+              ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+              ('xa : bool <- read ('Share-A[fun 'wire1 'B])) 
+              ('yb : unit <- read ('ShareOK-B[fun 'wire1 'B])), 
                return (), 
                'ba :: 'sa :: 'xa :: 'xb :: 'yb :: emptyCNameList
             ),
-            apply 'isAndGate ('B ++ 1)
+            apply 'isAndGate 'B
         ) 
-        ; applyBranch1Alpha('OTBitOK-B-A['B ++ 1], 
+        ; applyBranch1Alpha('OTBitOK-B-A['B], 
                            << 'xa, 'ya >> 
                            << 'sa, 'xa >>
                            << 'xb, 'sb >> emptyQidPairList) 
         ; applySubstChannelCase3(
             'ShareOK-B, 
-            'OTBitOK-B-A['B ++ 1], 
-             nf('xb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+            'OTBitOK-B-A['B], 
+             nf('xb : bool <- read ('Share-B[fun 'wire1 'B]), 
                 return (), 'xb :: emptyCNameList),
-             nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-                ('sb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-                ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                ('xb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)])) 
-                 'ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+             nf(('ba : bool <- read ('OTBit-A-B['B])) 
+                ('sb : bool <- read ('Share-B[fun 'wire0 'B])) 
+                ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                ('xb : bool <- read ('Share-B[fun 'wire1 'B])) 
+                 'ya : bool <- read ('Share-A[fun 'wire1 'B]), 
                  return (),
                 'ba :: 'xa :: 'ya :: 'sb :: 'xb :: emptyCNameList),
-            apply 'isAndGate ('B ++ 1)
+            apply 'isAndGate 'B
         )  
-        ; applyBranch1Alpha('OTBitOK-B-A['B ++ 1], 
+        ; applyBranch1Alpha('OTBitOK-B-A['B], 
                            << 'xb, 'yb >> 
                            << 'sb, 'xb >> emptyQidPairList)                    
         ; SYM[P1:Protocol <- new3OT]{
-           applySubstFamiliesOneCases1('OTBit-B-A, 'OTBitOK-B-A['B ++ 1], unit, 'ot)
+           applySubstFamiliesOneCases1('OTBit-B-A, 'OTBitOK-B-A['B], unit, 'ot)
           } 
         ****
         **** from here it's the second part of the induction
         ****
-        ; CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B ++ 1]]
+        ; CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B]]
           { *** isAliceInput
-            substNFFamilyOne('InputShareOK-B-A, 'ShareOK-B['B ++ 1],
-           nf('xb : bool <- read ('InputShare-B-A[fun 'wire0 ('B ++ 1)]), return (), 
+            substNFFamilyOne('InputShareOK-B-A, 'ShareOK-B['B],
+           nf('xb : bool <- read ('InputShare-B-A[fun 'wire0 'B]), return (), 
               'xb :: emptyCNameList)
           )
           ; SYM[P1:Protocol <- new3OTInd]{
-            substNFFamilyOne('Share-B, 'ShareOK-B['B ++ 1],
-       nf(('is : bool <- read ('InputShare-B-A[fun 'wire0 ('B ++ 1)])) 
-       'x : unit <- read ('InputShareOK-B-A[fun 'wire0 ('B ++ 1)]), 
+            substNFFamilyOne('Share-B, 'ShareOK-B['B],
+       nf(('is : bool <- read ('InputShare-B-A[fun 'wire0 'B])) 
+       'x : unit <- read ('InputShareOK-B-A[fun 'wire0 'B]), 
        return 'is, 'x :: 'is :: emptyCNameList)
       )
       ;
-      substNFFamilyOne('InputShareOK-B-A, 'ShareOK-B['B ++ 1],
-       nf('xb : bool <- read ('InputShare-B-A[fun 'wire0 ('B ++ 1)]), return (), 
+      substNFFamilyOne('InputShareOK-B-A, 'ShareOK-B['B],
+       nf('xb : bool <- read ('InputShare-B-A[fun 'wire0 'B]), return (), 
      'xb :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'is, 'xb >> emptyQidPairList)
+      ; applyAlphaNFPr('ShareOK-B['B], << 'is, 'xb >> emptyQidPairList)
           }
-          , CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B ++ 1]]{
+          , CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B]]{
        *** isBobInput
-           substNFFamilyOne('InputShareOK-B-B, 'ShareOK-B['B ++ 1],
-           nf('xb : bool <- read ('InputShare-B-B[fun 'wire0 ('B ++ 1)]), return (), 
+           substNFFamilyOne('InputShareOK-B-B, 'ShareOK-B['B],
+           nf('xb : bool <- read ('InputShare-B-B[fun 'wire0 'B]), return (), 
               'xb :: emptyCNameList)
           )
           ; SYM[P1:Protocol <- new3OTInd]{
-              substNFFamilyOne('Share-B, 'ShareOK-B['B ++ 1],
-       nf(('is : bool <- read ('InputShare-B-B[fun 'wire0 ('B ++ 1)])) 
-       'x : unit <- read ('InputShareOK-B-B[fun 'wire0 ('B ++ 1)]), 
+              substNFFamilyOne('Share-B, 'ShareOK-B['B],
+       nf(('is : bool <- read ('InputShare-B-B[fun 'wire0 'B])) 
+       'x : unit <- read ('InputShareOK-B-B[fun 'wire0 'B]), 
        return 'is, 'x :: 'is :: emptyCNameList)
       )
       ;
-      substNFFamilyOne('InputShareOK-B-B, 'ShareOK-B['B ++ 1],
-       nf('xb : bool <- read ('InputShare-B-B[fun 'wire0 ('B ++ 1)]), return (), 
+      substNFFamilyOne('InputShareOK-B-B, 'ShareOK-B['B],
+       nf('xb : bool <- read ('InputShare-B-B[fun 'wire0 'B]), return (), 
      'xb :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'is, 'xb >> emptyQidPairList)
+      ; applyAlphaNFPr('ShareOK-B['B], << 'is, 'xb >> emptyQidPairList)
             }
           , 
-          CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B ++ 1]]{
+          CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B]]{
        *** isNotGate
-       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-        nf('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), return (), 'xb :: emptyCNameList)
+       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+        nf('xb : bool <- read ('Share-B[fun 'wire0 'B]), return (), 'xb :: emptyCNameList)
        )
        ; SYM[P1:Protocol <- new3OTInd]{
-         substNFFamilyOne('Share-B, 'ShareOK-B['B ++ 1],
-       nf(('x : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-           'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+         substNFFamilyOne('Share-B, 'ShareOK-B['B],
+       nf(('x : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+           'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
            return (ap 'neg 'xb), 'x :: 'xb :: emptyCNameList)
       )
       ;
-      substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+      substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
            return (), 'xb :: emptyCNameList)
       ) 
        }
-       , CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B ++ 1]]{
+       , CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B]]{
        *** isXorGate
-         substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-          nf('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+         substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+          nf('xb : bool <- read ('Share-B[fun 'wire0 'B]), 
              return (), 'xb :: emptyCNameList)
          )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xb, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-          nf('xb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+       ; applyAlphaNFPr('ShareOK-B['B], << 'xb, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+          nf('xb : bool <- read ('Share-B[fun 'wire1 'B]), 
              return (), 'xb :: emptyCNameList)
          )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-B['B], 
                          << 'xb, 'yb >> 
                          << 'is, 'xb >>
                          emptyQidPairList) 
        ; SYM[P1:Protocol <- new3OTInd]{
-         substNFFamilyOne('Share-B, 'ShareOK-B['B ++ 1],
+         substNFFamilyOne('Share-B, 'ShareOK-B['B],
       
-      nf(('x : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-         ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         ('y : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])) 
-          'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+      nf(('x : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+         ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         ('y : unit <- read ('ShareOK-B[fun 'wire1 'B])) 
+          'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
           return (ap 'xor pair('xb, 'yb)), 
           'xb :: 'x :: 'yb :: 'y :: emptyCNameList)
       )
       ;
-       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
            return (), 'xb :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xb, 'is >> emptyQidPairList)
+      ; applyAlphaNFPr('ShareOK-B['B], << 'xb, 'is >> emptyQidPairList)
       ;
-       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'xb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'xb : bool <- read ('Share-B[fun 'wire1 'B]), 
            return (), 'xb :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xb, 'yb >> 
+      ; applyAlphaNFPr('ShareOK-B['B], << 'xb, 'yb >> 
                                             << 'is, 'xb >> emptyQidPairList)
-      ; changeOrder('ShareOK-B['B ++ 1], 'xb :: 'yb :: emptyCNameList) 
+      ; changeOrder('ShareOK-B['B], 'xb :: 'yb :: emptyCNameList) 
        }                    
        ,
                          
         CASE-DISTINCTION-channel-end-when{
          *** isAndGate 
-         substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-          nf('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+         substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+          nf('xb : bool <- read ('Share-B[fun 'wire0 'B]), 
              return (), 'xb :: emptyCNameList)
          )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xb, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-          nf('xb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+       ; applyAlphaNFPr('ShareOK-B['B], << 'xb, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+          nf('xb : bool <- read ('Share-B[fun 'wire1 'B]), 
              return (), 'xb :: emptyCNameList)
          )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-B['B], 
                          << 'xb, 'yb0 >> 
                          << 'is, 'xb0 >>
                          emptyQidPairList)  
                              
-       ; substNFFamilyOne('OTBitOK-B-A, 'ShareOK-B['B ++ 1],
-          nf('bb : bool <- read ('OTBit-B-A['B ++ 1]), return (), 
+       ; substNFFamilyOne('OTBitOK-B-A, 'ShareOK-B['B],
+          nf('bb : bool <- read ('OTBit-B-A['B]), return (), 
              'bb :: emptyCNameList)
          )
        ; SYM[P1:Protocol <- new3OTInd]{
-         substNFFamilyOne('Share-B, 'ShareOK-B['B ++ 1],
-       nf(('b : unit <- read ('OTBitOK-B-A[('B ++ 1)])) 
-          ('bb : bool <- read ('OTBit-B-A[('B ++ 1)])) 
-          ('x : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-          ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-          ('y : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])) 
-           'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+         substNFFamilyOne('Share-B, 'ShareOK-B['B],
+       nf(('b : unit <- read ('OTBitOK-B-A['B])) 
+          ('bb : bool <- read ('OTBit-B-A['B])) 
+          ('x : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+          ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+          ('y : unit <- read ('ShareOK-B[fun 'wire1 'B])) 
+           'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
            return (ap 'xor pair('bb, ap 'and pair('xb, 'yb))), 
            'bb :: 'b :: 'xb :: 'x :: 'yb :: 'y :: emptyCNameList)
       )
       ;
-      substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+      substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
            return (), 'xb :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xb, 'is >> emptyQidPairList)
+      ; applyAlphaNFPr('ShareOK-B['B], << 'xb, 'is >> emptyQidPairList)
       ;
-       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'xb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'xb : bool <- read ('Share-B[fun 'wire1 'B]), 
            return (), 'xb :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xb, 'yb0 >> 
+      ; applyAlphaNFPr('ShareOK-B['B], << 'xb, 'yb0 >> 
                                             << 'is, 'xb0 >> emptyQidPairList)
-      ; substNFFamilyOne('OTBitOK-B-A, 'ShareOK-B['B ++ 1],
-          nf('bb : bool <- read ('OTBit-B-A['B ++ 1]), return (), 'bb ::
+      ; substNFFamilyOne('OTBitOK-B-A, 'ShareOK-B['B],
+          nf('bb : bool <- read ('OTBit-B-A['B]), return (), 'bb ::
     emptyCNameList)
          )
-    ; changeOrder( 'ShareOK-B['B ++ 1],
+    ; changeOrder( 'ShareOK-B['B],
         'bb :: 'xb0 :: 'yb0 :: emptyCNameList
        )
        }
@@ -14376,7 +14376,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
        }
        }
        }
-       ; applyAllSameCases('ShareOK-B['B ++ 1])
+       ; applyAllSameCases('ShareOK-B['B])
        ; SYM[P1:Protocol <- new3OTIndEnd] {
          applyDropName('BobOK)
        }
@@ -14402,149 +14402,149 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
  strat bigInduction @ ProtocolConfig .
  sd bigInduction := 
    SYM[P1:Protocol <- restr16GIndEnd5]{
-        applyAllSameCases('Wire['B ++ 1]) 
+        applyAllSameCases('Wire['B]) 
        }
      ; applyDropName('Group)
     *** for alice input   
     ;  applySubstChannelCase3(
             'Share-A, 
-            'Wire['B ++ 1], 
-             nf('is : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)]),
+            'Wire['B], 
+             nf('is : bool <- read ('InputShare-A-A[fun 'wire0 'B]),
                 return 'is, 'is :: emptyCNameList),
-             nf(('is : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)])) 
-                 'xb : bool <- read ('Share-B['B ++ 1]), 
+             nf(('is : bool <- read ('InputShare-A-A[fun 'wire0 'B])) 
+                 'xb : bool <- read ('Share-B['B]), 
                  return (ap 'xor pair('is, 'xb)), 'is :: 'xb :: emptyCNameList),
-            apply 'isAliceInput ('B ++ 1)
+            apply 'isAliceInput 'B
         )
-     ; applyAlphaBranchCond('Wire['B ++ 1], 'is, 'xa, 
-                           when (apply 'isAliceInput ('B ++ 1)))
+     ; applyAlphaBranchCond('Wire['B], 'is, 'xa, 
+                           when (apply 'isAliceInput 'B))
      *** bob input                           
     ;  applySubstChannelCase3(
             'Share-A, 
-            'Wire['B ++ 1], 
-             nf('is : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)]),
+            'Wire['B], 
+             nf('is : bool <- read ('InputShare-A-B[fun 'wire0 'B]),
                 return 'is, 'is :: emptyCNameList),
-             nf(('is : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)])) 
-                 'xb : bool <- read ('Share-B['B ++ 1]), 
+             nf(('is : bool <- read ('InputShare-A-B[fun 'wire0 'B])) 
+                 'xb : bool <- read ('Share-B['B]), 
                  return (ap 'xor pair('is, 'xb)), 'is :: 'xb :: emptyCNameList),
-            apply 'isBobInput ('B ++ 1)
+            apply 'isBobInput 'B
         ) 
-      ; applyAlphaBranchCond('Wire['B ++ 1], 'is, 'xa, 
-                           when (apply 'isBobInput ('B ++ 1))) 
+      ; applyAlphaBranchCond('Wire['B], 'is, 'xa, 
+                           when (apply 'isBobInput 'B)) 
     *** not gate  
     ;  applySubstChannelCase3(
             'Share-A, 
-            'Wire['B ++ 1], 
-             nf('sa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)]), 
+            'Wire['B], 
+             nf('sa : bool <- read ('Share-A[fun 'wire0 'B]), 
                 return 'sa, 'sa :: emptyCNameList)   ,
-             nf(('sa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                 'xb : bool <- read ('Share-B['B ++ 1]), 
+             nf(('sa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                 'xb : bool <- read ('Share-B['B]), 
                  return (ap 'xor pair('sa, 'xb)), 'sa :: 'xb :: emptyCNameList),
-            apply 'isNotGate ('B ++ 1)
+            apply 'isNotGate 'B
         )                       
-     ; applyAlphaBranchCond('Wire['B ++ 1], 'sa, 'xa, 
-                           when (apply 'isNotGate ('B ++ 1)))
+     ; applyAlphaBranchCond('Wire['B], 'sa, 'xa, 
+                           when (apply 'isNotGate 'B))
      *** xor gate  
     ;  applySubstChannelCase3(
             'Share-A, 
-            'Wire['B ++ 1], 
-             nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])), 
+            'Wire['B], 
+             nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                ('ya : bool <- read ('Share-A[fun 'wire1 'B])), 
                  return (ap 'xor pair('xa, 'ya)), 'xa :: 'ya :: emptyCNameList)  ,
-             nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-                 'xb : bool <- read ('Share-B['B ++ 1]), 
+             nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+                 'xb : bool <- read ('Share-B['B]), 
                  return (ap 'xor pair((ap 'xor pair('xa, 'ya)), 'xb)), 
                  'ya :: 'xa :: 'xb :: emptyCNameList),
-            apply 'isXorGate ('B ++ 1)
+            apply 'isXorGate 'B
         )                       
      *** and gate
     ;  applySubstChannelCase3(
             'Share-A, 
-            'Wire['B ++ 1], 
-             nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-                ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])), 
+            'Wire['B], 
+             nf(('ba : bool <- read ('OTBit-A-B['B])) 
+                ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                ('ya : bool <- read ('Share-A[fun 'wire1 'B])), 
                 return (ap 'xor pair(ap 'and pair('xa, 'ya), 'ba)), 
                 'ba :: 'xa :: 'ya :: emptyCNameList) ,
-             nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-                ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]))
-                 'xb : bool <- read ('Share-B['B ++ 1]), 
+             nf(('ba : bool <- read ('OTBit-A-B['B])) 
+                ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                ('ya : bool <- read ('Share-A[fun 'wire1 'B]))
+                 'xb : bool <- read ('Share-B['B]), 
                  return (ap 'xor pair((ap 'xor pair(ap 'and pair('xa, 'ya), 'ba)), 'xb)), 
                  'ba :: 'ya :: 'xa :: 'xb :: emptyCNameList),
-            apply 'isAndGate ('B ++ 1)
+            apply 'isAndGate 'B
         )                     
     *** now for Share-B   
         
-    ; CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B ++ 1]]{
+    ; CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B]]{
        applySelectCaseSubst(
-         'Share-B['B ++ 1], 'Wire['B ++ 1], apply 'isAliceInput ('B ++ 1)
+         'Share-B['B], 'Wire['B], apply 'isAliceInput 'B
        )
-      , CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B ++ 1]]{
+      , CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B]]{
        applySelectCaseSubst(
-         'Share-B['B ++ 1], 'Wire['B ++ 1], apply 'isBobInput ('B ++ 1)
+         'Share-B['B], 'Wire['B], apply 'isBobInput 'B
        )
-      , CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B ++ 1]]{
+      , CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B]]{
        applySelectCaseSubst(
-         'Share-B['B ++ 1], 'Wire['B ++ 1], apply 'isNotGate ('B ++ 1)
+         'Share-B['B], 'Wire['B], apply 'isNotGate 'B
        )
-      , CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B ++ 1]]{
+      , CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B]]{
        applySelectCaseSubst(
-         'Share-B['B ++ 1], 'Wire['B ++ 1], apply 'isXorGate ('B ++ 1)
+         'Share-B['B], 'Wire['B], apply 'isXorGate 'B
        )
-      , CASE-DISTINCTION-channel-end-when[cn:ChannelName <- 'Wire['B ++ 1]]{
+      , CASE-DISTINCTION-channel-end-when[cn:ChannelName <- 'Wire['B]]{
         applySelectCaseSubst(
-         'Share-B['B ++ 1], 'Wire['B ++ 1], apply 'isAndGate ('B ++ 1)
+         'Share-B['B], 'Wire['B], apply 'isAndGate 'B
        )
     }
         }}}
      } 
      *** renamings
-    ; applyAlphaBranchCond('Wire['B ++ 1], 'is, 'xb, 
-                           when (apply 'isAliceInput ('B ++ 1)))      
-    ; applyAlphaBranchCond('Wire['B ++ 1], 'is, 'xb, 
-                           when (apply 'isBobInput ('B ++ 1))) 
+    ; applyAlphaBranchCond('Wire['B], 'is, 'xb, 
+                           when (apply 'isAliceInput 'B))      
+    ; applyAlphaBranchCond('Wire['B], 'is, 'xb, 
+                           when (apply 'isBobInput 'B)) 
                            
     *** now we handle the Share-B[B+1] part
     ; SYM[P1:Protocol <- restr16GIndSymShare]{
      applyDropName('Group)
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'xa, 'ya, 
-                           when (apply 'isAliceInput ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'xa, 'ya, 
+                           when (apply 'isAliceInput 'B)
                          )
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'xa, 'ya, 
-                           when (apply 'isBobInput ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'xa, 'ya, 
+                           when (apply 'isBobInput 'B)
                          )  
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'xa, 'ya, 
-                           when (apply 'isNotGate ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'xa, 'ya, 
+                           when (apply 'isNotGate 'B)
                          )                                            
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'xa, 'za, 
-                           when (apply 'isXorGate ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'xa, 'za, 
+                           when (apply 'isXorGate 'B)
                          )  
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'xa, 'za, 
-                           when (apply 'isAndGate ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'xa, 'za, 
+                           when (apply 'isAndGate 'B)
                          )
                         
    
-    ; CASE-DISTINCTION-channel[cn:ChannelName <- 'Share-B['B ++ 1]]{
+    ; CASE-DISTINCTION-channel[cn:ChannelName <- 'Share-B['B]]{
        applySelectCaseSubst(
-         'Wire['B ++ 1], 'Share-B['B ++ 1], apply 'isAliceInput ('B ++ 1)
+         'Wire['B], 'Share-B['B], apply 'isAliceInput 'B
       ),
-      CASE-DISTINCTION-channel[cn:ChannelName <- 'Share-B['B ++ 1]]{
+      CASE-DISTINCTION-channel[cn:ChannelName <- 'Share-B['B]]{
        applySelectCaseSubst(
-         'Wire['B ++ 1], 'Share-B['B ++ 1], apply 'isBobInput ('B ++ 1)
+         'Wire['B], 'Share-B['B], apply 'isBobInput 'B
       ),
-      CASE-DISTINCTION-channel[cn:ChannelName <- 'Share-B['B ++ 1]]{
+      CASE-DISTINCTION-channel[cn:ChannelName <- 'Share-B['B]]{
        applySelectCaseSubst(
-         'Wire['B ++ 1], 'Share-B['B ++ 1], apply 'isNotGate ('B ++ 1)
+         'Wire['B], 'Share-B['B], apply 'isNotGate 'B
       ),
-      CASE-DISTINCTION-channel[cn:ChannelName <- 'Share-B['B ++ 1]]{
+      CASE-DISTINCTION-channel[cn:ChannelName <- 'Share-B['B]]{
        applySelectCaseSubst(
-         'Wire['B ++ 1], 'Share-B['B ++ 1], apply 'isXorGate ('B ++ 1)
+         'Wire['B], 'Share-B['B], apply 'isXorGate 'B
       ),
-      CASE-DISTINCTION-channel-end-when[cn:ChannelName <- 'Share-B['B ++ 1]]{
+      CASE-DISTINCTION-channel-end-when[cn:ChannelName <- 'Share-B['B]]{
         applySelectCaseSubst(
-         'Wire['B ++ 1], 'Share-B['B ++ 1], apply 'isAndGate ('B ++ 1)
+         'Wire['B], 'Share-B['B], apply 'isAndGate 'B
         )
       }
     }
@@ -14554,210 +14554,210 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
     *** for alice input
    ;  applySubstChannelCase3(
             'Share-A, 
-            'Share-B['B ++ 1], 
-             nf('is : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)]),
+            'Share-B['B], 
+             nf('is : bool <- read ('InputShare-A-A[fun 'wire0 'B]),
                 return 'is, 'is :: emptyCNameList),
-             nf(('is : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)])) 
-                 'xb : bool <- read ('InputShare-B-A[fun 'wire0 ('B ++ 1)]), 
+             nf(('is : bool <- read ('InputShare-A-A[fun 'wire0 'B])) 
+                 'xb : bool <- read ('InputShare-B-A[fun 'wire0 'B]), 
                  return (ap 'xor pair('is, ap 'xor pair('is, 'xb))), 
                  'is :: 'xb :: emptyCNameList),
-            apply 'isAliceInput ('B ++ 1)
+            apply 'isAliceInput 'B
         ) 
    *** get to what we want
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'is, 'xa, 
-                           when (apply 'isAliceInput ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'is, 'xa, 
+                           when (apply 'isAliceInput 'B)
                          )  
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'xb, 'is, 
-                           when (apply 'isAliceInput ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'xb, 'is, 
+                           when (apply 'isAliceInput 'B)
                          )  
    *** for bob input  
    ;  applySubstChannelCase3(
             'Share-A, 
-            'Share-B['B ++ 1], 
-             nf('is : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)]),
+            'Share-B['B], 
+             nf('is : bool <- read ('InputShare-A-B[fun 'wire0 'B]),
                 return 'is, 'is :: emptyCNameList),
-             nf(('is : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)])) 
-                ('xb : bool <- read ('InputShare-B-B[fun 'wire0 ('B ++ 1)])),
+             nf(('is : bool <- read ('InputShare-A-B[fun 'wire0 'B])) 
+                ('xb : bool <- read ('InputShare-B-B[fun 'wire0 'B])),
                  return (ap 'xor pair('is, ap 'xor pair('is, 'xb))), 
                  'is :: 'xb :: emptyCNameList),
-            apply 'isBobInput ('B ++ 1)
+            apply 'isBobInput 'B
         ) 
    *** some renamings
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'is, 'xa, 
-                           when (apply 'isBobInput ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'is, 'xa, 
+                           when (apply 'isBobInput 'B)
                          )  
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'xb, 'is, 
-                           when (apply 'isBobInput ('B ++ 1))  
+   ; applyAlphaBranchCond('Share-B['B], 'xb, 'is, 
+                           when (apply 'isBobInput 'B)  
                          )  
    *** for not gate
     ;  applySubstChannelCase3(
             'Share-A, 
-            'Share-B['B ++ 1], 
-             nf('sa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)]), 
+            'Share-B['B], 
+             nf('sa : bool <- read ('Share-A[fun 'wire0 'B]), 
                 return 'sa, 'sa :: emptyCNameList),
-             nf(('sa : bool <- read ('Share-A[fun 'wire0 'B ++ 1])) 
-                ('xb : bool <- read ('Share-B[fun 'wire0 'B ++ 1])), 
+             nf(('sa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                ('xb : bool <- read ('Share-B[fun 'wire0 'B])), 
                 return (ap 'xor pair('sa, ap 'xor pair('sa, ap 'neg 'xb))), 
                 'sa :: 'xb :: emptyCNameList),
-            apply 'isNotGate ('B ++ 1)
+            apply 'isNotGate 'B
         )      
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'sa, 'xa, 
-                           when (apply 'isNotGate ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'sa, 'xa, 
+                           when (apply 'isNotGate 'B)
                          )       
    *** for xor gate 
    
    *** _ <- read C instead of x : T <- read C
    
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'xa, 'aa, 
-                           when (apply 'isXorGate ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'xa, 'aa, 
+                           when (apply 'isXorGate 'B)
                          )
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'ya, 'ba, 
-                           when (apply 'isXorGate ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'ya, 'ba, 
+                           when (apply 'isXorGate 'B)
                          ) 
    ;  applySubstChannelCase3(
             'Share-A, 
-            'Share-B['B ++ 1], 
-             nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                 'ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+            'Share-B['B], 
+             nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                 'ya : bool <- read ('Share-A[fun 'wire1 'B]), 
                  return (ap 'xor pair('xa, 'ya)), 'xa :: 'ya :: emptyCNameList),
-             nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-                ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-                ('yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)])), 
+             nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+                ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+                ('yb : bool <- read ('Share-B[fun 'wire1 'B])), 
                 return (ap 'xor pair('xb, 'yb)),
                 'xa :: 'ya :: 'yb :: 'xb :: emptyCNameList),
-             apply 'isXorGate ('B ++ 1)
+             apply 'isXorGate 'B
         )                       
    *** change the order to 'xb :: 'xa :: 'yb :: 'ya 
    ; applyChangeOrderBranch(
-       'Share-B['B ++ 1], 
-       apply 'isXorGate ('B ++ 1), 
+       'Share-B['B], 
+       apply 'isXorGate 'B, 
        'xb :: 'xa :: 'yb :: 'ya :: emptyCNameList
      )   
    *** for and gate
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'ba, 'bc, 
-                           when (apply 'isAndGate ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'ba, 'bc, 
+                           when (apply 'isAndGate 'B)
                          )                         
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'xa, 'xc, 
-                           when (apply 'isAndGate ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'xa, 'xc, 
+                           when (apply 'isAndGate 'B)
                          )                         
-   ; applyAlphaBranchCond('Share-B['B ++ 1], 'ya, 'yc, 
-                           when (apply 'isAndGate ('B ++ 1))
+   ; applyAlphaBranchCond('Share-B['B], 'ya, 'yc, 
+                           when (apply 'isAndGate 'B)
                          )                         
    ;  applySubstChannelCase3(
             'Share-A, 
-            'Share-B['B ++ 1], 
-             nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-                ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                 'ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+            'Share-B['B], 
+             nf(('ba : bool <- read ('OTBit-A-B['B])) 
+                ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                 'ya : bool <- read ('Share-A[fun 'wire1 'B]), 
                  return (ap 'xor pair(ap 'and pair('xa, 'ya), 'ba)), 
                  'ba :: 'xa :: 'ya :: emptyCNameList), 
-             nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-                ('bb : bool <- read ('OTBit-B-A['B ++ 1])) 
-                ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-                ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-                 'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+             nf(('ba : bool <- read ('OTBit-A-B['B])) 
+                ('bb : bool <- read ('OTBit-B-A['B])) 
+                ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+                ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+                 'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
                  return (ap 'xor pair('bb, ap 'and pair('xb, 'yb))), 
                  'ba :: 'xa :: 'ya :: 'bb :: 'yb :: 'xb :: emptyCNameList),
-             apply 'isAndGate ('B ++ 1)
+             apply 'isAndGate 'B
         )    
    *** change order to 'bb :: 'ba :: 'xb :: 'xa :: 'yb :: 'ya :: emptyCNameList 
    ; applyChangeOrderBranch(
-       'Share-B['B ++ 1], 
-       apply 'isAndGate ('B ++ 1), 
+       'Share-B['B], 
+       apply 'isAndGate 'B, 
        'bb :: 'ba :: 'xb :: 'xa :: 'yb :: 'ya :: emptyCNameList
      )
     
       }  
-     ; applyAllSameCases('Share-B['B ++ 1])
+     ; applyAllSameCases('Share-B['B])
      
-     *** now we have to get back to Wire['B ++ 1]
-    ; CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B ++ 1]]{ 
+     *** now we have to get back to Wire['B]
+    ; CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B]]{ 
         *** alice               
-        substNFFamilyOne('InputShare-B-A, 'Wire['B ++ 1],
-           nf(('x : bool <- read ('In-A[fun 'wire0 ('B ++ 1)])) 
-               'xa : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)]), 
+        substNFFamilyOne('InputShare-B-A, 'Wire['B],
+           nf(('x : bool <- read ('In-A[fun 'wire0 'B])) 
+               'xa : bool <- read ('InputShare-A-A[fun 'wire0 'B]), 
                return (ap 'xor pair('x, 'xa)), 'x :: 'xa :: emptyCNameList)
           )
-        ; applyDropNFCF('InputShare-A-A, 'Wire['B ++ 1]) 
-        ; applyAlphaNFPr('Wire['B ++ 1], << 'x, 'inA0 >> emptyQidPairList ) 
+        ; applyDropNFCF('InputShare-A-A, 'Wire['B]) 
+        ; applyAlphaNFPr('Wire['B], << 'x, 'inA0 >> emptyQidPairList ) 
         ; SYM[P1:Protocol <- restr16GSymAlice]{idle}
-      , CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B ++ 1]]{  
+      , CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B]]{  
         *** bob            
-        substNFFamilyOne('InputShare-B-B, 'Wire['B ++ 1],
-           nf(('x : bool <- read ('In-B[fun 'wire0 ('B ++ 1)])) 
-               'xa : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)]), 
+        substNFFamilyOne('InputShare-B-B, 'Wire['B],
+           nf(('x : bool <- read ('In-B[fun 'wire0 'B])) 
+               'xa : bool <- read ('InputShare-A-B[fun 'wire0 'B]), 
                return (ap 'xor pair('x, 'xa)), 'x :: 'xa :: emptyCNameList) 
           )
-        ; applyDropNFCF('InputShare-A-B, 'Wire['B ++ 1]) 
-        ; applyAlphaNFPr('Wire['B ++ 1], << 'x, 'inB0 >> emptyQidPairList )  
+        ; applyDropNFCF('InputShare-A-B, 'Wire['B]) 
+        ; applyAlphaNFPr('Wire['B], << 'x, 'inB0 >> emptyQidPairList )  
         ; SYM[P1:Protocol <- restr16GSymBob]{idle}
-      , CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B ++ 1]]{  
+      , CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B]]{  
          *** not
          applyDropName('Group)
          ; SYM[P1:Protocol <- restr16GSymNot]{
                applyDropName('Group)
-             ; substNFFamilyOne('Wire, 'Wire['B ++ 1],
-           nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-         'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+             ; substNFFamilyOne('Wire, 'Wire['B],
+           nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+         'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
          return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
           )
            }, 
-         CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B ++ 1]]{  
+         CASE-DISTINCTION-channel[cn:ChannelName <- 'Wire['B]]{  
          *** xor
-           applySwap23Xor('Wire['B ++ 1])
+           applySwap23Xor('Wire['B])
           ; applyDropName('Group)
           ; SYM[P1:Protocol <- restr16GSymXor]{
              applyDropName('Group)
-    ; substNFFamilyOne('Wire, 'Wire['B ++ 1],
-           nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-         'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+    ; substNFFamilyOne('Wire, 'Wire['B],
+           nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+         'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
          return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
           ) 
-    ; applyAlphaNFPr('Wire['B ++ 1], << 'xa, 'ua >> << 'xb, 'ub >> emptyQidPairList )   
-    ; substNFFamilyOne('Wire, 'Wire['B ++ 1],
-           nf(('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-         'xb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    ; applyAlphaNFPr('Wire['B], << 'xa, 'ua >> << 'xb, 'ub >> emptyQidPairList )   
+    ; substNFFamilyOne('Wire, 'Wire['B],
+           nf(('xa : bool <- read ('Share-A[fun 'wire1 'B])) 
+         'xb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
           )
-    ; applyAlphaNFPr('Wire['B ++ 1], 
+    ; applyAlphaNFPr('Wire['B], 
                              << 'xa, 'ya >> << 'xb, 'yb >>
                              << 'ua, 'xa >> << 'ub, 'xb >> emptyQidPairList )
-    ; changeOrder('Wire['B ++ 1], 'xa :: 'yb :: 'ya :: 'xb :: emptyCNameList)    
+    ; changeOrder('Wire['B], 'xa :: 'yb :: 'ya :: 'xb :: emptyCNameList)    
           }
          ,
          
           *** just a change of order, happens by nfs, and transforming the return, xor
-         CASE-DISTINCTION-channel-end-when[cn:ChannelName <- 'Wire['B ++ 1]]{
+         CASE-DISTINCTION-channel-end-when[cn:ChannelName <- 'Wire['B]]{
           *** and
           applySelectCaseSubst(
-              'OTBit-B-A['B ++ 1], 'Wire['B ++ 1], apply 'isAndGate ('B ++ 1)
+              'OTBit-B-A['B], 'Wire['B], apply 'isAndGate 'B
           )
             *** need to transform the return
-          ; applyAndXorTerm('Wire['B ++ 1])
+          ; applyAndXorTerm('Wire['B])
 
-          ; applyDropNFCFCases('OTBit-A-B, 'Wire['B ++ 1], apply 'isAndGate 'k) 
-          ; applyDistribR('Wire['B ++ 1])
+          ; applyDropNFCFCases('OTBit-A-B, 'Wire['B], apply 'isAndGate 'k) 
+          ; applyDistribR('Wire['B])
           ; applyDropName('Group)
           ; SYM[P1:Protocol <- restr16GSymAnd] {
             applyDropName('Group)
-    ; substNFFamilyOne('Wire, 'Wire['B ++ 1],
-           nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-         'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+    ; substNFFamilyOne('Wire, 'Wire['B],
+           nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+         'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
          return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
           ) 
-    ; applyAlphaNFPr('Wire['B ++ 1], << 'xa, 'ua >> << 'xb, 'ub >> emptyQidPairList )   
-    ; substNFFamilyOne('Wire, 'Wire['B ++ 1],
-           nf(('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-         'xb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+    ; applyAlphaNFPr('Wire['B], << 'xa, 'ua >> << 'xb, 'ub >> emptyQidPairList )   
+    ; substNFFamilyOne('Wire, 'Wire['B],
+           nf(('xa : bool <- read ('Share-A[fun 'wire1 'B])) 
+         'xb : bool <- read ('Share-B[fun 'wire1 'B]), 
          return (ap 'xor pair('xa, 'xb)), 'xa :: 'xb :: emptyCNameList)
           )
-    ; applyAlphaNFPr('Wire['B ++ 1], 
+    ; applyAlphaNFPr('Wire['B], 
                              << 'xa, 'ya >> << 'xb, 'yb >>
                              << 'ua, 'xa >> << 'ub, 'xb >> emptyQidPairList )
                              
-    ; changeOrder('Wire['B ++ 1], 'xa :: 'yb :: 'ya :: 'xb :: emptyCNameList)
+    ; changeOrder('Wire['B], 'xa :: 'yb :: 'ya :: 'xb :: emptyCNameList)
           } 
          }
         }}
@@ -14766,7 +14766,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
    
     ; SYM[P1:Protocol <- restr16GIndStart]{idle}
      
-     *** ; applyGetChannel('Wire['B ++ 1])
+     *** ; applyGetChannel('Wire['B])
 
  .
  
@@ -14774,7 +14774,10 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
  sd apBigInd(P) := 
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{apBigInd(P)}
-     : INDUCTION-P-3[idx:Qid <- 'B,
+     : SINGLE-INDUCTION
+       *** INDUCTION-P-3
+                   [idx:Qid <- 'B,
+                     q:Qid <- 'k,
                     P2:Protocol <- P                      
                    ]
                    { SYM[P1:Protocol <- restr16GIndEnd]{
@@ -14787,7 +14790,10 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
  sd apIndBobOK(P) := 
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{apIndBobOK(P)}
-     : INDUCTION-P-3[idx:Qid <- 'B, 
+     : SINGLE-INDUCTION
+       *** INDUCTION-P-3
+                   [idx:Qid <- 'B, 
+                     q:Qid <- 'k,
                     P2:Protocol <- P                      
                    ]
                    {
@@ -14799,7 +14805,10 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
  sd apIndAliceOK(P) := 
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{apIndAliceOK(P)}
-     : INDUCTION-P-3[idx:Qid <- 'B, 
+     : SINGLE-INDUCTION
+       *** INDUCTION-P-3
+                   [idx:Qid <- 'B, 
+                     q:Qid <- 'k,
                     P2:Protocol <- P                      
                    ]
                    {
@@ -14811,7 +14820,10 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
  sd apInd78(P) := 
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{apInd78(P)}
-     : INDUCTION-P-3[idx:Qid <- 'B, 
+     : SINGLE-INDUCTION
+       *** INDUCTION-P-3
+                   [idx:Qid <- 'B, 
+                     q:Qid <- 'k,
                     P2:Protocol <- P                      
                    ]
                    {
@@ -14827,104 +14839,104 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
        ; applyDropName('AliceOK)
        *** from here we start the proof
        ; applyDropName('BobOK)
-       ; CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B ++ 1]]{
+       ; CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B]]{
        *** isAliceInput
-       substNFFamilyOne('InputShareOK-B-A, 'ShareOK-B['B ++ 1],
-           nf('xa : unit <- read ('InputShareOK-A-A[fun 'wire0 ('B ++ 1)]), 
+       substNFFamilyOne('InputShareOK-B-A, 'ShareOK-B['B],
+           nf('xa : unit <- read ('InputShareOK-A-A[fun 'wire0 'B]), 
               return 'xa, 
               'xa :: emptyCNameList)
           )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xa, 'is >> emptyQidPairList) 
+       ; applyAlphaNFPr('ShareOK-B['B], << 'xa, 'is >> emptyQidPairList) 
        ; SYM[P1:Protocol <- new7Ind0]{
-          substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-           nf('is : unit <- read ('InputShareOK-A-A[fun 'wire0 ('B ++ 1)]), return 'is, 
+          substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+           nf('is : unit <- read ('InputShareOK-A-A[fun 'wire0 'B]), return 'is, 
               'is :: emptyCNameList)
           )
        }
        ,
-       CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B ++ 1]]{
+       CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B]]{
        *** isBobInput
-        substNFFamilyOne('InputShareOK-B-B, 'ShareOK-B['B ++ 1],
-           nf('xa : unit <- read ('InputShareOK-A-B[fun 'wire0 'B ++ 1]), return 'xa, 
+        substNFFamilyOne('InputShareOK-B-B, 'ShareOK-B['B],
+           nf('xa : unit <- read ('InputShareOK-A-B[fun 'wire0 'B]), return 'xa, 
               'xa :: emptyCNameList)
           )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xa, 'is >> emptyQidPairList)     
+       ; applyAlphaNFPr('ShareOK-B['B], << 'xa, 'is >> emptyQidPairList)     
        ; SYM[P1:Protocol <- new7Ind0]{
-          substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-           nf('is : unit <- read ('InputShareOK-A-B[fun 'wire0 ('B ++ 1)]), return 'is, 
+          substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+           nf('is : unit <- read ('InputShareOK-A-B[fun 'wire0 'B]), return 'is, 
               'is :: emptyCNameList)
           )
        }
-         , CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B ++ 1]]{
+         , CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B]]{
        *** isNotGate
-        substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-           nf('sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]), return 'sa, 
+        substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+           nf('sa : unit <- read ('ShareOK-A[fun 'wire0 'B]), return 'sa, 
               'sa :: emptyCNameList)
           )
        ; SYM[P1:Protocol <- new7Ind0]{
-         substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-           nf('sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]),
+         substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+           nf('sa : unit <- read ('ShareOK-A[fun 'wire0 'B]),
            return 'sa, 'sa :: emptyCNameList)
           )
        } 
-       , CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B ++ 1]]{
+       , CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-B['B]]{
        *** isXorGate
-       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-           nf('sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]), return 'sa, 
+       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+           nf('sa : unit <- read ('ShareOK-A[fun 'wire0 'B]), return 'sa, 
               'sa :: emptyCNameList)
           )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'sa, 'is >> emptyQidPairList)    
-       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-           nf('sa : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), return 'sa, 
+       ; applyAlphaNFPr('ShareOK-B['B], << 'sa, 'is >> emptyQidPairList)    
+       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+           nf('sa : unit <- read ('ShareOK-A[fun 'wire1 'B]), return 'sa, 
               'sa :: emptyCNameList)
           )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'is, 'xa >> 
+       ; applyAlphaNFPr('ShareOK-B['B], << 'is, 'xa >> 
                                                << 'sa, 'ya >> emptyQidPairList)      
        ; SYM[P1:Protocol <- new7Ind0]{
-        substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-           nf(('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-         'ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+        substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+           nf(('xa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+         'ya : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
          return (), 'xa :: 'ya :: emptyCNameList)
           )
        }                
        , CASE-DISTINCTION-channel-end-when{
          *** isAndGate 
-         substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-          nf('sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]), 
+         substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+          nf('sa : unit <- read ('ShareOK-A[fun 'wire0 'B]), 
              return 'sa, 'sa :: emptyCNameList)
          )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'sa, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-          nf('sa : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+       ; applyAlphaNFPr('ShareOK-B['B], << 'sa, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+          nf('sa : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
              return 'sa, 'sa :: emptyCNameList)
          )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-B['B], 
                          << 'sa, 'yb0 >> 
                          << 'is, 'xb0 >>
                          emptyQidPairList)  
        ; applySelectCaseSubst(
-          'OTBitOK-B-A['B ++ 1], 'ShareOK-B['B ++ 1], apply 'isAndGate ('B ++ 1)
+          'OTBitOK-B-A['B], 'ShareOK-B['B], apply 'isAndGate 'B
          )
                          
        
-      ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]), 
+      ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'sa : unit <- read ('ShareOK-A[fun 'wire0 'B]), 
            return 'sa, 'sa :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'sa, 'is >> emptyQidPairList)
+      ; applyAlphaNFPr('ShareOK-B['B], << 'sa, 'is >> emptyQidPairList)
       ;
-       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'sa : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'sa : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
            return 'sa, 'sa :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'sa, 'ya >> 
+      ; applyAlphaNFPr('ShareOK-B['B], << 'sa, 'ya >> 
                                             << 'is, 'xa >> emptyQidPairList) 
                               
          ; SYM[P1:Protocol <- new7Ind0]{
-           substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-            nf(('ba : unit <- read ('OTBitOK-A-B['B ++ 1])) 
-               ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-                'ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+           substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+            nf(('ba : unit <- read ('OTBitOK-A-B['B])) 
+               ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+                'ya : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
                 return (), 'ba :: 'xa :: 'ya :: emptyCNameList)
           ) 
           }
@@ -14932,48 +14944,48 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
        }
        }
          }  
-       ; applyAllSameCases('ShareOK-B['B ++ 1])    
+       ; applyAllSameCases('ShareOK-B['B])    
        *** now the second part of the proof
        ; applySubstChannelCase3(
            'OTBitOK-A-B,
-           'OTBitOK-B-A['B ++ 1],
-           nf(('ak : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-               'al : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+           'OTBitOK-B-A['B],
+           nf(('ak : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+               'al : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
               return (), 'ak :: 'al :: emptyCNameList),
            nf(
-              ('ak : unit <- read ('ShareOK-A[fun 'wire0 'B ++ 1])) 
-              ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B ++ 1])) 
-              ('al : unit <- read ('ShareOK-A[fun 'wire1 'B ++ 1])) 
-               'yb : unit <- read ('ShareOK-B[fun 'wire1 'B ++ 1]), 
+              ('ak : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+              ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+              ('al : unit <- read ('ShareOK-A[fun 'wire1 'B])) 
+               'yb : unit <- read ('ShareOK-B[fun 'wire1 'B]), 
                return (), 
                'ak :: 'al :: 'xb :: 'yb :: emptyCNameList),
-            apply 'isAndGate ('B ++ 1)  
+            apply 'isAndGate 'B  
          )
        ; applySubstChannelCase3(
             'ShareOK-B, 
-            'OTBitOK-B-A['B ++ 1], 
-             nf('sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]), 
+            'OTBitOK-B-A['B], 
+             nf('sa : unit <- read ('ShareOK-A[fun 'wire0 'B]), 
                 return 'sa, 'sa :: emptyCNameList),
-             nf( ('sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-                 ('al : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])) 
-                  'yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)]),
+             nf( ('sa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+                 ('al : unit <- read ('ShareOK-A[fun 'wire1 'B])) 
+                  'yb : unit <- read ('ShareOK-B[fun 'wire1 'B]),
                  return (), 
                  'al :: 'sa :: 'yb :: emptyCNameList),
-             apply 'isAndGate ('B ++ 1)
+             apply 'isAndGate 'B
         )  
-       ; applyBranch1Alpha('OTBitOK-B-A['B ++ 1], << 'sa, 'ak >> emptyQidPairList) 
+       ; applyBranch1Alpha('OTBitOK-B-A['B], << 'sa, 'ak >> emptyQidPairList) 
        ; applySubstChannelCase3(
             'ShareOK-B, 
-            'OTBitOK-B-A['B ++ 1], 
-             nf('sa : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+            'OTBitOK-B-A['B], 
+             nf('sa : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
                 return 'sa, 'sa :: emptyCNameList),
-             nf( ('ak : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-                 ('sa : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])),
+             nf( ('ak : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+                 ('sa : unit <- read ('ShareOK-A[fun 'wire1 'B])),
                  return (), 
                  'ak :: 'sa :: emptyCNameList),
-             apply 'isAndGate ('B ++ 1)
+             apply 'isAndGate 'B
         )
-       ; applyBranch1Alpha('OTBitOK-B-A['B ++ 1], << 'sa, 'al >> emptyQidPairList) 
+       ; applyBranch1Alpha('OTBitOK-B-A['B], << 'sa, 'al >> emptyQidPairList) 
        ; SYM[P1:Protocol <- new7IndEnd]{
          applyDropName('indAlice)
        ; applyDropName('indBob)
@@ -14981,9 +14993,9 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
        ; applyDropName('AliceOK)
        ; applyDropName('BobOK)
        ; applyCasesSubstFC(
-           'OTBitOK-A-B, 'OTBitOK-B-A['B ++ 1], 
-           nf(('ak : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-               'al : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+           'OTBitOK-A-B, 'OTBitOK-B-A['B], 
+           nf(('ak : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+               'al : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
                return (), 'ak :: 'al :: emptyCNameList),
            unit, 'ot)
        }  
@@ -15001,29 +15013,29 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
              
        ; applySubstChannelCase3(
             'ShareOK-A, 
-            'OTBitOK-A-B['B ++ 1], 
-             nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)]), 
+            'OTBitOK-A-B['B], 
+             nf('xa : bool <- read ('Share-A[fun 'wire0 'B]), 
                 return (), 'xa :: emptyCNameList),
-             nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                 'al : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+             nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                 'al : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
                  return (), 
                  'xa :: 'al :: emptyCNameList),
-            apply 'isAndGate ('B ++ 1)
+            apply 'isAndGate 'B
         )
-        ; applyBranch1Alpha('OTBitOK-A-B['B ++ 1], 
+        ; applyBranch1Alpha('OTBitOK-A-B['B], 
                            << 'xa, 'sa >> emptyQidPairList)
         ; applySubstChannelCase3(
             'ShareOK-A, 
-            'OTBitOK-A-B['B ++ 1], 
-             nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+            'OTBitOK-A-B['B], 
+             nf('xa : bool <- read ('Share-A[fun 'wire1 'B]), 
                 return (), 'xa :: emptyCNameList),
-             nf(('sa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                 'xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+             nf(('sa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                 'xa : bool <- read ('Share-A[fun 'wire1 'B]), 
                  return (), 
                  'sa :: 'xa :: emptyCNameList),
-            apply 'isAndGate ('B ++ 1)
+            apply 'isAndGate 'B
         )  
-        ; applyBranch1Alpha('OTBitOK-A-B['B ++ 1], 
+        ; applyBranch1Alpha('OTBitOK-A-B['B], 
                            << 'xa, 'ya >> 
                            << 'sa, 'xa >> emptyQidPairList)   
        
@@ -15036,7 +15048,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
        ; applyDropName('AliceOK)
        ; applyCasesSubsumeDropDivergeOwiseC(
           'OTBit-A-B, 
-          'OTBitOK-A-B['B ++ 1], 
+          'OTBitOK-A-B['B], 
           'xa :: 'ya :: emptyCNameList, 
           unit, 'ot
           )
@@ -15048,100 +15060,100 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
        ; applyDropName('AliceOK)
        
        ;
-         CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B ++ 1]]{
+         CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B]]{
        *** isAliceInput
-       substNFFamilyOne('InputShareOK-A-A, 'ShareOK-A['B ++ 1],
-           nf('xa : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)]), 
+       substNFFamilyOne('InputShareOK-A-A, 'ShareOK-A['B],
+           nf('xa : bool <- read ('InputShare-A-A[fun 'wire0 'B]), 
               return (), 'xa :: emptyCNameList)
           )    
         ; SYM[P1:Protocol <- new5Ind0]{
-            substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-             nf('is : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)]), 
+            substNFFamilyOne('Share-A, 'ShareOK-A['B],
+             nf('is : bool <- read ('InputShare-A-A[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
             )
-          ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'is, 'xa >> emptyQidPairList) 
+          ; applyAlphaNFPr('ShareOK-A['B], << 'is, 'xa >> emptyQidPairList) 
           } 
           , 
-          CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B ++ 1]]{
+          CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B]]{
        *** isBobInput
-        substNFFamilyOne('InputShareOK-A-B, 'ShareOK-A['B ++ 1],
-           nf('xa : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)]), return (), 
+        substNFFamilyOne('InputShareOK-A-B, 'ShareOK-A['B],
+           nf('xa : bool <- read ('InputShare-A-B[fun 'wire0 'B]), return (), 
               'xa :: emptyCNameList)
           )
         ; SYM[P1:Protocol <- new5Ind0]{
-            substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-             nf('is : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)]), 
+            substNFFamilyOne('Share-A, 'ShareOK-A['B],
+             nf('is : bool <- read ('InputShare-A-B[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
             )
-            ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'is, 'xa >> emptyQidPairList)
+            ; applyAlphaNFPr('ShareOK-A['B], << 'is, 'xa >> emptyQidPairList)
           }  ,
-          CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B ++ 1]]{
+          CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B]]{
        *** isNotGate
-        substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+        substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B ]),
           return (), 'xa :: emptyCNameList)
        )
        
        ; SYM[P1:Protocol <- new5Ind0]{
-        substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-       nf('sa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+        substNFFamilyOne('Share-A, 'ShareOK-A['B],
+       nf('sa : bool <- read ('Share-A[fun 'wire0 'B ]),
           return 'sa, 'sa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'sa, 'xa >> emptyQidPairList)
+       ; applyAlphaNFPr('ShareOK-A['B], << 'sa, 'xa >> emptyQidPairList)
        }
        , 
-        CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B ++ 1]]{
+        CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B]]{
        *** isXorGate
-       substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+       substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'xa, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1) ]),
+       ; applyAlphaNFPr('ShareOK-A['B], << 'xa, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire1 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-A['B], 
                          << 'xa, 'ya >> 
                          << 'is, 'xa >>
                          emptyQidPairList)
-       ; changeOrder('ShareOK-A['B ++ 1], 'ya :: 'xa :: emptyCNameList)                   
+       ; changeOrder('ShareOK-A['B], 'ya :: 'xa :: emptyCNameList)                   
        ; SYM[P1:Protocol <- new5Ind0]{
-          substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-       nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        'ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+          substNFFamilyOne('Share-A, 'ShareOK-A['B],
+       nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        'ya : bool <- read ('Share-A[fun 'wire1 'B]), 
         return (ap 'xor pair('xa, 'ya)), 'xa :: 'ya :: emptyCNameList)
       )
        }, CASE-DISTINCTION-channel-end-when{
            
         
          *** isAndGate 
-         substNFFamilyOne('OTBitOK-A-B, 'ShareOK-A['B ++ 1],
-       nf('ba : bool <- read ('OTBit-A-B['B ++ 1]), return (), 'ba :: emptyCNameList)
+         substNFFamilyOne('OTBitOK-A-B, 'ShareOK-A['B],
+       nf('ba : bool <- read ('OTBit-A-B['B]), return (), 'ba :: emptyCNameList)
        )      
-      ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+      ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'xa, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1) ]),
+       ; applyAlphaNFPr('ShareOK-A['B], << 'xa, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire1 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-A['B], 
                          << 'xa, 'ya >> 
                          << 'is, 'xa >>
                          emptyQidPairList)
                        
         ; SYM[P1:Protocol <- new5Ind0]{
-           substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-       nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-         'ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+           substNFFamilyOne('Share-A, 'ShareOK-A['B],
+       nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+         'ya : bool <- read ('Share-A[fun 'wire1 'B]), 
         return (ap 'xor pair(ap 'and pair('xa, 'ya), 'ba)), 
         'ba :: 'xa :: 'ya :: emptyCNameList)
      ) 
-     ; changeOrder('ShareOK-A['B ++ 1], 'ba :: 'xa :: 'ya :: emptyCNameList) 
+     ; changeOrder('ShareOK-A['B], 'ba :: 'xa :: 'ya :: emptyCNameList) 
         }
         
                       
@@ -15152,7 +15164,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
          }
        }  
              
-       ; applyAllSameCases('ShareOK-A['B ++ 1])
+       ; applyAllSameCases('ShareOK-A['B])
        ; SYM[P1:Protocol <- new5IndEnd]{
          applyDropName('indAlice)
        ; applyDropName('indBob)
@@ -15414,6 +15426,9 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
           ; applyDropName('indAlice)
           ; applyDropName('indBob)
           ; applyDropName('indAdv)
+          
+       
+          
           ; SYM[P1:Protocol <- new3]{
             sugar-newNF
        ; applyDropName('indAlice)
@@ -15434,6 +15449,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
        ; applyDropName('BobOK)
           }
          
+        
 
                     }    *** end of cong comp right          
      .           
@@ -15474,7 +15490,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
     
     strat indStep1 @ ProtocolConfig .
     sd indStep1 := 
-        applyCaseDistChannel2('ShareOK-B['B ++ 1])
+        applyCaseDistChannel2('ShareOK-B['B])
     .   
     
     strat applyInd1 @ ProtocolConfig .
@@ -15539,7 +15555,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
     
     strat indStepB1 @ ProtocolConfig .
     sd indStepB1 := 
-        applyCaseDistChannelStepB('ShareOK-B['B ++ 1])
+        applyCaseDistChannelStepB('ShareOK-B['B])
     . 
     
     strat applyCaseDistChannelBaseB : ChannelName @ ProtocolConfig .
@@ -15584,108 +15600,108 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
      : ( *** open for :
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isAliceInput
-       substNFFamilyOne('InputShareOK-B-A, 'ShareOK-B['B ++ 1],
-           nf('xa : unit <- read ('InputShareOK-A-A[fun 'wire0 ('B ++ 1)]), return 'xa, 
+       substNFFamilyOne('InputShareOK-B-A, 'ShareOK-B['B],
+           nf('xa : unit <- read ('InputShareOK-A-A[fun 'wire0 'B]), return 'xa, 
               'xa :: emptyCNameList)
           )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xa, 'is >> emptyQidPairList)     
+       ; applyAlphaNFPr('ShareOK-B['B], << 'xa, 'is >> emptyQidPairList)     
        ; SYM[P1:Protocol <- new7step]{
-          substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-           nf('is : unit <- read ('InputShareOK-A-A[fun 'wire0 ('B ++ 1)]), return 'is, 
+          substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+           nf('is : unit <- read ('InputShareOK-A-A[fun 'wire0 'B]), return 'is, 
               'is :: emptyCNameList)
           )
        }
        , 
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isBobInput
-        substNFFamilyOne('InputShareOK-B-B, 'ShareOK-B['B ++ 1],
-           nf('xa : unit <- read ('InputShareOK-A-B[fun 'wire0 'B ++ 1]), return 'xa, 
+        substNFFamilyOne('InputShareOK-B-B, 'ShareOK-B['B],
+           nf('xa : unit <- read ('InputShareOK-A-B[fun 'wire0 'B]), return 'xa, 
               'xa :: emptyCNameList)
           )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xa, 'is >> emptyQidPairList)     
+       ; applyAlphaNFPr('ShareOK-B['B], << 'xa, 'is >> emptyQidPairList)     
        ; SYM[P1:Protocol <- new7step]{
-          substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-           nf('is : unit <- read ('InputShareOK-A-B[fun 'wire0 ('B ++ 1)]), return 'is, 
+          substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+           nf('is : unit <- read ('InputShareOK-A-B[fun 'wire0 'B]), return 'is, 
               'is :: emptyCNameList)
           )
        }
          , 
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isNotGate
-        substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-           nf('sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]), return 'sa, 
+        substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+           nf('sa : unit <- read ('ShareOK-A[fun 'wire0 'B]), return 'sa, 
               'sa :: emptyCNameList)
           )
        ; SYM[P1:Protocol <- new7step]{
-         substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-           nf('sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]),
+         substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+           nf('sa : unit <- read ('ShareOK-A[fun 'wire0 'B]),
            return 'sa, 'sa :: emptyCNameList)
           )
        } 
        , 
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isXorGate
-       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-           nf('sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]), return 'sa, 
+       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+           nf('sa : unit <- read ('ShareOK-A[fun 'wire0 'B]), return 'sa, 
               'sa :: emptyCNameList)
           )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'sa, 'is >> emptyQidPairList)    
-       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-           nf('sa : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), return 'sa, 
+       ; applyAlphaNFPr('ShareOK-B['B], << 'sa, 'is >> emptyQidPairList)    
+       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+           nf('sa : unit <- read ('ShareOK-A[fun 'wire1 'B]), return 'sa, 
               'sa :: emptyCNameList)
           )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'is, 'xa >> 
+       ; applyAlphaNFPr('ShareOK-B['B], << 'is, 'xa >> 
                                                << 'sa, 'ya >> emptyQidPairList)      
        ; SYM[P1:Protocol <- new7step]{
-        substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-           nf(('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-         'ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+        substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+           nf(('xa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+         'ya : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
          return (), 'xa :: 'ya :: emptyCNameList)
           )
        }                
        , 
        CASE-DISTINCTION-channel-end-when{
          *** isAndGate 
-         substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-          nf('sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]), 
+         substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+          nf('sa : unit <- read ('ShareOK-A[fun 'wire0 'B]), 
              return 'sa, 'sa :: emptyCNameList)
          )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'sa, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-          nf('sa : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+       ; applyAlphaNFPr('ShareOK-B['B], << 'sa, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+          nf('sa : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
              return 'sa, 'sa :: emptyCNameList)
          )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-B['B], 
                          << 'sa, 'yb0 >> 
                          << 'is, 'xb0 >>
                          emptyQidPairList)  
-       ; substNFFamilyOne('OTBitOK-B-A, 'ShareOK-B['B ++ 1],
-          nf(('ba : unit <- read ('OTBitOK-A-B[('B ++ 1)])) 
-             ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-             ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-             ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])) 
-              'yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)]), 
+       ; substNFFamilyOne('OTBitOK-B-A, 'ShareOK-B['B],
+          nf(('ba : unit <- read ('OTBitOK-A-B['B])) 
+             ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+             ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+             ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])) 
+              'yb : unit <- read ('ShareOK-B[fun 'wire1 'B]), 
               return (),
               'ba :: 'xa :: 'ya :: 'xb :: 'yb :: emptyCNameList
             ) 
          )
-      ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'sa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)]), 
+      ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'sa : unit <- read ('ShareOK-A[fun 'wire0 'B]), 
            return 'sa, 'sa :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'sa, 'is >> emptyQidPairList)
+      ; applyAlphaNFPr('ShareOK-B['B], << 'sa, 'is >> emptyQidPairList)
       ;
-       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'sa : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'sa : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
            return 'sa, 'sa :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'sa, 'ya >> 
+      ; applyAlphaNFPr('ShareOK-B['B], << 'sa, 'ya >> 
                                             << 'is, 'xa >> emptyQidPairList)   
          ; SYM[P1:Protocol <- new7step]{
-           substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-            nf(('ba : unit <- read ('OTBitOK-A-B['B ++ 1])) 
-               ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-                'ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+           substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+            nf(('ba : unit <- read ('OTBitOK-A-B['B])) 
+               ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+                'ya : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
                 return (), 'ba :: 'xa :: 'ya :: emptyCNameList)
           ) 
           }                 
@@ -15756,7 +15772,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
     
     strat indStepC @ ProtocolConfig .
     sd indStepC := 
-        applyCaseDistChannelStepC('ShareOK-A['B ++ 1])
+        applyCaseDistChannelStepC('ShareOK-A['B])
     .
     
     strat applyCaseDistChannelStepC : ChannelName @ ProtocolConfig .
@@ -15766,103 +15782,103 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
      : ( *** open for :
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isAliceInput
-       substNFFamilyOne('InputShareOK-A-A, 'ShareOK-A['B ++ 1],
-           nf('xa : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)]), 
+       substNFFamilyOne('InputShareOK-A-A, 'ShareOK-A['B],
+           nf('xa : bool <- read ('InputShare-A-A[fun 'wire0 'B]), 
               return (), 'xa :: emptyCNameList)
           )
         ; SYM[P1:Protocol <- new10step]{
-            substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-             nf('is : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)]), 
+            substNFFamilyOne('Share-A, 'ShareOK-A['B],
+             nf('is : bool <- read ('InputShare-A-A[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
             )
-           ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'is, 'xa >> emptyQidPairList) 
+           ; applyAlphaNFPr('ShareOK-A['B], << 'is, 'xa >> emptyQidPairList) 
           }  , 
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isBobInput
-        substNFFamilyOne('InputShareOK-A-B, 'ShareOK-A['B ++ 1],
-           nf('xa : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)]), return (), 
+        substNFFamilyOne('InputShareOK-A-B, 'ShareOK-A['B],
+           nf('xa : bool <- read ('InputShare-A-B[fun 'wire0 'B]), return (), 
               'xa :: emptyCNameList)
           )
         ; SYM[P1:Protocol <- new10step]{
-            substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-             nf('is : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)]), 
+            substNFFamilyOne('Share-A, 'ShareOK-A['B],
+             nf('is : bool <- read ('InputShare-A-B[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
             )
-            ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'is, 'xa >> emptyQidPairList)
+            ; applyAlphaNFPr('ShareOK-A['B], << 'is, 'xa >> emptyQidPairList)
           }  , 
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isNotGate
-        substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+        substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B ]),
        return (), 'xa :: emptyCNameList)
        )
        ; SYM[P1:Protocol <- new10step]{
-        substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-       nf('sa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+        substNFFamilyOne('Share-A, 'ShareOK-A['B],
+       nf('sa : bool <- read ('Share-A[fun 'wire0 'B ]),
        return 'sa, 'sa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'sa, 'xa >> emptyQidPairList)
+       ; applyAlphaNFPr('ShareOK-A['B], << 'sa, 'xa >> emptyQidPairList)
        }, 
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isXorGate
-       substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+       substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'xa, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1) ]),
+       ; applyAlphaNFPr('ShareOK-A['B], << 'xa, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire1 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-A['B], 
                          << 'xa, 'ya >> 
                          << 'is, 'xa >>
                          emptyQidPairList)
-       ; changeOrder('ShareOK-A['B ++ 1], 'ya :: 'xa :: emptyCNameList)                   
+       ; changeOrder('ShareOK-A['B], 'ya :: 'xa :: emptyCNameList)                   
        ; SYM[P1:Protocol <- new10step]{
-          substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-       nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        'ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+          substNFFamilyOne('Share-A, 'ShareOK-A['B],
+       nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        'ya : bool <- read ('Share-A[fun 'wire1 'B]), 
         return (ap 'xor pair('xa, 'ya)), 'xa :: 'ya :: emptyCNameList)
       )
        }                
        , 
        CASE-DISTINCTION-channel-end-when{
          *** isAndGate 
-         substNFFamilyOne('OTBitOK-A-B, 'ShareOK-A['B ++ 1],
-       nf(('ak : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-        'al : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+         substNFFamilyOne('OTBitOK-A-B, 'ShareOK-A['B],
+       nf(('ak : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+        'al : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
         return (), 'ak :: 'al :: emptyCNameList)
        )
-      ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+      ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'xa, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1) ]),
+       ; applyAlphaNFPr('ShareOK-A['B], << 'xa, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire1 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-A['B], 
                          << 'xa, 'ya >> 
                          << 'is, 'xa >>
                          emptyQidPairList)
-        *** ; changeOrder('ShareOK-A['B ++ 1], 'xa :: 'ya :: emptyCNameList)                 
+        *** ; changeOrder('ShareOK-A['B], 'xa :: 'ya :: emptyCNameList)                 
         ; SYM[P1:Protocol <- new10step]{
-           substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-       nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-         'ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+           substNFFamilyOne('Share-A, 'ShareOK-A['B],
+       nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+         'ya : bool <- read ('Share-A[fun 'wire1 'B]), 
         return (ap 'xor pair(ap 'and pair('xa, 'ya), 'ba)), 
         'ba :: 'xa :: 'ya :: emptyCNameList)
      ) 
-     ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'xa, 'xa1 >> << 'ya, 'ya1 >> emptyQidPairList)
+     ; applyAlphaNFPr('ShareOK-A['B], << 'xa, 'xa1 >> << 'ya, 'ya1 >> emptyQidPairList)
      ; applySubsumeFamilyCasesChannelList
-          ('OTBit-A-B, 'ShareOK-A['B ++ 1], 'xa :: 'ya :: emptyCNameList)
-     ; applyDropFamilyCasesChannel('OTBit-A-B, 'ShareOK-A['B ++ 1])
+          ('OTBit-A-B, 'ShareOK-A['B], 'xa :: 'ya :: emptyCNameList)
+     ; applyDropFamilyCasesChannel('OTBit-A-B, 'ShareOK-A['B])
         }                
        }}}}}
-       ; applyAllSameCases('ShareOK-A['B ++ 1])
+       ; applyAllSameCases('ShareOK-A['B])
        ) *** end for :
      . 
      
@@ -15913,7 +15929,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
     
     strat indStepD @ ProtocolConfig .
     sd indStepD := 
-        applyCaseDistChannelStepD('Share-B['B ++ 1])
+        applyCaseDistChannelStepD('Share-B['B])
     .
     
     strat applyCaseDistChannelStepD : ChannelName @ ProtocolConfig .
@@ -15938,7 +15954,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
          *** isAndGate 
          idle               
        }}}}}
-       ; applyAllSameCases('Share-B['B ++ 1])
+       ; applyAllSameCases('Share-B['B])
        ) *** end for :
      .  
     
@@ -15952,7 +15968,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
     
     strat indStepA1 @ ProtocolConfig .
     sd indStepA1 := 
-        applyCaseDistChannelA2('ShareOK-A['B ++ 1])
+        applyCaseDistChannelA2('ShareOK-A['B])
     .
     
     strat applyCaseDistChannelA1 : ChannelName @ ProtocolConfig .
@@ -16040,103 +16056,103 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
      : ( *** open for :
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isAliceInput
-       substNFFamilyOne('InputShareOK-A-A, 'ShareOK-A['B ++ 1],
-           nf('xa : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)]), 
+       substNFFamilyOne('InputShareOK-A-A, 'ShareOK-A['B],
+           nf('xa : bool <- read ('InputShare-A-A[fun 'wire0 'B]), 
               return (), 'xa :: emptyCNameList)
           )
         ; SYM[P1:Protocol <- new5step]{
-            substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-             nf('is : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)]), 
+            substNFFamilyOne('Share-A, 'ShareOK-A['B],
+             nf('is : bool <- read ('InputShare-A-A[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
             )
-           ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'is, 'xa >> emptyQidPairList) 
+           ; applyAlphaNFPr('ShareOK-A['B], << 'is, 'xa >> emptyQidPairList) 
           }  , 
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isBobInput
-        substNFFamilyOne('InputShareOK-A-B, 'ShareOK-A['B ++ 1],
-           nf('xa : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)]), return (), 
+        substNFFamilyOne('InputShareOK-A-B, 'ShareOK-A['B],
+           nf('xa : bool <- read ('InputShare-A-B[fun 'wire0 'B]), return (), 
               'xa :: emptyCNameList)
           )
         ; SYM[P1:Protocol <- new5step]{
-            substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-             nf('is : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)]), 
+            substNFFamilyOne('Share-A, 'ShareOK-A['B],
+             nf('is : bool <- read ('InputShare-A-B[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
             )
-            ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'is, 'xa >> emptyQidPairList)
+            ; applyAlphaNFPr('ShareOK-A['B], << 'is, 'xa >> emptyQidPairList)
           }  , 
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isNotGate
-        substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+        substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B ]),
        return (), 'xa :: emptyCNameList)
        )
        ; SYM[P1:Protocol <- new5step]{
-        substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-       nf('sa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+        substNFFamilyOne('Share-A, 'ShareOK-A['B],
+       nf('sa : bool <- read ('Share-A[fun 'wire0 'B ]),
        return 'sa, 'sa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'sa, 'xa >> emptyQidPairList)
+       ; applyAlphaNFPr('ShareOK-A['B], << 'sa, 'xa >> emptyQidPairList)
        }, 
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isXorGate
-       substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+       substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'xa, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1) ]),
+       ; applyAlphaNFPr('ShareOK-A['B], << 'xa, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire1 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-A['B], 
                          << 'xa, 'ya >> 
                          << 'is, 'xa >>
                          emptyQidPairList)
-       ; changeOrder('ShareOK-A['B ++ 1], 'ya :: 'xa :: emptyCNameList)                   
+       ; changeOrder('ShareOK-A['B], 'ya :: 'xa :: emptyCNameList)                   
        ; SYM[P1:Protocol <- new5step]{
-          substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-       nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        'ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+          substNFFamilyOne('Share-A, 'ShareOK-A['B],
+       nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        'ya : bool <- read ('Share-A[fun 'wire1 'B]), 
         return (ap 'xor pair('xa, 'ya)), 'xa :: 'ya :: emptyCNameList)
       )
        }                
        , 
        CASE-DISTINCTION-channel-end-when{
          *** isAndGate 
-         substNFFamilyOne('OTBitOK-A-B, 'ShareOK-A['B ++ 1],
-       nf(('ak : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-        'al : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+         substNFFamilyOne('OTBitOK-A-B, 'ShareOK-A['B],
+       nf(('ak : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+        'al : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
         return (), 'ak :: 'al :: emptyCNameList)
        )
-      ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+      ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'xa, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1) ]),
+       ; applyAlphaNFPr('ShareOK-A['B], << 'xa, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire1 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-A['B], 
                          << 'xa, 'ya >> 
                          << 'is, 'xa >>
                          emptyQidPairList)
-        *** ; changeOrder('ShareOK-A['B ++ 1], 'xa :: 'ya :: emptyCNameList)                 
+        *** ; changeOrder('ShareOK-A['B], 'xa :: 'ya :: emptyCNameList)                 
         ; SYM[P1:Protocol <- new5step]{
-           substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-       nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-         'ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+           substNFFamilyOne('Share-A, 'ShareOK-A['B],
+       nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+         'ya : bool <- read ('Share-A[fun 'wire1 'B]), 
         return (ap 'xor pair(ap 'and pair('xa, 'ya), 'ba)), 
         'ba :: 'xa :: 'ya :: emptyCNameList)
      ) 
-     ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'xa, 'xa1 >> << 'ya, 'ya1 >> emptyQidPairList)
+     ; applyAlphaNFPr('ShareOK-A['B], << 'xa, 'xa1 >> << 'ya, 'ya1 >> emptyQidPairList)
      ; applySubsumeFamilyCasesChannelList
-          ('OTBit-A-B, 'ShareOK-A['B ++ 1], 'xa :: 'ya :: emptyCNameList)
-     ; applyDropFamilyCasesChannel('OTBit-A-B, 'ShareOK-A['B ++ 1])
+          ('OTBit-A-B, 'ShareOK-A['B], 'xa :: 'ya :: emptyCNameList)
+     ; applyDropFamilyCasesChannel('OTBit-A-B, 'ShareOK-A['B])
         }                
        }}}}}
-       ; applyAllSameCases('ShareOK-A['B ++ 1])
+       ; applyAllSameCases('ShareOK-A['B])
        ) *** end for :
      .  
     
@@ -16147,141 +16163,141 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
      : ( *** open for :
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isAliceInput
-       substNFFamilyOne('InputShareOK-B-A, 'ShareOK-B['B ++ 1],
-           nf('xb : bool <- read ('InputShare-B-A[fun 'wire0 ('B ++ 1)]), return (), 
+       substNFFamilyOne('InputShareOK-B-A, 'ShareOK-B['B],
+           nf('xb : bool <- read ('InputShare-B-A[fun 'wire0 'B]), return (), 
               'xb :: emptyCNameList)
           )
           ; SYM[P1:Protocol <- new3Ind0]{ 
-            substNFFamilyOne('Share-B, 'ShareOK-B['B ++ 1],
-       nf(('is : bool <- read ('InputShare-B-A[fun 'wire0 ('B ++ 1)])) 
-       'x : unit <- read ('InputShareOK-B-A[fun 'wire0 ('B ++ 1)]), 
+            substNFFamilyOne('Share-B, 'ShareOK-B['B],
+       nf(('is : bool <- read ('InputShare-B-A[fun 'wire0 'B])) 
+       'x : unit <- read ('InputShareOK-B-A[fun 'wire0 'B]), 
        return 'is, 'x :: 'is :: emptyCNameList)
       )
       ;
-      substNFFamilyOne('InputShareOK-B-A, 'ShareOK-B['B ++ 1],
-       nf('xb : bool <- read ('InputShare-B-A[fun 'wire0 ('B ++ 1)]), return (), 
+      substNFFamilyOne('InputShareOK-B-A, 'ShareOK-B['B],
+       nf('xb : bool <- read ('InputShare-B-A[fun 'wire0 'B]), return (), 
      'xb :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'is, 'xb >> emptyQidPairList)
+      ; applyAlphaNFPr('ShareOK-B['B], << 'is, 'xb >> emptyQidPairList)
       }
       , 
        CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isBobInput
-       substNFFamilyOne('InputShareOK-B-B, 'ShareOK-B['B ++ 1],
-           nf('xb : bool <- read ('InputShare-B-B[fun 'wire0 ('B ++ 1)]), return (), 
+       substNFFamilyOne('InputShareOK-B-B, 'ShareOK-B['B],
+           nf('xb : bool <- read ('InputShare-B-B[fun 'wire0 'B]), return (), 
               'xb :: emptyCNameList)
           )
           ; SYM[P1:Protocol <- new3Ind0]{ 
-            substNFFamilyOne('Share-B, 'ShareOK-B['B ++ 1],
-       nf(('is : bool <- read ('InputShare-B-B[fun 'wire0 ('B ++ 1)])) 
-       'x : unit <- read ('InputShareOK-B-B[fun 'wire0 ('B ++ 1)]), 
+            substNFFamilyOne('Share-B, 'ShareOK-B['B],
+       nf(('is : bool <- read ('InputShare-B-B[fun 'wire0 'B])) 
+       'x : unit <- read ('InputShareOK-B-B[fun 'wire0 'B]), 
        return 'is, 'x :: 'is :: emptyCNameList)
       )
       ;
-      substNFFamilyOne('InputShareOK-B-B, 'ShareOK-B['B ++ 1],
-       nf('xb : bool <- read ('InputShare-B-B[fun 'wire0 ('B ++ 1)]), return (), 
+      substNFFamilyOne('InputShareOK-B-B, 'ShareOK-B['B],
+       nf('xb : bool <- read ('InputShare-B-B[fun 'wire0 'B]), return (), 
      'xb :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'is, 'xb >> emptyQidPairList)
+      ; applyAlphaNFPr('ShareOK-B['B], << 'is, 'xb >> emptyQidPairList)
       }
       , 
       CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isNotGate
-       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-        nf('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), return (), 'xb :: emptyCNameList)
+       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+        nf('xb : bool <- read ('Share-B[fun 'wire0 'B]), return (), 'xb :: emptyCNameList)
        )
        ; SYM[P1:Protocol <- new3Ind0]{ 
-       substNFFamilyOne('Share-B, 'ShareOK-B['B ++ 1],
-       nf(('x : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-           'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+       substNFFamilyOne('Share-B, 'ShareOK-B['B],
+       nf(('x : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+           'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
            return (ap 'neg 'xb), 'x :: 'xb :: emptyCNameList)
       )
       ;
-      substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+      substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
            return (), 'xb :: emptyCNameList)
       )
       } 
        , CASE-DISTINCTION-channel[cn:ChannelName <- cn]{
        *** isXorGate
-         substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-          nf('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+         substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+          nf('xb : bool <- read ('Share-B[fun 'wire0 'B]), 
              return (), 'xb :: emptyCNameList)
          )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xb, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-          nf('xb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+       ; applyAlphaNFPr('ShareOK-B['B], << 'xb, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+          nf('xb : bool <- read ('Share-B[fun 'wire1 'B]), 
              return (), 'xb :: emptyCNameList)
          )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-B['B], 
                          << 'xb, 'yb >> 
                          << 'is, 'xb >>
                          emptyQidPairList)  
        *** now comes the sym proof!
        ; SYM[P1:Protocol <- new3Ind0]{ 
-        substNFFamilyOne('Share-B, 'ShareOK-B['B ++ 1],
+        substNFFamilyOne('Share-B, 'ShareOK-B['B],
       
-      nf(('x : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-         ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-         ('y : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])) 
-          'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+      nf(('x : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+         ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+         ('y : unit <- read ('ShareOK-B[fun 'wire1 'B])) 
+          'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
           return (ap 'xor pair('xb, 'yb)), 
           'xb :: 'x :: 'yb :: 'y :: emptyCNameList)
       )
       ;
-       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
            return (), 'xb :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xb, 'is >> emptyQidPairList)
+      ; applyAlphaNFPr('ShareOK-B['B], << 'xb, 'is >> emptyQidPairList)
       ;
-       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'xb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'xb : bool <- read ('Share-B[fun 'wire1 'B]), 
            return (), 'xb :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xb, 'yb >> 
+      ; applyAlphaNFPr('ShareOK-B['B], << 'xb, 'yb >> 
                                             << 'is, 'xb >> emptyQidPairList)
-      ; changeOrder('ShareOK-B['B ++ 1], 'xb :: 'yb :: emptyCNameList) 
+      ; changeOrder('ShareOK-B['B], 'xb :: 'yb :: emptyCNameList) 
        }
        , 
        CASE-DISTINCTION-channel-end-when{
          *** isAndGate 
-         substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-          nf('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+         substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+          nf('xb : bool <- read ('Share-B[fun 'wire0 'B]), 
              return (), 'xb :: emptyCNameList)
          )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xb, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-          nf('xb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+       ; applyAlphaNFPr('ShareOK-B['B], << 'xb, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+          nf('xb : bool <- read ('Share-B[fun 'wire1 'B]), 
              return (), 'xb :: emptyCNameList)
          )
-       ; applyAlphaNFPr('ShareOK-B['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-B['B], 
                          << 'xb, 'yb0 >> 
                          << 'is, 'xb0 >>
                          emptyQidPairList)  
-       ; substNFFamilyOne('OTBitOK-B-A, 'ShareOK-B['B ++ 1],
-          nf(('ba : unit <- read ('OTBitOK-A-B[('B ++ 1)])) 
-             ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-             ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-             ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])) 
-              'yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)]), 
+       ; substNFFamilyOne('OTBitOK-B-A, 'ShareOK-B['B],
+          nf(('ba : unit <- read ('OTBitOK-A-B['B])) 
+             ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+             ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+             ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])) 
+              'yb : unit <- read ('ShareOK-B[fun 'wire1 'B]), 
               return (),
               'ba :: 'xa :: 'ya :: 'xb :: 'yb :: emptyCNameList
          ) 
          )
-      ; substNFFamilyOne('OTBitOK-A-B, 'ShareOK-B['B ++ 1],  
-         nf('ba : bool <- read ('OTBit-A-B['B ++ 1]), return (), 'ba :: emptyCNameList)
+      ; substNFFamilyOne('OTBitOK-A-B, 'ShareOK-B['B],  
+         nf('ba : bool <- read ('OTBit-A-B['B]), return (), 'ba :: emptyCNameList)
       )
-      ; substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)]), 
+      ; substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B]), 
           return (), 'xa :: emptyCNameList)
        ) 
-    ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xa, 'is >> emptyQidPairList)         
-    ; substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+    ; applyAlphaNFPr('ShareOK-B['B], << 'xa, 'is >> emptyQidPairList)         
+    ; substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire1 'B]), 
           return (), 'xa :: emptyCNameList)
        ) 
-    ; applyAlphaNFPr('ShareOK-B['B ++ 1],  
+    ; applyAlphaNFPr('ShareOK-B['B],  
        << 'is, 'sa0 >>
        << 'xa, 'sa1 >>
        << 'xb, 'so0 >>
@@ -16291,68 +16307,68 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
         emptyQidPairList) 
         *** here comes the sym proof
     ; SYM[P1:Protocol <- new3Ind0]{
-      substNFFamilyOne('Share-B, 'ShareOK-B['B ++ 1],
-       nf(('b : unit <- read ('OTBitOK-B-A[('B ++ 1)])) 
-          ('bb : bool <- read ('OTBit-B-A[('B ++ 1)])) 
-          ('x : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-          ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-          ('y : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)])) 
-           'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+      substNFFamilyOne('Share-B, 'ShareOK-B['B],
+       nf(('b : unit <- read ('OTBitOK-B-A['B])) 
+          ('bb : bool <- read ('OTBit-B-A['B])) 
+          ('x : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+          ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+          ('y : unit <- read ('ShareOK-B[fun 'wire1 'B])) 
+           'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
            return (ap 'xor pair('bb, ap 'and pair('xb, 'yb))), 
            'bb :: 'b :: 'xb :: 'x :: 'yb :: 'y :: emptyCNameList)
       )
       ;
-      substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)]), 
+      substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'xb : bool <- read ('Share-B[fun 'wire0 'B]), 
            return (), 'xb :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xb, 'is >> emptyQidPairList)
+      ; applyAlphaNFPr('ShareOK-B['B], << 'xb, 'is >> emptyQidPairList)
       ;
-       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B ++ 1],
-       nf( 'xb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+       substNFFamilyOne('ShareOK-B, 'ShareOK-B['B],
+       nf( 'xb : bool <- read ('Share-B[fun 'wire1 'B]), 
            return (), 'xb :: emptyCNameList)
       )
-      ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xb, 'yb0 >> 
+      ; applyAlphaNFPr('ShareOK-B['B], << 'xb, 'yb0 >> 
                                             << 'is, 'xb0 >> emptyQidPairList)
-      ; substNFFamilyOne('OTBitOK-B-A, 'ShareOK-B['B ++ 1],
-          nf(('ba : unit <- read ('OTBitOK-A-B[('B ++ 1)])) 
-             ('xa : unit <- read ('ShareOK-A[fun 'wire0 ('B ++ 1)])) 
-             ('xb : unit <- read ('ShareOK-B[fun 'wire0 ('B ++ 1)])) 
-             ('ya : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)])) 
-              'yb : unit <- read ('ShareOK-B[fun 'wire1 ('B ++ 1)]), 
+      ; substNFFamilyOne('OTBitOK-B-A, 'ShareOK-B['B],
+          nf(('ba : unit <- read ('OTBitOK-A-B['B])) 
+             ('xa : unit <- read ('ShareOK-A[fun 'wire0 'B])) 
+             ('xb : unit <- read ('ShareOK-B[fun 'wire0 'B])) 
+             ('ya : unit <- read ('ShareOK-A[fun 'wire1 'B])) 
+              'yb : unit <- read ('ShareOK-B[fun 'wire1 'B]), 
               return (),
               'ba :: 'xa :: 'ya :: 'xb :: 'yb :: emptyCNameList
          ) 
          )
-     ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'ba, 'ba1 >> 
+     ; applyAlphaNFPr('ShareOK-B['B], << 'ba, 'ba1 >> 
                                            << 'xa, 'xa1 >> 
                                            << 'ya, 'ya1 >>
                                            << 'xb, 'xb1 >>
                                            << 'yb, 'yb1 >>
                                            emptyQidPairList)
-     ; substNFFamilyOne('OTBitOK-A-B, 'ShareOK-B['B ++ 1],
-        nf('ba : bool <- read ('OTBit-A-B['B ++ 1]), return (), 'ba :: emptyCNameList)
+     ; substNFFamilyOne('OTBitOK-A-B, 'ShareOK-B['B],
+        nf('ba : bool <- read ('OTBit-A-B['B]), return (), 'ba :: emptyCNameList)
        )                                     
-     ; substNFFamilyOne('OTBit-B-A, 'ShareOK-B['B ++ 1], 
-        nf(('ba : bool <- read ('OTBit-A-B[('B ++ 1)])) 
-           ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-           ('xb : bool <- read ('Share-B[fun 'wire0 ('B ++ 1)])) 
-           ('ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)])) 
-            'yb : bool <- read ('Share-B[fun 'wire1 ('B ++ 1)]), 
+     ; substNFFamilyOne('OTBit-B-A, 'ShareOK-B['B], 
+        nf(('ba : bool <- read ('OTBit-A-B['B])) 
+           ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+           ('xb : bool <- read ('Share-B[fun 'wire0 'B])) 
+           ('ya : bool <- read ('Share-A[fun 'wire1 'B])) 
+            'yb : bool <- read ('Share-B[fun 'wire1 'B]), 
             return (ap 'xor pair('ba, ap 'xor pair(ap 'and pair('xa, 'yb), 
                                                    ap 'and pair('xb, 'ya)))),
            'ba :: 'xa :: 'ya :: 'xb :: 'yb :: emptyCNameList)
      )
-     ; substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)]), 
+     ; substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B]), 
           return (), 'xa :: emptyCNameList)
        ) 
-    ; applyAlphaNFPr('ShareOK-B['B ++ 1], << 'xa, 'is >> emptyQidPairList)         
-    ; substNFFamilyOne('ShareOK-A, 'ShareOK-B['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+    ; applyAlphaNFPr('ShareOK-B['B], << 'xa, 'is >> emptyQidPairList)         
+    ; substNFFamilyOne('ShareOK-A, 'ShareOK-B['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire1 'B]), 
           return (), 'xa :: emptyCNameList)
        )
-    ; applyAlphaNFPr('ShareOK-B['B ++ 1],  
+    ; applyAlphaNFPr('ShareOK-B['B],  
         << 'is, 'sa0 >>
         << 'xb, 'sb0 >>
         << 'xb1, 'so0 >>
@@ -16360,7 +16376,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
         << 'yb, 'sb1 >>
         << 'yb1, 'so1 >>
         emptyQidPairList)
-    ; changeOrder( 'ShareOK-B['B ++ 1],
+    ; changeOrder( 'ShareOK-B['B],
        'ba :: 'sa0 :: 'sa1 :: 'so0 :: 'so1 :: 'sb0 :: 'sb1 :: emptyCNameList) 
     }                          
        }
@@ -16368,7 +16384,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
       }
       }
      }
-     ; applyAllSameCases('ShareOK-B['B ++ 1])
+     ; applyAllSameCases('ShareOK-B['B])
      ) *** close for :
      .
    
@@ -16465,10 +16481,13 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
     sd apInduction910(P) := 
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{apInduction910(P)}
-     : INDUCTION-P-3[idx:Qid <- 'B,
+     : SINGLE-INDUCTION
+       *** INDUCTION-P-3
+                    [idx:Qid <- 'B,
                      C:Qid <- 'AliceOK, 
-                    P2:Protocol <- P                      
-                   ]
+                     q:Qid <- 'k,
+                     P2:Protocol <- P                      
+                    ]
                    {
                    induction910
                    }
@@ -16484,29 +16503,29 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
        ; applyDropName('AliceOK)    
        ; applySubstChannelCase3(
             'ShareOK-A, 
-            'OTBitOK-A-B['B ++ 1], 
-             nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)]), 
+            'OTBitOK-A-B['B], 
+             nf('xa : bool <- read ('Share-A[fun 'wire0 'B]), 
                 return (), 'xa :: emptyCNameList),
-             nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                 'al : unit <- read ('ShareOK-A[fun 'wire1 ('B ++ 1)]), 
+             nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                 'al : unit <- read ('ShareOK-A[fun 'wire1 'B]), 
                  return (), 
                  'xa :: 'al :: emptyCNameList),
-            apply 'isAndGate ('B ++ 1)
+            apply 'isAndGate 'B
         )
-        ; applyBranch1Alpha('OTBitOK-A-B['B ++ 1], 
+        ; applyBranch1Alpha('OTBitOK-A-B['B], 
                            << 'xa, 'sa >> emptyQidPairList)
         ; applySubstChannelCase3(
             'ShareOK-A, 
-            'OTBitOK-A-B['B ++ 1], 
-             nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+            'OTBitOK-A-B['B], 
+             nf('xa : bool <- read ('Share-A[fun 'wire1 'B]), 
                 return (), 'xa :: emptyCNameList),
-             nf(('sa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-                 'xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+             nf(('sa : bool <- read ('Share-A[fun 'wire0 'B])) 
+                 'xa : bool <- read ('Share-A[fun 'wire1 'B]), 
                  return (), 
                  'sa :: 'xa :: emptyCNameList),
-            apply 'isAndGate ('B ++ 1)
+            apply 'isAndGate 'B
         )  
-        ; applyBranch1Alpha('OTBitOK-A-B['B ++ 1], 
+        ; applyBranch1Alpha('OTBitOK-A-B['B], 
                            << 'xa, 'ya >> 
                            << 'sa, 'xa >> emptyQidPairList) 
             
@@ -16518,7 +16537,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
        ; applyDropName('AliceOK)
        ; applyCasesSubsumeDropDivergeOwiseC(
           'OTBit-A-B, 
-          'OTBitOK-A-B['B ++ 1], 
+          'OTBitOK-A-B['B], 
           'xa :: 'ya :: emptyCNameList, 
           unit, 'ot
           )
@@ -16530,100 +16549,100 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
        ; applyDropName('AliceOK)
        
        ;
-         CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B ++ 1]]{
+         CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B]]{
        *** isAliceInput
-       substNFFamilyOne('InputShareOK-A-A, 'ShareOK-A['B ++ 1],
-           nf('xa : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)]), 
+       substNFFamilyOne('InputShareOK-A-A, 'ShareOK-A['B],
+           nf('xa : bool <- read ('InputShare-A-A[fun 'wire0 'B]), 
               return (), 'xa :: emptyCNameList)
           )    
         ; SYM[P1:Protocol <- new10Ind0]{
-            substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-             nf('is : bool <- read ('InputShare-A-A[fun 'wire0 ('B ++ 1)]), 
+            substNFFamilyOne('Share-A, 'ShareOK-A['B],
+             nf('is : bool <- read ('InputShare-A-A[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
             )
-          ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'is, 'xa >> emptyQidPairList) 
+          ; applyAlphaNFPr('ShareOK-A['B], << 'is, 'xa >> emptyQidPairList) 
           } 
           , 
-          CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B ++ 1]]{
+          CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B]]{
        *** isBobInput
-        substNFFamilyOne('InputShareOK-A-B, 'ShareOK-A['B ++ 1],
-           nf('xa : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)]), return (), 
+        substNFFamilyOne('InputShareOK-A-B, 'ShareOK-A['B],
+           nf('xa : bool <- read ('InputShare-A-B[fun 'wire0 'B]), return (), 
               'xa :: emptyCNameList)
           )
         ; SYM[P1:Protocol <- new10Ind0]{
-            substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-             nf('is : bool <- read ('InputShare-A-B[fun 'wire0 ('B ++ 1)]), 
+            substNFFamilyOne('Share-A, 'ShareOK-A['B],
+             nf('is : bool <- read ('InputShare-A-B[fun 'wire0 'B]), 
              return 'is, 'is :: emptyCNameList)
             )
-            ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'is, 'xa >> emptyQidPairList)
+            ; applyAlphaNFPr('ShareOK-A['B], << 'is, 'xa >> emptyQidPairList)
           }  ,
-          CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B ++ 1]]{
+          CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B]]{
        *** isNotGate
-        substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+        substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B ]),
           return (), 'xa :: emptyCNameList)
        )
        
        ; SYM[P1:Protocol <- new10Ind0]{
-        substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-       nf('sa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+        substNFFamilyOne('Share-A, 'ShareOK-A['B],
+       nf('sa : bool <- read ('Share-A[fun 'wire0 'B ]),
           return 'sa, 'sa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'sa, 'xa >> emptyQidPairList)
+       ; applyAlphaNFPr('ShareOK-A['B], << 'sa, 'xa >> emptyQidPairList)
        }
        , 
-        CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B ++ 1]]{
+        CASE-DISTINCTION-channel[cn:ChannelName <- 'ShareOK-A['B]]{
        *** isXorGate
-       substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+       substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'xa, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1) ]),
+       ; applyAlphaNFPr('ShareOK-A['B], << 'xa, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire1 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-A['B], 
                          << 'xa, 'ya >> 
                          << 'is, 'xa >>
                          emptyQidPairList)
-       ; changeOrder('ShareOK-A['B ++ 1], 'ya :: 'xa :: emptyCNameList)                   
+       ; changeOrder('ShareOK-A['B], 'ya :: 'xa :: emptyCNameList)                   
        ; SYM[P1:Protocol <- new10Ind0]{
-          substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-       nf(('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-        'ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+          substNFFamilyOne('Share-A, 'ShareOK-A['B],
+       nf(('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+        'ya : bool <- read ('Share-A[fun 'wire1 'B]), 
         return (ap 'xor pair('xa, 'ya)), 'xa :: 'ya :: emptyCNameList)
       )
        }, CASE-DISTINCTION-channel-end-when{
            
         
          *** isAndGate 
-         substNFFamilyOne('OTBitOK-A-B, 'ShareOK-A['B ++ 1],
-       nf('ba : bool <- read ('OTBit-A-B['B ++ 1]), return (), 'ba :: emptyCNameList)
+         substNFFamilyOne('OTBitOK-A-B, 'ShareOK-A['B],
+       nf('ba : bool <- read ('OTBit-A-B['B]), return (), 'ba :: emptyCNameList)
        )      
-      ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1) ]),
+      ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire0 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], << 'xa, 'is >> emptyQidPairList)
-       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B ++ 1],
-       nf('xa : bool <- read ('Share-A[fun 'wire1 ('B ++ 1) ]),
+       ; applyAlphaNFPr('ShareOK-A['B], << 'xa, 'is >> emptyQidPairList)
+       ; substNFFamilyOne('ShareOK-A, 'ShareOK-A['B],
+       nf('xa : bool <- read ('Share-A[fun 'wire1 'B ]),
        return (), 'xa :: emptyCNameList)
        )
-       ; applyAlphaNFPr('ShareOK-A['B ++ 1], 
+       ; applyAlphaNFPr('ShareOK-A['B], 
                          << 'xa, 'ya >> 
                          << 'is, 'xa >>
                          emptyQidPairList)
                        
         ; SYM[P1:Protocol <- new10Ind0]{
-           substNFFamilyOne('Share-A, 'ShareOK-A['B ++ 1],
-       nf(('ba : bool <- read ('OTBit-A-B['B ++ 1])) 
-        ('xa : bool <- read ('Share-A[fun 'wire0 ('B ++ 1)])) 
-         'ya : bool <- read ('Share-A[fun 'wire1 ('B ++ 1)]), 
+           substNFFamilyOne('Share-A, 'ShareOK-A['B],
+       nf(('ba : bool <- read ('OTBit-A-B['B])) 
+        ('xa : bool <- read ('Share-A[fun 'wire0 'B])) 
+         'ya : bool <- read ('Share-A[fun 'wire1 'B]), 
         return (ap 'xor pair(ap 'and pair('xa, 'ya), 'ba)), 
         'ba :: 'xa :: 'ya :: emptyCNameList)
      ) 
-     ; changeOrder('ShareOK-A['B ++ 1], 'ba :: 'xa :: 'ya :: emptyCNameList) 
+     ; changeOrder('ShareOK-A['B], 'ba :: 'xa :: 'ya :: emptyCNameList) 
         }
         
                       
@@ -16634,7 +16653,7 @@ return (ap 'xor pair( ap 'xor pair( ap 'and pair(xa, ya),
          }
        }  
              
-       ; applyAllSameCases('ShareOK-A['B ++ 1])
+       ; applyAllSameCases('ShareOK-A['B])
        
        ; SYM[P1:Protocol <- new10IndEnd]{
          applyDropName('indAlice)
@@ -16758,8 +16777,9 @@ using     sugar-newNF
         }
         ;  sugar-newNF
         ; rewriteRestrInitial
-        ; rewriteRestrInductive
+        ; rewriteRestrInductive     
         ; rewriteRestrFinal
+        
         ; desugar-newNF
         *** just to check that we are at restr1
         ; SYM[P1:Protocol <- restr1]{idle}   
@@ -17434,6 +17454,76 @@ using     sugar-newNF
         ; applyDropName('Wires)
         ; applySameCasesSubstFirstBranch('Out-A, 'SendFinalShare-B_A_adv, 'k)
       }    
-        
+  
+  .
+  
+***(
+  
+  srew [1] 
+ pConfig(secSig,
+       ('In-A @ N :: bool)
+           ('In-B @ M :: bool)          
+           ('In-A_A_adv @ N :: bool) 
+           ('InRcvd-B_B_adv @ M :: unit) 
+           ('InputShare-A-A_A_adv @ N :: bool)
+           ('InputShare-A-B_A_adv @ M :: bool) 
+           ('OTBit-A-B_A_adv @ K :: bool) 
+           ('OTChoice-B-A-0_ot_adv @ K :: unit)
+           ('OTChoice-B-A-1_ot_adv @ K :: unit) 
+            ('OTChoiceRcvd-B-A-0_ot_adv @ N + M :: unit) 
+           ('OTChoiceRcvd-B-A-1_ot_adv @ N + M :: unit)
+           ('OTMsg-A-B-0_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-1_ot_adv @ K :: bool)
+           ('OTMsg-A-B-2_ot_adv @ K :: bool) 
+           ('OTMsg-A-B-3_ot_adv @ K :: bool)
+           ('Out-A @ K :: bool)
+           ('Out-A_A_adv @ K :: bool) 
+           ('Out-B @ K :: bool) 
+           ('SendFinalShare-A_A_adv @ K :: bool) 
+           ('SendFinalShare-B_A_adv @ K :: bool) 
+           ('SendInputShare-A-B_A_adv @ M :: bool) 
+           ('SendInputShare-B-A_A_adv @ N :: bool) 
+           ('Share-A_A_adv @ K :: bool)
+           ('OTOut-A-B @ N + M :: bool)
+           
+               ('InputShare-A-A @ N :: bool)
+               ('InputShare-A-B @ M :: bool)
+               ('InputShare-B-A @ N :: bool)
+               ('InputShare-B-B @ M :: bool)
+               ('OTBit-A-B @ K :: bool)
+               ('OTBit-B-A @ K :: bool)
+               ('Share-A @ K :: bool)
+               ('Share-B @ K :: bool),
+           new3,
+           ('In-A @ N, 
+               'In-B @ M,
+               'InputShare-A-A @ N,
+               'InputShare-A-B @ M,
+               'InputShare-B-A @ N,
+               'InputShare-B-B @ M,
+               'OTBit-A-B @ K,
+               'OTBit-B-A @ K,
+               'Share-A @ K,'Share-B @ K), *** I  
+           getOutputs(restrInductive),
+           genA
+        )
+using    sugar-newNF
+       ; applyDropName('indAlice)
+       ; applyDropName('indBob)
+       ; applyDropName('indAdv) 
+       ; apIndBobOK(
+         
+   (family 'OTBitOK-B-A 'k (bound K) ::= 
+     nf('bb : bool <- read ('OTBit-B-A['k]), 
+        return (), 'bb :: emptyCNameList)
+   )
+   ||
+   (family 'ShareOK-B 'k (bound K) ::=
+     nf('xb : bool <- read ('Share-B['k]), 
+         return (), 'xb :: emptyCNameList)
+   )
+       )
+       ; applyDropName('BobOK)
+  
 .
-
+)

@@ -1,6 +1,6 @@
 ***( IPDL
 
-  Copyright : (C) 2022-23, Kristina Sojakova
+  Copyright : (C) 2022-23, Kristina Sojakova, Mihai Codescu
   License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
   Authors   : Mihai Codescu <mscodescu@gmail.com>
               Kristina Sojakova <sojakova.kristina@gmail.com>
@@ -111,24 +111,6 @@ smod EXECUTE is
    
  endsm
  
-
-***(
-srew [1] 
-pConfig(sig, 
-         ('In @ nil :: bool) 
-         ('LeakCtxt_Alice_adv @ nil :: bool), 
-         idealPlusSim, 
-         'In @ nil, 
-         getOutputs(idealPlusSim), 
-         empty)
-using 
-       sugar-newNF
-     ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv) 
-     ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)    
-.
-)
-
-
 srew [1] 
  pConfig(sig, 
          ('In @ nil :: bool) 
@@ -147,90 +129,23 @@ using
      ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv) 
      ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)  
      }
-.  
-
-***(
-srew [1] 
- pConfig(('xor : bool * bool ~> bool) 'flip : unit ~>>
-    bool, ('In @ nil :: bool) 'LeakCtxt_Alice_adv @ nil :: bool, newNF(<
-    'Ctxt : bool >, ('Ctxt ::= preNF('m : bool <- read 'In, 'k : bool <-
-    samp ('flip < () >) ; return (ap 'xor pair('m, 'k)), 'm ::
-    emptyCNameList)) || 'LeakCtxt_Alice_adv ::= nf('c : bool <- read 'Ctxt,
-    return 'c, 'c :: emptyCNameList), 'Ctxt :: emptyCNameList), 'In @ nil,
-    'LeakCtxt_Alice_adv @ nil, empty)
-using foldNF('Ctxt, 'LeakCtxt_Alice_adv)
-   
 .   
- )
-***(
-srew [1] 
- pConfig(('xor : bool * bool ~> bool) 'flip : unit ~>>
-    bool, ('In @ nil :: bool) 'LeakCtxt_Alice_adv @ nil :: bool, 
-     'LeakCtxt_Alice_adv ::= preNF(('m : bool <- read
-    'In) 'c : bool <~ 'k : bool <- samp ('flip < () >) ; return (ap 'xor
-    pair('m, 'k)), return 'c, 'm :: 'c :: emptyCNameList),
-    'In @ nil, 'LeakCtxt_Alice_adv @ nil, empty)
-using CONG-REACT{
-        bind-ret-2-pre
-     }
-.    
-)
  
-***(
+***( Here we record the proof from idealPlusSim.
+It has been plugged in the SYM proof from real, so we don't need 
+it anymore and we can comment it out.
+
 srew [1] 
- pConfig(('xor : bool * bool ~> bool) 'flip : unit ~>> bool, 
-         ('In @ nil :: bool) 'LeakCtxt_Alice_adv @ nil :: bool, 
-           newNF(emptyTypedCNameList, 
-                 'LeakCtxt_Alice_adv ::= 
-                    preNF('c : bool <~ preNF('m : bool <- read 'In, 
-                                             'k : bool <- samp ('flip < () >) ; 
-                                             return (ap 'xor pair('m, 'k)), 
-                                             'm :: emptyCNameList), 
-                           return 'c, 
-                           'c :: emptyCNameList),
-                  emptyCNameList), 
-          'In @ nil, 
-          'LeakCtxt_Alice_adv @ nil, 
-          empty)
-using liftInnerBindsNF('LeakCtxt_Alice_adv)
-      *** CONG-NEW-NF{CONG-REACT{(bind-bind-pre or-else bind-bind-pre-pre) ; (read-det-pre !)}} 
+pConfig(sig, 
+         ('In @ nil :: bool) 
+         ('LeakCtxt_Alice_adv @ nil :: bool), 
+         idealPlusSim, 
+         'In @ nil, 
+         getOutputs(idealPlusSim), 
+         empty)
+using 
+       sugar-newNF
+     ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv) 
+     ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)    
 .
 )
- 
-***(
-
-srew [1] 
- pConfig(sig, 
-         ('In @ nil :: bool) 
-         ('LeakCtxt_Alice_adv @ nil :: bool), 
-         real, 
-         'In @ nil, 
-         getOutputs(real), 
-         empty)
-using 
-   sugar-newNF
- ; foldNF('Flip, 'LeakCtxt_Alice_adv)   
- ; applyAssumption('LeakCtxt_Alice_adv)
-.  
-
-
-srew [1] 
- pConfig(sig, 
-         ('In @ nil :: bool) 
-         ('LeakCtxt_Alice_adv @ nil :: bool), 
-         real, 
-         'In @ nil, 
-         getOutputs(real), 
-         empty)
-using 
-   sugar-newNF
- ; foldNF('Flip, 'LeakCtxt_Alice_adv)   
- ; applyAssumption('LeakCtxt_Alice_adv)
- ; SYM[P1:Protocol <- idealPlusSim]{
-     sugar-newNF 
-   ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv)   
-   ; foldNF('Flip, 'LeakCtxt_Alice_adv)
-   }
-.  
-)
-
