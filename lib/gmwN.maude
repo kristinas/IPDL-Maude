@@ -2605,6 +2605,99 @@ endm
 smod EXECUTE is
  pr GMWN .
  pr STRATS .
+ 
+ strat eliminateOTDivergent @ ProtocolConfig .
+ sd eliminateOTDivergent := 
+           applyDivergeChannel3FamilyBranch('OTMsg-0, 'OTMsg-0_ot_adv, 
+                                           apply 'isSemiHonest 'n, 'om, bool)
+         ; applyAllSameCases('OTMsg-0_ot_adv)
+         
+         ; applyDivergeChannel3FamilyBranch('OTMsg-0, 'OTMsgRcvd-0_ot_adv, 
+                                            apply 'isHonest 'n, 'om, unit)
+         ; applyAllSameCases('OTMsgRcvd-0_ot_adv)
+         
+         ; applyDivergeChannel3FamilyBranch('OTMsg-1, 'OTMsg-1_ot_adv, 
+                                           apply 'isSemiHonest 'n, 'om, bool)
+         ; applyAllSameCases('OTMsg-1_ot_adv)
+         
+         ; applyDivergeChannel3FamilyBranch('OTMsg-1, 'OTMsgRcvd-1_ot_adv, 
+                                            apply 'isHonest 'n, 'om, unit)
+         ; applyAllSameCases('OTMsgRcvd-1_ot_adv)
+         ; applyDivergeChannel3FamilyBranch('OTMsg-2, 'OTMsg-2_ot_adv, 
+                                           apply 'isSemiHonest 'n, 'om, bool)
+         ; applyAllSameCases('OTMsg-2_ot_adv)
+         
+         ; applyDivergeChannel3FamilyBranch('OTMsg-2, 'OTMsgRcvd-2_ot_adv, 
+                                            apply 'isHonest 'n, 'om, unit)
+         ; applyAllSameCases('OTMsgRcvd-2_ot_adv)
+         ; applyDivergeChannel3FamilyBranch('OTMsg-3, 'OTMsg-3_ot_adv, 
+                                           apply 'isSemiHonest 'n, 'om, bool)
+         ; applyAllSameCases('OTMsg-3_ot_adv)
+         
+         
+         ; applyDivergeChannel3FamilyBranch('OTMsg-3, 'OTMsgRcvd-3_ot_adv, 
+                                            apply 'isHonest 'n, 'om, unit)
+         ; applyAllSameCases('OTMsgRcvd-3_ot_adv)
+                 
+         ; alpha-family-three[
+           C:Qid <- 'OTChoice-0, 
+           q1:Qid <- 'm,
+           q2:Qid <- 'n,
+           q3:Qid <- 'k,
+           q4:Qid <- 'n,
+           q5:Qid <- 'm,
+           q6:Qid <- 'k]  
+           
+          ; applyDivergeChannel3FamilyBranch('OTChoice-0, 'OTChoice-0_ot_adv, 
+                                             apply 'isSemiHonest 'm, 'oc, bool)
+          ; applyAllSameCases('OTChoice-0_ot_adv)
+          ; applyDivergeChannel3FamilyBranch('OTChoice-0, 'OTChoiceRcvd-0_ot_adv, 
+                                             apply 'isHonest 'm, 'oc, unit)
+          ; applyAllSameCases('OTChoiceRcvd-0_ot_adv)
+          ; alpha-family-three[
+           C:Qid <- 'OTChoice-0, 
+           q1:Qid <- 'n,
+           q2:Qid <- 'm,
+           q3:Qid <- 'k,
+           q4:Qid <- 'm,
+           q5:Qid <- 'n,
+           q6:Qid <- 'k] 
+          ; alpha-family-three[
+           C:Qid <- 'OTChoice-1, 
+           q1:Qid <- 'm,
+           q2:Qid <- 'n,
+           q3:Qid <- 'k,
+           q4:Qid <- 'n,
+           q5:Qid <- 'm,
+           q6:Qid <- 'k]  
+        
+          ; applyDivergeChannel3FamilyBranch('OTChoice-1, 'OTChoice-1_ot_adv, 
+                                             apply 'isSemiHonest 'm, 'oc, bool)
+                                               
+          ; applyAllSameCases('OTChoice-1_ot_adv)
+          
+          ; applyDivergeChannel3FamilyBranch('OTChoice-1, 'OTChoiceRcvd-1_ot_adv, 
+                                             apply 'isHonest 'm, 'oc, unit)
+                                             
+          ; applyAllSameCases('OTChoiceRcvd-1_ot_adv)
+          
+          ; alpha-family-three[
+           C:Qid <- 'OTChoice-1, 
+           q1:Qid <- 'n,
+           q2:Qid <- 'm,
+           q3:Qid <- 'k,
+           q4:Qid <- 'm,
+           q5:Qid <- 'n,
+           q6:Qid <- 'k]  
+          
+          ; applySubstDivergeFamily('OTMsg-0, 'OTOut, 'o, bool)
+          
+          ; applyDivergeChannel3FamilyBranch('OTOut, 'OTOut_ot_adv, 
+                                           apply 'isSemiHonest 'm, 'out, bool)
+          ; applyAllSameCases('OTOut_ot_adv) 
+    
+ .
+ 
 endsm 
 
 
@@ -2708,77 +2801,15 @@ using    sugar-newNF
         
        ; absorbFamily('SendInShare) 
        ; select-branch-family-p[bt:BoolTerm <- apply 'isInputGate 'k]{
-          applyDivergeChannel3FamilyBranch('OTMsg-0, 'OTMsg-0_ot_adv, 
-                                           apply 'isSemiHonest 'n, 'om, bool)
-         ; applyAllSameCases('OTMsg-0_ot_adv)
-         
-         ; applyDivergeChannel3FamilyBranch('OTMsg-0, 'OTMsgRcvd-0_ot_adv, 
-                                            apply 'isHonest 'n, 'om, unit)
-         ; applyAllSameCases('OTMsgRcvd-0_ot_adv)
-         ; applyDivergeChannel3FamilyBranch('OTMsg-1, 'OTMsg-1_ot_adv, 
-                                           apply 'isSemiHonest 'n, 'om, bool)
-         ; applyAllSameCases('OTMsg-1_ot_adv)
-         
-         ; applyDivergeChannel3FamilyBranch('OTMsg-1, 'OTMsgRcvd-1_ot_adv, 
-                                            apply 'isHonest 'n, 'om, unit)
-         ; applyAllSameCases('OTMsgRcvd-1_ot_adv)
-         ; applyDivergeChannel3FamilyBranch('OTMsg-2, 'OTMsg-2_ot_adv, 
-                                           apply 'isSemiHonest 'n, 'om, bool)
-         ; applyAllSameCases('OTMsg-2_ot_adv)
-         
-         ; applyDivergeChannel3FamilyBranch('OTMsg-2, 'OTMsgRcvd-2_ot_adv, 
-                                            apply 'isHonest 'n, 'om, unit)
-         ; applyAllSameCases('OTMsgRcvd-2_ot_adv)
-         ; applyDivergeChannel3FamilyBranch('OTMsg-3, 'OTMsg-3_ot_adv, 
-                                           apply 'isSemiHonest 'n, 'om, bool)
-         ; applyAllSameCases('OTMsg-3_ot_adv)
-         
-         ; applyDivergeChannel3FamilyBranch('OTMsg-3, 'OTMsgRcvd-3_ot_adv, 
-                                            apply 'isHonest 'n, 'om, unit)
-         ; applyAllSameCases('OTMsgRcvd-3_ot_adv)
-         
-         ; alpha-family-three[
-           C:Qid <- 'OTChoice-0, 
-           q1:Qid <- 'm,
-           q2:Qid <- 'n,
-           q3:Qid <- 'k,
-           q4:Qid <- 'n,
-           q5:Qid <- 'm,
-           q6:Qid <- 'k]  
-         
-          ; applyDivergeChannel3FamilyBranch('OTChoice-0, 'OTChoice-0_ot_adv, 
-                                             apply 'isSemiHonest 'm, 'oc, bool)
-          ; applyAllSameCases('OTChoice-0_ot_adv)
-          ; applyDivergeChannel3FamilyBranch('OTChoice-0, 'OTChoiceRcvd-0_ot_adv, 
-                                             apply 'isHonest 'm, 'oc, unit)
-          ; applyAllSameCases('OTChoiceRcvd-0_ot_adv)
-          ; alpha-family-three[
-           C:Qid <- 'OTChoice-1, 
-           q1:Qid <- 'm,
-           q2:Qid <- 'n,
-           q3:Qid <- 'k,
-           q4:Qid <- 'n,
-           q5:Qid <- 'm,
-           q6:Qid <- 'k]  
-        
-          ; applyDivergeChannel3FamilyBranch('OTChoice-1, 'OTChoice-1_ot_adv, 
-                                             apply 'isSemiHonest 'm, 'oc, bool)
-                                               
-          ; applyAllSameCases('OTChoice-1_ot_adv)
-          
-          ; applyDivergeChannel3FamilyBranch('OTChoice-1, 'OTChoiceRcvd-1_ot_adv, 
-                                             apply 'isHonest 'm, 'oc, unit)
-                                             
-          ; applyAllSameCases('OTChoiceRcvd-1_ot_adv)
-          
-          ; applySubstDivergeFamily('OTMsg-0, 'OTOut, 'o, bool)
-          
-          ; applyDivergeChannel3FamilyBranch('OTOut, 'OTOut_ot_adv, 
-                                           apply 'isSemiHonest 'm, 'out, bool)
-          ; applyAllSameCases('OTOut_ot_adv)                                 
-          
-         }   
-         ; applyGetChannel('Circuit)   
+           eliminateOTDivergent          
+         } 
+       ; select-branch-family-p[bt:BoolTerm <- apply 'isNotGate 'k]{
+           eliminateOTDivergent          
+         }  
+       ; select-branch-family-p[bt:BoolTerm <- apply 'isXorGate 'k]{
+           eliminateOTDivergent          
+         } 
+       ; applyGetChannel('Circuit)   
              
 .
 

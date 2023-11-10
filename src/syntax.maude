@@ -225,37 +225,6 @@ fmod NAT-TERM is
  op fun__ : Qid NatTerm -> NatTerm [ctor] . *** unary function application
  *** more if needed. 
  
- op _-_ : Nat Nat -> Nat . *** unsafe difference on naturals
- eq n1 - 0 = n1 .
- eq s(n1) - s(n2) = n1 - n2 .
- 
- var nt nt1 nt2 : NatTerm .
- var n x y n1 n2 : Nat .
- var q q' : Qid . 
- 
- op subst : NatTerm Qid NatTerm -> NatTerm .
- *** substitute in a nat term a qid with another nat term
- eq subst(n, q, nt) = n .
- eq subst(q', q, nt) = if q == q' then nt else q' fi .
- eq subst(nt1 ++ nt2, q, nt) = subst(nt1, q, nt) ++ subst(nt2, q, nt) .
- eq subst(nt1 -- nt2, q, nt) = subst(nt1, q, nt) -- subst(nt2, q, nt) .
- eq subst(fun q' nt1, q, nt) = fun q' subst(nt1, q, nt) .
- 
- *** properties of the ops on nat terms, the expected ones
- eq (nt ++ x) ++ y = nt ++ (x + y) .
- ceq (nt ++ x) -- y = nt ++ (x - y) if y <= x .
- ceq (nt ++ x) -- y = nt -- (y - x) if x < y .
- eq nt ++ 0 = nt .
- eq (nt -- x) -- y = nt -- (x + y) .
- ceq (nt -- x) ++ y = nt -- (x - y) if y <= x .
- ceq (nt -- x) ++ y = nt -- (y - x) if x < y .
- 
- eq (n - x) - y = n - (x + y) .
- ceq (n + x) - y = n + (x - y) if y < x .
- ceq (n + x) - y = n - (y - x) if x < y .
- ceq (n - x) + y = n - (x - y) if y <= x .
- ceq (n - x) + y = n - (y - x) if x < y .
-    
  sort BoolTerm .
  
  *** we need these for conditions in cases
@@ -266,17 +235,6 @@ fmod NAT-TERM is
  op _<T_ : NatTerm NatTerm -> BoolTerm [ctor] .
  op _<=T_ : NatTerm NatTerm -> BoolTerm [ctor] .
  op _conj_ : BoolTerm BoolTerm -> BoolTerm [ctor assoc comm] .
- 
- var bt bt' : BoolTerm .
- 
- op subst : BoolTerm Qid NatTerm -> BoolTerm .
- *** substitute a var with a nat term in a bool term
- eq subst(nt1 =T= nt2, q, nt) = subst(nt1, q, nt) =T= subst(nt2, q, nt) .
- eq subst(nt1 <T nt2, q, nt) = subst(nt1, q, nt) <T subst(nt2, q, nt) .
- eq subst(nt1 <=T nt2, q, nt) = subst(nt1, q, nt) <=T subst(nt2, q, nt) .
- eq subst(neg bt, q, nt) = neg subst(bt, q, nt) .
- eq subst(apply q' nt1, q, nt) = apply q' subst(nt1, q, nt) .
- eq subst(bt conj bt', q, nt) = (subst(bt, q, nt)) conj (subst(bt', q, nt)) .
  
 endfm
 
@@ -293,21 +251,56 @@ fmod NAT-TERM-EVAL is
  pr MAP{Qid, NatTerm} .
  pr SET{BoolTerm} .
  
-  var n n1 n2 n3 : Nat .
-  var t t1 t2 t3 t4 : NatTerm .
+  var n n1 n2 n3 x y : Nat .
+  var t t1 t2 t3 t4 nt nt1 nt2 : NatTerm .
   var A : Set{BoolTerm} .
   var bt bt' : BoolTerm .
-  
- var f : Map{Qid, NatTerm} .
- var q : Qid .
+  var q q' : Qid .
+  var f : Map{Qid, NatTerm} .
+ 
+ op _-_ : Nat Nat -> Nat . *** unsafe difference on naturals
+ eq n1 - 0 = n1 .
+ eq s(n1) - s(n2) = n1 - n2 .
+ 
+ 
+ op subst : NatTerm Map{Qid, NatTerm} -> NatTerm .
+ *** substitute in a nat term a qid with another nat term
+ eq subst(nt, empty) = nt .
+ eq subst(n, f) = n .
+ eq subst(q, f) = if f[q] == undefined then q else f[q] fi  .
+ eq subst(nt1 ++ nt2, f) = subst(nt1, f) ++ subst(nt2, f) .
+ eq subst(nt1 -- nt2, f) = subst(nt1, f) -- subst(nt2, f) .
+ eq subst(fun q' nt1, f) = fun q' subst(nt1, f) .
+ 
+ *** properties of the ops on nat terms, the expected ones
+ eq (nt ++ x) ++ y = nt ++ (x + y) .
+ ceq (nt ++ x) -- y = nt ++ (x - y) if y <= x .
+ ceq (nt ++ x) -- y = nt -- (y - x) if x < y .
+ eq nt ++ 0 = nt .
+ eq (nt -- x) -- y = nt -- (x + y) .
+ ceq (nt -- x) ++ y = nt -- (x - y) if y <= x .
+ ceq (nt -- x) ++ y = nt -- (y - x) if x < y .
+ 
+ eq (n - x) - y = n - (x + y) .
+ ceq (n + x) - y = n + (x - y) if y < x .
+ ceq (n + x) - y = n - (y - x) if x < y .
+ ceq (n - x) + y = n - (x - y) if y <= x .
+ ceq (n - x) + y = n - (y - x) if x < y .
+
+ 
+ op subst : BoolTerm Map{Qid, NatTerm} -> BoolTerm .
+ *** substitute a var with a nat term in a bool term
+ eq subst(bt, empty) = bt .
+ eq subst(nt1 =T= nt2, f) = subst(nt1, f) =T= subst(nt2, f) .
+ eq subst(nt1 <T nt2, f) = subst(nt1, f) <T subst(nt2, f) .
+ eq subst(nt1 <=T nt2, f) = subst(nt1, f) <=T subst(nt2, f) .
+ eq subst(neg bt, f) = neg subst(bt, f) .
+ eq subst(apply q' nt1, f) = apply q' subst(nt1, f) .
+ eq subst(bt conj bt', f) = (subst(bt, f)) conj (subst(bt', f)) .
  
  op extendWithAssums__ : Set{BoolTerm} Map{Qid, NatTerm} -> Map{Qid, NatTerm} .
  eq extendWithAssums (A, (q =T= n)) f = extendWithAssums A insert(q, n, f) .
  eq extendWithAssums A f = f [owise] .
-  
- op substInBoolTerm__ : BoolTerm Map{Qid, NatTerm} -> BoolTerm .
- eq substInBoolTerm bt empty = bt .
- eq substInBoolTerm bt ((q |-> t), f) = substInBoolTerm subst(bt, q, t) f . 
  
  op evalBoolTerm : BoolTerm Set{BoolTerm} Map{Qid, NatTerm} -> Bool . 
  *** evaluation w.r.t. a set of assumptions 
@@ -413,7 +406,7 @@ fmod BOOL-TERM-ENTAILS is
  
  *** actually we also want to check f(bt)!
  ceq A |= neg bt with f = true 
-  if evalBoolTerm(substInBoolTerm (neg bt) (extendWithAssums A f), A, f) .
+  if evalBoolTerm(subst(neg bt, extendWithAssums A f), A, f) .
  eq A |= neg bt with f = false [owise] . 
  
  eq A |= bt conj bt' with f = 
@@ -3083,7 +3076,7 @@ mod PROTOCOL-EQUALITY is
  *** rename variable in cases
  op alphaCases___ : Cases Qid Qid -> Cases .
  eq alphaCases R q q' = replaceVars(R, q |-> q') .
- eq alphaCases (when bt --> R) q q' = when (subst(bt, q, q')) --> replaceVars(R, q |-> q') .
+ eq alphaCases (when bt --> R) q q' = when (subst(bt, q |-> q')) --> replaceVars(R, q |-> q') .
  eq alphaCases (otherwise --> R) q q' = otherwise --> replaceVars(R, q |-> q') .
  eq alphaCases ((whenCond --> R) ;; whenList) q q' =
     (alphaCases (whenCond --> R) q q') 
@@ -4305,7 +4298,7 @@ mod PROTOCOL-EQUALITY is
          => 
          pConfig(Sigma, Delta, 
                (cn ::= 
-                 (when subst(bt, q, nj) --> R2) 
+                 (when subst(bt, q |-> nj) --> R2) 
                )
                 || 
                (family aQid q (bound nt) ::= 
@@ -4320,14 +4313,14 @@ mod PROTOCOL-EQUALITY is
              ),
              I,
              insert(aQid @ nt, cn @ nil), 
-             insert(subst(bt, q, nj), A)
+             insert(subst(bt, q |-> nj), A)
            )
     =>
     pConfig(Sigma, Delta, 
              ( family aQid q (bound nt) ::= R1) || (cn ::= R2),
              I, O', A'
            )       
-    /\ A' == insert(subst(bt, q, nj), A)
+    /\ A' == insert(subst(bt, q |-> nj), A)
     /\ O' == insert(aQid @ nt, cn @ nil)
     [nonexec]
     .
@@ -4349,7 +4342,7 @@ mod PROTOCOL-EQUALITY is
          => 
          pConfig(Sigma, Delta, 
                (cn ::= 
-                 (when subst(bt, q, nj) --> R2) 
+                 (when subst(bt, q |-> nj) --> R2) 
                  ;;
                  whenList'
                )
@@ -4366,14 +4359,14 @@ mod PROTOCOL-EQUALITY is
              || 
              ( cn ::= nf( (x : T <- read (aQid[nj]) ) BRL, R, QL)
              ),
-             I, insert(aQid @ nt, cn @ nil), insert(subst(bt, q, nj), A)
+             I, insert(aQid @ nt, cn @ nil), insert(subst(bt, q |-> nj), A)
            )
     =>
     pConfig(Sigma, Delta, 
              ( family aQid q (bound nt) ::= R1) || (cn ::= R2),
              I, O', A'
            )       
-    /\ A' == insert(subst(bt, q, nj), A)    
+    /\ A' == insert(subst(bt, q |-> nj), A)    
     /\ O' == insert(aQid @ nt, cn @ nil)
     /\
     pConfig(Sigma, Delta, 
@@ -4387,7 +4380,7 @@ mod PROTOCOL-EQUALITY is
                (family aQid q (bound nt) ::= 
                  whenList
                ),
-               I, O, insert(neg (subst(bt, q, nj)), A) 
+               I, O, insert(neg (subst(bt, q |-> nj)), A) 
            )
    => 
    pConfig(Sigma, Delta, 
@@ -4401,7 +4394,7 @@ mod PROTOCOL-EQUALITY is
                I, O, A''
            )  
     /\
-    A'' == insert(neg (subst(bt, q, nj)), A)
+    A'' == insert(neg (subst(bt, q |-> nj)), A)
     .               
      
      ****************************
@@ -4907,7 +4900,8 @@ mod PROTOCOL-EQUALITY is
        pConfig(Sigma, Delta, 
                (family C1 i (bound nt1) ::= cases) || 
                (C2[i] ::= nf((x : T <- read (C1[nj]) ) BRL, R, ql)), 
-               insert( C2 @ nt2, I), O, insert(i <T nt2, insert(bt, A) )
+               insert( C2 @ nt2, I), *** because we could read C2[0] or C2[i - 1]
+               O, insert(i <T nt2, insert(bt, A) )
               )
       =>
       pConfig(Sigma, Delta, 
@@ -6073,7 +6067,7 @@ mod PROTOCOL-EQUALITY is
         nj A f cases = 
         projectIndexAux 
         (family C q (bound nt) ::= whenList) 
-        nj A f (cases ;; when subst(bt, q, nj) --> replaceVars(R, insert(q, nj, f)))
+        nj A f (cases ;; when subst(bt, q |-> nj) --> replaceVars(R, insert(q, nj, f)))
     [owise] .
     ceq projectIndexAux 
         (family C q (bound nt) ::= (otherwise --> R)) 
@@ -6114,7 +6108,7 @@ mod PROTOCOL-EQUALITY is
         (family C (q q') (b1 b2)  ::= whenList) 
         (t1 t2) A f 
          (cases ;; 
-           when subst(subst(bt, q, t1), q', t2) --> 
+           when subst(bt, (q |-> t1, q' |-> t2)) --> 
              replaceVars(R, ((q |-> t1), (q' |-> t2), f)) 
          )
     [owise] .
@@ -6163,8 +6157,9 @@ mod PROTOCOL-EQUALITY is
         (family C (q q' q'') (b1 b2 b3)  ::= whenList) 
         (t1 t2 t3) A f 
         (cases' ;; when subst(
-                         subst(subst(bt, q, t1), q', t2), 
-                         q'', t3) --> 
+                         bt, 
+                         (q |-> t1, q' |-> t2, q'' |-> t3)
+                        )  --> 
                          replaceVars(R, ((q |-> t1),(q' |-> t2),(q'' |-> t3), f)) 
         )
     [owise] .
