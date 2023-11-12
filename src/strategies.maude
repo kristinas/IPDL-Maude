@@ -1508,13 +1508,13 @@ smod STRATS is
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using ((CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P cn1 cn2, 
                              P1:Protocol <- keepTwo P cn1 cn2]
-              {subst-family-case-three[R':Reaction <- R2, bt:BoolTerm <- bt]{ 
+              {subst-family-case-generic[R':Reaction <- R2, bt:BoolTerm <- bt]{ 
                  substNFFamilyThree(cn1, cn2[i1 i2 i3], R1)
                }
               }
               )
               or-else 
-              subst-family-case-three[R':Reaction <- R2, bt:BoolTerm <- bt]{
+              subst-family-case-generic[R':Reaction <- R2, bt:BoolTerm <- bt]{
                 substNFFamilyThree(cn1, cn2[i1 i2 i3], R1)
                }
              ) .                

@@ -15,6 +15,42 @@ load ../src/strategies
 mod GMWN is
  including APPROX-EQUALITY .
  protecting LIST{NatPairs} .
+ 
+ op delta : -> ChannelContext .
+ eq delta = 
+    ('InRcvd_party_adv @ (N + 2) 'I :: unit) 
+           ('InShareGen-Sum_party_adv @ (N + 1) (N + 2) 'I :: bool)
+           ('InShareGen_party_adv @ (N + 2) (N + 2) 'I :: bool)
+           ('InShare_party_adv @ (N + 2) (N + 2) 'I :: bool)
+           ('In_party_adv @ (N + 2) 'I :: bool)  
+           ('OTChoice-0_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTChoice-1_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTChoiceRcvd-0_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTChoiceRcvd-1_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTMsg-0_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsg-1_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsg-2_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsg-3_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OTMsgRcvd-0_ot_adv @ (N + 2) (N + 2) K :: unit)
+           ('OTMsgRcvd-1_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTMsgRcvd-2_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTMsgRcvd-3_ot_adv @ (N + 2) (N + 2) K :: unit) 
+           ('OTOut_ot_adv @ (N + 2) (N + 2) K :: bool) 
+           ('Out @ (N + 2) K :: bool)    
+           ('OutShareSum_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('OutShare_party_adv @ (N + 2) (N + 2) K :: bool)
+           ('Out_party_adv @ (N + 2) K :: bool)  
+           ('RcvdInShare_party_adv @ (N + 2) (N + 2) 'I :: bool)  
+           ('RcvdOutShare_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('SendInShare_party_adv @ (N + 2) (N + 2) 'I :: bool) 
+           ('SendOutShare_party_adv @ (N + 2) (N + 2) K :: bool)  
+           ('Share_party_adv @ (N + 2) K :: bool)
+           ('Bit_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('RcvdBit_party_adv @ (N + 2) (N + 2) K :: bool) 
+           ('SendBit_party_adv @ (N + 2) (N + 2) K :: bool)
+           ('BitSum_party_adv @ (N + 2) (N + 2) K :: bool)  
+           ('In @ (N + 2) 'I :: bool)
+   .        
 
  op sumF : -> SigElem .
  eq sumF = 'xor : (bool * bool) ~> bool .
@@ -2964,5 +3000,7 @@ red typeOf(sig,
            ('In @ (N + 2) 'I :: bool)
            , 'In @ (N + 2) 'I, genA, ideal) .
           
-)   
+)  
+
+red toJSON restr delta .
 

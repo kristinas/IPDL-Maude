@@ -228,13 +228,22 @@ fmod NAT-TERM is
  sort BoolTerm .
  
  *** we need these for conditions in cases
-
+ 
+ op falseBT : -> BoolTerm [ctor] .
+ op trueBT : -> BoolTerm [ctor] .
  op apply__ : Qid NatTerm -> BoolTerm [ctor] . *** predicates over natterms
  op neg_ : BoolTerm -> BoolTerm [ctor] .
  op _=T=_ : NatTerm NatTerm -> BoolTerm [ctor comm] .
  op _<T_ : NatTerm NatTerm -> BoolTerm [ctor] .
  op _<=T_ : NatTerm NatTerm -> BoolTerm [ctor] .
  op _conj_ : BoolTerm BoolTerm -> BoolTerm [ctor assoc comm] .
+ op _disj_ : BoolTerm BoolTerm -> BoolTerm [ctor assoc comm] .
+ 
+ var b1 b2 b3 : BoolTerm .
+ *** eq (b1 conj b2) disj b3 = (b1 disj b3) conj (b2 disj b3) .
+ *** eq (b1 disj b2) conj b3 = (b1 conj b3) disj (b2 conj b3) .
+ eq (b1 conj neg b1) = falseBT .
+ eq (b1 disj neg b1) = trueBT .
  
 endfm
 
@@ -297,6 +306,7 @@ fmod NAT-TERM-EVAL is
  eq subst(neg bt, f) = neg subst(bt, f) .
  eq subst(apply q' nt1, f) = apply q' subst(nt1, f) .
  eq subst(bt conj bt', f) = (subst(bt, f)) conj (subst(bt', f)) .
+ eq subst(bt disj bt', f) = (subst(bt, f)) disj (subst(bt', f)) .
  
  op extendWithAssums__ : Set{BoolTerm} Map{Qid, NatTerm} -> Map{Qid, NatTerm} .
  eq extendWithAssums (A, (q =T= n)) f = extendWithAssums A insert(q, n, f) .
@@ -311,6 +321,8 @@ fmod NAT-TERM-EVAL is
  
  eq evalBoolTerm(bt conj bt', A, f) =
     evalBoolTerm(bt, A, f) and evalBoolTerm(bt', A, f) .
+ eq evalBoolTerm(bt disj bt', A, f) =
+    evalBoolTerm(bt, A, f) or evalBoolTerm(bt', A, f) .   
  
  ceq evalBoolTerm(neg bt, A, f) = false if bt in A .
  ceq evalBoolTerm(neg bt, A, f) = true if neg bt in A .
@@ -342,6 +354,7 @@ fmod NAT-TERM-EVAL is
  
  ceq evalBoolTerm(t <T t1 + n1, (A, t <T t1 + n2), f) = true 
   if n2 < n1 . 
+ eq evalBoolTerm(t <T t + n, A, f) = n > 0 . 
  
  eq evalBoolTerm(0 <=T t, A, f) = true .
  eq evalBoolTerm(t <=T t, A, f) = true . 
@@ -413,6 +426,9 @@ fmod BOOL-TERM-ENTAILS is
     A |= bt with f and A |= bt' with f .
     
  eq (A, bt conj bt') |= bt with f = true .
+ 
+ eq A |= bt disj bt' with f = 
+    A |= bt with f or A |= bt' with f .   
  
 endfm
 
@@ -1935,7 +1951,62 @@ fmod PROTOCOL is
  eq removeOne (new C : T in P) C1 = removeOne P C1  .
  eq removeOne ((family C1 nlist blist ::= cases) || P) C1 = P .
  eq removeOne (newfamily C2 nlist blist : T in P) C1 = removeOne P C1 .
-                         
+        
+        
+ *** json-like representation
+ sort JSON .
+ *** TODO: the value should be JSON
+ *** 1. cn ::= R                value: {reaction: R}
+ *** 2. cn ::= P                value: (toJSON P Delta)
+ *** 3. cn ::= when bt -> R     value: {cond: bt, reaction: R}
+ *** 4. cn ::= when bt -> P     value: {cond: bt, protocol: (toJSON P Delta)}
+ 
+ op {} : -> JSON [ctor] .
+ op {cname:_,value:_,hasType:_,isInternal:_, extras:_} : 
+     ChannelName JSON JSON Bool JSON -> JSON 
+     [ctor format(d n d d n d d n d d n d d n d n d)] .
+ 
+ op {type:_} : Type -> JSON [ctor] .
+ op {reaction:_} : Reaction -> JSON [ctor] .
+ op {cond:_,reaction:_} : WhenCond Reaction -> JSON [ctor] .
+ op {cond:_,protocol:_} : WhenCond JSON -> JSON [ctor] .
+ 
+ sort JSONList .
+ subsort JSON < JSONList .
+ op emptyJSONList : -> JSONList [ctor] .
+ op __ : JSONList JSONList -> JSONList 
+     [ctor comm assoc id: emptyJSONList format(d n d)] .
+ 
+ op {_} : JSONList -> JSON [ctor format(d n n d)] .
+ op {indices:_,bounds:_} : List{NatTerm} List{Bounds} -> JSON [ctor] . 
+ 
+ var j j' e v t : JSON .
+ var js : JSONList .
+ var internal : Bool .
+ 
+ op insertJSON__ : JSON JSON -> JSON .
+ eq insertJSON j {js} = {j js} .
+ eq insertJSON j j' = {j j'} [owise] .
+ 
+ op updateInternal : JSON ChannelName -> JSON .
+ eq updateInternal(
+     {cname: cn, value: v, hasType: t, isInternal: internal, extras: e},
+      cn
+    ) = {cname: cn, value: v, hasType: t, isInternal: true, extras: e} .
+ eq updateInternal({j js}, cn) = 
+      insertJSON (updateInternal(j, cn)) (updateInternal({js}, cn)) .
+ eq updateInternal(j, cn) = j [owise] .  
+ 
+ *** sets the value to emptyProtocol, the typing is no longer correct
+ op updateValue : JSON -> JSON .
+ eq updateValue (
+     {cname: cn, value: v, hasType: t, isInternal: internal, extras: e}
+    ) = {cname: cn, value: {}, hasType: t, isInternal: internal, extras: e} .
+ eq updateValue({j js}) = 
+      insertJSON (updateValue(j)) (updateValue({js})) .
+ eq updateValue(j) = j [owise] .     
+    
+ 
 endfm
 
 fmod PROTOCOL-INDEP is
@@ -2364,6 +2435,86 @@ mod PROTOCOL-EQUALITY is
      var ntl : List{NatTerm} .
      var bounds : List{Bounds} .
      var cases' : Cases .
+     
+     
+ *** TODO: move elsewhere
+ op toJSON__ : Protocol ChannelContext -> JSON .
+ eq toJSON emptyProtocol Delta = {} .
+  *** eq toJSON (P1 || P2) Delta = {(toJSON P1 Delta) (toJSON P2 Delta)} .
+  *** TODO: this one ruins my groups
+  ***    toJSON(P1 || P2 || P3) 
+  *** =  {{P1} {P2 || P3}}
+  *** =  {{P1} {{P2} {P3}}}
+  *** when I want it to be
+  *** = {{P1}{P2}{P3}}      
+  *** so I have to do some sort of case distinction for protocols without compositions
+  
+ eq toJSON (emptyProtocol || P2) Delta = {{} (toJSON P2 Delta)} .
+ 
+ eq toJSON ((cn ::= cases) || P2) Delta =
+    insertJSON (toJSON (cn ::= cases) Delta) (toJSON P2 Delta) .
+ eq toJSON ((family C nlist blist ::= cases) || P2) Delta =
+    insertJSON (toJSON (family C nlist blist ::= cases) Delta) (toJSON P2 Delta) . 
+ eq toJSON ((new cn : T in P) || P2) Delta =
+    insertJSON (toJSON (new cn : T in P) Delta) (toJSON P2 Delta) .
+ eq toJSON ((newfamily cn nlist blist : T in P) || P2) Delta =
+    insertJSON (toJSON (newfamily cn nlist blist : T in P) Delta) (toJSON P2 Delta) .  
+       
+ eq toJSON (cn ::= R) (Delta (cn @ nil :: T)) =
+           {cname: cn, value: {reaction: R}, hasType: {type: T}, 
+            isInternal: false, extras: {}} .
+ eq toJSON (cn ::= P) Delta =
+           {cname: cn, value: (toJSON P Delta), 
+            hasType: {}, isInternal: false, extras: {}} .
+ eq toJSON (cn ::= whenList) (Delta (cn @ nil :: T)) =
+           {cname: cn, value: (toJSON whenList (Delta (cn @ nil :: T))), 
+            hasType: {type: T}, isInternal: false, extras: {}} . 
+            
+ op toJSON : WhenList ChannelContext -> JSON .
+ eq toJSON (whenCond --> R) Delta = {cond: whenCond, reaction: R} .
+ eq toJSON (whenCond --> P) Delta = {cond: whenCond, protocol: toJSON P Delta} .
+ eq toJSON ((whenCond --> R) ;; whenList) Delta = 
+    insertJSON ({cond: whenCond, reaction: R}) (toJSON whenList Delta) . 
+ eq toJSON ((whenCond --> P) ;; whenList) Delta = 
+    insertJSON ({cond: whenCond, protocol: (toJSON P Delta)}) 
+               (toJSON whenList Delta) 
+ .
+ 
+ eq toJSON (family C nlist blist ::= R) (Delta (C @ nlist' :: T)) =
+           {cname: C, value: {reaction: R}, hasType: {type: T}, isInternal: false,
+            extras: {indices: nlist, bounds: blist}
+           } .
+ eq toJSON (family C nlist blist ::= P) Delta =
+           {cname: C, value: (toJSON P Delta), 
+            hasType: {}, isInternal: false,
+            extras: {indices: nlist, bounds: blist}
+           } .
+ eq toJSON (family C nlist blist ::= ((whenCond --> R) ;; whenList)
+           ) 
+           (Delta (C @ nlist' :: T)) =
+           {cname: C, 
+            value: (toJSON 
+                     ((whenCond --> R) ;; whenList)
+                     (Delta (C @ nlist' :: T))
+                   ), 
+            hasType: {type: T}, isInternal: false,
+            extras: {indices: nlist, bounds: blist}} .
+ eq toJSON (family C nlist blist ::= ((whenCond --> P) ;; whenList)
+           ) 
+           Delta =
+           {cname: C, 
+            value: (toJSON 
+                     ((whenCond --> P) ;; whenList)
+                     Delta
+                   ), 
+            hasType: {}, isInternal: false,
+            extras: {indices: nlist, bounds: blist}} .                                      
+                      
+ eq toJSON (new cn : T in P) Delta = 
+      updateInternal(toJSON P (Delta (cn @ nil :: T)), cn) .     
+ eq toJSON (newfamily cn nlist blist : T in P) Delta = 
+      updateInternal(toJSON P (Delta (toBounds cn blist :: T)), cn) .
+                            
 
  *** similar to reactions, we write configurations
 
@@ -4938,7 +5089,8 @@ mod PROTOCOL-EQUALITY is
        pConfig(Sigma, Delta, 
                (family C1 (q q' q'') (b1 b2 b3) ::= cases) || 
                (C2[q q' q''] ::= nf((x : T <- read (C1[t1 t2 t3]) ) BRL, R, ql)), 
-               I, (toBounds C1 (b1 b2 b3), C2[q q' q''] @ nil), 
+               I, *** TODO important and C2 as inputs!!!! 
+               (toBounds C1 (b1 b2 b3), C2[q q' q''] @ nil), 
                ( insert(bt, A), addAssumptions A (q q' q'') (b1 b2 b3) )
               )
       =>
@@ -4951,6 +5103,50 @@ mod PROTOCOL-EQUALITY is
      /\
      A' == ( insert(bt, A), addAssumptions A (q q' q'') (b1 b2 b3) )
     .  
+    
+   var blist1 : List{Bounds} .
+   var ntlist : List{NatTerm} .  
+    
+   *** generic version
+       crl [subst-family-case-generic] :
+       pConfig(Sigma, Delta, 
+               (family C1 nlist1 blist1 ::= cases) || 
+               (family C2 nlist2 blist2 ::= 
+                whenList1 ;;
+                (when bt --> nf((x : T <- read (C1[ntlist]) ) BRL, R, ql)
+                ) ;;
+                whenList2), I, O, A)
+       =>    
+       pConfig(Sigma, Delta, 
+               (family C1 nlist1 blist1 ::= cases) || 
+               (family C2 nlist2 blist2 ::= 
+                whenList1 ;;
+                (when bt --> R'
+                ) ;;
+                whenList2)
+               , I, O, A)
+       if          
+       pConfig(Sigma, Delta, 
+               (family C1 nlist1 blist1 ::= cases) || 
+               (C2[nlist2] ::= nf((x : T <- read (C1[ntlist]) ) BRL, R, ql)), 
+               (I, toBounds C2 blist2),
+               (toBounds C1 blist1, C2[nlist2] @ nil), 
+               ( insert(bt, A), addAssumptions A nlist2 blist2 )
+              )
+      =>
+      pConfig(Sigma, Delta, 
+               (family C1 nlist1 blist1 ::= cases) || 
+               (C2[nlist2] ::= R'), 
+               I', O', A')
+     /\
+     I' ==  (I, toBounds C2 blist2)    
+     /\
+     O' == (toBounds C1 blist1, C2[nlist2] @ nil)
+     /\
+     A' == ( insert(bt, A), addAssumptions A nlist2 blist2 )
+    .  
+    
+    
    
    *** same rules for channels
    
