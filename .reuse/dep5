@@ -1,0 +1,14 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: IPDL-Maude
+Upstream-Contact: Kristina Sojakova <sojakova.kristina@gmail.com>
+Source: https://github.com/kristinas/IPDL-Maude
+
+Files: src/* 
+Copyright: (C) 2022-23, Kristina Sojakova, Mihai Codescu
+License: GPL-3.0-or-later
+
+Files: lib/* 
+Copyright: (C) 2022-23, Kristina Sojakova, Mihai Codescu
+License: GPL-3.0-or-later
+
+
