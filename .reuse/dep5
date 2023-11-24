@@ -13,6 +13,37 @@ Copyright: 2022-23, Kristina Sojakova <sojakova.kristina@gmail.com>
            2022-23, Mihai Codescu <mscodescu@gmail.com>
 License: GPL-3.0-or-later
 
+Files: doc/IPDL popl copy.key 
+Copyright: 2023, Joshua Gancher <jgancher@andrew.cmu.edu>
+License: GPL-3.0-or-later
+
+Files: doc/tech_report_popl.pdf
+Copyright: 2023, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2023, Joshua Gancher <jgancher@andrew.cmu.edu>
+           2023, Xiong Fan
+           2023, Elaine Shi
+           2023, Greg Morrisett 
+License: GPL-3.0-or-later
+
+Files: doc/*.tex
+Copyright: 2023, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2023, Mihai Codescu <mscodescu@gmail.com>
+           2023, Joshua Gancher <jgancher@andrew.cmu.edu>
+License: GPL-3.0-or-later
+
+Files: doc/*.bib
+Copyright: 2023, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2023, Mihai Codescu <mscodescu@gmail.com>
+           2023, Joshua Gancher <jgancher@andrew.cmu.edu>
+License: GPL-3.0-or-later
+
+Files: doc/tech_report_maude.pdf
+Copyright: 2023, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2023, Mihai Codescu <mscodescu@gmail.com>
+           2023, Joshua Gancher <jgancher@andrew.cmu.edu>
+License: GPL-3.0-or-later
+
+
 This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 3 of the License, or
