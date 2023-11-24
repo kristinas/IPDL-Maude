@@ -37,6 +37,12 @@ Copyright: 2023, Kristina Sojakova <sojakova.kristina@gmail.com>
            2023, Joshua Gancher <jgancher@andrew.cmu.edu>
 License: GPL-3.0-or-later
 
+Files: doc/*.sty
+Copyright: 2023, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2023, Mihai Codescu <mscodescu@gmail.com>
+           2023, Joshua Gancher <jgancher@andrew.cmu.edu>
+License: GPL-3.0-or-later
+
 Files: doc/tech_report_maude.pdf
 Copyright: 2023, Kristina Sojakova <sojakova.kristina@gmail.com>
            2023, Mihai Codescu <mscodescu@gmail.com>
