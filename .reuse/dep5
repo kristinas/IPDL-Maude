@@ -4,11 +4,13 @@ Upstream-Contact: Kristina Sojakova <sojakova.kristina@gmail.com>
 Source: https://github.com/kristinas/IPDL-Maude
 
 Files: src/* 
-Copyright: (C) 2022-23, Kristina Sojakova, Mihai Codescu
+Copyright: 2022-23, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2022-23, Mihai Codescu <mscodescu@gmail.com>
 License: GPL-3.0-or-later
 
 Files: lib/* 
-Copyright: (C) 2022-23, Kristina Sojakova, Mihai Codescu
+Copyright: 2022-23, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2022-23, Mihai Codescu <mscodescu@gmail.com>
 License: GPL-3.0-or-later
 
 
