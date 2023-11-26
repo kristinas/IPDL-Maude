@@ -42,26 +42,27 @@ mod SECURE is
  op idealPlusSim : -> Protocol .
  eq idealPlusSim = 
     new 'Key : key in
-    newfamily 'LeakMsgRcvd_id_adv 'i (bound n) : unit in
-    newfamily 'OkMsg_adv_id 'i (bound n) : ctxt in     
+    newfamily 'LeakMsgRcvd ^^ 'id .. 'adv 'i (bound n) : unit in
+    newfamily 'OkMsg ^^ 'adv .. 'id 'i (bound n) : ctxt in     
     (
     ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList) )
     ||
-    (family 'LeakCtxt_net_adv 'i (bound n) ::= 
+    (family 'LeakCtxt ^^ 'net .. 'adv 'i (bound n) ::= 
                 nf(
-                 ('x : unit <- read ('LeakMsgRcvd_id_adv['i]))
+                 ('x : unit <- read ('LeakMsgRcvd ^^ 'id .. 'adv['i]))
                  ('k : key <- read 'Key ),
                  samp ('enc < pair(ap 'zeros (), 'k) >),
                  'x :: 'k :: emptyCNameList
                 ) 
     )  
     ||
-    (family 'OkMsg_adv_id 'i (bound n) ::= nf('okCtxt : ctxt <- read ('OkCtxt_adv_net['i]), 
+    (family 'OkMsg ^^ 'adv .. 'id 'i (bound n) ::= 
+                       nf('okCtxt : ctxt <- read ('OkCtxt ^^ 'adv .. 'net['i]),
                           return 'okCtxt , 
                           'okCtxt :: emptyCNameList )
     )   
     ||
-    (family 'LeakMsgRcvd_id_adv 'i (bound n) ::= 
+    (family 'LeakMsgRcvd ^^ 'id .. 'adv 'i (bound n) ::= 
           nf(
             'in : msg <- read ('In['i]) ,
             return (),
@@ -71,7 +72,7 @@ mod SECURE is
     ||
     (family 'Out 'i (bound n) ::= 
           nf(
-            ('okMsg : ctxt <- read ('OkMsg_adv_id['i]))
+            ('okMsg : ctxt <- read ('OkMsg ^^ 'adv .. 'id['i]))
             ('in : msg <- read ('In['i])),
             return 'in,
             'okMsg :: 'in :: emptyCNameList
@@ -96,13 +97,13 @@ mod SECURE is
             )
     )    
     ||
-    (family 'LeakCtxt_net_adv 'i (bound n) ::= 
+    (family 'LeakCtxt ^^ 'net .. 'adv 'i (bound n) ::= 
       nf('send : ctxt <- read ('Send['i]), return 'send, 'send :: emptyCNameList)
     )
     || 
     (family 'Recv 'i (bound n) ::= 
             nf(
-            ('okCtxt : ctxt <- read ('OkCtxt_adv_net [ 'i ]) )
+            ('okCtxt : ctxt <- read ('OkCtxt ^^ 'adv .. 'net [ 'i ]) )
             ('send : ctxt <- read ('Send [ 'i ])), 
                 return 'send,
                 'okCtxt :: 'send :: emptyCNameList
@@ -122,7 +123,10 @@ mod SECURE is
   
   op addEncDec : -> Protocol .
    eq addEncDec = 
-   newNF(< 'Key : key > {'Send 'i (bound n) : ctxt} {'Enc 'i (bound n) : ctxt} {'Dec 'i (bound n) : msg},
+   newNF(< 'Key : key > 
+         {'Send 'i (bound n) : ctxt} 
+         {'Enc 'i (bound n) : ctxt} 
+         {'Dec 'i (bound n) : msg},
     (family 'Dec 'i (bound n) ::= 
                       nf(('k : key <- read 'Key) 
                          'send : ctxt <- read ('Send ['i]), 
@@ -138,13 +142,13 @@ mod SECURE is
     ||  
     ('Key ::= nf(emptyBRList, samp ('mu_key < () >), emptyCNameList)) 
     || 
-    (family 'LeakCtxt_net_adv 'i (bound n) ::= 
+    (family 'LeakCtxt ^^ 'net .. 'adv 'i (bound n) ::= 
        nf('send : ctxt <- read ('Send['i]), return 'send, 'send :: emptyCNameList)
     ) 
     || 
     (family 'Out 'i (bound n) ::= 
       nf(('d : msg <- read ('Dec['i]))
-         ('okCtxt : ctxt <- read ('OkCtxt_adv_net['i])) , 
+         ('okCtxt : ctxt <- read ('OkCtxt ^^ 'adv .. 'net['i])) , 
           return 'd, 
           'okCtxt :: 'd :: emptyCNameList)
     ) 
@@ -319,14 +323,14 @@ smod EXECUTE is
            nf('in : msg <- read ('In['i]), return 'in, 'in :: emptyCNameList)
          ) 
          || 
-         (family 'LeakCtxt_net_adv 'i (bound n) ::= 
+         (family 'LeakCtxt ^^ 'net .. 'adv 'i (bound n) ::= 
             nf('e : ctxt <- read ('Enc['i]), return 'e, 'e :: emptyCNameList)
          ) 
          ||
          ( 
          family 'Out 'i (bound n) ::= 
            nf(('d : msg <- read ('Dec['i])) 
-               'okCtxt : ctxt <- read ('OkCtxt_adv_net['i]), 
+               'okCtxt : ctxt <- read ('OkCtxt ^^ 'adv .. 'net['i]), 
                return 'd, 'okCtxt :: 'd :: emptyCNameList)
          ),
           'Dec :: 'Enc  :: emptyCNameList)  
@@ -337,11 +341,11 @@ endsm
 
 srew [1]
  aConfig(secSig, 
-         ('In @ n :: msg) ('Out @ n :: msg) ('OkCtxt_adv_net @ n :: ctxt)
-                 ('LeakCtxt_net_adv @ n :: ctxt),
+         ('In @ n :: msg) ('Out @ n :: msg) ('OkCtxt ^^ 'adv .. 'net @ n :: ctxt)
+                 ('LeakCtxt ^^ 'net .. 'adv @ n :: ctxt),
          real,
-         insert('In @ n, 'OkCtxt_adv_net @ n), 
-         insert('Out @ n, 'LeakCtxt_net_adv @ n),
+         insert('In @ n, 'OkCtxt ^^ 'adv .. 'net @ n), 
+         insert('Out @ n, 'LeakCtxt ^^ 'net .. 'adv @ n),
          genA,
          width 0,
          length 0)
@@ -351,7 +355,7 @@ using
         sugar-newNF 
       ; substNFFamiliesOne('Recv, 'Out, 
           nf(
-            ('okCtxt : ctxt <- read ('OkCtxt_adv_net [ 'i ]) )
+            ('okCtxt : ctxt <- read ('OkCtxt ^^ 'adv .. 'net [ 'i ]) )
             ('send : ctxt <- read ('Send [ 'i ])), 
                 return 'send,
                 'okCtxt :: 'send :: emptyCNameList
@@ -362,7 +366,7 @@ using
             foldNFFamily('Enc, 'Send)
           ; foldNFFamily('Dec, 'Out)
         } 
-      ; substNFFamiliesOne('Send, 'LeakCtxt_net_adv, 
+      ; substNFFamiliesOne('Send, 'LeakCtxt ^^ 'net .. 'adv, 
           nf('e : ctxt <- read ('Enc['i]), return 'e, 'e :: emptyCNameList)
         )    
       ; substNFFamiliesOne('Send, 'Dec, 
@@ -382,19 +386,20 @@ using
     TRANS{applyCPA('Key, 'Enc),
   STRICT{ moveProtocolUnderNewNF
         ; lift-inner-new-nf
-        ; foldNFFamily('Enc, 'LeakCtxt_net_adv) 
+        ; foldNFFamily('Enc, 'LeakCtxt ^^ 'net .. 'adv) 
         ; foldNFFamily('Dec, 'Out)  
         ; SYM[P1:Protocol <- idealPlusSim]{
             sugar-newNF 
-      ; substNFFamiliesOne('OkMsg_adv_id, 'Out, nf('okCtxt : ctxt <- read ('OkCtxt_adv_net['i]), 
+      ; substNFFamiliesOne('OkMsg ^^ 'adv .. 'id, 'Out, 
+                       nf('okCtxt : ctxt <- read ('OkCtxt ^^ 'adv .. 'net['i]), 
                           return 'okCtxt , 
                           'okCtxt :: emptyCNameList )
         )
-      ; substNFFamiliesOne('LeakMsgRcvd_id_adv, 'LeakCtxt_net_adv,  
+      ; substNFFamiliesOne('LeakMsgRcvd ^^ 'id .. 'adv, 'LeakCtxt ^^ 'net .. 'adv,  
          nf('in : msg <- read ('In['i]), return (), 'in :: emptyCNameList)
         )  
-      ; absorbFamily('LeakMsgRcvd_id_adv)
-      ; absorbFamily('OkMsg_adv_id)  
+      ; absorbFamily('LeakMsgRcvd ^^ 'id .. 'adv)
+      ; absorbFamily('OkMsg ^^ 'adv .. 'id)  
           }
         }
   }

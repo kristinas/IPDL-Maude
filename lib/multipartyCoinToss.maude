@@ -1551,7 +1551,7 @@ srew [1] pConfig(secSig,
         *** up to here
         *** now back to proof 
         ; absorb-reverse-new-nf-family
-             [q:Qid <- 'SumCommit, 
+             [fns:NameWithScripts <- 'SumCommit, 
               nlist:List{NatTerm} <- 'i,
               blist:List{Bounds} <- (bound (n + 2)),
               T:Type <- bool,
@@ -1580,7 +1580,7 @@ srew [1] pConfig(secSig,
            ) 
          ; absorbFamily('AllCommitted1)   
          ; absorb-reverse-new-nf-family
-             [q:Qid <- 'AllOpen, 
+             [fns:NameWithScripts <- 'AllOpen, 
               nlist:List{NatTerm} <- 'i,
               blist:List{Bounds} <- (bound (n + 2)),
               T:Type <- unit,
@@ -1645,13 +1645,13 @@ srew [1] pConfig(secSig,
          ; applyCaseDistBranch2('SumCommit, 'LastCommit)
          ; absorbChannel('LastCommit)
          ; SYM[P1:Protocol <- i3]{
-             unwrap-channel-family[C:Qid <- 'Commit]
-      ; unwrap-channel-family[C:Qid <- 'Committed]
+             unwrap-channel-family[fns:NameWithScripts <- 'Commit]
+      ; unwrap-channel-family[fns:NameWithScripts <- 'Committed]
       ; applyDropNF('Commit[n + 1], 'Committed[n + 1])
-      ; wrap-channel-family[C:Qid <- 'Commit]
-      ; wrap-channel-family-new-R[C:Qid <- 'Committed]
+      ; wrap-channel-family[fns:NameWithScripts <- 'Commit]
+      ; wrap-channel-family-new-R[fns:NameWithScripts <- 'Committed]
          }
-         ; merge-cases[C:Qid <- 'SumCommit]
+         ; merge-cases[fns:NameWithScripts <- 'SumCommit]
          ; applyReorderNF('Out, 'ao :: 'sc :: emptyCNameList)
             }
             

@@ -27,16 +27,16 @@ mod HELLO-WORLD is
  op idealPlusSim : -> Protocol .
  eq idealPlusSim = 
     new 'Ctxt : bool in
-    new 'LeakCtxt_id_adv : bool in
+    new 'LeakCtxt ^^ 'id .. 'adv : bool in
     (
-    ('LeakCtxt_id_adv ::= 
+    ('LeakCtxt ^^ 'id .. 'adv ::= 
        nf(('c : bool <- read 'Ctxt),
           return 'c,
           'c :: emptyCNameList )
     )  
     ||
-    ('LeakCtxt_Alice_adv ::= 
-       nf('c : bool <- read 'LeakCtxt_id_adv,
+    ('LeakCtxt ^^ 'Alice .. 'adv ::= 
+       nf('c : bool <- read ('LeakCtxt ^^ 'id .. 'adv),
           return 'c, 
           'c :: emptyCNameList)
     )
@@ -64,7 +64,7 @@ mod HELLO-WORLD is
                )
      )
      ||
-     ('LeakCtxt_Alice_adv ::= 
+     ('LeakCtxt ^^ 'Alice .. 'adv ::= 
        nf( 'c : bool <- read 'Ctxt ,
            return 'c,
           'c :: emptyCNameList )  
@@ -114,7 +114,7 @@ smod EXECUTE is
 srew [1] 
  pConfig(sig, 
          ('In @ nil :: bool) 
-         ('LeakCtxt_Alice_adv @ nil :: bool), 
+         ('LeakCtxt ^^ 'Alice .. 'adv @ nil :: bool), 
          real, 
          'In @ nil, 
          getOutputs(real), 
@@ -122,14 +122,14 @@ srew [1]
 using 
        sugar-newNF
      ; foldNF('Key, 'Ctxt)
-     ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)
-     ; applyAssumption('LeakCtxt_Alice_adv)
+     ; foldNF('Ctxt, 'LeakCtxt ^^ 'Alice .. 'adv)
+     ; applyAssumption('LeakCtxt ^^ 'Alice .. 'adv)
      ; SYM[P1:Protocol <- idealPlusSim]{
        sugar-newNF
-     ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv) 
-     ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)  
+     ; foldNF('LeakCtxt ^^ 'id .. 'adv, 'LeakCtxt ^^ 'Alice .. 'adv) 
+     ; foldNF('Ctxt, 'LeakCtxt ^^ 'Alice .. 'adv)  
      }
-.   
+.  
  
 ***( Here we record the proof from idealPlusSim.
 It has been plugged in the SYM proof from real, so we don't need 
@@ -138,14 +138,14 @@ it anymore and we can comment it out.
 srew [1] 
 pConfig(sig, 
          ('In @ nil :: bool) 
-         ('LeakCtxt_Alice_adv @ nil :: bool), 
+         ('LeakCtxt ^^ 'Alice .. 'adv @ nil :: bool), 
          idealPlusSim, 
          'In @ nil, 
          getOutputs(idealPlusSim), 
          empty)
 using 
        sugar-newNF
-     ; foldNF('LeakCtxt_id_adv, 'LeakCtxt_Alice_adv) 
-     ; foldNF('Ctxt, 'LeakCtxt_Alice_adv)    
+     ; foldNF('LeakCtxt ^^ 'id .. 'adv, 'LeakCtxt ^^ 'Alice .. 'adv) 
+     ; foldNF('Ctxt, 'LeakCtxt ^^ 'Alice .. 'adv)    
 .
 )
