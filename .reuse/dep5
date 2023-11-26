@@ -1,0 +1,69 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: IPDL-Maude
+Upstream-Contact: Kristina Sojakova <sojakova.kristina@gmail.com>
+Source: https://github.com/kristinas/IPDL-Maude
+
+Files: src/* 
+Copyright: 2022-23, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2022-23, Mihai Codescu <mscodescu@gmail.com>
+License: GPL-3.0-or-later
+
+Files: lib/* 
+Copyright: 2022-23, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2022-23, Mihai Codescu <mscodescu@gmail.com>
+License: GPL-3.0-or-later
+
+Files: doc/IPDL popl copy.key 
+Copyright: 2023, Joshua Gancher <jgancher@andrew.cmu.edu>
+License: GPL-3.0-or-later
+
+Files: doc/POPL2023.pdf
+Copyright: 2023, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2023, Joshua Gancher <jgancher@andrew.cmu.edu>
+           2023, Xiong Fan
+           2023, Elaine Shi
+           2023, Greg Morrisett 
+License: GPL-3.0-or-later
+
+Files: doc/*.tex
+Copyright: 2023, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2023, Mihai Codescu <mscodescu@gmail.com>
+           2023, Joshua Gancher <jgancher@andrew.cmu.edu>
+License: GPL-3.0-or-later
+
+Files: doc/*.bib
+Copyright: 2023, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2023, Mihai Codescu <mscodescu@gmail.com>
+           2023, Joshua Gancher <jgancher@andrew.cmu.edu>
+License: GPL-3.0-or-later
+
+Files: doc/*.sty
+Copyright: 2023, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2023, Mihai Codescu <mscodescu@gmail.com>
+           2023, Joshua Gancher <jgancher@andrew.cmu.edu>
+License: GPL-3.0-or-later
+
+Files: doc/tech_report_maude.pdf
+Copyright: 2023, Kristina Sojakova <sojakova.kristina@gmail.com>
+           2023, Mihai Codescu <mscodescu@gmail.com>
+           2023, Joshua Gancher <jgancher@andrew.cmu.edu>
+License: GPL-3.0-or-later
+
+
+This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this package; if not, see &lt;https://www.gnu.org/licenses/&gt;.
+Comment:
+ On Debian systems, the full text of the GNU General Public License
+ version 3 can be found in the file '/usr/share/common-licenses/GPL-3'.
+
+
