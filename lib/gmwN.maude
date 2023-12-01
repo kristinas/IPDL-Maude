@@ -3002,5 +3002,6 @@ red typeOf(sig,
           
 )  
 
-red toJSON restr delta .
+red updateValue (toJSON restr delta) .
 
+*** red toJSON restr delta .

@@ -439,11 +439,11 @@ fmod CHANNEL-NAME is
  sort NameWithScripts .
  subsort Qid < NameWithScripts .
  op _^^_.._ : NameWithScripts Qid Qid -> NameWithScripts [ctor] .  
-    *** superscript and subscript
- 
- 
+   
+
  var ns : NameWithScripts .
- 
+ var aQid sup1 sub1 sup2 sub2 : Qid .
+
  sort ChannelName .
  subsort NameWithScripts < ChannelName .
  op _[_] : NameWithScripts List{NatTerm} -> ChannelName [ctor] .
@@ -1978,10 +1978,17 @@ fmod PROTOCOL is
  *** sets the value to emptyProtocol, the typing is no longer correct
  op updateValue : JSON -> JSON .
  eq updateValue (
+     {cname: cn, value: {{cond: whenCond, protocol: j} js}, 
+      hasType: t, isInternal: internal, extras: e}
+    ) = {cname: cn, value: updateValue({{cond: whenCond, protocol: j} js}), 
+         hasType: t, isInternal: internal, extras: e} .
+ eq updateValue (
      {cname: cn, value: v, hasType: t, isInternal: internal, extras: e}
     ) = {cname: cn, value: {}, hasType: t, isInternal: internal, extras: e} .
  eq updateValue({j js}) = 
       insertJSON (updateValue(j)) (updateValue({js})) .
+ eq updateValue({cond: whenCond, protocol: j}) = 
+    {cond: whenCond, protocol: updateValue(j)} .     
  eq updateValue(j) = j [owise] .     
     
  
