@@ -998,6 +998,21 @@ smod STRATS is
  *** pure syntactic transformations
  ***********************************
  
+ strat applyExpandTypeNF : ChannelName @ ProtocolConfig .
+ sd applyExpandTypeNF(cn) :=
+    match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyExpandTypeNF(cn)} 
+     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using
+        ( CONG-COMP-RIGHT[Q:Protocol  <- removeOne P cn, 
+                          P1:Protocol <- keepOne P cn]{
+               CONG-REACT{expand-type-nf !}           
+                          }
+          or-else   
+          CONG-REACT{expand-type-nf !}
+        )               
+ .
+ 
  strat applyGetChannel : ChannelName @ ProtocolConfig .
  sd applyGetChannel(C1) :=
     get-channel[cn:ChannelName <- C1]
