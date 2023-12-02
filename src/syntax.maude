@@ -8,7 +8,7 @@
 )
 
 fmod TYPES is
- protecting NAT .
+ protecting INT .
 
  sort Type . 
  op unit : -> Type . 
@@ -259,6 +259,7 @@ fmod NAT-TERM-EVAL is
  pr NAT-TERM .
  pr MAP{Qid, NatTerm} .
  pr SET{BoolTerm} .
+ pr INT .
  
   var n n1 n2 n3 x y : Nat .
   var t t1 t2 t3 t4 nt nt1 nt2 : NatTerm .
@@ -267,11 +268,9 @@ fmod NAT-TERM-EVAL is
   var q q' : Qid .
   var f : Map{Qid, NatTerm} .
  
- op _-_ : Nat Nat -> Nat . *** unsafe difference on naturals
- eq n1 - 0 = n1 .
- eq s(n1) - s(n2) = n1 - n2 .
- 
- 
+ op diff : Nat Nat -> Nat . *** unsafe difference on naturals
+ eq diff(n1, n2) = n1 - n2 .
+  
  op subst : NatTerm Map{Qid, NatTerm} -> NatTerm .
  *** substitute in a nat term a qid with another nat term
  eq subst(nt, empty) = nt .
@@ -290,12 +289,13 @@ fmod NAT-TERM-EVAL is
  ceq (nt -- x) ++ y = nt -- (x - y) if y <= x .
  ceq (nt -- x) ++ y = nt -- (y - x) if x < y .
  
+ ***(
  eq (n - x) - y = n - (x + y) .
  ceq (n + x) - y = n + (x - y) if y < x .
  ceq (n + x) - y = n - (y - x) if x < y .
  ceq (n - x) + y = n - (x - y) if y <= x .
  ceq (n - x) + y = n - (y - x) if x < y .
-
+ )
  
  op subst : BoolTerm Map{Qid, NatTerm} -> BoolTerm .
  *** substitute a var with a nat term in a bool term
@@ -679,6 +679,8 @@ fmod REACTION is
  sort BindReadReaction .
  subsort BindReadReaction < BindReaction .
  op _:_<-_ : Qid Type ReadReaction -> BindReadReaction [ctor] .
+ op _<-_ : Qid ReadReaction -> BindReadReaction [ctor] . *** abbreviation notation
+ op ~<-_ : ReadReaction -> BindReadReaction [ctor] . *** name not important 
  
  *** while these are in pre-normal forms
  sort UnrestrictedBindReaction . *** everything allowed
@@ -766,6 +768,7 @@ fmod REACTION is
  subsort UnrestrictedBindReaction < Reaction .
  op if_then_else_ : Expression Reaction Reaction -> Reaction [ctor] . 
  op _:_<-_;_ : Qid Type Reaction Reaction -> Reaction [ctor] .
+ op _<-_;_ : Qid Reaction Reaction -> Reaction [ctor] . *** abbreviation notation
      
  vars M M1 M2 V : Expression .
  var c : ChannelName .
@@ -841,7 +844,7 @@ fmod REACTION is
  ceq eval(nt1 ++ nt2, val) = eval(nt1, val) + eval(nt2, val) 
   if eval(nt1, val) :: Nat /\ eval(nt2, val) :: Nat .
  eq eval(nt1 ++ nt2, val) = eval(nt1, val) ++ eval(nt2, val) [owise] . 
- ceq eval(nt1 -- nt2, val) = eval(nt1, val) - eval(nt2, val) 
+ ceq eval(nt1 -- nt2, val) = diff(eval(nt1, val), eval(nt2, val)) 
    if eval(nt1, val) :: Nat /\ eval(nt2, val) :: Nat .
  eq eval(nt1 -- nt2, val) = eval(nt1, val) -- eval(nt2, val) [owise] .  
   
@@ -1019,6 +1022,20 @@ mod REACTION-EQUALITY is
  op keepFirst : ChannelName ChannelName CNameList -> CNameTuple .
  eq keepFirst(x, y, QL) = keepFirstAux x y QL emptyCNameList .
 
+ *** deal with abbreviations
+ rl [expand-type-bind] :
+    rConfig(Sigma, Delta, Gamma, x <- R1 ; R2, I, A, T)
+    =>
+    rConfig(Sigma, Delta, Gamma, x : typeOf(Sigma, Delta, Gamma, I, A, R1) <- R1 ; R2, I, A, T)
+ .   
+ 
+ rl [expand-type-nf] :
+    rConfig(Sigma, Delta, Gamma, nf((x <- read c) BRL, R, QL), I, A, T)
+    => 
+    rConfig(Sigma, Delta, Gamma, 
+             nf((x : typeOf(Sigma, Delta, Gamma, I, A, read c) <- read c) BRL, R, QL), 
+            I, A, T)
+ .   
 
  *** core rules
 
@@ -1703,6 +1720,8 @@ fmod PROTOCOL is
  op dropEmpty : Protocol -> Protocol .
  eq dropEmpty(newNF(emptyTypedCNameList, P, ql)) = P .
  eq dropEmpty(P) = P [owise] .
+ 
+ var fns : NameWithScripts .
 
  op new2NFAux__ : Protocol Protocol -> Protocol .
  eq new2NFAux (new cn : T in P) newNF(ltq, P', ql) = 
@@ -1710,12 +1729,12 @@ fmod PROTOCOL is
  eq new2NFAux (newfamily cn nlist blist : T in P) newNF(ltq, P', ql) = 
       new2NFAux P newNF( {cn nlist blist : T } ltq, P', ql ++ (cn :: emptyCNameList)) . 
  eq new2NFAux (P1 || P2)  newNF(ltq, P', ql) = newNF(ltq, new2NF(P1) || new2NF(P2) ,ql) .
- eq new2NFAux (family C nlist blist ::= P) newNF(ltq, P', ql) = 
-     newNF(ltq, family C nlist blist ::= new2NF(P) , ql) .
- eq new2NFAux (family C nlist blist ::= (whenCond --> P) ) newNF(ltq, P', ql) = 
-      newNF(ltq, family C nlist blist ::= (whenCond --> new2NF(P) ) , ql) . 
- eq new2NFAux (family C nlist blist ::= (whenCond --> P) ;; whenList ) newNF(ltq, P', ql) = 
-      newNF(ltq, family C nlist blist ::= (whenCond --> new2NF(P)) ;; whenList   , ql) .      
+ eq new2NFAux (family fns nlist blist ::= P) newNF(ltq, P', ql) = 
+     newNF(ltq, family fns nlist blist ::= new2NF(P) , ql) .
+ eq new2NFAux (family fns nlist blist ::= (whenCond --> P) ) newNF(ltq, P', ql) = 
+      newNF(ltq, family fns nlist blist ::= (whenCond --> new2NF(P) ) , ql) . 
+ eq new2NFAux (family fns nlist blist ::= (whenCond --> P) ;; whenList ) newNF(ltq, P', ql) = 
+      newNF(ltq, family fns nlist blist ::= (whenCond --> new2NF(P)) ;; whenList   , ql) .      
         *** TODO: this is wrong! do the same on whenList!
  eq new2NFAux P newNF(ltq, P', ql) = newNF(ltq, P, ql) [owise] .
   
@@ -2351,7 +2370,7 @@ fmod PROTOCOL-TYPING is
     typeOfAux(Sigma, Delta, I, insert(bt, A), family c nlist blist ::= P)
     and
     typeOfAux(Sigma, Delta, I, insert(neg bt, A), family c nlist blist ::= whenList)  
- .
+ . *** TODO: same sets of outputs for each case
 
  eq typeOfAux(Sigma, Delta, I, A, newNF(ltq, P, ql)) = 
     typeOfAux(Sigma, Delta, I, A, newNF2New(newNF(ltq, P, ql)))
