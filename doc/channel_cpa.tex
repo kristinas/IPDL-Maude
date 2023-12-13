@@ -22,7 +22,7 @@
 
 Alice wants to communicate $q$ messages to Bob using an authenticated channel. The authenticated channel is not secure: it leaks each message to Eve, and waits to receive an $\mathsf{ok}$ message back from her before delivering the in-flight message. Thus, Eve cannot modify any of the messages but can read and delay them for any amount of time. To transmit information securely, Alice sends encryptions of her messages, which Bob decrypts using a shared key not known to Eve.
 
-Formally, we assume types $\key, \msg, \ctxt$ of keys, messages, and ciphertexts, respectively; a chosen message $\zeros : \one \rightarrow \msg$; a probabilistic key generation algorithm $\gen_\key : \one \twoheadrightarrow \key$; a probabilistic encryption algorithm $\enc : \msg \times \key \twoheadrightarrow \ctxt$ that takes a message and a key, and returns a ciphertext; and a decryption algorithm $\dec : \ctxt \times \key \rightarrow \msg$
+Formally, we assume the types $\key, \msg, \ctxt$ of keys, messages, and ciphertexts, respectively; a chosen message $\zeros : \one \rightarrow \msg$; a probabilistic key generation algorithm $\gen_\key : \one \twoheadrightarrow \key$; a probabilistic encryption algorithm $\enc : \msg \times \key \twoheadrightarrow \ctxt$ that takes a message and a key, and returns a ciphertext; and a decryption algorithm $\dec : \ctxt \times \key \rightarrow \msg$
 that takes a ciphertext and a key, and returns a message. We will write $\enc(m,k)$ and $\dec(c,k)$ in place of $\enc \ (m,k)$ and $\dec \ (c,k)$.
 
 \subsection{The Assumptions}
