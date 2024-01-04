@@ -1362,7 +1362,38 @@ So the inductive part of the real protocol now has $\Adv(C,K)$ looking like so:
 \end{itemize}
 \end{itemize}
 
-We now amend Bob's shares with a gratuitous dependency on timing, which we will later convert into a dependency on the sum of shares of parties $0,\ldots,N$. Specifically, in the presence of the channels $\InShareOk(\A,\A,-)$, $\InShareOk(\A,\B,-)$, $\InShareOk(\B,\A,-)$, $\InShareOk(\B,\B,-)$ as well as the channels $\ShareOk(\A,-)$, $\ShareOk(\B,-)$ we can express the protocol $\Shares(C,K)$ equivalently as follows:
+\noindent We now amend Bob's shares with a gratuitous dependency on timing, which we will later convert into a dependency on the sum of shares of parties $0,\ldots,N$. To this end, we introduce new internal channels
+\begin{itemize}
+\item {\color{teal} $\InShareGenOk(\A,\A,i)$ for $i < N$}
+\item {\color{teal} $\InShareGenOk(\A,\B,i)$ for $i < M$}
+\item {\color{teal} $\InShareGenOk(\B,\A,i)$ for $i < N$}
+\item {\color{teal} $\InShareGenOk(\B,\B,i)$ for $i < M$}
+\end{itemize}
+to keep track of the timing information in the protocol $\Init$ and
+\begin{itemize}
+\item {\color{teal} $\SendBitOk(\A,\B,k)$ for $k < K$}
+\item {\color{teal} $\RcvdBitOk(\A,\B,k)$ for $k < K$}
+\end{itemize}
+to keep track of the timing information in the protocol $\Shares(C,K)$. Call the following protocol fragment $\InitOk$:
+\begin{itemize}
+\item {\color{teal} $\InShareGenOk(\A,\A,i)$ for $i < N$}
+\item {\color{teal} $\InShareGenOk(\A,\B,i)$ for $i < M$}
+\item {\color{teal} $\InShareGenOk(\B,\A,i)$ for $i < N$}
+\item {\color{teal} $\InShareGenOk(\B,\B,i)$ for $i < M$}
+\item {\color{teal} $\InShareOk(\A,\A,i) \coloneqq \_ \leftarrow \InShare(\A,\A,i); \ \ret{\checkmark}$ for $i < N$}
+\item {\color{teal} $\InShareOk(\A,\B,i) \coloneqq \_ \leftarrow \InShare(\A,\B,i); \ \ret{\checkmark}$ for $i < M$}
+\item {\color{teal} $\InShareOk(\B,\A,i) \coloneqq \_ \leftarrow \InShare(\B,\A,i); \ \ret{\checkmark}$ for $i < N$}
+\item {\color{teal} $\InShareOk(\B,\B,i) \coloneqq \_ \leftarrow \InShare(\B,\B,i); \ \ret{\checkmark}$ for $i < M$}
+\end{itemize}
+Call the following protocol fragment $\SharesOk(C,K)$:
+\begin{itemize}
+\item {\color{teal} $\SendBitOk(\A,\B,k)$ for $k < K$}
+\item {\color{teal} $\RcvdBitOk(\A,\B,k)$ for $k < K$}
+\item {\color{teal} $\ShareOk(\A,k) \coloneqq \_ \leftarrow \Share(\A,k); \ \ret{\checkmark}$ for $k < K$}
+\item {\color{teal} $\ShareOk(\B,k) \coloneqq \_ \leftarrow \Share(\B,k); \ \ret{\checkmark}$ for $k < K$}
+\end{itemize}
+
+\noindent In the presence of the channels $\InShareOk(\A,\A,-)$, $\InShareOk(\A,\B,-)$, $\InShareOk(\B,\A,-)$, $\InShareOk(\B,\B,-)$ and the protocol $\SharesOk(C,K)$ we can express the protocol $\Shares(C,K)$ equivalently as follows:
 
 \begin{itemize}
 \item $\Shares(\epsilon,0)$ is the protocol $\zero$
@@ -1447,36 +1478,6 @@ to keep track of whether an input has arrived. For a wire share, the timing depe
 \item {\color{teal} $\InShareOk(\B,\B,i) \coloneqq \read{\InOk(\B,i)}$ for $i < M$}
 \item {\color{teal} $\ShareOk(\A,k) \coloneqq \read{\WireOk(k)}$ for $k < K$}
 \item {\color{teal} $\ShareOk(\B,k) \coloneqq \read{\WireOk(k)}$ for $k < K$}
-\end{itemize}
-To this end, we introduce new internal channels
-\begin{itemize}
-\item {\color{teal} $\InShareGenOk(\A,\A,i)$ for $i < N$}
-\item {\color{teal} $\InShareGenOk(\A,\B,i)$ for $i < M$}
-\item {\color{teal} $\InShareGenOk(\B,\A,i)$ for $i < N$}
-\item {\color{teal} $\InShareGenOk(\B,\B,i)$ for $i < M$}
-\end{itemize}
-to keep track of the timing information in the protocol $\Init$ and
-\begin{itemize}
-\item {\color{teal} $\SendBitOk(\A,\B,k)$ for $k < K$}
-\item {\color{teal} $\RcvdBitOk(\A,\B,k)$ for $k < K$}
-\end{itemize}
-to keep track of the timing information in the protocol $\Shares(C,K)$. Call the following protocol fragment $\InitOk$:
-\begin{itemize}
-\item {\color{teal} $\InShareGenOk(\A,\A,i)$ for $i < N$}
-\item {\color{teal} $\InShareGenOk(\A,\B,i)$ for $i < M$}
-\item {\color{teal} $\InShareGenOk(\B,\A,i)$ for $i < N$}
-\item {\color{teal} $\InShareGenOk(\B,\B,i)$ for $i < M$}
-\item {\color{teal} $\InShareOk(\A,\A,i) \coloneqq \_ \leftarrow \InShare(\A,\A,i); \ \ret{\checkmark}$ for $i < N$}
-\item {\color{teal} $\InShareOk(\A,\B,i) \coloneqq \_ \leftarrow \InShare(\A,\B,i); \ \ret{\checkmark}$ for $i < M$}
-\item {\color{teal} $\InShareOk(\B,\A,i) \coloneqq \_ \leftarrow \InShare(\B,\A,i); \ \ret{\checkmark}$ for $i < N$}
-\item {\color{teal} $\InShareOk(\B,\B,i) \coloneqq \_ \leftarrow \InShare(\B,\B,i); \ \ret{\checkmark}$ for $i < M$}
-\end{itemize}
-Call the following protocol fragment $\SharesOk(C,K)$:
-\begin{itemize}
-\item {\color{teal} $\SendBitOk(\A,\B,k)$ for $k < K$}
-\item {\color{teal} $\RcvdBitOk(\A,\B,k)$ for $k < K$}
-\item {\color{teal} $\ShareOk(\A,k) \coloneqq \_ \leftarrow \Share(\A,k); \ \ret{\checkmark}$ for $k < K$}
-\item {\color{teal} $\ShareOk(\B,k) \coloneqq \_ \leftarrow \Share(\B,k); \ \ret{\checkmark}$ for $k < K$}
 \end{itemize}
 
 \noindent In the presence of the channels $\InShareOk(\A,\A,-)$, $\InShareOk(\A,\B,-)$, $\InShareOk(\B,\A,-)$, $\InShareOk(\B,\B,-)$ and the protocol $\Shares(C,K)$ we can define the protocol $\SharesOk(C,K)$ equivalently as follows:
