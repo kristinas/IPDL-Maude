@@ -4612,7 +4612,7 @@ The latest version of the protocol $\Shares(C,K)$ is therefore as follows:
 \begin{itemize}
 \item $\Ctrbs_{N+1}(\epsilon,0)$ is the protocol $\zero$
 
-\item $\Ctrb_{N+1}\big(C; \, \inputgate(p,i),K+1\big)$ is the composition of $\Ctrbs_{N+1}(C,K)$ with the protocol
+\item $\Ctrbs_{N+1}\big(C; \, \inputgate(p,i),K+1\big)$ is the composition of $\Ctrbs_{N+1}(C,K)$ with the protocol
 \begin{itemize}
 \item $\SendBit(N+1,m,K) \coloneqq \read{\SendBit(N+1,m,K)}$ for $m \leq N+1$
 \item $\RcvdBit(N+1,m,K) \coloneqq \read{\RcvdBit(N+1,m,K)}$ for $m \leq N+1$
@@ -4636,7 +4636,7 @@ The latest version of the protocol $\Shares(C,K)$ is therefore as follows:
 \item $\SumCtrb(N+1,m,K) \coloneqq \read{\SumCtrb(N+1,m,K)}$ for $m \leq N+1$
 \end{itemize}
 
-\item $\Ctrb_{N+1}\big(C; \, \andgate(k,l),K+1\big)$ is the composition of $\Ctrbs_{N+1}(C,K)$ with the protocol
+\item $\Ctrbs_{N+1}\big(C; \, \andgate(k,l),K+1\big)$ is the composition of $\Ctrbs_{N+1}(C,K)$ with the protocol
 \begin{itemize}
 \item $\SendBit(N+1,m,K) \coloneqq \read{\SendBit(N+1,m,K)}$ for $m \leq N+1$
 \item $\RcvdBit(N+1,m,K) \coloneqq b \leftarrow \SendBit(m,N+1,K); \ x_m \leftarrow \Share(m,k); \ y_m \leftarrow \Share(m,l); \\ x_{N+1} \leftarrow \Share(N+1,k); \ y_{N+1} \leftarrow \Share(N+1,l); \ \ret{b \oplus (x_m * y_{N+1}) \oplus (x_{N+1} * y_m)}$ for $m \leq N$
@@ -4689,7 +4689,7 @@ The latest version of the protocol $\Shares(C,K)$ is therefore as follows:
 \end{itemize}
 \end{itemize}
 
-None of the channels defined by $\Ctrb_{N+1}(C,K)$ are utilized anywhere outside of $\Ctrb_{N+1}(C,K)$ and as such we may discard this protocol fragment entirely. This in particular eliminates all references to the channels $\Share(N+1,-)$ from the inductive part of the protocol. To summarize, the inductive part of the real protocol now consists of the protocols $\Shares(C,K)$ and $\Adv(C,K)$, followed by the hiding of the channels
+None of the channels defined by $\Ctrbs_{N+1}(C,K)$ are utilized anywhere outside of $\Ctrbs_{N+1}(C,K)$ and as such we may discard this protocol fragment entirely. This in particular eliminates all references to the channels $\Share(N+1,-)$ from the inductive part of the protocol. To summarize, the inductive part of the real protocol now consists of the protocols $\Shares(C,K)$ and $\Adv(C,K)$, followed by the hiding of the channels
 \begin{itemize}
 \item $\SendBit(n,m,k)$ for $n \leq N$ and $m \leq N+1$ and $k < K$,
 \item $\RcvdBit(n,m,k)$ for $n \leq N$ and $m \leq N+1$ and $k < K$,
