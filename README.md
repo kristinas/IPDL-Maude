@@ -15,7 +15,7 @@ Alternatively, run `nix-shell -p maude`.
 The [src](https://github.com/kristinas/IPDL-Maude/tree/main/src "src") folder contains the implementation of the equality and typing judgements for reactions and protocols, in the file [syntax.maude](https://github.com/kristinas/IPDL-Maude/blob/main/src/syntax.maude "syntax.maude"). Actual proofs are written using the strategies introduced in [strategies.maude](https://github.com/kristinas/IPDL-Maude/blob/main/src/strategies.maude "strategies.maude").
 
 The [doc](https://github.com/kristinas/IPDL-Maude/tree/main/doc) folder contains a [technical report](https://github.com/kristinas/IPDL-Maude/blob/main/doc/POPL2023.pdf) describing the theory behind the tool,
-and updated version of the syntax together with a description of the [Maude implementation of IPDL](https://github.com/kristinas/IPDL-Maude/blob/main/doc/tech_report_maude.pdf) and a detailed presentation of the [case studies](https://github.com/kristinas/IPDL-Maude/blob/main/doc/case_studies.pdf):
+and updated version of the syntax together with a description of the [Maude implementation of IPDL](https://github.com/kristinas/IPDL-Maude/blob/main/doc/tech_report.pdf) and a detailed presentation of the [case studies](https://github.com/kristinas/IPDL-Maude/blob/main/doc/case_studies.pdf):
 - Symmetric-Key Encryption: CPA Security (Sec. 1) for approximate equality of protocols;
 - Symmetric-Key Encryption: CPA$-To-CPA Security (Sec. 2) for approximate equality of protocols;
 - Symmetric-Key Encryption: Authenticated-To-Secure Channel (Sec. 3) for approximate equality of protocols;
