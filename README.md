@@ -22,7 +22,7 @@ and updated version of the syntax together with a description of the [Maude impl
 - Authenticated-To-Secure Channel: Diffie-Hellman Key Exchange - DHKE (Sec. 4) for approximate equality of protocols;
 - Diffie-Hellman Key Exchange (DHKE) + One-Time Pad (OTP) (Sec. 5) for approximate equality 
 of protocols;
-- Public-Key Encryption: El Gamal (Sec. 6) or approximate equality 
+- Public-Key Encryption: El Gamal (Sec. 6) for approximate equality 
 of protocols;
 - Oblivious Transfer: 1-Out-Of-2 Pre-Processing (Sec. 7) for exact equality of protocols;
 - Multi-Party Coin Toss (Sec. 8) for induction;
