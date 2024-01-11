@@ -28,14 +28,14 @@ of protocols;
 
 In the [lib](https://github.com/kristinas/IPDL-Maude/tree/main/lib "lib") folder  we have the formalizations of the case studies (if an item of the list above is missing here, its implementation is ongoing):
 - `helloWorld.maude` is a simple example, explained in Sec. 2.7 of the
-[Maude technical report](https://github.com/kristinas/IPDL-Maude/blob/main/doc/tech_report_maude.pdf) ;
+[Maude technical report](https://github.com/kristinas/IPDL-Maude/blob/main/doc/tech_report.pdf) ;
 - `cpaSecurity.maude` for CPA Security;
 - `pseudoRandom.maude` for CPA$-To-CPA Security;
 - `secure.maude` for Authenticated-To-Secure Channel;
 - `dhke.maude` for (DHKE) and (DHKE+OTP);
 - `preProcessing.maude` for 1-Out-Of-2 Pre-Processing;
 - `multipartyCoinToss.maude` for Multi-Party Coin Toss;
-- `gmw.maude` for Two-Party GMW Protocol.
+- `gmw2.maude` for Two-Party GMW Protocol.
 
 To run the examples, call
 `Maude> load lib/FILENAME`
