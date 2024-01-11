@@ -43,14 +43,14 @@ mod COIN-TOSS is
  op n : -> Nat .
    
  op idealPlusSim : -> Protocol .
- eq idealPlusSim = 
+ eq idealPlusSim =  *** todo: here and in real, fix bounds!!!
     newfamily 'AllOpen 'i (bound (n + 2)) : unit in
     newfamily 'Commit 'i (bound n) : bool in
     newfamily 'Committed 'i (bound (n + 1)) : unit in
     new 'Flip : bool in
     new 'LastCommit : bool in
     newfamily 'LeakCommitted_comm_adv 'i (bound (n + 1)) : unit in
-    new 'LeakFlip_id_adv : bool in
+    new 'LeakFlip_id_adv : bool in *** TODO: wrong here!!!
     newfamily 'LeakOpened_comm_adv 'i (bound (n + 1)) : bool in
     new 'Ok_adv_id : unit in
     newfamily 'Open 'i (bound (n + 1)) : unit in
@@ -170,13 +170,13 @@ mod COIN-TOSS is
   family 'Party 'i (bound (n + 1)) ::= 
     (
      (when (apply 'honest 'i)  --> 
-     newfamily 'AllCommitted ('i 'j) ((bound (n + 1))(uniformBound (n + 2))) : unit in 
-     newfamily 'SumOpened ('i 'j) ((bound (n + 1))(uniformBound (n + 2))) : bool in
+     newfamily 'AllCommitted ('i 'j) ((bound (n + 1))(bound (n + 2))) : unit in 
+     newfamily 'SumOpened ('i 'j) ((bound (n + 1))(bound (n + 2))) : bool in
      ( *** start new
      (family 'Commit 'i (bound (n + 1))  ::= nf(emptyBRList, samp ('flip < () >), emptyCNameList)
      )
      ||
-     (family 'AllCommitted ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::=
+     (family 'AllCommitted ('i 'j) ((bound (n + 1)) (bound (n + 2))) ::=
         (when ('j =T= 0) --> nf(emptyBRList, return (), emptyCNameList))
         ;;
         (otherwise -->  nf( ('x : unit <- read ('AllCommitted ['i ('j -- 1)] ))
@@ -193,7 +193,7 @@ mod COIN-TOSS is
                       'x :: emptyCNameList)
      )
      ||
-     (family 'SumOpened ('i 'j) ((bound (n + 1))  (uniformBound (n + 2)))   ::= 
+     (family 'SumOpened ('i 'j) ((bound (n + 1))  (bound (n + 2)))   ::= 
        (when ('j =T= 0) --> nf(emptyBRList, return False, emptyCNameList)  ) ;;
        (otherwise --> nf(('x : bool <- read ('SumOpened [ 'i ('j -- 1) ]))
                          ('y : bool <- read ('Opened ['j -- 1])),
@@ -362,10 +362,10 @@ smod EXECUTE is
      )
      ||
     newNF(
-          {'AllCommitted ('i 'j) (bound (n + 1) uniformBound (n + 2)) : unit} 
-          {'SumOpened ('i 'j) (bound (n + 1) uniformBound (n + 2)) : bool}
+          {'AllCommitted ('i 'j) (bound (n + 1) bound (n + 2)) : unit} 
+          {'SumOpened ('i 'j) (bound (n + 1) bound (n + 2)) : bool}
      ,		 
- (family 'AllCommitted ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+ (family 'AllCommitted ('i 'j) ((bound (n + 1)) (bound (n + 2))) ::= 
        nf('x : unit <- read ('AllCommitted1['j]), return 'x, 'x :: emptyCNameList)   
      ) *** end family 
      || 
@@ -383,7 +383,7 @@ smod EXECUTE is
             'sumOpened :: emptyCNameList)
      ) 
      || 
-     family 'SumOpened ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+     family 'SumOpened ('i 'j) ((bound (n + 1)) (bound (n + 2))) ::= 
        (when (0 =T= 'j) --> nf(emptyBRList, return False, emptyCNameList)) 
        ;; 
        (otherwise --> nf(('x : bool <- read ('SumOpened['i ('j -- 1)])) 
@@ -427,10 +427,10 @@ smod EXECUTE is
      )
      ||
     newNF(
-          {'AllCommitted ('i 'j) (bound (n + 1) uniformBound (n + 2)) : unit} 
-          {'SumOpened ('i 'j) (bound (n + 1) uniformBound (n + 2)) : bool}
+          {'AllCommitted ('i 'j) (bound (n + 1) bound (n + 2)) : unit} 
+          {'SumOpened ('i 'j) (bound (n + 1) bound (n + 2)) : bool}
      ,		 
- (family 'AllCommitted ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+ (family 'AllCommitted ('i 'j) ((bound (n + 1)) (bound (n + 2))) ::= 
        nf('x : unit <- read ('AllCommitted1['j]), return 'x, 'x :: emptyCNameList)   
      ) *** end family 
      || 
@@ -448,7 +448,7 @@ smod EXECUTE is
             'sumOpened :: emptyCNameList)
      ) 
      || 
-     family 'SumOpened ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+     family 'SumOpened ('i 'j) ((bound (n + 1)) (bound (n + 2))) ::= 
        (when (0 =T= 'j) --> nf(emptyBRList, return False, emptyCNameList)) 
        ;; 
        (otherwise --> nf(('x : bool <- read ('SumOpened['i ('j -- 1)])) 
@@ -493,7 +493,7 @@ smod EXECUTE is
      )
      ||
     newNF(
-        {'SumOpened ('i 'j) (bound (n + 1) uniformBound (n + 2)) : bool}
+        {'SumOpened ('i 'j) (bound (n + 1) bound (n + 2)) : bool}
      ,		 
      
      (family 'Commit 'i (bound (n + 1)) ::= 
@@ -510,7 +510,7 @@ smod EXECUTE is
             'sumOpened :: emptyCNameList)
      ) 
      || 
-     family 'SumOpened ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+     family 'SumOpened ('i 'j) ((bound (n + 1)) (bound (n + 2))) ::= 
        (when (0 =T= 'j) --> nf(emptyBRList, return False, emptyCNameList)) 
        ;; 
        (otherwise --> nf(('x : bool <- read ('SumOpened['i ('j -- 1)])) 
@@ -565,7 +565,7 @@ smod EXECUTE is
      )
      ||
     newNF(
-         {'SumOpened ('i 'j) (bound (n + 1) uniformBound (n + 2)) : bool}
+         {'SumOpened ('i 'j) (bound (n + 1) bound (n + 2)) : bool}
      ,		 
      (family 'Commit 'i (bound (n + 1)) ::= 
         nf( emptyBRList, samp ('flip < () >), emptyCNameList)) 
@@ -581,7 +581,7 @@ smod EXECUTE is
             'sumOpened :: emptyCNameList)
      ) 
      || 
-     family 'SumOpened ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+     family 'SumOpened ('i 'j) ((bound (n + 1)) (bound (n + 2))) ::= 
        nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x :: emptyCNameList)                 
      , 
      'SumOpened :: emptyCNameList
@@ -629,7 +629,7 @@ smod EXECUTE is
      )
      ||
     newNF(
-         {'SumOpened ('i 'j) (bound (n + 1) uniformBound (n + 2)) : bool}
+         {'SumOpened ('i 'j) (bound (n + 1) bound (n + 2)) : bool}
      ,		 
      (family 'Commit 'i (bound (n + 1)) ::= 
         nf( emptyBRList, samp ('flip < () >), emptyCNameList)) 
@@ -645,7 +645,7 @@ smod EXECUTE is
             'x :: emptyCNameList)
      ) 
      || 
-     family 'SumOpened ('i 'j) ((bound (n + 1)) (uniformBound (n + 2))) ::= 
+     family 'SumOpened ('i 'j) ((bound (n + 1)) (bound (n + 2))) ::= 
        nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x :: emptyCNameList)                 
      , 
      'SumOpened :: emptyCNameList
@@ -1490,7 +1490,39 @@ smod EXECUTE is
       
 endsm
 
-set trace off .
+set trace on .
+
+red validForCtx(
+  'y : bool <- read ('Opened['j -- 1]), 
+  ('AdvCommit_adv_party @ n + 1 :: bool)
+  ('AdvOpen_adv_party @ n + 1 :: unit)
+  ('AllCommitted @ (n + 1) (n + 2) :: unit)
+  ('Commit @ n + 1 :: bool)
+  ('Committed @ n + 1 :: unit)
+  ('LeakCommitted_comm_adv @ n + 1 :: unit)
+  ('LeakOpened_comm_adv @ n + 1 :: bool)
+  ('Open @ n + 1 :: unit)
+  ('Opened @ n + 1 :: bool)
+  ('Out @ n + 1 :: bool)
+  ('SumOpened @ (n + 1) (n + 2) :: bool), 
+  (neg (0 =T= 'j), 
+   apply 'honest 'i, 
+   apply 'honest (n + 1), 
+   'i <T n + 1, 
+   'j <T n + 2)
+) .
+
+***(
+
+red typeOf(secSig, ('AdvCommit_adv_party @ (n + 1) :: bool) 
+    ('AdvOpen_adv_party @ (n + 1) :: unit) 
+    ('Out @ (n + 1) :: bool),
+    insert('AdvCommit_adv_party @ (n + 1), 'AdvOpen_adv_party @ (n + 1)),
+    insert(apply 'honest (n + 1), empty),
+    real
+    ) 
+.    
+    
 
 *** this is the main proof
 srew [1] pConfig(secSig, 
@@ -1503,6 +1535,7 @@ srew [1] pConfig(secSig,
                  insert(apply 'honest (n + 1), empty)
                 ) 
    using sugar-newNF
+           
          ; addNewFamilyToGroup(newfamily 'AllCommitted1 'i (bound(n + 2)) : unit in 
               family 'AllCommitted1 'i (bound(n + 2)) ::= 
                 (when ('i =T= 0) --> nf(emptyBRList, return (), emptyCNameList)) ;;
@@ -1516,9 +1549,9 @@ srew [1] pConfig(secSig,
              , 'Commitment
              , 'AllCommitted1   
             )      
-                 
+           ***(       
         ; applyCaseDistInd('Party, 'Commitment, 'AllCommitted, r1)    
-        ***( 
+
         ; applyCaseDistSubst('Party, 'Commitment, 'Open, 'AllCommitted, r2)  
         
         ; applyCaseDistAbsorb('Party, 'Commitment, 'AllCommitted, r3) 
@@ -1657,4 +1690,4 @@ srew [1] pConfig(secSig,
             
             ) *** end comment
 .
-
+)
