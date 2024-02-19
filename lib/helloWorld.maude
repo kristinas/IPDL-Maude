@@ -32,19 +32,19 @@ mod HELLO-WORLD is
     ('LeakCtxt ^^ 'id .. 'adv ::= 
        nf(('c : bool <- read 'Ctxt),
           return 'c,
-          'c :: emptyCNameList )
+          'c )
     )  
     ||
     ('LeakCtxt ^^ 'Alice .. 'adv ::= 
        nf('c : bool <- read ('LeakCtxt ^^ 'id .. 'adv),
           return 'c, 
-          'c :: emptyCNameList)
+          'c )
     )
     ||
     ('Ctxt ::= 
        nf( 'm : bool <- read 'In,
            samp ('flip < () >),
-           'm :: emptyCNameList)
+           'm )
     )
     )
  .
@@ -60,14 +60,14 @@ mod HELLO-WORLD is
        nf( ('m : bool <- read 'In)
             'k : bool <- read 'Key,
             return (ap 'xor pair('m, 'k)),
-           'm :: 'k :: emptyCNameList
+           'm 'k 
                )
      )
      ||
      ('LeakCtxt ^^ 'Alice .. 'adv ::= 
        nf( 'c : bool <- read 'Ctxt ,
            return 'c,
-          'c :: emptyCNameList )  
+          'c )  
      )
     ) 
          
@@ -90,12 +90,12 @@ smod EXECUTE is
  var P : Protocol .
   
   rl [assumption] :
-    rConfig(Sigma, Delta (f @ nil :: bool), Gamma (x : bool),
+    rConfig(Sigma, Delta (chn f :: bool), Gamma (x : bool),
             y : bool <- samp ('flip < () >) ; 
             return (ap 'xor pair(x, y)), I, A, bool
             )
      => 
-     rConfig(Sigma, Delta (f @ nil :: bool), Gamma (x : bool),
+     rConfig(Sigma, Delta (chn f :: bool), Gamma (x : bool),
              samp ('flip < () >), I, A, bool)
   .  
   
@@ -113,10 +113,10 @@ smod EXECUTE is
  
 srew [1] 
  pConfig(sig, 
-         ('In @ nil :: bool) 
-         ('LeakCtxt ^^ 'Alice .. 'adv @ nil :: bool), 
+         (chn 'In :: bool) 
+         (chn ('LeakCtxt ^^ 'Alice .. 'adv) :: bool), 
          real, 
-         'In @ nil, 
+         chn 'In, 
          getOutputs(real), 
          empty)
 using 
@@ -129,6 +129,7 @@ using
      ; foldNF('LeakCtxt ^^ 'id .. 'adv, 'LeakCtxt ^^ 'Alice .. 'adv) 
      ; foldNF('Ctxt, 'LeakCtxt ^^ 'Alice .. 'adv)  
      }
+     
 .  
  
 ***( Here we record the proof from idealPlusSim.

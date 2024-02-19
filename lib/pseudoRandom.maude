@@ -40,14 +40,14 @@ mod PSEUDORANDOM is
  eq lrLeft = 
   new 'Key : key in
    (
-    ('Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    ('Key ::= nf(emptyBRList, samp ('genKey < () >), nil))
     ||
-    (family 'Enc 'i (bound q) ::= 
+    (family ('Enc[bound q]) 'i (bound q) ::= 
       nf( ('ml : msg <- read ('Msg-L['i]))
           ('mr : msg <- read ('Msg-R['i]))
           ('k : key <- read 'Key),
           samp ('enc < pair('ml, 'k) >),
-           'ml :: 'mr :: 'k :: emptyCNameList)
+           'ml 'mr 'k)
     ) 
    ) 
  .
@@ -56,14 +56,14 @@ mod PSEUDORANDOM is
  eq lrRight = 
   new 'Key : key in
    (
-    ('Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    ('Key ::= nf(emptyBRList, samp ('genKey < () >), nil))
     ||
-    (family 'Enc 'i (bound q) ::= 
+    (family ('Enc[bound q]) 'i (bound q) ::= 
       nf( ('ml : msg <- read ('Msg-L['i]))
           ('mr : msg <- read ('Msg-R['i]))
           ('k : key <- read 'Key),
           samp ('enc < pair('mr, 'k) >),
-           'ml :: 'mr :: 'k :: emptyCNameList)
+           'ml 'mr 'k)
     ) 
    ) 
  .
@@ -72,13 +72,13 @@ mod PSEUDORANDOM is
  eq cmLeft = 
   new 'Key : key in
    (
-    ('Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    ('Key ::= nf(emptyBRList, samp ('genKey < () >), nil))
     ||
-    (family 'Enc 'i (bound q) ::= 
+    (family ('Enc[bound q]) 'i (bound q) ::= 
       nf( ('m : msg <- read ('Msg['i]))
           ('k : key <- read 'Key),
           samp ('enc < pair('m, 'k) >),
-           'm :: 'k :: emptyCNameList)
+           'm 'k )
     ) 
    ) 
  .
@@ -86,15 +86,15 @@ mod PSEUDORANDOM is
  
   op int1 : -> Protocol .
  eq int1 = 
-     newfamily 'Msg 'i (bound q) : msg in 
+     newfamily ('Msg[bound q]) 'i (bound q) : msg in 
      (
      cmLeft ||
-     (family 'Msg 'i (bound q) ::= 
+     (family ('Msg[bound q]) 'i (bound q) ::= 
       nf(
       ('ml : msg <- read ('Msg-L['i]))
       ('mr : msg <- read ('Msg-R['i])),
       return 'ml,
-      'ml :: 'mr :: emptyCNameList
+      'ml 'mr
       )
     )
      )
@@ -102,20 +102,20 @@ mod PSEUDORANDOM is
  
  op int2 : -> Protocol .
  eq int2 =
-    newfamily 'Msg 'i (bound q) : msg in
+    newfamily ('Msg[bound q]) 'i (bound q) : msg in
       ( 
-    (family 'Enc 'i (bound q) ::= 
+    (family ('Enc[bound q]) 'i (bound q) ::= 
       nf( 'm : msg <- read ('Msg['i]),
           samp ('unifCtxt < () >),
-          'm :: emptyCNameList)
+          'm )
     )
     ||
-     (family 'Msg 'i (bound q) ::= 
+     (family ('Msg[bound q]) 'i (bound q) ::= 
       nf(
       ('ml : msg <- read ('Msg-L['i]))
       ('mr : msg <- read ('Msg-R['i])),
       return 'mr,
-      'ml :: 'mr :: emptyCNameList
+      'ml 'mr 
       )
     ) 
     )      
@@ -123,26 +123,26 @@ mod PSEUDORANDOM is
  
  op int3 : -> Protocol .
  eq int3 =
-   newfamily 'Msg 'i (bound q) : msg in
+   newfamily ('Msg[bound q]) 'i (bound q) : msg in
       (
-          (family 'Msg 'i (bound q) ::= 
+          (family ('Msg[bound q]) 'i (bound q) ::= 
       nf(
       ('ml : msg <- read ('Msg-L['i]))
       ('mr : msg <- read ('Msg-R['i])),
       return 'mr,
-      'ml :: 'mr :: emptyCNameList
+      'ml 'mr
       )
     )
     ||
     new 'Key : key in
    (
-    ('Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    ('Key ::= nf(emptyBRList, samp ('genKey < () >), nil))
     ||
-    (family 'Enc 'i (bound q) ::= 
+    (family ('Enc[bound q]) 'i (bound q) ::= 
       nf( ('m : msg <- read ('Msg['i]))
           ('k : key <- read 'Key),
           samp ('enc < pair('m, 'k) >),
-          'm :: 'k :: emptyCNameList)
+          'm 'k )
     ) 
    )
 
@@ -172,38 +172,38 @@ smod EXECUTE is
     aConfig(Sigma, Delta ,
             newNF( < Key : key >, 
    (
-    (Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    (Key ::= nf(emptyBRList, samp ('genKey < () >), nil))
     ||
-    (family Enc i (bound q) ::= 
+    (family (Enc[bound q]) i (bound q) ::= 
       nf( (m : msg <- read (Msg[i]))
           (k : key <- read Key),
           samp ('enc < pair(m, k) >),
-          m :: k :: emptyCNameList)
+          m k )
     ) 
-   ), Key :: emptyCNameList) , I, O, A, width wid, length len
+   ), chn Key) , I, O, A, width wid, length len
    )
    =>
    aConfig(Sigma, Delta ,
             newNF( < Key : key >, 
    (
-    (Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    (Key ::= nf(emptyBRList, samp ('genKey < () >), nil))
     ||
-    (family Enc i (bound q) ::= 
+    (family (Enc[bound q]) i (bound q) ::= 
       nf( (m : msg <- read (Msg[i]))
           (k : key <- read Key),
           samp ('enc < pair(ap 'zeros (), k) >),
-          m :: k :: emptyCNameList)
+          m k)
     ) 
-   ), Key :: emptyCNameList) , I, O, A, width (wid + 1), length (len + | I | - 1)
+   ), chn Key) , I, O, A, width (wid + 1), length (diff(len + | I |, 1))
    )
    
    if
    
-    (Msg @ q) in I 
+    (fam (Msg [bound q])) in I 
     
     /\
     
-    O == Enc @ q
+    O == fam (Enc[bound q])
     
    .
    
@@ -218,34 +218,34 @@ smod EXECUTE is
     aConfig(Sigma, Delta ,
             newNF( < Key : key >, 
    (
-    (Key ::= nf(emptyBRList, samp ('genKey < () >), emptyCNameList))
+    (Key ::= nf(emptyBRList, samp ('genKey < () >), nil))
     ||
-    (family Enc i (bound q) ::= 
+    (family (Enc[bound q]) i (bound q) ::= 
       nf( (m : msg <- read (Msg[i]))
           (k : key <- read Key),
           samp ('enc < pair(m, k) >),
-          m :: k :: emptyCNameList)
+          m k)
     ) 
-   ), Key :: emptyCNameList) , I, O, A, width wid, length len
+   ), chn Key) , I, O, A, width wid, length len
    )
    =>
    aConfig(Sigma, Delta ,
            
-    family Enc i (bound q) ::= 
+    family (Enc[bound q]) i (bound q) ::= 
       nf( m : msg <- read (Msg[i]),
           samp ('unifCtxt < () >),
-          m :: emptyCNameList)
+          m)
     
-    , I, O, A, width (wid + 1), length (len + | I | - 1)
+    , I, O, A, width (wid + 1), length (diff(len + | I |, 1))
    )
    
    if
    
-    (Msg @ q) in I 
+    (fam (Msg [bound q])) in I 
     
     /\
     
-    O == Enc @ q
+    O == fam (Enc [bound q])
     
    .
    
@@ -259,8 +259,11 @@ smod EXECUTE is
 endsm
 
 srew [1]
- aConfig(sig,('Msg-L @ q :: msg) ('Msg-R @ q :: msg) ('Enc @ q :: ctxt), lrLeft, 
-         insert('Msg-L @ q, 'Msg-R @ q),   getOutputs(lrLeft), empty, width 0, length 0)
+ aConfig(sig,(fam ('Msg-L[bound q]) :: msg) 
+              (fam ('Msg-R[bound q]) :: msg)
+              (fam ('Enc[bound q]) :: ctxt), lrLeft, 
+         insert(fam ('Msg-L[bound q]) , fam ('Msg-R[bound q])), 
+         getOutputs(lrLeft), empty, width 0, length 0)
 using 
  TRANS{
  TRANS{
@@ -271,17 +274,17 @@ using
     ; SYM[P1:Protocol <- int1]{
          sugar-newNF
      ; moveNewToFront
-     ; foldNFFamily('Msg, 'Enc)
+     ; foldNFFamily(fam ('Msg[bound q]), fam ('Enc[bound q]))
        }
      ; sugar-newNF 
  },
  applyCPAD
  },
  STRICT{
-     foldNFFamily('Msg, 'Enc)
+     foldNFFamily(fam ('Msg[bound q]), fam ('Enc[bound q]))
    ; SYM[P1:Protocol <- int2]{
        sugar-newNF
-       ; foldNFFamily('Msg, 'Enc) 
+       ; foldNFFamily(fam ('Msg[bound q]), fam ('Enc[bound q]))
      }
    ; sugar-newNF  
  }
@@ -298,7 +301,7 @@ using
  STRICT{
      sugar-newNF
    ; moveNewToFront
-   ; foldNFFamily('Msg, 'Enc)
+   ; foldNFFamily(fam ('Msg[bound q]), fam ('Enc[bound q]))
    ; SYM[P1:Protocol <- lrRight]{
        sugar-newNF
      }  

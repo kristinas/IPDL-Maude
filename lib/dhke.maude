@@ -48,57 +48,57 @@ mod DHKE is
     new 'Recv-Alice-Bob : msg in 
     new 'Recv-Bob-Alice : msg in
     ( *** begin new
-     ('SecretKey-Alice ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+     ('SecretKey-Alice ::= nf(emptyBRList, samp ('unif_key < () >), nil)
      )
      ||
      (
       'Send-Alice-Bob ::= nf( 'ka : key <- read 'SecretKey-Alice,
                               return (ap 'exp pair(ap 'g (), 'ka)),
-                              'ka :: emptyCNameList
+                              'ka
                              )
      )
      ||
-     ('SecretKey-Bob ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+     ('SecretKey-Bob ::= nf(emptyBRList, samp ('unif_key < () >), nil)
      )
      ||
      (
       'Send-Bob-Alice ::= nf( 'kb : key <- read 'SecretKey-Bob,
                               return (ap 'exp pair(ap 'g (), 'kb)),
-                              'kb :: emptyCNameList
+                              'kb
                              )
      ) 
      ||
      ('LeakPublicKey-Alice ^^ 'adv .. 'net ::= nf('sa : msg <- read 'Send-Alice-Bob, 
-                                          return 'sa, 'sa :: emptyCNameList))
+                                          return 'sa, 'sa))
      ||
      ('LeakPublicKey-Bob ^^ 'adv .. 'net ::= nf('sb : msg <- read 'Send-Bob-Alice, 
-                                        return 'sb, 'sb :: emptyCNameList))
+                                        return 'sb, 'sb))
      ||
      ('Recv-Alice-Bob ::= nf(('oa : msg <- read ('OkPublicKey-Alice ^^ 'adv .. 'net))
                              ('sab : msg <- read 'Send-Alice-Bob),
                              return 'sab,
-                             'oa :: 'sab :: emptyCNameList 
+                             'oa 'sab   
                              )
      ) 
      ||
      ('Recv-Bob-Alice ::= nf(('ob : msg <- read ('OkPublicKey-Bob ^^ 'adv .. 'net))
                              ('sba : msg <- read 'Send-Bob-Alice),
                              return 'sba,
-                             'ob :: 'sba :: emptyCNameList 
+                             'ob 'sba   
                              )
      )
      ||
      ('Key-Alice ::= nf(('rb : msg <- read 'Recv-Bob-Alice)
                         ('ka : key <- read 'SecretKey-Alice),
                          return (ap 'exp pair('rb, 'ka)),
-                         'rb :: 'ka :: emptyCNameList
+                         'rb 'ka  
                         )
      ) 
       ||
      ('Key-Bob ::= nf(('ra : msg <- read 'Recv-Alice-Bob)
                         ('kb : key <- read 'SecretKey-Bob),
                          return (ap 'exp pair('ra, 'kb)),
-                         'ra :: 'kb :: emptyCNameList
+                         'ra 'kb  
                         )
      )                                                
     ) *** end new
@@ -109,27 +109,27 @@ mod DHKE is
     new 'SecretKey : key in
     new 'Key : msg in
     (
-     ('SecretKey ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+     ('SecretKey ::= nf(emptyBRList, samp ('unif_key < () >), nil)
      )
      ||
      (
       'Key ::= nf( 'k : key <- read 'SecretKey,
                    return (ap 'exp pair(ap 'g (), 'k)),
-                   'k :: emptyCNameList
+                   'k  
                  )
      ) 
      ||
      ('Key-Alice ::= nf(('oka : msg <- read ('OkKey-Alice ^^ 'adv .. 'id))
                         ('k : msg <- read 'Key),
                         return 'k,
-                        'oka :: 'k :: emptyCNameList                        
+                        'oka 'k                          
                         )
      )
      ||
      ('Key-Bob ::= nf(('okb : msg <- read ('OkKey-Bob ^^ 'adv .. 'id))
                         ('k : msg <- read 'Key),
                         return 'k,
-                        'okb :: 'k :: emptyCNameList                        
+                        'okb 'k                          
                         )
      ))
  .
@@ -141,39 +141,39 @@ mod DHKE is
     new 'PublicKey-Alice : msg in
     new 'PublicKey-Bob : msg in
     ( 
-     ('SecretKey-Alice ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+     ('SecretKey-Alice ::= nf(emptyBRList, samp ('unif_key < () >), nil)
      )
      ||
-     ('SecretKey-Bob ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+     ('SecretKey-Bob ::= nf(emptyBRList, samp ('unif_key < () >), nil)
      )
      ||
      (
       'PublicKey-Alice ::= nf( 'ka : key <- read 'SecretKey-Alice,
                               return (ap 'exp pair(ap 'g (), 'ka)),
-                              'ka :: emptyCNameList
+                              'ka  
                              )
      )
      ||
      (
       'PublicKey-Bob ::= nf( 'kb : key <- read 'SecretKey-Bob,
                               return (ap 'exp pair(ap 'g (), 'kb)),
-                              'kb :: emptyCNameList
+                              'kb  
                              )
      ) 
      ||
      ('LeakPublicKey-Alice ^^ 'adv .. 'net ::= nf('pa : msg <- read 'PublicKey-Alice, 
-                                          return 'pa, 'pa :: emptyCNameList))
+                                          return 'pa, 'pa  ))
      ||
      ('LeakPublicKey-Bob ^^ 'adv .. 'net ::= nf('pb : msg <- read 'PublicKey-Bob, 
-                                        return 'pb, 'pb :: emptyCNameList))
+                                        return 'pb, 'pb  ))
      ||
      ('OkKey-Alice ^^ 'adv .. 'id ::= nf('ob : msg <- read ('OkPublicKey-Bob ^^ 'adv .. 'net),
-                                 return 'ob, 'ob :: emptyCNameList 
+                                 return 'ob, 'ob   
                                 )
      )
      ||
      ('OkKey-Bob ^^ 'adv .. 'id ::= nf('oa : msg <- read ('OkPublicKey-Alice ^^ 'adv .. 'net),
-                                 return 'oa, 'oa :: emptyCNameList 
+                                 return 'oa, 'oa   
                                 )
      )
     )
@@ -201,41 +201,41 @@ mod DHKE is
           ('Key ::= nf(('ka : key <- read 'SecretKey-Alice) 
                        ('kb : key <- read 'SecretKey-Bob), 
                        return (ap 'exp pair(ap 'exp pair(ap 'g (), 'ka), 'kb)),
-                       'ka :: 'kb :: emptyCNameList
+                       'ka 'kb  
                        )
           )
           || 
           ('Key-Alice ::= nf(('k : msg <- read 'Key)
                              ('ob : msg <- read ('OkPublicKey-Bob ^^ 'adv .. 'net)), 
                              return 'k, 
-                             'ob :: 'k :: emptyCNameList)
+                             'ob 'k  )
           ) 
           || 
           ('Key-Bob ::= nf(('k : msg <- read 'Key)
                             'oa : msg <- read ('OkPublicKey-Alice ^^ 'adv .. 'net), 
                             return 'k, 
-                            'oa :: 'k :: emptyCNameList)
+                            'oa 'k  )
           ) 
           || 
           ('PublicKey-Alice ::= nf('ka : key <- read 'SecretKey-Alice, 
-                return (ap 'exp pair(ap 'g (), 'ka)), 'ka :: emptyCNameList)
+                return (ap 'exp pair(ap 'g (), 'ka)), 'ka  )
           )
           ||
           ('PublicKey-Bob ::= nf('kb : key <- read 'SecretKey-Bob, 
-                 return (ap 'exp pair(ap 'g (), 'kb)), 'kb :: emptyCNameList)
+                 return (ap 'exp pair(ap 'g (), 'kb)), 'kb  )
           )
           ||
           ('LeakPublicKey-Alice ^^ 'adv .. 'net ::= 
-                nf('pa : msg <- read 'PublicKey-Alice, return 'pa, 'pa :: emptyCNameList)
+                nf('pa : msg <- read 'PublicKey-Alice, return 'pa, 'pa  )
           ) 
           || 
           ('LeakPublicKey-Bob ^^ 'adv .. 'net ::= 
-                nf('pb : msg <- read 'PublicKey-Bob, return 'pb, 'pb :: emptyCNameList)
+                nf('pb : msg <- read 'PublicKey-Bob, return 'pb, 'pb  )
           ) 
           || 
-          ('SecretKey-Alice ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)) 
+          ('SecretKey-Alice ::= nf(emptyBRList, samp ('unif_key < () >), nil)) 
           || 
-          ('SecretKey-Bob ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList))
+          ('SecretKey-Bob ::= nf(emptyBRList, samp ('unif_key < () >), nil))
       ) *** end new
   . 
   
@@ -250,38 +250,38 @@ mod DHKE is
              ('Key ::= nf(('ka : key <- read 'SecretKey-Alice) 
                         ('kb : key <- read 'SecretKey-Bob), 
                         return (ap 'exp pair(ap 'exp pair(ap 'g (), 'ka), 'kb)), 
-                        'ka :: 'kb :: emptyCNameList)
+                        'ka 'kb  )
              ) || 
              ('PublicKey-Alice ::= 
               nf('ka : key <- read 'SecretKey-Alice, 
-                 return (ap 'exp pair(ap 'g (), 'ka)), 'ka :: emptyCNameList)
+                 return (ap 'exp pair(ap 'g (), 'ka)), 'ka  )
            ) || 
            ('PublicKey-Bob ::=
               nf('kb : key <- read 'SecretKey-Bob, 
-                  return (ap 'exp pair(ap 'g (), 'kb)), 'kb :: emptyCNameList)
+                  return (ap 'exp pair(ap 'g (), 'kb)), 'kb  )
            ) || 
-           ('SecretKey-Alice ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+           ('SecretKey-Alice ::= nf(emptyBRList, samp ('unif_key < () >), nil)
            ) || 
-           ('SecretKey-Bob ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList))
-             ,'SecretKey-Alice :: 'SecretKey-Bob :: emptyCNameList
+           ('SecretKey-Bob ::= nf(emptyBRList, samp ('unif_key < () >), nil))
+             , (chn 'SecretKey-Alice) (chn 'SecretKey-Bob)  
            ) 
            ||           
            ('Key-Alice ::= nf(('k : msg <- read 'Key) 
                               ('ob : msg <- read ('OkPublicKey-Bob ^^ 'adv .. 'net)), 
-                              return 'k, 'ob :: 'k :: emptyCNameList)
+                              return 'k, 'ob 'k  )
            ) || 
            ('Key-Bob ::= nf(('k : msg <- read 'Key) 
                             ('oa : msg <- read ('OkPublicKey-Alice ^^ 'adv .. 'net)), 
-                            return 'k, 'oa :: 'k :: emptyCNameList)
+                            return 'k, 'oa 'k  )
            ) || 
            ('LeakPublicKey-Alice ^^ 'adv .. 'net ::= 
-              nf('pa : msg <- read 'PublicKey-Alice, return 'pa, 'pa :: emptyCNameList)
+              nf('pa : msg <- read 'PublicKey-Alice, return 'pa, 'pa  )
            ) || 
            ('LeakPublicKey-Bob ^^ 'adv .. 'net ::= 
-              nf( 'pb : msg <- read 'PublicKey-Bob, return 'pb, 'pb :: emptyCNameList)
+              nf( 'pb : msg <- read 'PublicKey-Bob, return 'pb, 'pb  )
            )
            , 
-           'Key :: 'PublicKey-Alice :: 'PublicKey-Bob :: emptyCNameList)
+           (chn 'Key) (chn 'PublicKey-Alice) (chn 'PublicKey-Bob)  )
   .   
  
 *****************************
@@ -301,83 +301,83 @@ mod DHKE is
     new 'Send : msg in
     new 'Recv : msg in
     ( *** begin new
-     ('SecretKey-Alice ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+     ('SecretKey-Alice ::= nf(emptyBRList, samp ('unif_key < () >), nil)
      )
      ||
      (
       'Send-Alice-Bob ::= nf( 'ka : key <- read 'SecretKey-Alice,
                               return (ap 'exp pair(ap 'g (), 'ka)),
-                              'ka :: emptyCNameList
+                              'ka  
                              )
      )
      ||
-     ('SecretKey-Bob ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+     ('SecretKey-Bob ::= nf(emptyBRList, samp ('unif_key < () >), nil)
      )
      ||
      (
       'Send-Bob-Alice ::= nf( 'kb : key <- read 'SecretKey-Bob,
                               return (ap 'exp pair(ap 'g (), 'kb)),
-                              'kb :: emptyCNameList
+                              'kb  
                              )
      ) 
      ||
      ('LeakPublicKey-Alice ^^ 'adv .. 'net ::= nf('sa : msg <- read 'Send-Alice-Bob, 
-                                          return 'sa, 'sa :: emptyCNameList))
+                                          return 'sa, 'sa  ))
      ||
      ('LeakPublicKey-Bob ^^ 'adv .. 'net ::= nf('sb : msg <- read 'Send-Bob-Alice, 
-                                        return 'sb, 'sb :: emptyCNameList))
+                                        return 'sb, 'sb  ))
      ||
      ('Recv-Alice-Bob ::= nf(('oa : msg <- read ('OkPublicKey-Alice ^^ 'adv .. 'net))
                              ('sab : msg <- read 'Send-Alice-Bob),
                              return 'sab,
-                             'oa :: 'sab :: emptyCNameList 
+                             'oa 'sab   
                              )
      ) 
      ||
      ('Recv-Bob-Alice ::= nf(('ob : msg <- read ('OkPublicKey-Bob ^^ 'adv .. 'net))
                              ('sba : msg <- read 'Send-Bob-Alice),
                              return 'sba,
-                             'ob :: 'sba :: emptyCNameList 
+                             'ob 'sba   
                              )
      )
      ||
      ('Key-Alice ::= nf(('rb : msg <- read 'Recv-Bob-Alice)
                         ('ka : key <- read 'SecretKey-Alice),
                          return (ap 'exp pair('rb, 'ka)),
-                         'rb :: 'ka :: emptyCNameList
+                         'rb 'ka  
                         )
      ) 
       ||
      ('Key-Bob ::= nf(('ra : msg <- read 'Recv-Alice-Bob)
                         ('kb : key <- read 'SecretKey-Bob),
                          return (ap 'exp pair('ra, 'kb)),
-                         'ra :: 'kb :: emptyCNameList
+                         'ra 'kb  
                         )
      )  
      ||
      ('Send ::= nf(('m : msg <- read 'In)
                    ('ka : msg <- read 'Key-Alice),
                    return (ap 'mul pair('m, 'ka)),
-                   'm :: 'ka :: emptyCNameList
+                   'm 'ka  
                   )
      )
      ||
      ('Recv ::= nf( ('okc : msg <- read ('OkCtxt ^^ 'adv .. 'net))
                     ('send : msg <- read 'Send),
                     return 'send,
-                    'okc :: 'send :: emptyCNameList
+                    'okc 'send  
                   )
      )
      ||
      ('Out ::= nf( ('r : msg <- read 'Recv)
                    ('kb : msg <- read 'Key-Bob),
                    return (ap 'mul pair('r, ap 'inv 'kb)),
-                   'r :: 'kb :: emptyCNameList
+                   'r 'kb  
                  )
      )
      ||     
      ('LeakCtxt ^^ 'net .. 'adv ::= 
-      nf('send : msg <- read 'Send, return 'send, 'send :: emptyCNameList)) 
+      nf('send : msg <- read 'Send, return 'send, 'send  )) 
     ) *** end new
   .
   
@@ -386,11 +386,11 @@ mod DHKE is
       ('Out ::= nf( ('ok : unit <- read ('OkMsg ^^ 'adv .. 'id))
                    ('m : msg <- read 'In),
                    return 'm,
-                   'ok :: 'm :: emptyCNameList
+                   'ok 'm  
                  )
      ) || 
      ('LeakMsgRcvd ^^ 'id .. 'adv ::= 
-       nf('m : msg <- read 'In, return (), 'm :: emptyCNameList)
+       nf('m : msg <- read 'In, return (), 'm  )
      )
   .
   
@@ -404,7 +404,7 @@ mod DHKE is
                         nf ( ('lr : unit <- read ('LeakMsgRcvd ^^ 'id .. 'adv))
                              ('oka : msg <- read ('OkKey-Alice  ^^ 'adv .. 'id)),
                              samp ('unif_msg < () >),
-                             'lr :: 'oka :: emptyCNameList
+                             'lr 'oka  
                            )
      )
      ||
@@ -412,7 +412,7 @@ mod DHKE is
                                ('oka : msg <- read ('OkKey-Alice ^^ 'adv .. 'id))
                                ('okb : msg <- read ('OkKey-Bob ^^ 'adv .. 'id)),
                                return (),
-                               'okc :: 'oka :: 'okb :: emptyCNameList
+                               'okc 'oka 'okb  
                               )
      ) )
   .
@@ -439,26 +439,26 @@ mod DHKE is
          ('Send ::= nf(('m : msg <- read 'In)
                    ('ka : msg <- read 'Key-Alice),
                    return (ap 'mul pair('m, 'ka)),
-                   'm :: 'ka :: emptyCNameList
+                   'm 'ka  
                   )
      )
      ||
      ('Recv ::= nf( ('okc : msg <- read ('OkCtxt ^^ 'adv .. 'net))
                     ('send : msg <- read 'Send),
                     return 'send,
-                    'okc :: 'send :: emptyCNameList
+                    'okc 'send  
                   )
      )
      ||
      ('Out ::= nf( ('r : msg <- read 'Recv)
                    ('kb : msg <- read 'Key-Bob),
                    return (ap 'mul pair('r, ap 'inv 'kb)),
-                   'r :: 'kb :: emptyCNameList
+                   'r 'kb  
                  )
      )
      ||     
      ('LeakCtxt ^^ 'net .. 'adv ::= 
-       nf('send : msg <- read 'Send, return 'send, 'send :: emptyCNameList)) 
+       nf('send : msg <- read 'Send, return 'send, 'send  )) 
        )
      )
      .
@@ -470,7 +470,7 @@ mod DHKE is
         newNF(< 'Key-Alice : msg > < 'Key-Bob : msg > < 'Key : msg > < 'SecretKey : key >,
          ('LeakCtxt ^^ 'net .. 'adv ::= nf(('ka : msg <- read 'Key-Alice) 
                                   'm : msg <-  read 'In, return (ap 'mul pair('m, 'ka)), 
-                                  'm :: 'ka :: emptyCNameList)
+                                  'm 'ka  )
          ) 
          || 
          ('Out ::= nf(('ka : msg <- read 'Key-Alice) 
@@ -478,64 +478,64 @@ mod DHKE is
                       ('m : msg <- read 'In) 
                       'okc : msg <- read ('OkCtxt ^^ 'adv .. 'net), 
                       return (ap 'mul pair(ap 'mul pair('m, 'ka), ap 'inv 'kb)), 
-                      'm :: 'okc :: 'ka :: 'kb :: emptyCNameList)
+                      'm 'okc 'ka 'kb  )
          ) 
          || 
          ('Key ::= nf('k : key <- read 'SecretKey, 
-                      return (ap 'exp pair(ap 'g (), 'k)), 'k :: emptyCNameList)
+                      return (ap 'exp pair(ap 'g (), 'k)), 'k  )
          ) 
          || 
          ('Key-Alice ::= nf(('k : msg <- read 'Key)  
                              'oka : msg <- read ('OkKey-Alice ^^ 'adv .. 'id), 
                              return 'k, 
-                             'oka :: 'k :: emptyCNameList)
+                             'oka 'k  )
          ) 
          || 
          ('Key-Bob ::= nf(('k : msg <- read 'Key) 
                            'okb : msg <- read ('OkKey-Bob ^^ 'adv .. 'id), 
-                            return 'k, 'okb :: 'k :: emptyCNameList)
+                            return 'k, 'okb 'k  )
          ) 
          || 
-         'SecretKey ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList), 
-         'Key-Alice :: 'Key-Bob :: 'SecretKey :: 'Key :: emptyCNameList) 
+         'SecretKey ::= nf(emptyBRList, samp ('unif_key < () >), nil), 
+         (chn 'Key-Alice) (chn 'Key-Bob) (chn 'SecretKey) (chn 'Key)  ) 
          || 
          newNF(< 'PublicKey-Alice : msg > < 'PublicKey-Bob : msg > 
                < 'SecretKey-Alice : key > < 'SecretKey-Bob : key >, 
                ('LeakPublicKey-Alice ^^ 'adv .. 'net ::= 
-                 nf('pa : msg <- read 'PublicKey-Alice, return 'pa, 'pa :: emptyCNameList)
+                 nf('pa : msg <- read 'PublicKey-Alice, return 'pa, 'pa  )
                ) 
                || 
                ('LeakPublicKey-Bob ^^ 'adv .. 'net ::= 
-                 nf('pb : msg <- read 'PublicKey-Bob, return 'pb, 'pb :: emptyCNameList)
+                 nf('pb : msg <- read 'PublicKey-Bob, return 'pb, 'pb  )
                ) 
                || 
                ('OkKey-Alice ^^ 'adv .. 'id ::= 
                  nf('ob : msg <- read ('OkPublicKey-Bob ^^ 'adv .. 'net), 
-                     return 'ob, 'ob :: emptyCNameList)
+                     return 'ob, 'ob  )
                ) 
                || 
                ('OkKey-Bob ^^ 'adv .. 'id ::= 
                  nf('oa : msg <- read ('OkPublicKey-Alice ^^ 'adv .. 'net), 
-                    return 'oa, 'oa :: emptyCNameList)
+                    return 'oa, 'oa  )
                ) 
                || 
                ('PublicKey-Alice ::= 
                  nf('ka : key <- read 'SecretKey-Alice, 
-                    return (ap 'exp pair(ap 'g (), 'ka)), 'ka :: emptyCNameList)
+                    return (ap 'exp pair(ap 'g (), 'ka)), 'ka  )
                ) 
                || 
                ('PublicKey-Bob ::= 
                  nf('kb : key <- read 'SecretKey-Bob, 
-                    return (ap 'exp pair(ap 'g (), 'kb)), 'kb :: emptyCNameList)
+                    return (ap 'exp pair(ap 'g (), 'kb)), 'kb  )
                ) 
                || 
-               ('SecretKey-Alice ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+               ('SecretKey-Alice ::= nf(emptyBRList, samp ('unif_key < () >), nil)
                ) 
                || 
-               'SecretKey-Bob ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList),
-              'SecretKey-Alice :: 'SecretKey-Bob :: 
-              'PublicKey-Alice :: 'PublicKey-Bob :: emptyCNameList), 
-              'OkKey-Alice ^^ 'adv .. 'id :: 'OkKey-Bob ^^ 'adv .. 'id :: emptyCNameList)
+               'SecretKey-Bob ::= nf(emptyBRList, samp ('unif_key < () >), nil),
+              (chn 'SecretKey-Alice) (chn 'SecretKey-Bob)
+              (chn 'PublicKey-Alice) (chn 'PublicKey-Bob)  ), 
+              (chn ('OkKey-Alice ^^ 'adv .. 'id)) (chn ('OkKey-Bob ^^ 'adv .. 'id))  )
     .  
     
  
@@ -567,8 +567,8 @@ smod EXECUTE is
      ? CONG-NEW-NF{applyCommute(C)}
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using 
-        CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
-                         P1:Protocol <- keepOne P C]{ 
+        CONG-COMP-RIGHT[Q:Protocol  <- removeOne P (chn C), 
+                         P1:Protocol <- keepOne P (chn C)]{ 
                          CONG-REACT{cong-nf{commute}}
                          }
      .          
@@ -578,69 +578,71 @@ smod EXECUTE is
  crl [ddh] : 
     aConfig(Sigma, Delta ,
           newNF( < SecretKeyAlice : key > < SecretKeyBob : key > , 
-          (SecretKeyAlice ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+          (SecretKeyAlice ::= nf(emptyBRList, samp ('unif_key < () >), nil)
            ) 
           || 
-           (SecretKeyBob ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+           (SecretKeyBob ::= nf(emptyBRList, samp ('unif_key < () >), nil)
            ) 
           ||
           (
           Key ::= nf((ka : key <- read SecretKeyAlice)
                      (kb : key <- read SecretKeyBob),
                      return (ap 'exp pair(ap 'exp pair(ap 'g (), ka), kb)),
-                     ka :: kb :: emptyCNameList)
+                     ka kb  )
           )
           ||
           (
           PublicKeyAlice ::= nf( ka : key <- read SecretKeyAlice,
                                return (ap 'exp pair(ap 'g (), ka)),
-                               ka :: emptyCNameList
+                               ka  
                              )
           )
           ||
           (
           PublicKeyBob ::= nf( kb : key <- read SecretKeyBob,
                              return (ap 'exp pair(ap 'g (), kb)),
-                             kb :: emptyCNameList
+                             kb  
                              )
           ),
-          SecretKeyAlice :: SecretKeyBob :: emptyCNameList)
+          (chn SecretKeyAlice) (chn SecretKeyBob))
           , I, O, A, width wid, length len) 
           =>
     aConfig(Sigma, Delta,
           newNF( < SecretKeyAlice : key > < SecretKeyBob : key > < SecretKey : key >, 
-          (SecretKey ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+          (SecretKey ::= nf(emptyBRList, samp ('unif_key < () >), nil)
            ) 
           || 
-          (SecretKeyAlice ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+          (SecretKeyAlice ::= nf(emptyBRList, samp ('unif_key < () >), nil)
            ) 
           || 
-           (SecretKeyBob ::= nf(emptyBRList, samp ('unif_key < () >), emptyCNameList)
+           (SecretKeyBob ::= nf(emptyBRList, samp ('unif_key < () >), nil)
            ) 
           ||
           (
           Key ::= nf((k : key <- read SecretKey),
                      return (ap 'exp pair(ap 'g (), k)),
-                     k :: emptyCNameList)
+                     k  )
           )
           ||
           (
           PublicKeyAlice ::= nf( ka : key <- read SecretKeyAlice,
                                return (ap 'exp pair(ap 'g (), ka)),
-                               ka :: emptyCNameList
+                               ka  
                              )
           )
           ||
           (
           PublicKeyBob ::= nf( kb : key <- read SecretKeyBob,
                              return (ap 'exp pair(ap 'g (), kb)),
-                             kb :: emptyCNameList
+                             kb  
                              )
           ),
-          SecretKey :: SecretKeyAlice :: SecretKeyBob :: emptyCNameList)        
-          , I, O, A, width (wid + 1), length (len + | I | ) *** because the protocol has no inputs
+          (chn SecretKey) (chn SecretKeyAlice) (chn SecretKeyBob)   
+          )     
+          , I, O, A, width (wid + 1), length (len + | I | ) 
+          *** because the protocol has no inputs
           )  
-   if O == insert(PublicKeyAlice @ nil, insert(PublicKeyBob @ nil, Key @ nil))       
+   if O == insert(chn PublicKeyAlice, insert(chn PublicKeyBob, chn Key))       
           [nonexec]   
    . 
    
@@ -650,7 +652,8 @@ smod EXECUTE is
  sd applyDDH(sk, k) := 
     match aConf s.t. aConfStartsWithNew aConf
     ? CONG-NEW-NF-APPROX{applyDDH(sk, k)} 
-    : matchrew aConf s.t. aConfig(Sigma, Delta, P, I, O, A, width wid, length len) := aConf by aConf 
+    : matchrew aConf s.t. 
+      aConfig(Sigma, Delta, P, I, O, A, width wid, length len) := aConf by aConf 
           using
       CONG-COMP-APPROX{
          ddh[SecretKey:NameWithScripts <- sk, k:NameWithScripts <- k]
@@ -675,8 +678,8 @@ smod EXECUTE is
       ? CONG-NEW-NF{applySameExpPre(C)}
       : matchrew pConf s.t. 
          pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
-                             P1:Protocol <- keepOne P C] 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P (chn C), 
+                             P1:Protocol <- keepOne P (chn C)] 
              { CONG-REACT[o:ChannelName <- C]{cong-pre-nf{samp-exp}}}
    .                                
             
@@ -696,8 +699,8 @@ smod EXECUTE is
       ? CONG-NEW-NF{applySameMulPre(C)}
       : matchrew pConf s.t. 
          pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P C, 
-                             P1:Protocol <- keepOne P C] 
+       using CONG-COMP-RIGHT[Q:Protocol  <- removeOne P (chn C), 
+                             P1:Protocol <- keepOne P (chn C)] 
              { CONG-REACT[o:ChannelName <- C]{cong-pre-nf{samp-mul}}}
    .                  
  
@@ -710,13 +713,14 @@ endsm
 ***( 1. the idealSimDHKE subproof, commented out after we plug it in the proof
 srew [1] 
  aConfig(sig,
-         ('Key-Alice @ nil :: msg ) ('Key-Bob @ nil :: msg)
-                ('LeakPublicKey-Alice ^^ 'adv .. 'net @ nil :: msg)  
-                ('LeakPublicKey-Bob ^^ 'adv .. 'net @ nil :: msg)
-                ('OkPublicKey-Alice ^^ 'adv .. 'net @ nil :: msg)
-                ('OkPublicKey-Bob ^^ 'adv .. 'net @ nil :: msg),
+         (chn 'Key-Alice :: msg ) (chn 'Key-Bob :: msg)
+                (chn 'LeakPublicKey-Alice ^^ 'adv .. 'net  :: msg)  
+                (chn 'LeakPublicKey-Bob ^^ 'adv .. 'net   :: msg)
+                (chn 'OkPublicKey-Alice ^^ 'adv .. 'net   :: msg)
+                (chn 'OkPublicKey-Bob ^^ 'adv .. 'net   :: msg),
         idealSimDHKE,
-        insert('OkPublicKey-Alice ^^ 'adv .. 'net @ nil, 'OkPublicKey-Bob ^^ 'adv .. 'net @ nil),
+        insert(chn 'OkPublicKey-Alice ^^ 'adv .. 'net  , 
+               chn 'OkPublicKey-Bob ^^ 'adv .. 'net  ),
         getOutputs(idealSimDHKE),
         empty, width 0, length 0)
 using   STRICT{
@@ -731,13 +735,14 @@ using   STRICT{
 ***( 2. the whole DHKE proof, commented out after we plug it in the OTP proof
 srew [1] 
  aConfig(sig,
-         ('Key-Alice @ nil :: msg ) ('Key-Bob @ nil :: msg)
-                ('LeakPublicKey-Alice ^^ 'adv .. 'net @ nil :: msg)  
-                ('LeakPublicKey-Bob ^^ 'adv .. 'net @ nil :: msg)
-                ('OkPublicKey-Alice ^^ 'adv .. 'net @ nil :: msg)
-                ('OkPublicKey-Bob ^^ 'adv .. 'net @ nil :: msg),
+         (chn 'Key-Alice   :: msg ) (chn 'Key-Bob   :: msg)
+                (chn 'LeakPublicKey-Alice ^^ 'adv .. 'net   :: msg)  
+                (chn 'LeakPublicKey-Bob ^^ 'adv .. 'net   :: msg)
+                (chn 'OkPublicKey-Alice ^^ 'adv .. 'net   :: msg)
+                (chn 'OkPublicKey-Bob ^^ 'adv .. 'net   :: msg),
         realDHKE,
-        insert('OkPublicKey-Alice ^^ 'adv .. 'net @ nil, 'OkPublicKey-Bob ^^ 'adv .. 'net @ nil),
+        insert(chn 'OkPublicKey-Alice ^^ 'adv .. 'net  , 
+               chn 'OkPublicKey-Bob ^^ 'adv .. 'net  ),
         getOutputs(realDHKE),
         empty,
         width 0,
@@ -759,22 +764,26 @@ using   TRANS{
       ; foldNF('Key, 'Key-Bob)
       ; foldNF('PublicKey-Alice, 'LeakPublicKey-Alice ^^ 'adv .. 'net)
       ; foldNF('PublicKey-Bob, 'LeakPublicKey-Bob ^^ 'adv .. 'net)
-      ; changeOrder('Key-Alice, 'ob :: 'kb :: 'ka :: emptyCNameList)
+      ; changeOrder(chn 'Key-Alice, 'ob 'kb 'ka  )
         }
       ; sugar-newNF
       ; SYM[P1:Protocol <- aux2]{
           moveNewToFront
-      ; reorder-newNF[ql2:CNameList <- 'SecretKey-Alice :: 'SecretKey-Bob :: 
-                                       'Key :: 'PublicKey-Alice :: 'PublicKey-Bob :: emptyCNameList]
+      ; reorder-newNF[ql2:List{CNameBound} <- (chn 'SecretKey-Alice)  
+                                       (chn 'SecretKey-Bob) 
+                                       (chn 'Key) 
+                                       (chn 'PublicKey-Alice) 
+                                       (chn 'PublicKey-Bob)  ]
         }
     },
     TRANS{
     applyDDH('SecretKey, 'k),
     STRICT{
         moveNewToFront
-      ; reorder-newNF[ql2:CNameList <- 'SecretKey :: 'Key :: 'SecretKey-Alice :: 
-                                       'SecretKey-Bob :: 'PublicKey-Alice :: 'PublicKey-Bob
-                                       :: emptyCNameList  ] 
+      ; reorder-newNF[ql2:List{CNameBound} <- (chn 'SecretKey)  (chn 'Key) (chn 'SecretKey-Alice) 
+                                       (chn 'SecretKey-Bob) (chn 'PublicKey-Alice) 
+                                       (chn 'PublicKey-Bob)
+                                          ] 
       ; SYM[P1:Protocol <- idealSimDHKE]{
         sugar-newNF 
       ; moveNewToFront 
@@ -795,19 +804,19 @@ using   TRANS{
 ***( this is the idealSimOTP subproof, commented out after plugging in the main proof
 srew [1] 
  aConfig(sig,
-        ('OkCtxt ^^ 'adv .. 'net @ nil :: msg) 
-           ('OkPublicKey-Alice ^^ 'adv .. 'net @ nil :: msg)
-           ('OkPublicKey-Bob ^^ 'adv .. 'net @ nil :: msg)
-           ('In @ nil :: msg)
-           ('LeakCtxt ^^ 'net .. 'adv @ nil :: msg)
-           ('LeakPublicKey-Alice ^^ 'adv .. 'net @ nil :: msg)
-           ('LeakPublicKey-Bob ^^ 'adv .. 'net @ nil :: msg) 
-           ('Out @ nil :: msg) ,
+        (chn 'OkCtxt ^^ 'adv .. 'net   :: msg) 
+           (chn 'OkPublicKey-Alice ^^ 'adv .. 'net   :: msg)
+           (chn 'OkPublicKey-Bob ^^ 'adv .. 'net   :: msg)
+           (chn 'In   :: msg)
+           (chn 'LeakCtxt ^^ 'net .. 'adv   :: msg)
+           (chn 'LeakPublicKey-Alice ^^ 'adv .. 'net   :: msg)
+           (chn 'LeakPublicKey-Bob ^^ 'adv .. 'net   :: msg) 
+           (chn 'Out   :: msg) ,
         idealSimOTP,
-        ('OkCtxt ^^ 'adv .. 'net @ nil, 
-            'OkPublicKey-Alice ^^ 'adv .. 'net @ nil, 
-            'OkPublicKey-Bob ^^ 'adv .. 'net @ nil, 
-            'In @ nil),
+        (chn 'OkCtxt ^^ 'adv .. 'net  , 
+         chn 'OkPublicKey-Alice ^^ 'adv .. 'net  , 
+         chn 'OkPublicKey-Bob ^^ 'adv .. 'net  , 
+         chn 'In  ),
         getOutputs(idealSimOTP),
         empty,
         width 0,
@@ -829,19 +838,19 @@ set trace off .
 
 srew [1] 
  aConfig(sig,
-        ('OkCtxt ^^ 'adv .. 'net @ nil :: msg) 
-           ('OkPublicKey-Alice ^^ 'adv .. 'net @ nil :: msg)
-           ('OkPublicKey-Bob ^^ 'adv .. 'net @ nil :: msg)
-           ('In @ nil :: msg)
-           ('LeakCtxt ^^ 'net .. 'adv @ nil :: msg)
-           ('LeakPublicKey-Alice ^^ 'adv .. 'net @ nil :: msg)
-           ('LeakPublicKey-Bob ^^ 'adv .. 'net @ nil :: msg) 
-           ('Out @ nil :: msg) ,
+        (chn ('OkCtxt ^^ 'adv .. 'net)   :: msg) 
+           (chn ('OkPublicKey-Alice ^^ 'adv .. 'net)   :: msg)
+           (chn ('OkPublicKey-Bob ^^ 'adv .. 'net)   :: msg)
+           (chn 'In   :: msg)
+           (chn ('LeakCtxt ^^ 'net .. 'adv)   :: msg)
+           (chn ('LeakPublicKey-Alice ^^ 'adv .. 'net)   :: msg)
+           (chn ('LeakPublicKey-Bob ^^ 'adv .. 'net)   :: msg) 
+           (chn 'Out   :: msg) ,
         realOTP,
-        ('OkCtxt ^^ 'adv .. 'net @ nil, 
-            'OkPublicKey-Alice ^^ 'adv .. 'net @ nil, 
-            'OkPublicKey-Bob ^^ 'adv .. 'net @ nil, 
-            'In @ nil),
+        (chn ('OkCtxt ^^ 'adv .. 'net)  , 
+          chn  ('OkPublicKey-Alice ^^ 'adv .. 'net)  , 
+          chn  ('OkPublicKey-Bob ^^ 'adv .. 'net)  , 
+          chn  'In  ),
         getOutputs(realOTP),
         empty,
         width 0,
@@ -853,9 +862,10 @@ using TRANS{
         ; SYM[P1:Protocol <- aux3]{
         sugar-newNF     
       ; moveNewToFront
-      ; reorder-newNF[ql2:CNameList <- 'Key-Alice :: 'Key-Bob :: 'SecretKey-Alice ::
-    'SecretKey-Bob :: 'Send-Alice-Bob :: 'Send-Bob-Alice :: 'Recv-Alice-Bob
-    :: 'Recv-Bob-Alice :: 'Send :: 'Recv :: emptyCNameList]
+      ; reorder-newNF[ql2:List{CNameBound} <- (chn 'Key-Alice ) (chn 'Key-Bob ) 
+          (chn 'SecretKey-Alice ) (chn 'SecretKey-Bob ) (chn 'Send-Alice-Bob ) 
+          (chn 'Send-Bob-Alice ) (chn 'Recv-Alice-Bob ) (chn 'Recv-Bob-Alice ) 
+          (chn 'Send ) (chn 'Recv)  ]
       } 
       ; sugar-newNF 
       ; CONG-NEW-NF{CONG-COMP-RIGHT{foldNF('Recv, 'Out)}}
@@ -882,28 +892,32 @@ using TRANS{
       ; foldNF('Key, 'Key-Bob)
       ; foldNF('PublicKey-Alice, 'LeakPublicKey-Alice ^^ 'adv .. 'net)
       ; foldNF('PublicKey-Bob, 'LeakPublicKey-Bob ^^ 'adv .. 'net)
-      ; changeOrder('Key-Alice, 'ob :: 'kb :: 'ka :: emptyCNameList)
+      ; changeOrder(chn 'Key-Alice, 'ob 'kb 'ka  )
         }
       ; sugar-newNF
       ; SYM[P1:Protocol <- aux2]{
           moveNewToFront
-      ; reorder-newNF[ql2:CNameList <- 'SecretKey-Alice :: 'SecretKey-Bob :: 
-                                       'Key :: 'PublicKey-Alice :: 'PublicKey-Bob :: emptyCNameList]
+      ; reorder-newNF[ql2:List{CNameBound} <- 
+          (chn 'SecretKey-Alice ) (chn 'SecretKey-Bob ) 
+           (chn  'Key ) (chn 'PublicKey-Alice ) (chn 'PublicKey-Bob)  ]
         }
     },
     TRANS{
     applyDDH('SecretKey, 'k),
     STRICT{
         moveNewToFront
-      ; reorder-newNF[ql2:CNameList <- 'SecretKey :: 'Key :: 'SecretKey-Alice :: 
-                                       'SecretKey-Bob :: 'PublicKey-Alice :: 'PublicKey-Bob
-                                       :: emptyCNameList  ] 
+      ; reorder-newNF[ql2:List{CNameBound} <- 
+          (chn 'SecretKey ) (chn 'Key ) (chn 'SecretKey-Alice ) 
+          (chn  'SecretKey-Bob ) (chn 'PublicKey-Alice ) (chn 'PublicKey-Bob)
+                                          ] 
       ; SYM[P1:Protocol <- idealSimDHKE]{
         sugar-newNF 
       ; moveNewToFront
-      ; reorder-newNF[ql2:CNameList <- 'SecretKey :: 'Key :: 'SecretKey-Alice ::
-    'SecretKey-Bob :: 'PublicKey-Alice :: 'PublicKey-Bob :: 'OkKey-Alice ^^ 'adv .. 'id :: 'OkKey-Bob ^^ 'adv .. 'id
-    :: emptyCNameList]  
+      ; reorder-newNF[ql2:List{CNameBound} <- 
+         (chn 'SecretKey ) (chn 'Key ) (chn 'SecretKey-Alice ) 
+         (chn 'SecretKey-Bob ) (chn 'PublicKey-Alice ) (chn 'PublicKey-Bob ) 
+         (chn ('OkKey-Alice ^^ 'adv .. 'id)) (chn ('OkKey-Bob ^^ 'adv .. 'id))
+     ]  
       ; foldNF('OkKey-Alice ^^ 'adv .. 'id, 'Key-Alice)
       ; foldNF('OkKey-Bob ^^ 'adv .. 'id, 'Key-Bob)
              }
@@ -921,13 +935,13 @@ using TRANS{
              ;  moveNewToFront
              ; SYM[P1:Protocol <- aux4]{
                  moveNewToFront
-            ; reorder-newNF[ql2:CNameList <- 
-               'Key-Alice :: 'Key-Bob :: 
-               'OkKey-Alice ^^ 'adv .. 'id :: 'OkKey-Bob ^^ 'adv .. 'id :: 
-               'SecretKey :: 'Key :: 'SecretKey-Alice :: 'SecretKey-Bob :: 
-               'PublicKey-Alice :: 'PublicKey-Bob :: emptyCNameList
+            ; reorder-newNF[ql2:List{CNameBound} <- 
+               (chn 'Key-Alice ) (chn 'Key-Bob ) (chn ('OkKey-Alice ^^ 'adv .. 'id)) 
+               (chn ('OkKey-Bob ^^ 'adv .. 'id)) (chn 'SecretKey ) 
+               (chn 'Key ) (chn 'SecretKey-Alice ) (chn 'SecretKey-Bob ) 
+               (chn 'PublicKey-Alice ) (chn 'PublicKey-Bob)   
             ]
-            ; changeOrder('Out, 'okc :: 'm :: 'ka :: 'kb :: emptyCNameList)
+            ; changeOrder(chn 'Out, 'okc 'm  'ka 'kb  )
              }
              ; CONG-NEW-NF{
          CONG-COMP-RIGHT{
@@ -944,7 +958,7 @@ using TRANS{
           }  *** end cong-comp-right
         } *** end cong-new-nf
              ; moveNewToFront
-             ; changeOrder('Out, 'okc :: 'oka :: 'okb :: 'm :: emptyCNameList)
+             ; changeOrder(chn 'Out, 'okc 'oka 'okb 'm  )
              ; SYM[P1:Protocol <- idealSimOTP]{
          sugar-newNF  
        ; CONG-NEW-NF{moveProtocolUnderNewNF}
