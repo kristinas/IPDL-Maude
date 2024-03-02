@@ -1787,7 +1787,8 @@ to keep track of whether an input has arrived. For a wire share, the timing depe
 \item {\color{teal} $\begin{cases*} \SendBitOk(n,m,K) \coloneqq \_ \leftarrow \ShareOk(n,k); \ \_ \leftarrow \ShareOk(n,l); \ \ret{\checkmark} \\ \hspace{10pt} \text{for $n,m \leq N+1$ if $n < m$} \\ \SendBitOk(n,m,K) \coloneqq \read{\SendBitOk(n,m,K)} \\ \hspace{10pt} \text{for $n,m \leq N+1$ if $n \geq m$} \end{cases*}$}\smallskip
 \item {\color{teal} $\RcvdBitOk(n,m,K) \coloneqq \_ \leftarrow \SendBitOk(m,n,K); \ \_ \leftarrow \ShareOk(m,k); \ \_ \leftarrow \ShareOk(m,l); \\ \_ \leftarrow \ShareOk(n,k); \ \_ \leftarrow \ShareOk(n,l); \ \ret{\checkmark}$ for $n,m \leq N+1$}\smallskip
 \item {\color{teal} $\begin{cases*}
-\CtrbOk(n,m,K) \coloneqq \read{\SendBitOk(n,m,K)} \\ \hspace{10pt} \text{for $n,m \leq N+1$ if $n < m$} \\ \CtrbOk(n,m,K) \coloneqq \read{\RcvdBitOk(n,m,K)} \\ \hspace{10pt} \text{for $n,m \leq N+1$ if $m < n$} \\ \CtrbOk(n,n,K) \coloneqq \_ \leftarrow \ShareOk(n,k); \ \_ \leftarrow \ShareOk(n,l); \ \ret{\checkmark} \\ \hspace{10pt} \text{for $n \leq N+1$} \end{cases*}$}
+\CtrbOk(n,m,K) \coloneqq \read{\SendBitOk(n,m,K)} \\ \hspace{10pt} \text{for $n,m \leq N+1$ if $n < m$} \\ \CtrbOk(n,m,K) \coloneqq \read{\RcvdBitOk(n,m,K)} \\ \hspace{10pt} \text{for $n,m \leq N+1$ if $m < n$} \\ \CtrbOk(n,n,K) \coloneqq \_ \leftarrow \ShareOk(n,k); \ \_ \leftarrow \ShareOk(n,l); \ \ret{\checkmark} \\ \hspace{10pt} \text{for $n \leq N+1$} \end{cases*}$}\smallskip
+\item {\color{teal} $\begin{cases*} \SumCtrbOk(n,0,K) \coloneqq \read{\CtrbOk(n,0,K)} \\ \hspace{10pt} \text{for $n \leq N+1$} \\ \SumCtrbOk(n,m+1,K) \coloneqq \_ \leftarrow \SumCtrbOk(n,m,K); \ \_ \leftarrow \CtrbOk(n,m+1,K); \ \ret{\checkmark} \\ \hspace{10pt} \text{for $n \leq N+1$ and $m \leq N$} \end{cases*}$}\smallskip
 \item {\color{teal} $\ShareOk(n,K) \coloneqq \read{\SumCtrbOk(n,N+1,K)}$ for $n \leq N+1$}
 \end{itemize}
 \end{itemize}
