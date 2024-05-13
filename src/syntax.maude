@@ -266,13 +266,15 @@ fmod NAT-TERM-EVAL is
  
   var n n1 n2 n3 x y : Nat .
   var t t1 t2 t3 t4 nt nt1 nt2 : NatTerm .
-  var A : Set{BoolTerm} .
+  var A A' : Set{BoolTerm} .
   var bt bt' : BoolTerm .
   var q q' : Qid .
   var f : Map{Qid, NatTerm} .
  
  op diff : Nat Nat -> Nat . *** unsafe difference on naturals
+ eq diff(n1 + x, x) = n1 .
  eq diff(n1, n2) = n1 - n2 .
+ 
   
  op subst : NatTerm Map{Qid, NatTerm} -> NatTerm .
  *** substitute in a nat term a qid with another nat term
@@ -312,66 +314,82 @@ fmod NAT-TERM-EVAL is
  eq subst(bt disj bt', f) = (subst(bt, f)) disj (subst(bt', f)) .
  
  op extendWithAssums__ : Set{BoolTerm} Map{Qid, NatTerm} -> Map{Qid, NatTerm} .
+ *** TODO: check if this is the best way to deal with these things
+ *** perhaps values instead of identifiers when doing induction?
+ eq extendWithAssums (A, (q =T= t), (t =T= n)) f = extendWithAssums A insert(q, n, f) .
  eq extendWithAssums (A, (q =T= n)) f = extendWithAssums A insert(q, n, f) .
  eq extendWithAssums A f = f [owise] .
  
  op evalBoolTerm : BoolTerm Set{BoolTerm} Map{Qid, NatTerm} -> Bool . 
  *** evaluation w.r.t. a set of assumptions 
  *** and a valuation function
+ eq evalBoolTerm(bt, A, f) = evalBoolTermAux(bt, expandIneq A empty, f) .
  
- ceq evalBoolTerm(bt, A, f) = true if bt in A .
- ceq evalBoolTerm(bt, A, f) = false if (neg bt) in A .
+ op expandIneq__ : Set{BoolTerm} Set{BoolTerm} -> Set{BoolTerm} .
+ eq expandIneq (A, nt <T t + 2) A' = expandIneq A (A', nt <T t + 2, nt <=T t + 1) .
+ eq expandIneq A A' = union(A, A') [owise] .
+  
+ op evalBoolTermAux : BoolTerm Set{BoolTerm} Map{Qid, NatTerm} -> Bool .  
+   
+ ceq evalBoolTermAux(bt, A, f) = true if bt in A .
+ ceq evalBoolTermAux(bt, A, f) = false if (neg bt) in A .
  
- eq evalBoolTerm(bt conj bt', A, f) =
-    evalBoolTerm(bt, A, f) and evalBoolTerm(bt', A, f) .
- eq evalBoolTerm(bt disj bt', A, f) =
-    evalBoolTerm(bt, A, f) or evalBoolTerm(bt', A, f) .   
+ eq evalBoolTermAux(bt conj bt', A, f) =
+    evalBoolTermAux(bt, A, f) and evalBoolTermAux(bt', A, f) .
+ eq evalBoolTermAux(bt disj bt', A, f) =
+    evalBoolTermAux(bt, A, f) or evalBoolTermAux(bt', A, f) .   
  
- ceq evalBoolTerm(neg bt, A, f) = false if bt in A .
- ceq evalBoolTerm(neg bt, A, f) = true if neg bt in A .
- ceq evalBoolTerm(neg (t =T= 0), A, f) = true if evalBoolTerm(0 <T evalTerm t f, A, f) .
- ceq evalBoolTerm(neg (t1 =T= t2), A, f) = false 
+ ceq evalBoolTermAux(neg bt, A, f) = false if bt in A .
+ ceq evalBoolTermAux(neg bt, A, f) = true if neg bt in A .
+ ceq evalBoolTermAux(neg (t =T= 0), A, f) = true if evalBoolTermAux(0 <T evalTerm t f, A, f) .
+ ceq evalBoolTermAux(neg (t1 =T= t2), A, f) = false 
      if evalTerm t1 f == evalTerm t2 f .
- ceq evalBoolTerm(neg (t1 =T= t2), A, f) = true 
+ ceq evalBoolTermAux(neg (t1 =T= t2), A, f) = true 
      if evalTerm t1 f =/= evalTerm t2 f /\ ((evalTerm t1 f) :: Nat) /\ ((evalTerm t2 f) :: Nat) .
+ eq evalBoolTermAux(neg (t1 =T= t2), (A, t1 <T t2), f) = true .  
+ eq evalBoolTermAux(neg (t1 =T= t2), (A, t3 <T t2, t3 =T= t1), f) = true .
+ eq evalBoolTermAux(neg (t1 =T= t2), (A, neg (t3 =T= t2), t3 =T= t1), f) = true .
+   
      
- ceq evalBoolTerm(0 =T= t ++ n1, A, f) = false if n1 =/= 0 .
- eq evalBoolTerm(t1 =T= t2, A, f) = evalTerm t1 f == evalTerm t2 f .
- *** eq evalBoolTerm(n1 =T= n2, A, f) = n1 == n2 .
- ceq evalBoolTerm(t1 =T= t2, ((t1 =T= t3), (t4 =T= t2), A), f ) = true 
-  if evalBoolTerm(evalTerm t3 f =T= evalTerm t4 f, A, f) .  
+ ceq evalBoolTermAux(0 =T= t ++ n1, A, f) = false if n1 =/= 0 .
+ eq evalBoolTermAux(t1 =T= t2, A, f) = evalTerm t1 f == evalTerm t2 f .
+ *** eq evalBoolTermAux(n1 =T= n2, A, f) = n1 == n2 .
+ ceq evalBoolTermAux(t1 =T= t2, ((t1 =T= t3), (t4 =T= t2), A), f ) = true 
+  if evalBoolTermAux(evalTerm t3 f =T= evalTerm t4 f, A, f) .  
  
- eq evalBoolTerm(n1 <T n2, A, f) = n1 < n2 .
- eq evalBoolTerm(t + n1 <T t + n2, A, f) = n1 < n2 .
- ceq evalBoolTerm(t <T t1, A, f) = true if (t <=T t1 + 1) in A .
- ceq evalBoolTerm(t <T t1, A, f) = true if (t <=T t1 + 2) in A .
- eq evalBoolTerm(t -- n <T t, A, f) = true .
- ceq evalBoolTerm(t -- n <T t2, A, f) = true if evalBoolTerm( t <=T t2, A, f) .
- eq evalBoolTerm(n1 <T n2, A, f) = n1 < n2 . 
- ceq evalBoolTerm(t1 <T t2 ++ n1, A, f) = true if n1 =/= 0 /\ evalBoolTerm(t1 <T t2, A, f) .
- ceq evalBoolTerm(t1 <T t4, (t1 <T t2, t3 <T t4, A), f) = true 
-     if evalBoolTerm(evalTerm t2 f <=T evalTerm t3 f, A, f) .
- eq evalBoolTerm(t <T t, A, f) = false .
- ceq evalBoolTerm(0 <T t ++ n1, A, f) = true if n1 > 0 .
- eq evalBoolTerm(t <T t ++ n1, A, f) = true .
- eq evalBoolTerm(t1 <T t2, (A, t1 <=T t3, t3 ++ 1 <=T t2), f) = true .
+ eq evalBoolTerm(t1 <T t2, (A, t1 <T t3, t3 <T t2), f) = true .
+ eq evalBoolTermAux(n1 <T n2, A, f) = n1 < n2 .
+ eq evalBoolTermAux(t + n1 <T t + n2, A, f) = n1 < n2 .
+ ceq evalBoolTermAux(t <T t1, A, f) = true if (t <=T t1 + 1) in A .
+ ceq evalBoolTermAux(t <T t1, A, f) = true if (t <=T t1 + 2) in A .
+ eq evalBoolTermAux(t -- n <T t, A, f) = true .
+ ceq evalBoolTermAux(t -- n <T t2, A, f) = true if evalBoolTermAux( t <=T t2, A, f) .
+ eq evalBoolTermAux(n1 <T n2, A, f) = n1 < n2 . 
+ ceq evalBoolTermAux(t1 <T t2 ++ n1, A, f) = true 
+   if n1 =/= 0 /\ evalBoolTermAux(t1 <T t2, A, f) .
+ ceq evalBoolTermAux(t1 <T t4, (t1 <T t2, t3 <T t4, A), f) = true 
+     if evalBoolTermAux(evalTerm t2 f <=T evalTerm t3 f, A, f) .
+ eq evalBoolTermAux(t <T t, A, f) = false .
+ ceq evalBoolTermAux(0 <T t ++ n1, A, f) = true if n1 > 0 .
+ eq evalBoolTermAux(t <T t ++ n1, A, f) = true .
+ eq evalBoolTermAux(t1 <T t2, (A, t1 <=T t3, t3 ++ 1 <=T t2), f) = true .
  
- ceq evalBoolTerm(t <T t1 + n1, (A, t <T t1 + n2), f) = true 
+ ceq evalBoolTermAux(t <T t1 + n1, (A, t <T t1 + n2), f) = true 
   if n2 < n1 . 
- eq evalBoolTerm(t <T t + n, A, f) = n > 0 . 
+ eq evalBoolTermAux(t <T t + n, A, f) = n > 0 . 
  
- eq evalBoolTerm(0 <=T t, A, f) = true .
- eq evalBoolTerm(t <=T t, A, f) = true . 
- eq evalBoolTerm(n1 <=T n1 + n2, A, f) = true . *** this is new!
- ceq evalBoolTerm(t1 <=T t2 + n2, A, f) = true if t1 <=T n2 in A .
- eq evalBoolTerm(t + n1 <=T t + n2, A, f) = n1 <= n2 .
- eq evalBoolTerm(n1 <=T n2, A, f) = n1 <= n2 .
- ceq evalBoolTerm(t1 -- t2 <=T t, A, f) = true if evalBoolTerm(t1 <=T t, A, f) .
- ceq evalBoolTerm(t1 <=T t2, A, f) = true if evalBoolTerm(t1 <T t2, A, f) .
- ceq evalBoolTerm(t1 <=T t2, A, f) = true if evalBoolTerm(t1 =T= t2, A, f) .
- ceq evalBoolTerm(t1 <=T t4, (t1 <=T t2, t3 <=T t4, A), f) = true 
-     if evalBoolTerm(evalTerm t2 f <=T evalTerm t3 f, A, f) .
- ceq evalBoolTerm(t1 <=T t2, A, f) = true if t1 ++ 1 <=T t2 in A .    
+ eq evalBoolTermAux(0 <=T t, A, f) = true .
+ eq evalBoolTermAux(t <=T t, A, f) = true . 
+ eq evalBoolTermAux(n1 <=T n1 + n2, A, f) = true . *** this is new!
+ ceq evalBoolTermAux(t1 <=T t2 + n2, A, f) = true if t1 <=T n2 in A .
+ eq evalBoolTermAux(t + n1 <=T t + n2, A, f) = n1 <= n2 .
+ eq evalBoolTermAux(n1 <=T n2, A, f) = n1 <= n2 .
+ ceq evalBoolTermAux(t1 -- t2 <=T t, A, f) = true if evalBoolTermAux(t1 <=T t, A, f) .
+ ceq evalBoolTermAux(t1 <=T t2, A, f) = true if evalBoolTermAux(t1 <T t2, A, f) .
+ ceq evalBoolTermAux(t1 <=T t2, A, f) = true if evalBoolTermAux(t1 =T= t2, A, f) .
+ ceq evalBoolTermAux(t1 <=T t4, (t1 <=T t2, t3 <=T t4, A), f) = true 
+     if evalBoolTermAux(evalTerm t2 f <=T evalTerm t3 f, A, f) .
+ ceq evalBoolTermAux(t1 <=T t2, A, f) = true if t1 ++ 1 <=T t2 in A .    
       
  op evalTerm__ : NatTerm Map{Qid, NatTerm} -> NatTerm .
  eq evalTerm n1 f = n1 .
@@ -433,6 +451,8 @@ fmod BOOL-TERM-ENTAILS is
  ceq A |= apply q1 nt1 with f = true 
   if (apply q1 (evalTerm nt1 (extendWithAssums A f))) in A .
   
+ eq A |= nt1 =T= nt1 with f = true . 
+  
  ceq A |= nt1 =T= nt2 with f = true 
    if evalBoolTerm(evalTerm nt1 (extendWithAssums A f) =T= evalTerm nt2 (extendWithAssums A f),
                    A , f) .
@@ -442,6 +462,8 @@ fmod BOOL-TERM-ENTAILS is
   if evalBoolTerm(evalTerm nt1 (extendWithAssums A f) <T evalTerm nt2 (extendWithAssums A f),
                   A, f) .
  eq A |= nt1 <T nt2 with f = false [owise] .
+ 
+ eq A |= nt1 <=T nt1 with f = true .
  
  ceq A |= nt1 <=T nt2 with f = true 
   if evalBoolTerm(evalTerm nt1 (extendWithAssums A f) <=T evalTerm nt2 (extendWithAssums A f),
@@ -594,14 +616,20 @@ fmod CNAMEBOUND-SET is
  *** custom membership test
  *** check whether the index is within bounds
  op isElemB : ChannelName Set{CNameBound} Set{BoolTerm} -> Bool .
+ eq isElemB(cn, S, A) =
+    isElemBAux(cn, mergeSplitFams S, A) .
  
  var q : NameWithScripts .
  var nt nt1 nt2 nt3 b1 b2 b3 : NatTerm .
- var S : Set{CNameBound} .
+ var S S1 S2 : Set{CNameBound} .
  var A : Set{BoolTerm} .
  var B : Set{NatTerm} .
  var F : Qid .
  var bd1 bd2 bd3 : Bounds .
+ var bdlist : List{Bounds} .
+ var cn : ChannelName .
+ var fn : FamilyName .
+ var n : Nat .
  
  *** individual check, we may need previous term for dependent bounds 
  *** so we send it in a set
@@ -616,51 +644,191 @@ fmod CNAMEBOUND-SET is
  eq getBound (fixedBound nt) = nt .
  eq getBound (dependentBound F) = empty .
  
+ op mergeSplitFams_ : Set{CNameBound} -> Set {CNameBound} .
+ *** for splits
+ *** !!! also merge C[N+1 'B] with fixedBound N+1 bound B
+ eq mergeSplitFams 
+     (S, fam ( q[(bound (nt + 1)) bd2]), 
+         fam ( q[(fixedBound (nt + 1)) bd2]) 
+     ) = mergeSplitFams
+     (S, fam ( q[(bound (nt + 2)) bd2]))
+ .
+ eq mergeSplitFams 
+     (S, fam ( q[(bound (nt + 1)) (fixedBound nt2)]), 
+         chn ( q[(nt + 1) nt2]) 
+     ) = mergeSplitFams
+     (S, fam ( q[(bound (nt + 2)) (fixedBound nt2)]))
+ .    
+ eq mergeSplitFams 
+     (S, fam ( q[bd1 (bound (nt + 1)) bd2]), 
+         fam ( q[bd1 (fixedBound (nt + 1)) bd2]) 
+     ) = mergeSplitFams
+     (S, fam ( q[bd1 (bound (nt + 2)) bd2]))
+ .  
+ ***( for induction
+  eq mergeSplitFams
+    (S, chn ( q[nt1 nt2]), 
+        fam ( q[(fixedBound nt1) (bound nt2)]) 
+     ) = mergeSplitFams
+     (S, fam ( q[(fixedBound nt1) (bound (nt2 + 1))]) ) .
 
+ eq mergeSplitFams 
+     (S, fam ( q[(bound nt) bd2]), 
+         fam ( q[(fixedBound nt) bd2]) 
+     ) = mergeSplitFams
+     (S, fam ( q[(bound (nt + 1)) bd2]))
+ .    
+ eq mergeSplitFams 
+     (S, fam ( q[bd1 (bound nt)]), 
+         fam ( q[bd1 (fixedBound nt)]) 
+     ) = mergeSplitFams
+     (S, fam ( q[bd1 (bound (nt + 1))]))
+ . 
+ eq mergeSplitFams 
+     (S, fam ( q[bd1 bd2 (bound nt)]), 
+         fam ( q[bd1 bd2 (fixedBound nt)]) 
+     ) = mergeSplitFams
+     (S, fam ( q[bd1 bd2 (bound (nt + 1))]))
+ . 
+ eq mergeSplitFams 
+     (S, fam ( q[bd1 (bound nt) bd2]), 
+         fam ( q[bd1 (fixedBound nt) bd2]) 
+     ) = mergeSplitFams
+     (S, fam ( q[bd1 (bound (nt + 1)) bd2]))
+ .
+ eq mergeSplitFams 
+     (S, fam ( q[(bound nt) bd1 bd2 ]), 
+         fam ( q[(fixedBound nt)bd1 bd2 ]) 
+     ) = mergeSplitFams
+     (S, fam ( q[(bound (nt + 1)) bd1 bd2 ]))
+ . 
+ )
+ eq mergeSplitFams S = S [owise] .       
+
+ op isElemBAux : ChannelName Set{CNameBound} Set{BoolTerm} -> Bool .
  
- eq isElemB(q, S, A) = (chn q) in S .
+ eq isElemBAux(q, S, A) = (chn q) in S .
  
- eq isElemB(q[nt1], (S, chn (q[nt1]) ), A) = true .
- eq isElemB(q[nt1], (S, fam (q[bound b1]) ), A) = inBounds nt1 (bound b1) A empty . 
- eq isElemB(q[nt1], S, A) = false [owise] .
+ eq isElemBAux(q[nt1], (S, chn (q[nt1]) ), A) = true .
+ eq isElemBAux(q[nt1], (S, fam (q[bound b1]) ), A) = inBounds nt1 (bound b1) A empty . 
+ eq isElemBAux(q[nt1], S, A) = false [owise] .
  
- eq isElemB(q[nt1 nt2], (S, chn (q[nt1 nt2]) ), A) = true .
+ eq isElemBAux(q[nt1 nt2], (S, chn (q[nt1 nt2]) ), A) = true .
+ ceq isElemBAux(q[nt1 nt2], (S, fam (q[bd1 bd2])), A) = true
+ if (inBounds nt1 bd1 A empty
+     and
+     inBounds nt2 bd2 A nt1
+    )
+ . 
+ 
+ ceq isElemBAux(q[nt1 nt2], (S, fam (q[bd1 bd2])), A) =  
+     isElemBAux(q[nt1 nt2], S, A)
+ if not 
+    (inBounds nt1 bd1 A empty
+     and
+     inBounds nt2 bd2 A nt1
+    )    
+ .
+   
+ eq isElemBAux(q[nt1 nt2], S, A) = false [owise] .
+ 
+ eq isElemBAux(q[nt1 nt2 nt3], (S, chn (q[nt1 nt2 nt3])), A) = true . 
+ 
+ ceq isElemBAux(q[nt1 nt2 nt3], (S, fam (q[bd1 bd2 bd3])), A) = true
+ if (inBounds nt1 bd1 A empty
+     and
+     inBounds nt2 bd2 A nt1
+     and
+     inBounds nt3 bd3 A nt2
+    )
+ . 
+ 
+ ceq isElemBAux(q[nt1 nt2 nt3], (S, fam (q[bd1 bd2 bd3])), A) =  
+     isElemBAux(q[nt1 nt2], S, A)
+ if not 
+    (inBounds nt1 bd1 A empty
+     and
+     inBounds nt2 bd2 A nt1
+     and
+     inBounds nt3 bd3 A nt2
+    )  
+ .
+   
+ eq isElemBAux(q[nt1 nt2 nt3], S, A) = false [owise] .
+ 
+ ***( 
+ TOO SPECIFIC, REMOVE
+ for splits
+ eq isElemB(q[nt1 nt2], 
+            (S, fam ( q[(bound (nt + 1)) bd2]), 
+                fam ( q[(fixedBound (nt + 1)) bd2]) 
+            ),
+            A) =
+            inBounds nt1 (bound (nt + 2)) A empty 
+            and 
+            inBounds nt2 bd2 A (nt + 2) . 
+            
  eq isElemB(q[nt1 nt2], (S, fam (q[bd1 bd2])), A) = 
    (inBounds nt1 bd1 A empty
     and
-   inBounds nt2 bd2 A (getBound bd1) 
+   inBounds nt2 bd2 A nt1
    )
    or
    isElemB(q[nt1 nt2], S, A)
  .
- eq isElemB(q[nt1 nt2], (S, fam (q[bd1 bd2])), A) = 
-   (inBounds nt1 bd1 A empty
-    and
-   inBounds nt2 bd2 A (getBound bd1))
-    or
-   isElemB(q[nt1 nt2], S, A) .  
- eq isElemB(q[nt1 nt2], S, A) = false [owise] .   
+   
+ eq isElemB(q[nt1 nt2], S, A) = false [owise] .
  
  eq isElemB(q[nt1 nt2 nt3], (S, chn (q[nt1 nt2 nt3])), A) = true . 
+   *** for splits
+ eq isElemB(q[nt1 nt2 nt3], 
+            (S, fam ( q[bd1 (bound (nt + 1)) bd2]), 
+                fam ( q[bd1 (fixedBound (nt + 1)) bd2]) 
+            ),
+            A) =
+            inBounds nt1 bd1 A empty
+            and
+            inBounds nt2 (bound (nt + 2)) A nt1
+            and 
+            inBounds nt3 bd2 A nt2 .
+            
  eq isElemB(q[nt1 nt2 nt3], (S, fam (q[bd1 bd2 bd3])), A) = 
    (inBounds nt1 bd1 A empty
     and
    inBounds nt2 bd2 A empty
     and 
-   inBounds nt3 bd3 A (getBound bd2)
+   inBounds nt3 bd3 A nt2
    )
     or
-   isElemB(q[nt1 nt2 nt3], S, A)  .
- eq isElemB(q[nt1 nt2 nt3], (S, fam (q[bd1 bd2 bd3])), A) = 
-   (inBounds nt1 bd1 A empty
-    and
-   inBounds nt2 bd2 A empty
-    and 
-   inBounds nt3 bd3 A (getBound bd2))
-   or
-   isElemB(q[nt1 nt2 nt3], S, A) 
- .  
+   isElemB(q[nt1 nt2 nt3], S, A)  . 
  eq isElemB(q[nt1 nt2 nt3], S, A) = false [owise] .
+ )
+ 
+ 
+ op _equiv_ : Set{CNameBound} Set{CNameBound} -> Bool [comm] .
+ eq S equiv S = true .
+ eq empty equiv empty = true .
+ eq (chn cn, S1) equiv (chn cn, S2) = S1 equiv S2 .
+ eq (fam (cn[bdlist]), S1) equiv 
+    (fam (cn[bdlist]), S2) =
+    S1 equiv S2 .
+ eq (fam (cn[(bound (n + 2)) bd2]), S1) equiv 
+    (fam (cn[(bound (n + 1)) bd2]),
+     fam (cn[(fixedBound (n + 1)) bd2]),
+     S2) =
+    S1 equiv S2 .   
+ eq (fam (cn[bd1 (bound (n + 2)) bd2]), S1) equiv 
+    (fam (cn[bd1 (bound (n + 1)) bd2]),
+     fam (cn[bd1 (fixedBound (n + 1)) bd2]),
+     S2) =
+    S1 equiv S2 . 
+ eq (fam (cn[(bound (n + 2)) bd1 bd2]), S1) equiv 
+    (fam (cn[(bound (n + 1)) bd1 bd2]),
+     fam (cn[(fixedBound (n + 1)) bd1 bd2]),
+     S2) =
+    S1 equiv S2 .    
+ eq S1 equiv S2 = false [owise] .
+ 
  
 endfm
 
@@ -691,11 +859,12 @@ fmod CHANNEL is
  var cn cn1 cn2 : ChannelName .
  var nlist nlist1 nlist2 : List{NatTerm} .
  var nt nt1 nt2 nt3 nt' nt'' : NatTerm .
- var x y : Nat .
+ var x y n : Nat .
  var bn : CNameBound .
  var b b1 b2 b3 : NatTerm .
  var bd bd1 bd2 bd3 bd4 bd5 bd6 : Bounds .
  var bdlist bdlist1 : List{Bounds} .
+ var tc : TypedChannel . 
   
  *** this function checks whether a bounded name fits the context and the assumptions
  *** no type, we will use it for inputs/outputs
@@ -790,6 +959,42 @@ fmod CHANNEL is
  eq elem (fam (ns[bdlist])) T emptyChannelCtx A = false .
  eq elem (fam (ns[bdlist])) T ((fam (ns[bdlist]) :: T) Delta) A = true .
  eq elem (fam (ns[bdlist])) T Delta A = false [owise] .
+ 
+ 
+ op removeEntry__ : TypedChannel ChannelContext -> ChannelContext .
+ eq removeEntry tc (Delta tc) = Delta .
+ eq removeEntry tc Delta = Delta [owise] .
+ 
+ op union__ : ChannelContext ChannelContext -> ChannelContext [comm] .
+ eq union Delta1 emptyChannelCtx = Delta1 .
+ eq union (Delta1 tc) (Delta2 tc) = (union Delta1 Delta2) tc .
+ eq union Delta1 Delta2 = Delta1 Delta2 [owise] .
+   
+ op diff__ : ChannelContext ChannelContext -> ChannelContext .
+ eq diff emptyChannelCtx Delta1 = emptyChannelCtx .
+ eq diff Delta1 emptyChannelCtx = Delta1 .
+ eq diff (Delta1 tc) (Delta2 tc) = diff Delta1 Delta2 .
+ eq diff (Delta1 tc) Delta2 = tc (diff Delta1 Delta2) [owise] . 
+ 
+ op _equiv_ : ChannelContext ChannelContext -> Bool [comm] .
+ eq Delta1 equiv Delta1 = true .
+ eq emptyChannelCtx equiv emptyChannelCtx = true .
+ eq ((chn cn :: T) Delta1) equiv ((chn cn :: T) Delta2) =
+    Delta1 equiv Delta2 .
+ eq ((fam (ns[bdlist]) :: T) Delta1) equiv ((fam (ns[bdlist]) :: T) Delta2) =
+    Delta1 equiv Delta2 .
+ eq ((fam (ns[(bound (n + 2)) bd2]) :: T) Delta1) equiv 
+    ((fam (ns[(bound (n + 1)) bd2]) :: T) (fam (ns[(fixedBound (n + 1)) bd2]) :: T) Delta2) =
+    Delta1 equiv Delta2 .   
+ eq ((fam (ns[bd1 (bound (n + 2)) bd2]) :: T) Delta1) equiv 
+    ((fam (ns[bd1 (bound (n + 1)) bd2]) :: T) 
+     (fam (ns[bd1 (fixedBound (n + 1)) bd2]) :: T) Delta2) =
+    Delta1 equiv Delta2 . 
+ eq ((fam (ns[(bound (n + 2)) bd1 bd2]) :: T) Delta1) equiv 
+    ((fam (ns[(bound (n + 1)) bd1 bd2]) :: T) 
+     (fam (ns[(fixedBound (n + 1)) bd1 bd2]) :: T) Delta2) =
+    Delta1 equiv Delta2 .    
+ eq Delta1 equiv Delta2 = false [owise] .     
  
 endfm 
 
@@ -1007,12 +1212,19 @@ fmod REACTION-TYPING is
  protecting DISTRIBUTION-TYPING .
  protecting CNAMEBOUND-SET .
  
+  sort BoolWithError .
+ subsort Bool < BoolWithError .
+ op err_ : String -> BoolWithError [ctor] .
+ 
+ sort TypeWithError .
+ subsort Type < TypeWithError .
+ op typeErr_ : String -> TypeWithError [ctor] .
  
  *** the type of a reaction in the context given by
  *** a signature, a channel context, a variable context
  *** a set of inputs and a set of index assumptions
  op typeOf : Signature ChannelContext TypeContext 
-             Set{CNameBound} Set{BoolTerm} Reaction -> Type .
+             Set{CNameBound} Set{BoolTerm} Reaction -> TypeWithError .
  *** TODO: add error handling, if we fail we should know why!            
 
  var Sigma : Signature .
@@ -1045,35 +1257,27 @@ fmod REACTION-TYPING is
  *** a bind-read list is valid for a context 
  *** if the context contains the channels that are being read from
  *** with the right type
- op validForCtx : BRList ChannelContext Set{BoolTerm} -> Bool .
- eq validForCtx(emptyBRList, Delta, A) = true .
+ op validForCtx : BRList ChannelContext Set{CNameBound} Set{BoolTerm} -> BoolWithError .
+ eq validForCtx(emptyBRList, Delta, I, A) = true .
  
- eq validForCtx((x : T <- read ns) BRL, Delta (chn ns :: T), A) = 
-    validForCtx(BRL, Delta, A) .
+ eq validForCtx((x : T <- read ns) BRL, Delta (chn ns :: T), I, A) = 
+    validForCtx(BRL, Delta, I, A) .
 
  
- eq validForCtx((x : T <- read (ns[nlist])) BRL, Delta (chn (ns[nlist]) :: T), A) =
-    validForCtx(BRL, Delta, A) .
-
- ceq validForCtx((x : T <- read (ns[nt])) BRL, Delta (fam (ns[bd]) :: T), A) = 
-     validForCtx(BRL, Delta (fam (ns[bd]) :: T), A) *** if ns is a family, read more than once
-     if inBounds nt bd A empty .
-
-  ceq validForCtx((x : T <- read (ns[nt1 nt2])) BRL, Delta (fam (ns[bd1 bd2]) :: T), A) = 
-     validForCtx(BRL, Delta (fam (ns[bd1 bd2]) :: T), A)
-     if  (inBounds nt1 bd1 A empty  
-     and inBounds nt2 bd2 A nt1) 
-     or validForCtx((x : T <- read (ns[nt1 nt2])) BRL, Delta, A)  .
+ eq validForCtx((x : T <- read (ns[nlist])) BRL, Delta (chn (ns[nlist]) :: T), I, A) =
+    validForCtx(BRL, Delta, I, A) .
     
-  ceq validForCtx((x : T <- read (ns[nt1 nt2 nt3])) BRL, 
-                  Delta (fam (ns[bd1 bd2 bd3]) :: T), A) = 
-     validForCtx(BRL, Delta (fam (ns[bd1 bd2]) :: T), A)
-     if  (inBounds nt1 bd1 A empty 
-     and inBounds nt2 bd2 A empty  
-     and inBounds nt3 bd3 A nt2) 
-     or validForCtx((x : T <- read (ns[nt1 nt2 nt3])) BRL, Delta, A).  
+ eq validForCtx((x : T <- read (ns[nlist])) BRL, Delta (fam (ns[bdList]) :: T), I, A) =
+    validForCtx(BRL, Delta (fam (ns[bdList]) :: T), I, A) 
+    and 
+    isElemB(ns[nlist], I, A) . 
+    
+ ceq validForCtx((x : T <- read (ns[nlist])) BRL, Delta (fam (ns[bdList]) :: T), I, A) =
+    err ("invalid read for:" + string(x) + "in read:" + string(ns) )   
+    if not isElemB(ns[nlist], I, A)
+ .
      
-  eq validForCtx(BRL, Delta, A) = false [owise] .       
+ eq validForCtx(BRL, Delta, I, A) = false [owise] .       
   
  eq typeOf(Sigma, Delta, Gamma, I, A, return M) = typeOf(Sigma, Gamma, M) .
  eq typeOf(Sigma, Delta, Gamma, I, A, samp D) = typeOf(Sigma, Gamma, D) .
@@ -1081,13 +1285,16 @@ fmod REACTION-TYPING is
   if isElemB(ns, I, A) .
 
  ceq typeOf(Sigma, Delta (chn (ns[nlist]) :: T), Gamma, I, A, read (ns[nlist])) = T 
-     if isElemB(ns[nlist], I, A) .
+     if isElemB(ns[nlist], I, A) . 
 
  ceq typeOf(Sigma, Delta (fam (ns[bdList]) :: T), Gamma, I, A, read (ns[nlist])) = T 
-     if isElemB(ns[nlist], I, A) .     
+     if isElemB(ns[nlist], I, A) .
+     
+ ceq typeOf(Sigma, Delta (fam (ns[bdList]) :: T), Gamma, I, A, read (ns[nlist])) = 
+     typeOf(Sigma, Delta, Gamma, I, A, read (ns[nlist]))
+     if not isElemB(ns[nlist], I, A) .          
  *** Should we check that nlist respects the bounds here?
  *** No, isElemB does that for us
- ***  and is more permisive, since I does not change if we split I
  *** Again any match would do, since the type does not change!
    
  ceq typeOf(Sigma, Delta, Gamma, I, A, if M then R1 else R2) = 
@@ -1097,9 +1304,15 @@ fmod REACTION-TYPING is
  ceq typeOf(Sigma, Delta, Gamma, I, A, x : T1 <- R1 ; R2) = 
      typeOf(Sigma, Delta, Gamma (x : T1), I, A, R2)
      if typeOf(Sigma, Delta, Gamma, I, A, R1) == T1 .
+ ceq typeOf(Sigma, Delta, Gamma, I, A, x : T1 <- R1 ; R2) = 
+     typeErr "type assignment error"
+     if typeOf(Sigma, Delta, Gamma, I, A, R1) =/= T1 .     
  ceq typeOf(Sigma, Delta, Gamma, I, A, nf(BRL, R, QL)) = 
        typeOf(Sigma, Delta, addDeclarations BRL Gamma, I, A, R) 
-     if validForCtx(BRL, Delta, A) .
+     if validForCtx(BRL, Delta, I, A) .
+  ceq typeOf(Sigma, Delta, Gamma, I, A, nf(BRL, R, QL)) = 
+       typeErr ("invalid list of reads")
+     if not validForCtx(BRL, Delta, I, A) .    
  eq typeOf(Sigma, Delta, Gamma, I, A, preNF(BL, R, QL)) =
        typeOf(Sigma, Delta, addDeclarations BL Gamma, I, A, R) .    
  
@@ -1659,6 +1872,7 @@ fmod PROTOCOL is
  protecting LIST{CNameBound} .
  protecting CNAME-BOUND .
  protecting TYPEDCNAME .
+ protecting SET{BoolTerm} .
  
  sort Protocol .
 
@@ -1693,11 +1907,11 @@ fmod PROTOCOL is
  subsort Protocol < Cases . *** for Party[i] ::= some parallel composition, no cases
  subsort WhenList < Cases .
 
- var q q2 i q' : Qid .
+ var q q2 i q' idx : Qid .
  var n x y n1 n2 m : Nat .
  var R R' : Reaction .
  var T : Type .
- var ql : List{CNameBound} .
+ var ql ql' : List{CNameBound} .
  var P P' P1 P2 : Protocol .
  var cn cn' C D : ChannelName .
  var ltq : TypedCNameList .
@@ -1709,6 +1923,7 @@ fmod PROTOCOL is
  
  var blist blist' : List{Bounds} .
  var evalMap : Map{Qid, NatTerm} .
+ var A : Set{BoolTerm} .
  
  *** lookup cn ::= cases in P by cn
  
@@ -1767,13 +1982,64 @@ fmod PROTOCOL is
  *** functions on protocols, for sym proofs
  *** to explicitly build the protocols we do induction on, remove a family F
  *** and add the family F with new bound 'B and a channel F['B]
-
+ 
  op removeFamily__ : CNameBound Protocol -> Protocol .
  eq removeFamily (fam (cn[blist])) 
       newNF( {(cn[blist]) nlist : T} ltq, 
              P || family (cn[blist]) nlist blist ::= cases, ql) =
       newNF( ltq, P, del (fam (cn[blist])) ql) .
- eq removeFamily cnb P = P [owise] .     
+ eq removeFamily cnb P = P [owise] .   
+ 
+ *** create a group by adding several families to it
+ op group_named_params__in_ : 
+      List{CNameBound} ChannelName List{NatTerm} List{Bounds} Protocol -> Protocol .
+ eq group ql named cn params nlist blist in (newNF(ltq, P, ql')) = 
+    newNF(ltq, group ql named cn params nlist blist in P, ql') .
+ eq group ql named cn params nlist blist in P =
+    extendGroup ql cn (P || family (cn[blist]) nlist blist ::= emptyProtocol) [owise] .
+ 
+ op extendGroup___ : List{CNameBound} ChannelName Protocol -> Protocol .
+ eq extendGroup (fam (fns[blist']) ) cn
+    (P || 
+    (family (cn[blist]) nlist blist ::= emptyProtocol) || 
+    (family (fns[blist']) nlist' blist' ::= cases)
+    ) =
+    P || 
+    (family (cn[blist]) nlist blist ::= 
+      (family (fns[blist']) nlist' blist' ::= cases)
+    )
+ . 
+ eq extendGroup (fam (fns[blist']) ) cn
+    (P || 
+    (family (cn[blist]) nlist blist ::= P1) || 
+    (family (fns[blist']) nlist' blist' ::= cases)
+    ) =
+    P || 
+    (family (cn[blist]) nlist blist ::= 
+      (P1 || (family (fns[blist']) nlist' blist' ::= cases))
+    )
+ . 
+ eq extendGroup ((fam (fns[blist']) ) ql) cn
+    (P || 
+    (family (cn[blist]) nlist blist ::= P1) || 
+    (family (fns[blist']) nlist' blist' ::= cases)
+    ) = 
+    if P1 == emptyProtocol then 
+    extendGroup ql cn
+    (P || 
+    (family (cn[blist]) nlist blist ::= 
+      (family (fns[blist']) nlist' blist' ::= cases)
+    )
+    )
+    else 
+    extendGroup ql cn
+    (P || 
+    (family (cn[blist]) nlist blist ::= 
+      (P1 || (family (fns[blist']) nlist' blist' ::= cases))
+    )
+    )
+    fi
+ .  
  
  op addInternalChannel_typed_assigned_in_ : ChannelName Type Cases Protocol -> Protocol .
  eq addInternalChannel cn typed T assigned cases in newNF(ltq, P, ql) = 
@@ -1788,8 +2054,10 @@ fmod PROTOCOL is
           P || family (cn[blist]) nlist blist ::= cases, 
           (fam (cn[blist])) ql) .
  eq addInternalFamily cn typed T params nlist blist assigned cases in P =
-    newfamily cn[blist] nlist blist : T in 
-    (P || family (cn[blist]) nlist blist ::= cases) [owise] .
+    newNF({ (cn[blist]) nlist : T } , 
+          P || family (cn[blist]) nlist blist ::= cases,
+          (fam (cn[blist]))
+          ) [owise] .
   
  var cases' : Cases .
     
@@ -1806,18 +2074,18 @@ fmod PROTOCOL is
  eq change cnb with cases in newNF(ltq, P, ql) =
     newNF(ltq, change cnb with cases in P, ql) .
            
- eq change cnb with cases in (family (q[blist]) nlist blist ::= P) =   
-    family (q[blist]) nlist blist ::= change cnb with cases in P .
- eq change cnb with cases in ((family (q[blist]) nlist blist ::= P) || P2) =   
-    (family (q[blist]) nlist blist ::= change cnb with cases in P) 
+ eq change cnb with cases in (family (cn[blist]) nlist blist ::= P) =   
+    family (cn[blist]) nlist blist ::= change cnb with cases in P .
+ eq change cnb with cases in ((family (cn[blist]) nlist blist ::= P) || P2) =   
+    (family (cn[blist]) nlist blist ::= change cnb with cases in P) 
     ||
     change cnb with cases in P2 .
  eq change cnb with cases in P = P [owise] . 
 
  var whenList1 whenList2 : WhenList . 
  
- op branch_change_with_in_ : WhenCond CNameBound Cases Protocol -> Protocol .
- eq branch whenCond change cnb with cases in  
+ op branch_of_change_with_in_ : WhenCond CNameBound CNameBound Cases Protocol -> Protocol .
+ eq branch whenCond of (fam (C[blist])) change cnb with cases in  
     (family (C[blist]) nlist blist ::= 
       whenList1 ;;
       (whenCond --> P) ;;
@@ -1829,7 +2097,31 @@ fmod PROTOCOL is
        (whenCond --> change cnb with cases in P) ;;
        whenList2 
  .
- eq branch whenCond change cnb with cases in P = P [owise] .
+ eq branch whenCond of (fam (C[blist])) change cnb with cases in
+    newNF(ltq, P, ql) =
+    newNF(ltq, branch whenCond of (fam (C[blist])) change cnb with cases in P, ql) .
+ eq branch whenCond of (fam (C[blist])) change cnb with cases in
+    (newNF(ltq, P1, ql) || P2)  =
+    newNF(ltq, branch whenCond of (fam (C[blist])) change cnb with cases in P1, ql)
+    ||
+    (branch whenCond of (fam (C[blist])) change cnb with cases in P2) .    
+ eq branch whenCond of (fam (C[blist])) change cnb with cases in  
+    ( P1 ||
+    (family (C[blist]) nlist blist ::= 
+      whenList1 ;;
+      (whenCond --> P) ;;
+      whenList2
+    )
+    )      
+    =  
+    P1 || branch whenCond of (fam (C[blist])) change cnb with cases in  
+    (family (C[blist]) nlist blist ::= 
+      whenList1 ;;
+      (whenCond --> P) ;;
+      whenList2
+    )      
+    .   
+ eq branch whenCond of (fam (C[blist])) change cnb with cases in P = P [owise] .
 
  op overall_with_in_ : CNameBound Cases Protocol -> Protocol .
  eq overall cnb with cases in (family (C[blist]) nlist blist ::= (whenCond --> P)) =
@@ -1842,17 +2134,95 @@ fmod PROTOCOL is
              ) 
  .  
  eq overall cnb with cases in P = P [owise] .
+ 
 
- op addBranch : WhenCond Protocol Protocol -> Protocol .
- eq addBranch(whenCond, P1, family (C[blist]) nlist blist ::= whenList1) =
+
+ *** add a branch in front of a when list in a family
+ op addBranch : WhenCond Cases Protocol -> Protocol .
+ eq addBranch(whenCond, cases, family (C[blist]) nlist blist ::= whenList1) =
     family (C[blist]) nlist blist ::=
-     (whenCond --> P1) ;; whenList1 . 
-        
+     (whenCond --> cases) ;; whenList1 . 
+     
+ *** add a branch at the end of a when list in a family
+ op addBranchEnd___ : WhenCond Cases Protocol -> Protocol .
+ eq addBranchEnd whenCond cases (family (C[blist]) nlist blist ::= whenList1) =
+    family (C[blist]) nlist blist ::=
+    whenList1 ;; (whenCond --> cases) .    
+ eq addBranchEnd whenCond cases (cn ::= whenList1) =
+    cn ::= whenList1 ;; (whenCond --> cases) .      
+      
+ op removeFromGroupCases___ : CNameBound CNameBound Protocol -> Protocol .
+ eq removeFromGroupCases (fam (C[blist])) (fam (cn[blist'])) 
+    (family (C[blist]) nlist blist ::=
+      (whenCond --> (P || family (cn[blist']) nlist' blist' ::= cases) )
+      ;; whenList
+    )
+    = removeFromGroupCasesAux (fam (C[blist])) (fam (cn[blist'])) 
+    (family (C[blist]) nlist blist ::=
+       whenList
+    ) (family (C[blist]) nlist blist ::= whenCond --> P) 
+      (family (cn[blist']) nlist' blist' ::= whenCond --> cases) .
+ eq removeFromGroupCases (fam (C[blist])) (chn cn) 
+    (family (C[blist]) nlist blist ::=
+      (whenCond --> (P || cn ::= cases) )
+      ;; whenList
+    )
+    = removeFromGroupCasesAux (fam (C[blist])) (chn cn)
+    (family (C[blist]) nlist blist ::=
+       whenList
+    ) (family (C[blist]) nlist blist ::= whenCond --> P) 
+      (cn ::= whenCond --> cases) .     
+    
+ op removeFromGroupCasesAux_____ : 
+     CNameBound CNameBound Protocol Protocol Protocol -> Protocol .
+ *** end
+ eq removeFromGroupCasesAux (fam (C[blist])) (fam (cn[blist'])) 
+    (family (C[blist]) nlist blist ::=
+       (whenCond --> (P || family (cn[blist']) nlist' blist' ::= cases) )
+    ) P1 P2 
+    =
+    (addBranchEnd whenCond P P1)
+    ||     
+    (addBranchEnd whenCond cases P2)
+ .
+ eq removeFromGroupCasesAux (fam (C[blist])) (chn cn) 
+    (family (C[blist]) nlist blist ::=
+       (whenCond --> (P || cn ::= cases) )
+    ) P1 P2 
+    =
+    (addBranchEnd whenCond P P1)
+    ||     
+    (addBranchEnd whenCond cases P2)
+ .
+ ***  loop
+ eq removeFromGroupCasesAux (fam (C[blist])) (fam (cn[blist'])) 
+    (family (C[blist]) nlist blist ::=
+       (whenCond --> (P || family (cn[blist']) nlist' blist' ::= cases) )
+       ;; whenList
+    ) P1 P2  
+    =  
+    removeFromGroupCasesAux (fam (C[blist])) (fam (cn[blist'])) 
+    (family (C[blist]) nlist blist ::=
+       whenList
+    ) (addBranchEnd whenCond P P1)
+      (addBranchEnd whenCond cases P2) .
+ eq removeFromGroupCasesAux (fam (C[blist])) (chn cn)
+    (family (C[blist]) nlist blist ::=
+       (whenCond --> (P || cn ::= cases) )
+       ;; whenList
+    ) P1 P2  
+    =  
+    removeFromGroupCasesAux (fam (C[blist])) (chn cn) 
+    (family (C[blist]) nlist blist ::=
+       whenList
+    ) (addBranchEnd whenCond P P1)
+      (addBranchEnd whenCond cases P2) .     
+      
 
  *** the bare structure of a protocol
  op getStructure_ : Protocol -> Protocol .
  eq getStructure emptyProtocol = emptyProtocol .
- eq getStructure (cn ::= cases) = emptyProtocol .
+ eq getStructure (cn ::= cases) = (cn ::= emptyProtocol) .
  eq getStructure (family (cn[blist]) nlist blist ::= 
                    newfamily (cn'[blist']) nlist' blist' : T in P)
     = family (cn[blist]) nlist blist ::= 
@@ -1951,6 +2321,8 @@ fmod PROTOCOL is
  var cnb1 cnb2 : CNameBound .  
    
  op keepTwo___ : Protocol CNameBound CNameBound -> Protocol .
+ eq keepTwo newNF(ltq, P, ql) cnb1 cnb2 = 
+    keepTwo P cnb1 cnb2 . *** new equation, keep?
  eq keepTwo ((C1 ::= cases1) || (C2 ::= cases2) || P) (chn C1) (chn C2) =  
      (C1 ::= cases1) || (C2 ::= cases2) .
  eq keepTwo ((C1 ::= cases1) || (family (C2[blist]) nlist blist ::= cases2) || P) 
@@ -1969,6 +2341,9 @@ fmod PROTOCOL is
  eq keepTwo (newfamily (C[blist]) nlist blist : T in P) cnb1 cnb2 = keepTwo P cnb1 cnb2 .
  
  op removeTwo___ : Protocol CNameBound CNameBound -> Protocol .
+ eq removeTwo newNF(ltq, P, ql) cnb1 cnb2 = 
+    removeTwo P cnb1 cnb2 . 
+ *** new equation, keep? needed it for generating the inputs for the induction protocol
  eq removeTwo ((C1 ::= cases1) || (C2 ::= cases2) || P) (chn C1) (chn C2) =  P .
  eq removeTwo ((C1 ::= cases1) || (family (C2[blist]) nlist blist ::= cases2) || P) 
     (chn C1) (fam (C2[blist])) =  P .  
@@ -2215,14 +2590,10 @@ fmod PROTOCOL-TYPING is
  var P1 P2 P : Protocol .
  var n n0 : Nat .
  var nlist : List{NatTerm} .
- var blist : List{Bounds} .
+ var blist blist' : List{Bounds} .
  var ind1 ind2 ind3 : Qid .
  var nt1 nt2 nt3 : NatTerm .
- 
- sort BoolWithError .
- subsort Bool < BoolWithError .
- op err_ : String -> BoolWithError [ctor] .
- 
+  
  *** add to a set the condition that the variables of a family
  *** are within bounds
  op addAssumptions___ : Set{BoolTerm} List{NatTerm} List{Bounds} -> Set{BoolTerm} .
@@ -2264,7 +2635,25 @@ fmod PROTOCOL-TYPING is
  eq addAssumptions A (ind1 ind2 ind3) ((bound nt1)(fixedBound nt2) (dependentBound q)) =
      insert(ind3 <T fun q ind2,
      insert(ind2 =T= nt2, insert(ind1 <T nt1, A))
-     ) .                        
+     ) .   
+ *** we are missing cases here?  
+ eq addAssumptions A (ind1 ind2 ind3) ((bound nt1)(fixedBound nt2) (fixedBound nt3)) =
+     insert(ind3 =T= nt3,
+     insert(ind2 =T= nt2, insert(ind1 <T nt1, A))
+     ) .  
+ eq addAssumptions A (ind1 ind2 ind3) ((fixedBound nt1)(fixedBound nt2) (fixedBound nt3)) =
+     insert(ind3 =T= nt3,
+     insert(ind2 =T= nt2, insert(ind1 =T= nt1, A))
+     ) .                         
+ 
+ *** a helper for turning a list of terms in a list of fixed bounds
+ op toFixedBounds_ : List{NatTerm} -> List{Bounds} .
+ eq toFixedBounds nlist = toFixedBoundsAux nlist nil .
+ 
+ op toFixedBoundsAux__ : List{NatTerm} List{Bounds} -> List{Bounds} .
+ eq toFixedBoundsAux nil blist = blist .
+ eq toFixedBoundsAux (nt1 nlist) blist =
+    toFixedBoundsAux nlist (blist (fixedBound nt1)) .
  
  *** a predicate to check that a protocol typechecks
  op typeOf : Signature ChannelContext Set{CNameBound} Set{BoolTerm} Protocol -> BoolWithError .
@@ -2288,7 +2677,7 @@ fmod PROTOCOL-TYPING is
  eq typeOfAux(Sigma, Delta, I, A, emptyProtocol) = true .
 
  ceq typeOfAux(Sigma, Delta, I, A, cn ::= R) = 
-     err "can't assign to an input" 
+     err ("can't assign to an input:" + string(cn))
  if  isElemB(cn, I, A) .
  
  ceq typeOfAux(Sigma, Delta, I, A, cn ::= R) = 
@@ -2298,7 +2687,7 @@ fmod PROTOCOL-TYPING is
      == 
      typeInCtx(chn cn, A, Delta)    
      )
- .    
+ .  
 
  eq typeOfAux(Sigma, Delta, I, A, cn ::= R) = 
     typeOf(Sigma, Delta, emptyTypeContext, I, A, R) 
@@ -2342,7 +2731,21 @@ fmod PROTOCOL-TYPING is
  var bt : BoolTerm .
  
  var ltq : TypedCNameList .   
- var ql : List{CNameBound} .  
+ var ql : List{CNameBound} . 
+ 
+ ceq typeOfAux(Sigma, Delta, I, A, family (c[blist]) nlist blist ::= R) = 
+     err ("not occurs in Delta" + string(c))
+ if not occurs (fam (c[blist])) Delta A
+ . 
+ 
+ ceq typeOfAux(Sigma, Delta, I, A, family (c[blist]) nlist blist ::= R) = 
+     err ("type error for " + string(c))
+ if not(    
+     typeOf(Sigma, Delta, emptyTypeContext, insert((fam (c[blist])), I), 
+            addAssumptions A nlist blist, R) == 
+     typeInCtx((fam (c[blist])), addAssumptions A nlist blist, Delta) 
+    ) 
+ .
 
  eq typeOfAux(Sigma, Delta, I, A, family (c[blist]) nlist blist ::= R) = 
      occurs (fam (c[blist])) Delta A
@@ -2419,8 +2822,12 @@ fmod PROTOCOL-TYPING is
  eq addChannels (< cn : T > ltq) Delta = addChannels ltq (Delta (chn cn :: T) ) .
  eq addChannels ({(c[blist]) nlist : T } ltq) Delta = 
     addChannels ltq (Delta (fam (c[blist]) :: T) ) .
-        
-
+    
+ op chansToCtx_ : TypedCNameList -> ChannelContext .
+ eq chansToCtx  emptyTypedCNameList = emptyChannelCtx .
+ eq chansToCtx (< cn : T > ltq) = (chn cn :: T) (chansToCtx ltq) .
+ eq chansToCtx ({(c[blist]) nlist : T } ltq) = (fam (c[blist]) :: T) (chansToCtx ltq) .  
+ 
 endfm
 
  
@@ -2454,7 +2861,7 @@ mod PROTOCOL-EQ-HELPERS is
  var cases : Cases .
  var blist blist' : List{Bounds} .
  var cn : ChannelName .
- var bn : CNameBound .   
+ var bn cnb : CNameBound .   
 
  
   var BRL : BRList .
@@ -2476,7 +2883,53 @@ mod PROTOCOL-EQ-HELPERS is
     var whenList whenList1 whenList2 : WhenList .
     var whenCond : WhenCond .
     var bd1 bd2 bd3 bd : Bounds .
+    
+     var BL : BRList .
+    
+ *** given a channel/family and a protocol, checks whether the protocol reads from it
+ 
+ op readsFromSet__ : Protocol Set{CNameBound} -> Bool .
+ eq readsFromSet P empty = false .
+ eq readsFromSet P (cnb, O) = (readsFrom P cnb) or (readsFromSet P O) .
+ 
+ op readsFrom__ : Protocol CNameBound -> Bool .
+ eq readsFrom emptyProtocol cnb = false .
+ eq readsFrom (P1 || P2) cnb = 
+    (readsFrom P1 cnb) or (readsFrom P2 cnb) . 
+ eq readsFrom (new cn : T in P) cnb =  readsFrom P cnb . 
+ eq readsFrom (newfamily cn[blist] nlist blist : T in P) cnb =  readsFrom P cnb .  
+ eq readsFrom (newNF(ltq, P, ql)) cnb =  readsFrom P cnb .
+ eq readsFrom (family cn[blist] nlist blist ::= cases) cnb = 
+    readsFrom cases cnb .
+ eq readsFrom (cn ::= cases) cnb = 
+    readsFrom cases cnb .
+ 
+ op readsFrom__ : Reaction CNameBound -> Bool .
+ eq readsFrom (return M) cnb = false .
+ eq readsFrom (samp Dist) cnb = false .
+ eq readsFrom (if M then R1 else R2) cnb =
+    readsFrom R1 cnb or readsFrom R2 cnb .   
+  eq readsFrom (i : T <- R1 ; R2) cnb = 
+    readsFrom R1 cnb or readsFrom R2 cnb .
+ eq readsFrom (nf(BL, R, QL)) cnb = readsFrom R cnb .
+ eq readsFrom (preNF(BL, R, QL)) cnb = readsFrom R cnb .
+ eq readsFrom (read cn) (chn cn) = true .
+ eq readsFrom (read (fns[ntl])) (fam (fns[blist])) = true .
+    *** this is wrong, ntl must be in bounds!
+ eq readsFrom (read cn1) cnb = false [owise] .
+ 
+ op readsFrom__ : WhenList CNameBound -> Bool .
+ eq readsFrom (whenCond --> R) cnb = readsFrom R cnb .
+ eq readsFrom ((whenCond --> R) ;; whenList) cnb = 
+    (readsFrom R cnb) or (readsFrom whenList cnb) . 
+ eq readsFrom (whenCond --> P) cnb = readsFrom P cnb .
+ eq readsFrom ((whenCond --> P) ;; whenList) cnb = 
+    (readsFrom P cnb) or (readsFrom whenList cnb) . 
 
+  *** extend a given Delta with the internal channels of a protocol
+ op addInternalChannels__ : ChannelContext Protocol -> ChannelContext .
+ eq addInternalChannels Delta newNF(ltq, P, ql) = addChannels ltq Delta .
+ eq addInternalChannels Delta P = Delta [owise] .
    
   ***  op toBounds__ : ChannelName List{Bounds} -> CNameBound .
   ***  eq toBounds cn bounds = cn @ bounds .
@@ -2503,8 +2956,11 @@ mod PROTOCOL-EQ-HELPERS is
    op getFamilyNamesAux_ : Protocol -> List{CNameBound} .
    eq getFamilyNamesAux (family (cn[blist]) nlist blist ::= cases) = 
        (fam (cn[blist])) .
+   eq getFamilyNamesAux (cn ::= cases) = chn cn .   
    eq getFamilyNamesAux (P || (family (cn[blist]) nlist blist ::= cases)) = 
       (fam (cn[blist])) (getFamilyNamesAux P) .
+   eq getFamilyNamesAux (P || (cn ::= cases)) = 
+      (chn cn) (getFamilyNamesAux P) .   
  
    op addCondToCases__ : WhenCond Cases -> Cases .
    eq addCondToCases otherwise R = otherwise --> R .
@@ -2525,6 +2981,23 @@ mod PROTOCOL-EQ-HELPERS is
       combineOne (family (fns[blist]) nlist blist ::= 
                    whenList1 ;; (addCondToCases whenCond cases))
                  whenList2 .
+   eq combineOne (cn ::= whenList1) 
+                 (whenCond --> P || cn ::= cases) =
+      cn ::= whenList1 ;; (addCondToCases whenCond cases) .  
+   eq combineOne (cn ::= whenList1) 
+                 ((whenCond --> P || cn ::= cases) ;; whenList2) =
+      combineOne (cn ::= 
+                   whenList1 ;; (addCondToCases whenCond cases))
+                 whenList2 .              
+   *** also cover case with only one family on the branch
+   eq combineOne (family (fns[blist]) nlist blist ::= whenList1) 
+                 (whenCond --> family (fns[blist]) nlist blist ::= cases) =
+      family (fns[blist]) nlist blist ::= whenList1 ;; (addCondToCases whenCond cases) .  
+   eq combineOne (family (fns[blist]) nlist blist ::= whenList1) 
+                 ((whenCond --> family (fns[blist]) nlist blist ::= cases) ;; whenList2) =
+      combineOne (family (fns[blist]) nlist blist ::= 
+                   whenList1 ;; (addCondToCases whenCond cases))
+                 whenList2 .               
                     
    var cNameList : List{CNameBound} . 
    op combineAux___ : List{CNameBound} Protocol WhenList -> Protocol .              
@@ -2539,6 +3012,16 @@ mod PROTOCOL-EQ-HELPERS is
      
      ((whenCond --> (family (fns[blist]) nlist blist ::= cases) || P1) ;; whenList)
    .
+   eq combineAux ((chn cn) cNameList) emptyProtocol 
+       ((whenCond --> (cn ::= cases) || P1 ) ;; whenList) =
+      combineAux cNameList 
+     
+      (combineOne (cn ::= emptyWhen)
+                  ((whenCond --> (cn ::= cases) || P1) ;; whenList)
+      )
+     
+     ((whenCond --> (cn ::= cases) || P1) ;; whenList)
+   .
    eq combineAux ((fam (fns[blist])) cNameList) P 
        ((whenCond --> (family (fns[blist]) nlist blist ::= cases) || P1 ) ;; whenList) =
       combineAux cNameList 
@@ -2548,7 +3031,39 @@ mod PROTOCOL-EQ-HELPERS is
       )
      )
      ((whenCond --> (family (fns[blist]) nlist blist ::= cases) || P1) ;; whenList)
-   .  
+   . 
+    eq combineAux ((chn cn) cNameList) P 
+       ((whenCond --> (cn ::= cases) || P1 ) ;; whenList) =
+      combineAux cNameList 
+     (P || 
+      (combineOne (cn ::= emptyWhen)
+                  ((whenCond --> (cn ::= cases) || P1) ;; whenList)
+      )
+     )
+     ((whenCond --> (cn ::= cases) || P1) ;; whenList)
+   . 
+    
+   *** also cover one family on each branch
+   eq combineAux ((fam (fns[blist])) cNameList) emptyProtocol 
+       ((whenCond --> (family (fns[blist]) nlist blist ::= cases) ) ;; whenList) =
+      combineAux cNameList 
+     
+      (combineOne (family (fns[blist]) nlist blist ::= emptyWhen)
+                  ((whenCond --> (family (fns[blist]) nlist blist ::= cases)) ;; whenList)
+      )
+     
+     ((whenCond --> (family (fns[blist]) nlist blist ::= cases) ) ;; whenList)
+   .
+   eq combineAux ((fam (fns[blist])) cNameList) P 
+       ((whenCond --> (family (fns[blist]) nlist blist ::= cases)  ) ;; whenList) =
+      combineAux cNameList 
+     (P || 
+      (combineOne (family (fns[blist]) nlist blist ::= emptyWhen)
+                  ((whenCond --> (family (fns[blist]) nlist blist ::= cases) ) ;; whenList)
+      )
+     )
+     ((whenCond --> (family (fns[blist]) nlist blist ::= cases)) ;; whenList)
+   . 
 
     *** switch to combined notation
    *** family 'Group i n ::= 
@@ -2604,15 +3119,51 @@ mod PROTOCOL-EQ-HELPERS is
     ((updateAt q idx q' bd1) (updateAt q idx nlist bounds))
  . 
  
+ op fixedAt____ : Qid Qid List{NatTerm} List{Bounds} -> List{Bounds} .
+ eq fixedAt q idx q' bd1 = 
+      if q == q' then fixedBound idx else bd1 fi .
+ eq fixedAt q idx (q' nlist) (bd1 bounds) = 
+    ((fixedAt q idx q' bd1) (fixedAt q idx nlist bounds))
+ . 
+ 
  ***
  op adjustIndexP___ : Qid Qid Protocol -> Protocol .
+ eq adjustIndexP q idx (family ('Comp[fns1 fns2][blist]) nlist blist ::=
+    (family (fns1[blist]) nlist (blist) ::= cases) || 
+    (family (fns2[blist]) nlist (blist) ::= cases')
+   ) =
+   (adjustIndexP q idx (family (fns1[blist]) nlist blist ::= cases))
+   ||
+   (adjustIndexP q idx (family (fns2[blist]) nlist blist ::= cases'))
+ .  
  eq adjustIndexP q idx (family (fns[blist]) qlist blist ::= P) =
-     family (fns[blist]) qlist (updateAt q idx qlist blist) ::=  
+     family (fns[(updateAt q idx qlist blist)]) qlist (updateAt q idx qlist blist) ::=  
         adjustIndexP q idx P .
+ eq adjustIndexP q idx 
+    (family (fns[blist]) qlist blist ::= 
+       (whenCond --> P)
+    ) =
+    family (fns[(updateAt q idx qlist blist)]) qlist (updateAt q idx qlist blist) ::=
+     whenCond --> adjustIndexP q idx P 
+    .
+ eq adjustIndexP q idx 
+    (family (fns[blist]) qlist blist ::= 
+       (whenCond --> P) ;; whenList 
+    ) =
+     addBranch(whenCond, adjustIndexP q idx P , 
+     adjustIndexP q idx 
+    (family (fns[blist]) qlist blist ::= 
+        whenList 
+    )
+    ) 
+    .   
+          
  eq adjustIndexP q idx (family (fns[blist]) qlist blist ::= cases) =  
-     family (fns[blist]) qlist (updateAt q idx qlist blist) ::= cases . 
+     family (fns[(updateAt q idx qlist blist)]) qlist (updateAt q idx qlist blist) ::= cases 
+ [owise]    
+     . 
  eq adjustIndexP q idx ((family (fns[blist]) qlist blist ::= cases) || P) =  
-     (family (fns[blist]) qlist (updateAt q idx qlist blist) ::= cases)
+     (family (fns[(updateAt q idx qlist blist)]) qlist (updateAt q idx qlist blist) ::= cases)
      ||
      adjustIndexP q idx P .
  *** wrong for now but make it go through
@@ -2621,12 +3172,52 @@ mod PROTOCOL-EQ-HELPERS is
       (cn ::= cases)
      ||
      adjustIndexP q idx P .
+ 
+ var blist1 : List{Bounds} .
+ 
+  *** delete a family from each branch of a whenList
+ op removeFromEachBranch__ : CNameBound WhenList -> WhenList .
+ eq removeFromEachBranch 
+     (fam (fns1[blist1]))
+     (whenCond --> P || family (fns1[blist1]) nlist1 blist1 ::= cases) = 
+     whenCond --> P .
+ eq removeFromEachBranch  (fam (fns1[blist1])) emptyWhen = emptyWhen .
+ eq removeFromEachBranch 
+     (fam (fns1[blist1]))  
+     (
+     (whenCond --> P || family (fns1[blist1]) nlist1 blist1 ::= cases)
+     ;;
+     whenList
+     ) =
+     (whenCond --> P)
+     ;;
+     (removeFromEachBranch (fam (fns1[blist1])) whenList) .
+     
+ *** check that a family is assigned same thing on each branch of a when list
+ op sameOnEachBranch___ : CNameBound Cases WhenList -> Bool .
+ eq sameOnEachBranch (fam (fns1[blist1])) cases emptyWhen = true .
+ eq sameOnEachBranch 
+     (fam (fns1[blist1])) cases 
+     (
+     (whenCond --> P || family (fns1[blist1]) nlist1 blist1 ::= cases)
+     ;;
+     whenList
+     ) = sameOnEachBranch (fam (fns1[blist1])) cases whenList .
+ eq sameOnEachBranch 
+     (fam (fns1[blist1])) cases 
+     whenList = false [owise] .  
    
    *** checks that we have the same reaction on every case in a list       
    op allSameReaction__ : WhenList Reaction -> Bool .
    eq allSameReaction emptyWhen R = true .
    eq allSameReaction ((whenCond --> R1) ;; whenList)  R2 = 
-      (R1 == R2) and allSameReaction whenList R2 .        
+      (R1 == R2) and allSameReaction whenList R2 .  
+      
+      *** checks that we have the same protocol on every case in a list       
+   op allSameProtocol__ : WhenList Protocol -> Bool .
+   eq allSameProtocol emptyWhen P = true .
+   eq allSameProtocol ((whenCond --> P1) ;; whenList)  P2 = 
+      (P1 == P2) and allSameProtocol whenList P2 .          
      
      *** only interested in C[idx], so no families
      op isSubprotocolOf__ : Protocol Protocol -> Bool .
@@ -2677,16 +3268,210 @@ mod PROTOCOL-EQ-HELPERS is
  eq mapFromLists (q qlist) (nt nlist) = (q |-> nt, mapFromLists qlist nlist) .
  
  op substIndex____ : Protocol Qid NatTerm Set{BoolTerm} -> Protocol .
- eq substIndex (family (fns[blist]) qlist blist ::= cases) q idx A = 
-      projectIndex (family (fns[blist]) qlist blist ::= cases) 
+ eq substIndex (family (cn[blist]) qlist blist ::= cases) q idx A = 
+   ***( was
+      projectIndex (family (cn[blist]) qlist blist ::= cases) 
                    (genPrjIdxTerms q idx qlist blist)
                    A 
-                   (mapFromLists qlist (genPrjIdxTerms q idx qlist blist)) .
- eq substIndex ((family (fns[blist]) qlist blist ::= cases) || P1) q idx A =
-    (substIndex (family (fns[blist]) qlist blist ::= cases) q idx A)
+                   (mapFromLists qlist (genPrjIdxTerms q idx qlist blist)) 
+   )
+   project2Index (family (cn[blist]) qlist blist ::= cases)  
+                 q idx A empty               
+                   .
+ eq substIndex ((family (cn[blist]) qlist blist ::= cases) || P1) q idx A =
+    (substIndex (family (cn[blist]) qlist blist ::= cases) q idx A)
     ||
     (substIndex P1 q idx A)
  .   
+ 
+ op getInductionBase______ : Protocol ChannelName Qid Qid Set{BoolTerm} Protocol -> Protocol .
+ eq getInductionBase newNF(ltq, P, ql) cn q idx A P2 = 
+    getInductionBase P cn q idx A P2 .
+ eq getInductionBase 
+    (P || family (cn[blist]) nlist blist ::= P1) cn q idx A P2 =
+   P 
+   || (adjustIndexP q idx (family (cn[blist]) nlist blist ::= P2))
+   || (substIndex P1 q idx A) .
+ eq getInductionBase 
+    (P || family (cn[blist]) nlist blist ::= cases) cn q idx A P2 =
+   P 
+   || (adjustIndexP q idx P2)
+   || (substIndex (family (cn[blist]) nlist blist ::= cases) q idx A) [owise] .  
+   
+   
+ *** same thing for a sym proof
+ op getInductionBaseSym______ : Protocol ChannelName Qid Qid Set{BoolTerm} Protocol -> Protocol .
+ eq getInductionBaseSym newNF(ltq, P, ql) cn q idx A P2 = 
+    getInductionBaseSym P cn q idx A P2 .
+ eq getInductionBaseSym 
+    (P || family (cn[blist]) nlist blist ::= P1) cn q idx A P2 =
+   P 
+   || (adjustIndexP q idx (family (cn[blist]) nlist blist ::= P1))
+   || (substIndex P2 q idx A) .  
+   
+ *** same thing for a sym proof
+ op getInductionEndSym______ : Protocol ChannelName Qid Qid Set{BoolTerm} Protocol -> Protocol .
+ eq getInductionEndSym newNF(ltq, P, ql) cn q idx A P2 = 
+    getInductionEndSym P cn q idx A P2 .
+ eq getInductionEndSym 
+    (P || family (cn[blist]) nlist blist ::= P1) cn q idx A P2 =
+   P 
+   || (adjustIndexP q idx (family (cn[blist]) nlist blist ::= P1))
+   || (substIndex P1 q idx A) .    
+   
+ op unsplitDelta__ : ChannelContext Set{CNameBound} -> ChannelContext .  
+ eq unsplitDelta Delta empty = Delta .
+ eq unsplitDelta (Delta (fam (fns[(bound (nt + 1)) bd2]) :: T) 
+                      (fam (fns[(fixedBound (nt + 1)) bd2]) :: T)
+                 )
+                 (O, fam (fns[(bound (nt + 2)) bd2])) = 
+    unsplitDelta  (Delta (fam (fns[(bound (nt + 2)) bd2]) :: T) ) O .  
+ eq unsplitDelta (Delta (fam (fns[bd1 (bound (nt + 1)) bd2]) :: T) 
+                      (fam (fns[bd1 (fixedBound (nt + 1)) bd2]) :: T)
+                 )
+                 (O, fam (fns[bd1 (bound (nt + 2)) bd2])) = 
+    unsplitDelta  (Delta (fam (fns[bd1 (bound (nt + 2)) bd2]) :: T) ) O .               
+   
+ op splitDelta__ : ChannelContext Set{CNameBound} -> ChannelContext .
+ eq splitDelta Delta empty = Delta .
+ eq splitDelta (Delta (fam (fns[(bound (nt + 2)) bd2]) :: T) )  
+               (O, fam (fns[(bound (nt + 2)) bd2])) 
+    =
+    splitDelta (Delta (fam (fns[(bound (nt + 1)) bd2]) :: T) 
+                      (fam (fns[(fixedBound (nt + 1)) bd2]) :: T)
+               )  
+               O . 
+ eq splitDelta (Delta (fam (fns[bd1 (bound (nt + 2)) bd2]) :: T) )  
+               (O, fam (fns[bd1 (bound (nt + 2)) bd2])) 
+    =
+    splitDelta (Delta (fam (fns[bd1 (bound (nt + 1)) bd2]) :: T) 
+                      (fam (fns[bd1 (fixedBound (nt + 1)) bd2]) :: T)
+               )  
+               O .  
+                              
+ op splitOutputs__ : Set{CNameBound} Set{CNameBound} -> Set{CNameBound} .
+ eq splitOutputs I empty = I .
+ eq splitOutputs (I, fam (fns[(bound (nt + 2)) bd2]) )  
+               (O, fam (fns[(bound (nt + 2)) bd2])) 
+    =
+    splitOutputs (I, fam (fns[(bound (nt + 1)) bd2]), 
+                     fam (fns[(fixedBound (nt + 1)) bd2]))
+               O . 
+ eq splitOutputs (I, fam (fns[bd1 (bound (nt + 2)) bd2]) )  
+                 (O, fam (fns[bd1 (bound (nt + 2)) bd2]) ) 
+    =
+    splitOutputs (I, fam (fns[bd1 (bound (nt + 1)) bd2]), 
+                     fam (fns[bd1 (fixedBound (nt + 1)) bd2]) )
+               O .   
+               
+ op unsplitOutputs__ : Set{CNameBound} Set{CNameBound} -> Set{CNameBound} .
+ eq unsplitOutputs I empty = I .
+ eq unsplitOutputs (I, fam (fns[(bound (nt + 1)) bd2]), 
+                     fam (fns[(fixedBound (nt + 1)) bd2]))
+                   (O, fam (fns[(bound (nt + 1)) bd2]), 
+                     fam (fns[(fixedBound (nt + 1)) bd2])) = 
+    unsplitOutputs (I, fam (fns[(bound (nt + 2)) bd2]) ) O .                 
+ eq unsplitOutputs (I, fam (fns[bd1 (bound (nt + 1)) bd2]), 
+                     fam (fns[bd1 (fixedBound (nt + 1)) bd2]))
+                   (O, fam (fns[bd1 (bound (nt + 1)) bd2]), 
+                     fam (fns[bd1 (fixedBound (nt + 1)) bd2])) = 
+    unsplitOutputs (I, fam (fns[bd1 (bound (nt + 2)) bd2]) ) O .
+  
+  op deltaInd____ : ChannelContext Protocol Qid Qid -> ChannelContext .
+ eq deltaInd Delta 
+    (family (cn[blist]) nlist blist ::= (whenCond --> P) ;; whenList)
+    q idx = 
+    deltaInd Delta P q idx .
+ eq deltaInd Delta (family (cn[blist]) nlist blist ::= P)
+    q idx = 
+    deltaInd Delta P q idx .
+ eq deltaInd Delta (P1 || P2) q idx =
+    deltaInd (deltaInd Delta P1 q idx) P2 q idx .    
+ eq deltaInd 
+     (Delta (fam (fns[blist]) :: T) ) 
+     (family (fns[blist]) nlist blist ::= cases)
+     q idx
+     =
+     if allFixed q nlist blist
+     then 
+     Delta (fam (fns[updateAt q idx nlist blist]) :: T) 
+           (chn (fns[getBoundValues q idx nlist blist]) :: T) 
+     else
+     Delta (fam (fns[updateAt q idx nlist blist]) :: T) 
+           (fam (fns[fixedAt q idx nlist blist]) :: T) 
+     fi .
+     
+ eq deltaInd 
+     (Delta (fam (fns[blist]) :: T) ) 
+     (P || family (fns[blist]) nlist blist ::= cases)
+     q idx
+     =
+     if allFixed q nlist blist
+     then deltaInd
+     (Delta (fam (fns[updateAt q idx nlist blist]) :: T) 
+            (chn (fns[getBoundValues q idx nlist blist]) :: T)  
+     ) P q idx      
+     else
+     deltaInd
+     (Delta (fam (fns[updateAt q idx nlist blist]) :: T) 
+            (fam (fns[fixedAt q idx nlist blist]) :: T) 
+     )
+     P q idx 
+     fi
+ .                      
+   
+ op getInductionDelta____ : ChannelContext Protocol Qid Qid -> ChannelContext .
+ eq getInductionDelta Delta 
+    (family (cn[blist]) nlist blist ::= (whenCond --> P) ;; whenList)
+    q idx = 
+    getInductionDelta Delta P q idx .
+ eq getInductionDelta Delta (family (cn[blist]) nlist blist ::= P)
+    q idx = 
+    getInductionDelta Delta P q idx .
+ eq getInductionDelta Delta (P1 || P2) q idx =
+    getInductionDelta (getInductionDelta Delta P1 q idx) P2 q idx .    
+ eq getInductionDelta 
+     (Delta (fam (fns[blist (bound nt)]) :: T) ) 
+     (family (fns[blist (bound nt)]) nlist (blist (bound nt)) ::= cases)
+     q idx
+     =
+     if allFixed q nlist (blist (bound nt))
+     then 
+     Delta (fam (fns[blist (bound idx)]) :: T) 
+           (chn (fns[getBoundValues q idx nlist (blist (bound nt))]) :: T) 
+     else
+     Delta (fam (fns[blist (bound idx)]) :: T) (fam (fns[blist (fixedBound idx)]) :: T) 
+     fi .
+     
+ eq getInductionDelta 
+     (Delta (fam (fns[blist (bound nt)]) :: T) ) 
+     (P || family (fns[blist (bound nt)]) nlist (blist (bound nt)) ::= cases)
+     q idx
+     =
+     if allFixed q nlist (blist (bound nt))
+     then getInductionDelta
+     (Delta (fam (fns[blist (bound idx)]) :: T) 
+           (chn (fns[getBoundValues q idx nlist (blist (bound nt))]) :: T) 
+     ) P q idx      
+     else
+     getInductionDelta
+     (Delta (fam (fns[blist (bound idx)]) :: T) (fam (fns[blist (fixedBound idx)]) :: T))
+     P q idx 
+     fi .    
+   
+ op getInductionEnd______ : Protocol ChannelName Qid Qid Set{BoolTerm} Protocol -> Protocol .
+ eq getInductionEnd newNF(ltq, P, ql) cn q idx A P2 = 
+    getInductionEnd P cn q idx A P2 .
+ eq getInductionEnd
+    (P || family (cn[blist]) nlist blist ::= P1) cn q idx A P2 =
+   P 
+   || (adjustIndexP q idx (family (cn[blist]) nlist blist ::= P2))
+   || (substIndex P2 q idx A) .   
+ eq getInductionEnd
+    (P || family (cn[blist]) nlist blist ::= cases) cn q idx A P2 =
+   P 
+   || (adjustIndexP q idx P2)
+   || (substIndex P2 q idx A) [owise] .     
  
  op genPrjIdxTerms____ : Qid NatTerm List{NatTerm} List{Bounds} -> List{NatTerm} .
  eq genPrjIdxTerms q nj nil nil = nil .
@@ -2720,13 +3505,25 @@ mod PROTOCOL-EQ-HELPERS is
  *** set the bound for q to nt  
  op setBound____ : List{NatTerm} List{Bounds} Qid NatTerm -> List{Bounds} .
  eq setBound q (bound nt1) q nt = fixedBound nt .
+ 
+ 
+ 
+ eq setBound q (fixedBound nt1) q nt = fixedBound nt .
+ eq setBound q (fixedBound nt1) q nt = fixedBound nt .
+ 
 
  eq setBound (q q1) ((bound nt1) bd2) q nt = (fixedBound nt) bd2 .
+ eq setBound (q q1) ((fixedBound nt) bd2) q nt1 = (fixedBound nt1) bd2 .
+*** unsafe, we need A, same as below
 
  eq setBound (q1 q) (bd1 (bound nt1)) q nt = bd1 (fixedBound nt) .
+ eq setBound (q1 q) (bd1 (fixedBound nt)) q nt = bd1 (fixedBound nt) .
  eq setBound (q1 q) (bd1 (dependentBound F)) q nt = bd1 (fixedBound nt) .
 
  eq setBound (q q1 q2) ((bound nt1) bd1 bd2) q nt = (fixedBound nt) bd1 bd2 .
+ eq setBound (q q1 q2) ((fixedBound nt) bd1 bd2) q nt = (fixedBound nt) bd1 bd2 . 
+ *** TODO: cheat for now, but we should prove that nt1 = nt with A!
+ eq setBound (q q1 q2) ((fixedBound nt) bd1 bd2) q nt1 = (fixedBound nt1) bd1 bd2 .
  
  eq setBound (q1 q q2) (bd1 (bound nt1) bd2) q nt = bd1 (fixedBound nt) bd2 .
  
@@ -2740,8 +3537,17 @@ mod PROTOCOL-EQ-HELPERS is
  eq  getBoundValues q nj (q nlist) (bd1 blist) = nj (getBoundValues q nj nlist blist) .
  eq  getBoundValues q nj (q' nlist) ((fixedBound nt) blist) = 
        nt (getBoundValues q nj nlist blist) .
+       
+ op  getBoundValues2_____ : 
+    Qid NatTerm List{NatTerm} List{Bounds} Set{BoolTerm} -> List{NatTerm} .
+ eq  getBoundValues2 q nj nil nil A = nil .
+ eq  getBoundValues2 q nj (q nlist) (bd1 blist) A = nj (getBoundValues2 q nj nlist blist A) .
+ eq  getBoundValues2 q nj (q' nlist) ((fixedBound q1) blist) (A, q1 =T= nt) = 
+       nt (getBoundValues2 q nj nlist blist (A, q1 =T= nt)) .  
+ eq  getBoundValues2 q nj (q' nlist) ((fixedBound nt) blist) A = 
+       nt (getBoundValues2 q nj nlist blist A) .          
  
- *** partial projection for families      
+ *** partial projection for families  
  op project2Index_____ :       
      Protocol 
        List{NatTerm} *** several indices
@@ -2750,13 +3556,47 @@ mod PROTOCOL-EQ-HELPERS is
  eq project2Index P nil nil A f = P .
  eq project2Index P (q nlist1) (nj nlist2) A f =
     project2Index 
-     (project2IndexAux P q nj A f emptyWhen)
+     (project2IndexAux P q nj (expandIneq A empty) f emptyWhen)
      nlist1
      nlist2
-     A f .     
+     A f [label project2IndexTop] .     
        
   op project2IndexAux______ : 
      Protocol Qid NatTerm Set{BoolTerm} Map{Qid, NatTerm} Cases -> Protocol .
+  op project2IndexAuxP______ : 
+     Protocol Qid NatTerm Set{BoolTerm} Map{Qid, NatTerm} Cases -> Protocol .   
+  *** structural part   
+  eq project2IndexAux (cn ::= cases) q nj A f emptyWhen = cn ::= cases [label projectCN] .   
+  eq project2IndexAux (family ('Comp[fns1 fns2][blist]) nlist blist ::=
+    (family (fns1[blist]) nlist (blist) ::= cases) || 
+    (family (fns2[blist]) nlist (blist) ::= cases')
+   )  q nj A f emptyWhen 
+   = (project2IndexAuxP (family (fns1[blist]) nlist (blist) ::= cases) 
+       q nj A f emptyWhen
+     ) 
+     ||
+     (project2IndexAuxP (family (fns2[blist]) nlist (blist) ::= cases') 
+       q nj A f emptyWhen)
+  .     
+   eq project2IndexAux (family (fns[blist]) nlist blist ::= P)
+      q nj A f emptyWhen =
+      family (fns[(setBound nlist blist q nj)]) nlist (setBound nlist blist q nj) ::=
+      project2IndexAuxP P q nj A f emptyWhen .
+      
+   eq project2IndexAuxP (P1 || P2)
+      q nj A f emptyWhen =
+      (project2IndexAuxP P1 q nj A f emptyWhen)
+      ||
+      (project2IndexAuxP P2 q nj A f emptyWhen) .   
+   
+   eq project2IndexAux (P1 || P2)
+      q nj A f emptyWhen =
+      (project2IndexAux P1 q nj A f emptyWhen)
+      ||
+      (project2IndexAux P2 q nj A f emptyWhen) .      
+   
+   *** for reactions
+      
    eq project2IndexAux (family (fns[blist]) nlist blist ::= R) 
        q nj A f cases =
       project2IndexAux (family (fns[blist]) nlist blist ::= (otherwise --> R)) 
@@ -2769,7 +3609,7 @@ mod PROTOCOL-EQ-HELPERS is
    ceq project2IndexAux
        (family (fns[blist]) nlist blist ::= emptyWhen)
        q nj A f cases =    
-       family (fns[blist]) nlist (setBound nlist blist q nj) ::= cases 
+       family (fns[(setBound nlist blist q nj)]) nlist (setBound nlist blist q nj) ::= cases 
       if not (allFixed q nlist blist)
    .      
    ceq project2IndexAux 
@@ -2777,8 +3617,7 @@ mod PROTOCOL-EQ-HELPERS is
        q nj A f cases = 
        fns[getBoundValues q nj nlist blist] ::= 
         replaceVars(R, insert(q, nj, f)) 
-    if (A |= bt with (insert(q, nj, f))) /\ (allFixed q nlist blist) .
-    
+    if (A |= bt with (insert(q, nj, f))) /\ (allFixed q nlist blist) .   
      ceq project2IndexAux 
         (family (fns[blist]) nlist blist ::= (when bt --> R) ;; whenList) 
        q nj A f cases = 
@@ -2819,7 +3658,81 @@ mod PROTOCOL-EQ-HELPERS is
        else  family (fns[setBound nlist blist q nj])  nlist (setBound nlist blist q nj) ::=  
          cases ;; (otherwise --> replaceVars(R, insert(q, nj, f)))
        fi  
-    [owise] .      
+    [owise] .
+    
+   *** for protocols   
+
+   *** connect
+   
+   eq project2IndexAux 
+        (family (fns[blist]) nlist blist ::= (when bt --> P) ;; whenList) 
+       q nj A f cases = 
+      project2IndexAuxP 
+        (family (fns[blist]) nlist blist ::= (when bt --> P) ;; whenList) 
+       q nj A f cases . 
+       
+  eq project2IndexAuxP (family (fns[blist]) nlist blist ::= R) 
+       q nj A f cases =
+      project2IndexAux (family (fns[blist]) nlist blist ::= (otherwise --> R)) 
+       q nj A f cases .   
+       
+  eq project2IndexAuxP (family (fns[blist]) nlist blist ::= (whenCond --> R) ;; whenList) 
+       q nj A f cases =
+      project2IndexAux (family (fns[blist]) nlist blist ::= ((whenCond --> R) ;; whenList)) 
+       q nj A f cases .        
+    
+    *** end with when
+    
+    eq project2IndexAuxP
+       (family (fns[blist]) nlist blist ::= emptyWhen)
+       q nj A f cases =    
+       family (fns[(setBound nlist blist q nj)]) nlist (setBound nlist blist q nj) ::= cases 
+   .      
+    
+    *** found a condition that holds 
+     ceq project2IndexAuxP 
+        (family (fns[blist]) nlist blist ::= (when bt --> P) ;; whenList) 
+       q nj A f cases = 
+       family (fns[(setBound nlist blist q nj)]) nlist (setBound nlist blist q nj) ::= 
+        (project2IndexAux P q nj A f emptyWhen) 
+    if (A |= bt with (insert(q, nj, f))) .
+      
+    *** found a condition that we can disprove
+   ceq project2IndexAuxP 
+        (family (fns[blist]) nlist blist ::= (when bt --> P) ;; whenList) 
+        q nj A f cases = 
+        project2IndexAuxP 
+        (family (fns[blist]) nlist blist ::= whenList) 
+        q nj A f cases
+    if A |= neg bt with (insert(q, nj, f)) .
+    
+    *** can't do either, so store as a possible case
+    eq project2IndexAuxP 
+        (family (fns[blist]) nlist blist ::= (when bt --> P) ;; whenList) 
+        q nj A f cases = 
+        project2IndexAuxP 
+        (family (fns[blist]) nlist blist ::= whenList) 
+        q nj A f
+        (cases ;; 
+         when (simplify A subst(bt, q |-> nj) f) --> 
+          (project2IndexAux P q nj A f emptyWhen) 
+          )
+    [owise] .
+    *** got to the end and didn't find anything yet
+    eq project2IndexAuxP 
+        (family (fns[blist]) nlist blist ::= (otherwise --> P)) 
+        q nj A f emptyWhen = 
+        
+       family (fns[setBound nlist blist q nj]) 
+              nlist (setBound nlist blist q nj) ::= (project2IndexAux P q nj A f emptyWhen) 
+       .
+    *** got to the end and we have some possible cases   
+    eq project2IndexAuxP 
+        (family (fns[blist]) nlist blist ::= (otherwise --> P)) 
+        q nj A f cases =      
+       family (fns[setBound nlist blist q nj])  nlist (setBound nlist blist q nj) ::=  
+         cases ;; (otherwise --> (project2IndexAux P q nj A f emptyWhen))    
+    [owise] .    
    
    var t1 t2 t3 : NatTerm .
    
@@ -2998,7 +3911,7 @@ mod PROTOCOL-EQ-CORE is
  var fns fns1 fns2 cns cns1 cns2 : NameWithScripts . 
 
  var Sigma : Signature .
- vars Delta D Delta' : ChannelContext .
+ vars Delta D Delta' Delta1 Delta2 : ChannelContext .
  vars R R' R1 R2 R3 R4 S1 S2 S : Reaction .
  vars T T0 T1 T2 T3 : Type .
  vars M M1 M2 : Expression .
@@ -3025,7 +3938,7 @@ mod PROTOCOL-EQ-CORE is
  
   var BRL : BRList .
  var QL : List{NatTerm} .
- var A : Set{BoolTerm} .
+ var A A' : Set{BoolTerm} .
  var nlist1 nlist2 : List{NatTerm} . 
   var qid1 qid2 : Qid .
     var q1 q2 : Qid .
@@ -3054,19 +3967,22 @@ mod PROTOCOL-EQ-CORE is
  rl [UNSAFE] : 
     pConfig(Sigma, Delta, P2, I, O, A) 
      => 
-    pConfig(Sigma, Delta, P1, I, O, A)
+    pConfig(Sigma, Delta', P1, I', O', A')
  [nonexec] 
  .   
  
  
  crl [SYM] :
-     pConfig(Sigma, Delta, P2, I, O, A) 
+     pConfig(Sigma, Delta2, P2, I, O2, A) 
      => 
-     pConfig(Sigma, Delta, P1, I, O, A)
+     pConfig(Sigma, Delta1, P1, I, O1, A)
      if
-     pConfig(Sigma, Delta, P1, I, O, A)
+     pConfig(Sigma, Delta1, P1, I, O1, A)
      => 
-     pConfig(Sigma, Delta, P2, I, O, A) [nonexec] .
+     pConfig(Sigma, Delta2, P2, I, O2, A) 
+     /\ Delta1 equiv Delta2 
+     /\ O1 equiv O2     
+     [nonexec] .
      
  
  crl [CONG-REACT] : 
@@ -3085,27 +4001,28 @@ mod PROTOCOL-EQ-CORE is
      . *** TODO: cn shouldn't be in I!
 
  crl [CONG-COMP-LEFT] :
-     pConfig(Sigma, Delta, P1 || Q, I, O, A) 
+     pConfig(Sigma, Delta1, P1 || Q, I, O, A) 
      => 
-     pConfig(Sigma, Delta, P2 || Q, I, O, A)
+     pConfig(Sigma, Delta2, P2 || Q, I, union(getOutputs(P2), getOutputs(Q)), A)
      if
-     pConfig(Sigma, Delta, P1, union(I, getOutputs(Q)), getOutputs(P1), A)
+     pConfig(Sigma, Delta1, P1, union(I, getOutputs(Q)), getOutputs(P1), A)
      => 
-     pConfig(Sigma, Delta, P2, I1, O1, A)
-     /\ O1 == getOutputs(P1) 
+     pConfig(Sigma, Delta2, P2, I1, O2, A)
+     /\ O2 == getOutputs(P2) 
      /\ I1 == union(I, getOutputs(Q))
-     /\ typeOf(Sigma, Delta, union(I, getOutputs(P1)), A, Q) 
-     /\ O == union(getOutputs(P1), getOutputs(Q))
+     /\ typeOf(Sigma, Delta2, union(I, getOutputs(P2)), A, Q)
+     /\ Delta1 equiv Delta2
+     /\ O equiv (union(getOutputs(P2), getOutputs(Q)))
  .
 
   crl [CONG-COMP-RIGHT] :
-     pConfig(Sigma, Delta, Q || P1, I, O, A) 
+     pConfig(Sigma, Delta1, Q || P1, I, O, A) 
      => 
-     pConfig(Sigma, Delta, Q || P2, I, O, A)
+     pConfig(Sigma, Delta2, Q || P2, I, union(getOutputs(P2), getOutputs(Q)), A)
      if
-     pConfig(Sigma, Delta, P1, union(I, getOutputs(Q)), getOutputs(P1), A)
+     pConfig(Sigma, Delta1, P1, union(I, getOutputs(Q)), getOutputs(P1), A)
      => 
-     pConfig(Sigma, Delta, P2, I1, O1, A)
+     pConfig(Sigma, Delta2, P2, I1, O2, A)
      ***(
      /\ O1 == getOutputs(P1) 
      /\ I1 == union(I, getOutputs(Q))
@@ -3116,16 +4033,18 @@ mod PROTOCOL-EQ-CORE is
      .
    
  crl [CONG-NEW] : 
-     pConfig(Sigma, Delta, new cn : T in P1, I, O, A)
+     pConfig(Sigma, Delta1, new cn : T in P1, I, O1, A)
      => 
-     pConfig(Sigma, Delta, new cn : T in P2, I, O, A)
+     pConfig(Sigma, removeEntry ((chn cn) :: T) Delta2, new cn : T in P2, I, getOutputs(P2), A)
      if
-     pConfig(Sigma, Delta ((chn cn) :: T),  P1, I, insert(chn cn, O), A)
+     pConfig(Sigma, ((chn cn) :: T) Delta1,  P1, I, insert(chn cn, O1), A)
      => 
-     pConfig(Sigma, Delta',  P2, I, O', A) 
-     /\ O' == insert(chn cn, O)
-     /\ Delta' == Delta ((chn cn) :: T)
-     [nonexec] .
+     pConfig(Sigma, Delta2,  P2, I, O2, A) 
+     /\ O2 == insert(chn cn, getOutputs(P2))
+     /\ Delta2 equiv (((chn cn) :: T) Delta1)
+     /\ insert(chn cn, O1) equiv O2
+     *** [nonexec] 
+     .
      *** /\ P1 =/= P2 .   
      
   *** COMP-COMM and COMP-ASSOC are out, || has these attributes
@@ -3390,7 +4309,7 @@ mod PROTOCOL-EQ-DERIVED-NF is
  var fns fns1 fns2 cns cns1 cns2 : NameWithScripts . 
 
  var Sigma : Signature .
- vars Delta D Delta' : ChannelContext .
+ vars Delta D Delta' Delta1 Delta2 : ChannelContext .
  vars R R' R1 R2 R3 R4 S1 S2 S : Reaction .
  vars T T0 T1 T2 T3 : Type .
  vars M M1 M2 : Expression .
@@ -3483,19 +4402,27 @@ mod PROTOCOL-EQ-DERIVED-NF is
     [nonexec]
  . *** check that same names occur in ql1 and ql2
         
-  crl [CONG-NEW-NF] : 
-    pConfig(Sigma, Delta, newNF(ltq, P1, ql), I, O, A) 
+ crl [CONG-NEW-NF] : 
+    pConfig(Sigma, Delta1, newNF(ltq, P1, ql), I, O1, A) 
     => 
-    pConfig(Sigma, Delta, newNF(ltq, P2, ql), I, O, A)
+    pConfig(Sigma, diff Delta2 (addChannels ltq emptyChannelCtx), 
+            newNF(ltq, P2, ql), I, O2 \ (chansInList ltq), A)
     if
-    pConfig(Sigma, addChannels ltq Delta, P1, I, union(chansInList ltq, O), A)
+    pConfig(Sigma, addChannels ltq Delta1, P1, I, union(chansInList ltq, O1), A)
     =>
-    pConfig(Sigma, Delta', P2, I, O', A) 
+    pConfig(Sigma, Delta2, P2, I, O2, A) 
+    ***( FOR NOW
+    /\ *** the channels in ltq have not changed
+    diff (addChannels ltq emptyChannelCtx) Delta2 == emptyChannelCtx
+    )
     /\
-    Delta' == addChannels ltq Delta
-    /\
-    O' == union(chansInList ltq, O)
-  .    
+    O2 == getOutputs(P2)
+    /\ 
+    (addChannels ltq Delta1) equiv Delta2 
+    /\ 
+    O2 equiv (union(chansInList ltq, O1))
+    
+  .
  
  var cnbl cnbl' : List{CNameBound} .
   
@@ -3593,6 +4520,17 @@ mod PROTOCOL-EQ-DERIVED-NF is
      pConfig(Sigma, Delta, newNF(ltq, P || Q, cnbl), I, O, A)
  if
      typeOf(Sigma, addChannels ltq Delta, union(I, getOutputs(P)), A, Q)
+     *** /\
+     *** typeOf(Sigma, Delta, I, *** was  union(I, getOutputs(newNF(ltq, Q, QL))), 
+     ***       A, P)     
+ .
+ 
+ rl [COMP-NEW-newNF-inside-new] : *** aici
+     pConfig(Sigma, Delta, newNF(ltq1, P || newNF(ltq, Q, cnbl), cnbl'), I, O, A)
+     =>   
+     pConfig(Sigma, Delta, newNF(ltq1, newNF(ltq, P || Q, cnbl), cnbl'), I, O, A)
+ *** if
+ ***    typeOf(Sigma, addChannels ltq Delta, union(I, getOutputs(P)), A, Q)
      *** /\
      *** typeOf(Sigma, Delta, I, *** was  union(I, getOutputs(newNF(ltq, Q, QL))), 
      ***       A, P)     
@@ -3807,7 +4745,7 @@ mod PROTOCOL-EQ-FAMILY is
  var fns fns1 fns2 cns cns1 cns2 : NameWithScripts . 
 
  var Sigma : Signature .
- vars Delta D Delta' : ChannelContext .
+ vars Delta D Delta' Delta1 Delta2 : ChannelContext .
  vars R R' R1 R2 R3 R4 S1 S2 S : Reaction .
  vars T T0 T1 T2 T3 : Type .
  vars M M1 M2 : Expression .
@@ -3837,7 +4775,7 @@ mod PROTOCOL-EQ-FAMILY is
  var A A' : Set{BoolTerm} .
  var nlist1 nlist2 : List{NatTerm} . 
   var qid1 qid2 : Qid .
-    var q1 q2 : Qid .
+    var q1 q2 q3 : Qid .
   var cn1 cn2 : ChannelName .  
      var T' : Type .
      
@@ -3854,11 +4792,796 @@ mod PROTOCOL-EQ-FAMILY is
   
   var cnbl cnbl' : List{CNameBound} .
   
-  var q3 q4 q5 q6 : Qid .
+  var q4 q5 q6 : Qid .
  var whenList whenList' whenList1 whenList2 : WhenList .
  var whenCond : WhenCond .
+ 
+ *** remove branching
+ rl [REMOVE-BRANCH] :
+ pConfig(Sigma, Delta, family (fns[blist]) nlist blist ::= when bt --> R, I, O, A)
+ => 
+ pConfig(Sigma, Delta, family (fns[blist]) nlist blist ::= R, I, O, A)
+ *** if addAssumptions A nlist blist |= bt with empty 
+ .
+ 
+ rl [REMOVE-OTHERWISE] :
+ pConfig(Sigma, Delta, family (fns[blist]) nlist blist ::= otherwise --> R, I, O, A)
+ => 
+ pConfig(Sigma, Delta, family (fns[blist]) nlist blist ::= R, I, O, A)
+ .
+ 
+ *** split a family
+ rl [SPLIT-family-2] : 
+  pConfig(Sigma, Delta (fam (fns[(bound (n + 2)) bd2]) :: T), 
+     family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases, 
+     I, fam (fns[(bound (n + 2)) bd2]), A)
+  => 
+   pConfig(Sigma, 
+      Delta (fam (fns[(bound (n + 1)) bd2]) :: T) (fam (fns[(fixedBound (n + 1)) bd2]) :: T), 
+      (family (fns[(bound (n + 1)) bd2]) (q1 q2) ((bound (n + 1)) bd2) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2) ((bound (n + 2)) bd2)) empty), I, 
+      (fam (fns[(bound (n + 1)) bd2]), fam (fns[(fixedBound (n + 1)) bd2])), 
+      A) 
+ . 
+ 
+ *** split on second index
+ 
+ rl [SPLIT-family-3] : 
+  pConfig(Sigma, Delta (fam (fns[bd1 (bound (n + 2)) bd3]) :: T), 
+     family (fns[bd1 (bound (n + 2)) bd3]) (q1 q2 q3) (bd1 (bound (n + 2)) bd3) ::= cases, 
+     I, fam (fns[bd1 (bound (n + 2)) bd3]), A) 
+  => 
+   pConfig(Sigma, 
+      Delta (fam (fns[bd1 (bound (n + 1)) bd3]) :: T) 
+            (fam (fns[bd1 (fixedBound (n + 1)) bd3]) :: T), 
+      (family (fns[bd1 (bound (n + 1)) bd3]) (q1 q2 q3) (bd1 (bound (n + 1)) bd3) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[bd1 (bound (n + 2)) bd3]) (q1 q2 q3) (bd1 (bound (n + 2)) bd3) ::= cases) 
+        q2 (n + 1) (addAssumptions A (q1 q2 q3) (bd1 (bound (n + 2)) bd3)) empty), I, 
+      (fam (fns[bd1 (bound (n + 1)) bd3]), fam (fns[bd1 (fixedBound (n + 1)) bd3])), 
+      A) 
+ .  
+ 
+ *** split on first index
+ 
+  rl [SPLIT-fst-family-3] : 
+  pConfig(Sigma, Delta (fam (fns[(bound (n + 2)) bd2 bd3]) :: T), 
+     family (fns[(bound (n + 2)) bd2 bd3]) (q1 q2 q3) ((bound (n + 2)) bd2 bd3) ::= cases, 
+     I, fam (fns[(bound (n + 2)) bd2 bd3]), A) 
+  => 
+   pConfig(Sigma, 
+      Delta (fam (fns[(bound (n + 1)) bd2 bd3]) :: T) 
+            (fam (fns[(fixedBound (n + 1)) bd2 bd3]) :: T), 
+      (family (fns[(bound (n + 1)) bd2 bd3]) (q1 q2 q3) ((bound (n + 1)) bd2 bd3) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd2 bd3]) (q1 q2 q3) ((bound (n + 2)) bd2 bd3) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2 q3) ((bound (n + 2)) bd2 bd3)) empty), I, 
+      (fam (fns[(bound (n + 1)) bd2 bd3]), fam (fns[(fixedBound (n + 1)) bd2 bd3])), 
+      A) 
+ .
+  
+ 
+ *** split a family inside a normal form, store the splits in order
+ rl [SPLIT-family-2-newnf] : 
+  pConfig(Sigma, Delta, 
+     newNF(ltq { (fns[(bound (n + 2)) bd2]) (q1 q2) : T },
+     P || family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases, 
+     ql),
+     I, O, A) 
+  => 
+   pConfig(Sigma, 
+      Delta, 
+      newNF(ltq { (fns[(bound (n + 1)) bd2]) (q1 q2) : T } 
+                { (fns[(fixedBound (n + 1)) bd2]) (q1 q2) : T }, 
+      P ||
+      (family (fns[(bound (n + 1)) bd2]) (q1 q2) ((bound (n + 1)) bd2) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2) ((bound (n + 2)) bd2))  empty),
+      (fam (fns[(bound (n + 1)) bd2])) 
+      (fam (fns[(fixedBound (n + 1)) bd2])) 
+      (del (fam (fns[(bound (n + 2)) bd2])) ql)
+      )        
+        , I, O, A)
+      
+ .  
+ 
+ *** same for 3 indices, second position
+ rl [SPLIT-family-3-newnf] : 
+  pConfig(Sigma, Delta, 
+     newNF(ltq { (fns[bd1 (bound (n + 2)) bd3]) (q1 q2 q3) : T },
+     P || family (fns[bd1 (bound (n + 2)) bd3]) (q1 q2 q3) 
+                     (bd1 (bound (n + 2)) bd3) ::= cases, 
+     ql),
+     I, O, A) 
+  => 
+   pConfig(Sigma, 
+      Delta, 
+      newNF(ltq { (fns[bd1 (bound (n + 1)) bd3]) (q1 q2 q3) : T } 
+                { (fns[bd1 (fixedBound (n + 1)) bd3]) (q1 q2 q3) : T }, 
+      P ||
+      (family (fns[bd1 (bound (n + 1)) bd3]) (q1 q2 q3) 
+                  (bd1 (bound (n + 1)) bd3) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[bd1 (bound (n + 2)) bd3]) (q1 q2 q3) 
+                    (bd1 (bound (n + 2)) bd3) ::= cases) 
+        q2 (n + 1) (addAssumptions A (q1 q2 q3) (bd1 (bound (n + 2)) bd3)) empty),
+      (fam (fns[bd1 (bound (n + 1)) bd3])) 
+      (fam (fns[bd1 (fixedBound (n + 1)) bd3])) 
+      (del (fam (fns[bd1 (bound (n + 2)) bd3])) ql)
+      )        
+        , I, O, A)
+ .  
+ 
+ *** same for 3 indices, first position
+ rl [SPLIT-fst-family-3-newnf] : 
+  pConfig(Sigma, Delta, 
+     newNF(ltq { (fns[(bound (n + 2)) bd2 bd3]) (q1 q2 q3) : T },
+     P || family (fns[(bound (n + 2)) bd2 bd3]) (q1 q2 q3) 
+                     ((bound (n + 2)) bd2 bd3) ::= cases, 
+     ql),
+     I, O, A) 
+  => 
+   pConfig(Sigma, 
+      Delta, 
+      newNF(ltq { (fns[(bound (n + 1)) bd2 bd3]) (q1 q2 q3) : T } 
+                { (fns[(fixedBound (n + 1)) bd2 bd3]) (q1 q2 q3) : T }, 
+      P ||
+      (family (fns[(bound (n + 1)) bd2 bd3]) (q1 q2 q3) 
+                  ((bound (n + 1)) bd2 bd3) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd2 bd3]) (q1 q2 q3) 
+                    ((bound (n + 2)) bd2 bd3) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2 q3) ((bound (n + 2)) bd2 bd3)) empty),
+      (fam (fns[(bound (n + 1)) bd2 bd3])) 
+      (fam (fns[(fixedBound (n + 1)) bd2 bd3])) 
+      (del (fam (fns[(bound (n + 2)) bd2 bd3])) ql)
+      )        
+        , I, O, A)
+ .
+ 
+ *** split a family inside a group and a normal form
+ *** store the splits in order
+ rl [SPLIT-family-2-newnf-group] : 
+  pConfig(Sigma, Delta, 
+     newNF(ltq { (fns[(bound (n + 2)) bd2]) (q1 q2) : T },
+     P || 
+      (family (fns1[blist]) nlist blist ::= 
+      (P1 ||
+      family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases
+      )
+      ), 
+     ql),
+     I, O, A) 
+  => 
+   pConfig(Sigma, 
+      Delta, 
+      newNF(ltq { (fns[(bound (n + 1)) bd2]) (q1 q2) : T } 
+                { (fns[(fixedBound (n + 1)) bd2]) (q1 q2) : T }, 
+      P || (family (fns1[blist]) nlist blist ::= 
+      (P1 ||
+      (family (fns[(bound (n + 1)) bd2]) (q1 q2) ((bound (n + 1)) bd2) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2) ((bound (n + 2)) bd2))  empty)
+      ))  ,
+      (fam (fns[(bound (n + 1)) bd2])) 
+      (fam (fns[(fixedBound (n + 1)) bd2])) 
+      (del (fam (fns[(bound (n + 2)) bd2])) ql)
+      )        
+        , I, O, A)     
+ .  
+ 
+ *** same for 3 indices second position
+ rl [SPLIT-family-3-newnf-group] : 
+  pConfig(Sigma, Delta, 
+     newNF(ltq { (fns[bd1 (bound (n + 2)) bd3]) (q1 q2 q3) : T },
+     P || 
+     (family (fns1[blist]) nlist blist ::= 
+      (P1 ||
+     family (fns[bd1 (bound (n + 2)) bd3]) (q1 q2 q3) 
+                     (bd1 (bound (n + 2)) bd3) ::= cases)), 
+     ql),
+     I, O, A) 
+  => 
+   pConfig(Sigma, 
+      Delta, 
+      newNF(ltq { (fns[bd1 (bound (n + 1)) bd3]) (q1 q2 q3) : T } 
+                { (fns[bd1 (fixedBound (n + 1)) bd3]) (q1 q2 q3) : T }, 
+      P ||
+      (family (fns1[blist]) nlist blist ::= 
+      (P1 ||
+      (family (fns[bd1 (bound (n + 1)) bd3]) (q1 q2 q3) 
+                  (bd1 (bound (n + 1)) bd3) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[bd1 (bound (n + 2)) bd3]) (q1 q2 q3) 
+                    (bd1 (bound (n + 2)) bd3) ::= cases) 
+        q2 (n + 1) (addAssumptions A (q1 q2 q3) (bd1 (bound (n + 2)) bd3)) empty)
+      ))  ,
+      (fam (fns[bd1 (bound (n + 1)) bd3])) 
+      (fam (fns[bd1 (fixedBound (n + 1)) bd3])) 
+      (del (fam (fns[bd1 (bound (n + 2)) bd3])) ql)
+      )        
+        , I, O, A)
+ . 
+ 
+ 
+ *** same for 3 indices, first position
+ rl [SPLIT-fst-family-3-newnf-group] : 
+  pConfig(Sigma, Delta, 
+     newNF(ltq { (fns[(bound (n + 2)) bd2 bd3]) (q1 q2 q3) : T },
+     P || 
+     (family (fns1[blist]) nlist blist ::= 
+      (P1 ||
+     family (fns[(bound (n + 2)) bd2 bd3]) (q1 q2 q3) 
+                     ((bound (n + 2)) bd2 bd3) ::= cases)), 
+     ql),
+     I, O, A) 
+  => 
+   pConfig(Sigma, 
+      Delta, 
+      newNF(ltq { (fns[(bound (n + 1)) bd2 bd3]) (q1 q2 q3) : T } 
+                { (fns[(fixedBound (n + 1)) bd2 bd3]) (q1 q2 q3) : T }, 
+      P ||
+      (family (fns1[blist]) nlist blist ::= 
+      (P1 ||
+      (family (fns[(bound (n + 1)) bd2 bd3]) (q1 q2 q3) 
+                  ((bound (n + 1)) bd2 bd3) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd2 bd3]) (q1 q2 q3) 
+                    ((bound (n + 2)) bd2 bd3) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2 q3) ((bound (n + 2)) bd2 bd3)) empty)
+      ))  ,
+      (fam (fns[(bound (n + 1)) bd2 bd3])) 
+      (fam (fns[(fixedBound (n + 1)) bd2 bd3])) 
+      (del (fam (fns[(bound (n + 2)) bd2 bd3])) ql)
+      )        
+        , I, O, A)
+ .
+ 
+ *** unsplit a family
 
-   *********************
+ rl [UNSPLIT-family-2] : 
+ pConfig(Sigma, 
+      Delta (fam (fns[(bound (n + 1)) bd2]) :: T) (fam (fns[(fixedBound (n + 1)) bd2]) :: T), 
+     (family (fns[(bound (n + 1)) bd2]) (q1 q2) ((bound (n + 1)) bd2) ::= cases)
+     ||
+     (family (fns[(fixedBound (n + 1)) bd2]) (q1 q2) ((fixedBound (n + 1)) bd2) ::= cases'), 
+     I, (fam (fns[(bound (n + 1)) bd2]), fam (fns[(fixedBound (n + 1)) bd2])) , A)
+  => 
+   pConfig(Sigma, 
+      Delta (fam (fns[(bound (n + 2)) bd2]) :: T), 
+      (family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases), 
+      I, 
+      fam (fns[(bound (n + 2)) bd2]), 
+      A) 
+ .  
+ 
+  rl [UNSPLIT-fst-family-3] : 
+ pConfig(Sigma, 
+      Delta (fam (fns[(bound (n + 1)) bd2 bd3]) :: T)  
+            (fam (fns[(fixedBound (n + 1)) bd2 bd3]) :: T), 
+     (family (fns[(bound (n + 1)) bd2 bd3]) (q1 q2 q3) ((bound (n + 1)) bd2 bd3) ::= cases)
+     ||
+     (family (fns[(fixedBound (n + 1)) bd2 bd3]) (q1 q2 q3) ((fixedBound (n + 1)) bd2 bd3) ::= cases'), 
+     I, (fam (fns[(bound (n + 1)) bd2 bd3]), fam (fns[(fixedBound (n + 1)) bd2 bd3])) , A)
+  => 
+   pConfig(Sigma, 
+      Delta (fam (fns[(bound (n + 2)) bd2 bd3]) :: T), 
+      (family (fns[(bound (n + 2)) bd2 bd3]) (q1 q2 q3) ((bound (n + 2)) bd2 bd3) ::= 
+        (when (q1 =T= (n + 1)) --> cases') ;;
+        (when (neg (q1 =T= (n + 1))) --> cases)
+      )  , 
+      I, 
+      fam (fns[(bound (n + 2)) bd2 bd3]), 
+      A) 
+ .
+   
+   
+ rl [UNSPLIT-fst-family-3-nf] : 
+ pConfig(Sigma, 
+      Delta,
+      newNF(ltq {(fns[(bound (n + 1)) bd2 bd3]) nlist : T }  
+             {(fns[(fixedBound (n + 1)) bd2 bd3]) nlist : T },
+      P ||
+     (family (fns[(bound (n + 1)) bd2 bd3]) (q1 q2 q3) ((bound (n + 1)) bd2 bd3) ::= cases)
+     ||
+     (family (fns[(fixedBound (n + 1)) bd2 bd3]) (q1 q2 q3) ((fixedBound (n + 1)) bd2 bd3) ::= cases') 
+     , 
+     ql),
+     I, O, A)
+  => 
+    pConfig(Sigma, 
+      Delta,
+      newNF(ltq {(fns[(bound (n + 2)) bd2 bd3]) nlist : T }  
+             , 
+      P ||
+     (family (fns[(bound (n + 2)) bd2 bd3]) (q1 q2 q3) ((bound (n + 2)) bd2 bd3) ::= 
+        (when (q1 =T= (n + 1)) --> cases') ;;
+        (when (neg (q1 =T= (n + 1))) --> cases)
+      )       
+     , 
+      (fam (fns[(bound (n + 2)) bd2 bd3])) 
+      
+      (del (fam (fns[(bound (n + 1)) bd2 bd3])) 
+        (del (fam (fns[(fixedBound (n + 1)) bd2 bd3])) ql)
+        
+      )
+     ) ,
+     I, O, A)
+ .
+ 
+ *** split a family on every branch of a protocol  
+ 
+ var fn : FamilyName .
+ 
+ rl [SPLIT-family-2-all-branches-end] : 
+  pConfig(Sigma, Delta (fam (fns[(bound (n + 2)) bd2]) :: T), 
+    family fn nlist blist ::= 
+     whenCond --> 
+     ((family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) || P), 
+     I, (fam (fns[(bound (n + 2)) bd2]), O), A)
+  => 
+   pConfig(Sigma, 
+      Delta (fam (fns[(bound (n + 1)) bd2]) :: T) (fam (fns[(fixedBound (n + 1)) bd2]) :: T), 
+      family fn nlist blist ::= 
+      whenCond --> 
+      (P ||
+      (family (fns[(bound (n + 1)) bd2]) (q1 q2) ((bound (n + 1)) bd2) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2) ((bound (n + 2)) bd2)) empty)), I, 
+      (fam (fns[(bound (n + 1)) bd2]), fam (fns[(fixedBound (n + 1)) bd2]), O), 
+      A) 
+ . 
+ 
+ rl [SPLIT-all-branches-nf-2] :
+ pConfig(Sigma, Delta, newNF(ltq {(fns[(bound (n + 2)) bd2]) nlist : T}, 
+   P || family fn nlist' blist' ::= cases, ql), I, O, A)
+ => 
+ pConfig(Sigma, Delta, 
+   newNF(ltq {(fns[(bound (n + 1)) bd2]) nlist : T}
+             {(fns[(fixedBound (n + 1)) bd2]) nlist : T}, 
+             P || splitFamilyOnAllBranches (family fn nlist' blist' ::= cases) fns A, 
+             (fam (fns[(bound (n + 1)) bd2]))
+             (fam (fns[(fixedBound (n + 1)) bd2]))
+             (del (fam (fns[(bound (n + 2)) bd2])) ql)
+        ), 
+   I, O, A) 
+ .
+ 
+ rl [SPLIT-all-branches-nf-3] :
+ pConfig(Sigma, Delta, newNF(ltq {(fns[bd1 (bound (n + 2)) bd2]) nlist : T}, 
+   P || family fn nlist' blist' ::= cases, ql), I, O, A)
+ => 
+ pConfig(Sigma, Delta, 
+   newNF(ltq {(fns[bd1 (bound (n + 1)) bd2]) nlist : T}
+             {(fns[bd1 (fixedBound (n + 1)) bd2]) nlist : T}, 
+             P || splitFamilyOnAllBranches (family fn nlist' blist' ::= cases) fns A, 
+             (fam (fns[bd1 (bound (n + 1)) bd2]))
+             (fam (fns[bd1 (fixedBound (n + 1)) bd2]))
+             (del (fam (fns[bd1 (bound (n + 2)) bd2])) ql)
+        ), 
+   I, O, A) 
+ .
+ 
+ rl [SPLIT-all-branches-top-2] :
+ pConfig(Sigma, Delta (fam (fns[(bound (n + 2)) bd2]) :: T) , 
+  P || family fn nlist' blist' ::= cases, I, 
+  (fam (fns[(bound (n + 2)) bd2]), O), A)
+ => 
+ pConfig(Sigma, 
+      Delta (fam (fns[(bound (n + 1)) bd2]) :: T) (fam (fns[(fixedBound (n + 1)) bd2]) :: T), 
+      P || splitFamilyOnAllBranches (family fn nlist' blist' ::= cases) fns A,
+      I,
+      (fam (fns[(bound (n + 1)) bd2]), fam (fns[(fixedBound (n + 1)) bd2]), O), 
+      A)
+ .  
+ 
+ rl [SPLIT-all-branches-top-3] :
+ pConfig(Sigma, Delta (fam (fns[bd1 (bound (n + 2)) bd2]) :: T) , 
+  P || family fn nlist' blist' ::= cases, I, 
+  (fam (fns[bd1 (bound (n + 2)) bd2]), O), A)
+ => 
+ pConfig(Sigma, 
+      Delta (fam (fns[bd1 (bound (n + 1)) bd2]) :: T) 
+            (fam (fns[bd1 (fixedBound (n + 1)) bd2]) :: T), 
+      P || splitFamilyOnAllBranches (family fn nlist' blist' ::= cases) fns A,
+      I,
+      (fam (fns[bd1 (bound (n + 1)) bd2]), fam (fns[bd1 (fixedBound (n + 1)) bd2]), O), 
+      A)
+ . 
+ 
+ op splitFamilyOnAllBranches___ : Protocol NameWithScripts Set{BoolTerm} -> Protocol .
+ eq splitFamilyOnAllBranches 
+    (family fn nlist blist ::= 
+     whenCond --> 
+     ((family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) || P))
+    fns
+    A =
+    family fn nlist blist ::= 
+      whenCond --> 
+      (P ||
+      (dropBranch
+      (family (fns[(bound (n + 1)) bd2]) (q1 q2) ((bound (n + 1)) bd2) ::= cases)
+      q1 (n + 1)
+      )
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2) ((bound (n + 2)) bd2)) empty))
+ .  
+ eq splitFamilyOnAllBranches 
+    (family fn nlist blist ::= 
+     whenCond --> 
+     ((family (fns[bd1 (bound (n + 2)) bd2]) (q1 q2 q3)  
+              (bd1 (bound (n + 2)) bd2) ::= cases) || P)
+     )          
+    fns
+    A =
+    family fn nlist blist ::= 
+      whenCond --> 
+      (P ||
+      (
+      dropBranch
+      (family (fns[bd1 (bound (n + 1)) bd2]) (q1 q2 q3) (bd1 (bound (n + 1)) bd2) ::= cases)
+      q2 (n + 1)
+      )
+      ||
+      (project2Index 
+        (family (fns[bd1 (bound (n + 2)) bd2]) (q1 q2 q3) (bd1 (bound (n + 2)) bd2) ::= cases) 
+        q2 (n + 1) (addAssumptions A (q1 q2 q3) (bd1 (bound (n + 2)) bd2)) empty))
+ . 
+  eq splitFamilyOnAllBranches 
+    (family fn nlist blist ::= 
+     (whenCond --> 
+     ((family (fns[(bound (n + 2)) bd2]) (q1 q2)  
+              ((bound (n + 2)) bd2) ::= cases) || P)
+     )
+     ;; whenList
+    )
+    fns A =
+    mergeCases 
+     (family fn nlist blist ::= 
+      whenCond --> 
+      (P ||
+      (
+      dropBranch
+      (family (fns[(bound (n + 1)) bd2]) (q1 q2) ((bound (n + 1)) bd2) ::= cases)
+      q1 (n + 1)
+      )
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2) ((bound (n + 2)) bd2)) empty))
+    )
+    (splitFamilyOnAllBranches 
+    (family fn nlist blist ::= 
+      whenList
+    )
+    fns A)
+     .
+ eq splitFamilyOnAllBranches 
+    (family fn nlist blist ::= 
+     (whenCond --> 
+     ((family (fns[bd1 (bound (n + 2)) bd2]) (q1 q2 q3)  
+              (bd1 (bound (n + 2)) bd2) ::= cases) || P)
+     )
+     ;; whenList
+    )
+    fns A =
+    mergeCases 
+     (family fn nlist blist ::= 
+      whenCond --> 
+      (P ||
+      (dropBranch 
+      (family (fns[bd1 (bound (n + 1)) bd2]) (q1 q2 q3) (bd1 (bound (n + 1)) bd2) ::= cases)
+      q2 (n + 1)
+      )
+      ||
+      (project2Index 
+        (family (fns[bd1 (bound (n + 2)) bd2]) (q1 q2 q3) (bd1 (bound (n + 2)) bd2) ::= cases) 
+        q2 (n + 1) (addAssumptions A (q1 q2 q3) (bd1 (bound (n + 2)) bd2)) empty))
+    )
+    (splitFamilyOnAllBranches 
+    (family fn nlist blist ::= 
+      whenList
+    )
+    fns A)
+     .
+     
+ *** same thing for splitFst
+ rl [SPLIT-fst-all-branches-nf-3] :
+ pConfig(Sigma, Delta, newNF(ltq {(fns[(bound (n + 2)) bd1 bd2]) nlist : T}, 
+   P || family fn nlist' blist' ::= cases, ql), I, O, A)
+ => 
+ pConfig(Sigma, Delta, 
+   newNF(ltq {(fns[(bound (n + 1)) bd1 bd2]) nlist : T}
+             {(fns[(fixedBound (n + 1)) bd1 bd2]) nlist : T}, 
+             P || splitFamilyFstOnAllBranches (family fn nlist' blist' ::= cases) fns A, 
+             (fam (fns[(bound (n + 1)) bd1 bd2]))
+             (fam (fns[(fixedBound (n + 1)) bd1 bd2]))
+             (del (fam (fns[(bound (n + 2)) bd1 bd2])) ql)
+        ), 
+   I, O, A) 
+ .
+ 
+ rl [SPLIT-fst-all-branches-top-3] :
+ pConfig(Sigma, Delta (fam (fns[(bound (n + 2)) bd1 bd2]) :: T) , 
+  P || family fn nlist' blist' ::= cases, I, 
+  (fam (fns[(bound (n + 2)) bd1 bd2]), O), A)
+ => 
+ pConfig(Sigma, 
+      Delta (fam (fns[(bound (n + 1)) bd1 bd2]) :: T) 
+            (fam (fns[(fixedBound (n + 1)) bd1 bd2]) :: T), 
+      P || splitFamilyFstOnAllBranches (family fn nlist' blist' ::= cases) fns A,
+      I,
+      (fam (fns[(bound (n + 1)) bd1 bd2]), fam (fns[(fixedBound (n + 1)) bd1 bd2]), O), 
+      A)
+ . 
+ 
+ op splitFamilyFstOnAllBranches___ : Protocol NameWithScripts Set{BoolTerm} -> Protocol .
+ eq splitFamilyFstOnAllBranches 
+    (family fn nlist blist ::= 
+     whenCond --> 
+     ((family (fns[(bound (n + 2)) bd1 bd2]) (q1 q2 q3)  
+              ((bound (n + 2)) bd1 bd2) ::= cases) || P)
+     )          
+    fns
+    A =
+    family fn nlist blist ::= 
+      whenCond --> 
+      (P ||
+      (
+      dropBranch
+      (family (fns[(bound (n + 1)) bd1 bd2]) (q1 q2 q3) ((bound (n + 1)) bd1 bd2) ::= cases)
+      q1 (n + 1)
+      )
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd1 bd2]) (q1 q2 q3) ((bound (n + 2)) bd1 bd2) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2 q3) ((bound (n + 2)) bd1 bd2)) empty))
+ . 
+ eq splitFamilyFstOnAllBranches 
+    (family fn nlist blist ::= 
+     (whenCond --> 
+     ((family (fns[(bound (n + 2)) bd1 bd2]) (q1 q2 q3)  
+              ((bound (n + 2)) bd1 bd2) ::= cases) || P)
+     )
+     ;; whenList
+    )
+    fns A =
+    mergeCases 
+     (family fn nlist blist ::= 
+      whenCond --> 
+      (P ||
+      (dropBranch 
+      (family (fns[(bound (n + 1)) bd1 bd2]) (q1 q2 q3) ((bound (n + 1)) bd1 bd2) ::= cases)
+      q1 (n + 1)
+      )
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd1 bd2]) (q1 q2 q3) ((bound (n + 2)) bd1 bd2) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2 q3) ((bound (n + 2)) bd1 bd2)) empty))
+    )
+    (splitFamilyFstOnAllBranches 
+    (family fn nlist blist ::= 
+      whenList
+    )
+    fns A)
+    .    
+    
+ op mergeCases__ : Protocol Protocol -> Protocol .
+ eq mergeCases (family (fns[blist]) nlist blist ::= whenList1)   
+               (family (fns[blist]) nlist blist ::= whenList2) =
+    (family (fns[blist]) nlist blist ::= whenList1 ;; whenList2) 
+ .   
+ 
+ op dropBranch___ : Protocol Qid NatTerm -> Protocol .
+ eq dropBranch   
+     (family (fns[blist]) nlist blist ::= 
+        whenList1 ;; 
+        (when (q =T= nt) --> cases) ;; 
+        whenList2)
+     q nt =   
+     (family (fns[blist]) nlist blist ::= whenList1 ;; whenList2) 
+ .
+ eq dropBranch P q nt = P [owise] .
+ 
+ *** TODO: condition that we can prove not q =T= nt
+ rl [drop-branch] : 
+ pConfig(Sigma, Delta, P, I, O, A)
+ =>
+ pConfig(Sigma, Delta, dropBranch P q nt, I, O, A) 
+ [nonexec]
+ .
+  
+ rl [SPLIT-all-branches-nf-3] :
+ pConfig(Sigma, Delta, newNF(ltq {(fns[bd1 (bound (n + 2)) bd2]) nlist : T}, P, ql), I, O, A)
+ => 
+ pConfig(Sigma, Delta, 
+   newNF(ltq {(fns[bd1 (bound (n + 1)) bd2]) nlist : T}
+             {(fns[bd1 (fixedBound (n + 1)) bd2]) nlist : T}, P, 
+             (fam (fns[bd1 (bound (n + 1)) bd2]))
+             (fam (fns[bd1 (fixedBound (n + 1)) bd2]))
+             (del (fam (fns[bd1 (bound (n + 2)) bd2])) ql)
+        ), 
+   I, O, A) 
+ .
+ 
+ rl [SPLIT-all-branches-end-2] :
+ pConfig(Sigma, Delta, 
+ family fn nlist blist ::= 
+     whenCond --> 
+     ((family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) || P),
+ I, O, A    
+ ) 
+ => 
+ pConfig(Sigma, Delta, 
+ family fn nlist blist ::= 
+      whenCond --> 
+      (P ||
+      (family (fns[(bound (n + 1)) bd2]) (q1 q2) ((bound (n + 1)) bd2) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2) ((bound (n + 2)) bd2)) empty)),
+ I, O, A    
+ ) 
+ .
+ 
+ crl [SPLIT-all-branches-loop-2] :
+ pConfig(Sigma, Delta, 
+    family fn nlist blist ::= 
+     (whenCond --> 
+     ((family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) || P)
+     )
+     ;; whenList, 
+     I, O, A)
+  => 
+   pConfig(Sigma, 
+      Delta, 
+      family fn nlist blist ::= 
+      (whenCond --> 
+      (P ||
+      (family (fns[(bound (n + 1)) bd2]) (q1 q2) ((bound (n + 1)) bd2) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2) ((bound (n + 2)) bd2)) empty))
+      )
+      ;; whenList'  , I, 
+      O, 
+      A) 
+  if 
+  pConfig(Sigma, Delta, 
+    family fn nlist blist ::= 
+     whenList, 
+     I, O, A)
+  => 
+   pConfig(Sigma, 
+      Delta, 
+      family fn nlist blist ::= 
+      whenList', I, 
+      O, 
+      A)    
+ . 
+
+ 
+ crl [SPLIT-family-2-all-branches-loop] : 
+  pConfig(Sigma, Delta (fam (fns[(bound (n + 2)) bd2]) :: T), 
+    family fn nlist blist ::= 
+     (whenCond --> 
+     ((family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) || P)
+     )
+     ;; whenList, 
+     I, (fam (fns[(bound (n + 2)) bd2]), O), A)
+  => 
+   pConfig(Sigma, 
+      Delta (fam (fns[(bound (n + 1)) bd2]) :: T) (fam (fns[(fixedBound (n + 1)) bd2]) :: T), 
+      family fn nlist blist ::= 
+      (whenCond --> 
+      (P ||
+      (family (fns[(bound (n + 1)) bd2]) (q1 q2) ((bound (n + 1)) bd2) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[(bound (n + 2)) bd2]) (q1 q2) ((bound (n + 2)) bd2) ::= cases) 
+        q1 (n + 1) (addAssumptions A (q1 q2) ((bound (n + 2)) bd2)) empty))
+      )
+      ;; whenList'  , I, 
+      (fam (fns[(bound (n + 1)) bd2]), fam (fns[(fixedBound (n + 1)) bd2]), O), 
+      A) 
+  if 
+  pConfig(Sigma, Delta (fam (fns[(bound (n + 2)) bd2]) :: T), 
+    family fn nlist blist ::= 
+     whenList, 
+     I, (fam (fns[(bound (n + 2)) bd2]), O), A)
+  => 
+   pConfig(Sigma, 
+      Delta (fam (fns[(bound (n + 1)) bd2]) :: T) (fam (fns[(fixedBound (n + 1)) bd2]) :: T), 
+      family fn nlist blist ::= 
+      whenList', I, 
+      (fam (fns[(bound (n + 1)) bd2]), fam (fns[(fixedBound (n + 1)) bd2]), O), 
+      A)    
+ .
+ 
+ rl [SPLIT-family-3-all-branches-end] : 
+  pConfig(Sigma, Delta (fam (fns[bd1 (bound (n + 2)) bd2]) :: T), 
+    family fn nlist blist ::= 
+     whenCond --> 
+     ((family (fns[bd1 (bound (n + 2)) bd2]) (q1 q2 q3)  
+              (bd1 (bound (n + 2)) bd2) ::= cases) || P), 
+     I, (fam (fns[bd1 (bound (n + 2)) bd2]), O), A)
+  => 
+   pConfig(Sigma, 
+      Delta (fam (fns[bd1 (bound (n + 1)) bd2]) :: T) 
+            (fam (fns[bd1 (fixedBound (n + 1)) bd2]) :: T), 
+      family fn nlist blist ::= 
+      whenCond --> 
+      (P ||
+      (family (fns[bd1 (bound (n + 1)) bd2]) (q1 q2 q3) (bd1 (bound (n + 1)) bd2) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[bd1 (bound (n + 2)) bd2]) (q1 q2 q3) (bd1 (bound (n + 2)) bd2) ::= cases) 
+        q2 (n + 1) (addAssumptions A (q1 q2 q3) (bd1 (bound (n + 2)) bd2)) empty)), I, 
+      (fam (fns[bd1 (bound (n + 1)) bd2]), fam (fns[bd1 (fixedBound (n + 1)) bd2]), O), 
+      A) 
+ . 
+ 
+ crl [SPLIT-family-3-all-branches-loop] : 
+  pConfig(Sigma, Delta (fam (fns[bd1 (bound (n + 2)) bd2]) :: T), 
+    family fn nlist blist ::= 
+     (whenCond --> 
+     ((family (fns[bd1 (bound (n + 2)) bd2]) (q1 q2 q3) 
+               (bd1 (bound (n + 2)) bd2) ::= cases) || P)
+     )
+     ;; whenList, 
+     I, (fam (fns[bd1 (bound (n + 2)) bd2]), O), A)
+  => 
+   pConfig(Sigma, 
+      Delta (fam (fns[bd1 (bound (n + 1)) bd2]) :: T) 
+            (fam (fns[bd1 (fixedBound (n + 1)) bd2]) :: T), 
+      family fn nlist blist ::= 
+      (whenCond --> 
+      (P ||
+      (family (fns[bd1 (bound (n + 1)) bd2]) (q1 q2 q3) (bd1 (bound (n + 1)) bd2) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[bd1 (bound (n + 2)) bd2]) (q1 q2 q3) (bd1 (bound (n + 2)) bd2) ::= cases) 
+        q2 (n + 1) (addAssumptions A (q1 q2 q3) (bd1 (bound (n + 2)) bd2)) empty))
+      )
+      ;; whenList'  , I, 
+      (fam (fns[bd1 (bound (n + 1)) bd2]), fam (fns[bd1 (fixedBound (n + 1)) bd2]), O), 
+      A) 
+  if 
+  pConfig(Sigma, Delta (fam (fns[bd1 (bound (n + 2)) bd2]) :: T), 
+    family fn nlist blist ::= 
+     whenList, 
+     I, (fam (fns[bd1 (bound (n + 2)) bd2]), O), A)
+  => 
+   pConfig(Sigma, 
+      Delta (fam (fns[bd1 (bound (n + 1)) bd2]) :: T) 
+            (fam (fns[bd1 (fixedBound (n + 1)) bd2]) :: T), 
+      family fn nlist blist ::= 
+      whenList', I, 
+      (fam (fns[bd1 (bound (n + 1)) bd2]), fam (fns[bd1 (fixedBound (n + 1)) bd2]), O), 
+      A)    
+ .
+ 
+      
+ *********************
  *** rules for families
  *********************
  
@@ -3876,7 +5599,15 @@ mod PROTOCOL-EQ-FAMILY is
      /\ occurs (fam (fns[blist])) Delta A
      /\ O == fam (fns[blist])
      . *** TODO: fns @ n shouldn't be in I!
-
+ 
+  rl [alpha-assums-chn] :
+   pConfig(Sigma, Delta, 
+           cn ::= R, I, O, (A, q =T= nt))
+   =>         
+   pConfig(Sigma, Delta, 
+           cn ::= replaceVars(R, insert(q, nt, empty)), I, O, (A, q =T= nt))
+  .
+           
    rl [alpha-family] :
    pConfig(Sigma, Delta, 
             newNF(ltq { (fns[bound n]) q : T }, 
@@ -3891,6 +5622,32 @@ mod PROTOCOL-EQ-FAMILY is
  .
  
    *** TODO: fns must be renamed as well - not anymore, we store just the bounds!
+   
+   rl [alpha-family-three-top] : 
+   pConfig(Sigma, Delta, 
+           P || family (fns[bd1 bd2 bd3]) (q1 q2 q3) (bd1 bd2 bd3) ::= cases, I, O, A)
+   => 
+   pConfig(Sigma, Delta,
+            P || (family (fns[bd1 bd2 bd3]) (q4 q5 q6) (bd1 bd2 bd3) ::= 
+                    (alphaCases (alphaCases (alphaCases (alphaCases (alphaCases 
+                      (alphaCases cases q1 '1) 
+                      q2 '2) q3 '3) '1 q4) '2 q5) '3 q6)                
+                 ), I, O, A)
+ [nonexec]
+ .
+ 
+ rl [alpha-family-two-top] : 
+   pConfig(Sigma, Delta, 
+           P || family (fns[bd1 bd2]) (q1 q2) (bd1 bd2) ::= cases, I, O, A)
+   => 
+   pConfig(Sigma, Delta,
+            P || (family (fns[bd1 bd2]) (q3 q4) (bd1 bd2) ::= 
+                    (alphaCases (alphaCases (alphaCases 
+                      (alphaCases cases q1 '1) 
+                      q2 '2) '1 q3) '2 q4)                
+                 ), I, O, A)
+ [nonexec]
+ .
   
    rl [alpha-family-three] : 
    pConfig(Sigma, Delta, newNF(ltq {(fns[bd1 bd2 bd3]) (q1 q2 q3) : T}, 
@@ -3940,6 +5697,120 @@ mod PROTOCOL-EQ-FAMILY is
               I, O, A)
  [nonexec]
  .
+ 
+  var cnb : CNameBound .
+
+*** when a family has same cases as a group, add it to each branch of the group
+*** with corresponding value
+op addToGroupSameCases__ : Protocol Protocol -> Protocol .
+eq addToGroupSameCases
+   (family (fns[blist]) nlist blist ::= whenList1)
+   (cn ::= whenList2)
+   =
+   family (fns[blist]) nlist blist ::= 
+     (addToGroupSameCasesAux whenList1 (cn ::= whenList2)) .
+eq addToGroupSameCases
+   (family (fns[blist]) nlist blist ::= whenList1)
+   (family (fns1[blist1]) nlist1 blist1 ::= whenList2)
+   =
+   family (fns[blist]) nlist blist ::= 
+     (addToGroupSameCasesAux whenList1 
+     (family (fns1[blist1]) nlist1 blist1 ::= whenList2)) .     
+     
+     
+op addToGroupSameCasesAux__ : WhenList Protocol -> WhenList .
+eq addToGroupSameCasesAux (whenCond --> P) (cn ::= whenCond --> R) 
+   = whenCond --> (P || cn ::= R) .
+eq addToGroupSameCasesAux ((whenCond --> P) ;; whenList1) 
+                          (cn ::= ((whenCond --> R) ;; whenList2)) 
+   = 
+   (whenCond --> (P || cn ::= R)) 
+   ;;
+   (addToGroupSameCasesAux whenList1 (cn ::= whenList2)) .
+   
+eq addToGroupSameCasesAux (whenCond --> P) 
+   (family (fns1[blist1]) nlist1 blist1 ::= whenCond --> R) 
+   = whenCond --> (P || family (fns1[blist1]) nlist1 blist1 ::= R) .
+eq addToGroupSameCasesAux ((whenCond --> P) ;; whenList1) 
+   (family (fns1[blist1]) nlist1 blist1 ::= ((whenCond --> R) ;; whenList2)) 
+   = 
+   (whenCond --> (P || family (fns1[blist1]) nlist1 blist1 ::= R)) 
+   ;;
+   (addToGroupSameCasesAux whenList1 
+    (family (fns1[blist1]) nlist1 blist1 ::= whenList2)
+   ) .   
+   
+   
+ rl [add-chn-to-group-same-cases] :
+  pConfig(Sigma, Delta,
+  (family (fns[blist]) nlist blist ::= whenList1) 
+  ||
+  (cn ::= whenList2)
+  , I, O, A) 
+  => 
+  pConfig(Sigma, Delta,
+  addToGroupSameCases
+   (family (fns[blist]) nlist blist ::= whenList1)
+   (cn ::= whenList2)
+  , I, O, A) 
+  .
+  
+  rl [add-fam-to-group-same-cases] :
+  pConfig(Sigma, Delta,
+  (family (fns[blist]) nlist blist ::= whenList1) 
+  ||
+  (family (fns1[blist1]) nlist1 blist1 ::= whenList2)
+  , I, O, A) 
+  => 
+  pConfig(Sigma, Delta,
+  addToGroupSameCases
+   (family (fns[blist]) nlist blist ::= whenList1)
+   (family (fns1[blist1]) nlist1 blist1 ::= whenList2)
+  , I, O, A) 
+  .
+   
+
+*** if a family is assigned same thing on each branch
+*** take it out without having to merge afterwards
+crl [remove-merge-from-group-cases] :
+ pConfig(Sigma, Delta,
+family (fns[blist]) nlist blist ::= 
+ ( (whenCond --> P || family (fns1[blist1]) nlist1 blist1 ::= cases)
+  ;;
+  whenList 
+ ), I, O, A) 
+=> pConfig(Sigma, Delta,
+  (family (fns1[blist1]) nlist1 blist1 ::= cases)
+  ||
+  family (fns[blist]) nlist blist ::= 
+  (whenCond --> P)
+  ;;
+  removeFromEachBranch (fam (fns1[blist1])) whenList
+  , I, O, A)
+if 
+ sameOnEachBranch (fam (fns1[blist1])) cases whenList  
+. 
+ 
+  rl [remove-from-group-cases] :
+  pConfig(Sigma, Delta, 
+            (family (fns1[blist]) nlist blist ::= cases),
+             I, O, A)
+  =>            
+  pConfig(Sigma, Delta, 
+            removeFromGroupCases (fam (fns1[blist])) cnb
+            (family (fns1[blist]) nlist blist ::= cases),
+             I, O, A)
+  [nonexec] .           
+  
+  rl [rename-group] :
+     pConfig(Sigma, Delta, 
+            (family (fns1[bound nt]) q (bound nt) ::= cases),
+            I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+            (family (fns2[bound nt]) q (bound nt) ::= cases),
+            I, O, A)     
+     [nonexec] .        
  
   rl [addToGroup] :
    pConfig(Sigma, Delta, 
@@ -3997,6 +5868,86 @@ mod PROTOCOL-EQ-FAMILY is
            I, O, A 
            )       
  . 
+ 
+ *******************************************
+ *** merge two groups if they have same conditions on branches
+ 
+ rl [merge-groups] :
+ pConfig(Sigma, Delta, (family (fns1[blist1]) nlist1 blist1 ::= whenList1) ||
+    (family (fns2[blist1]) nlist1 blist1 ::= whenList2), I, O, A)
+ =>
+ pConfig(Sigma, Delta, mergeGroupsSameConds 
+    (family (fns1[blist1]) nlist1 blist1 ::= whenList1)
+    (family (fns2[blist1]) nlist1 blist1 ::= whenList2)
+    fns, I, O, A)
+ [nonexec]
+ .
+ 
+op mergeGroupsSameConds___ : Protocol Protocol NameWithScripts -> Protocol .
+eq mergeGroupsSameConds 
+    (family (fns1[blist1]) nlist1 blist1 ::= whenList1)
+    (family (fns2[blist1]) nlist1 blist1 ::= whenList2)
+    fns =
+    family (fns[blist1]) nlist1 blist1 ::= mergeCasesSameConds whenList1 whenList2
+  .
+    
+op mergeCasesSameConds__ : WhenList WhenList -> WhenList .
+eq mergeCasesSameConds
+   (whenCond --> P1) (whenCond --> P2)  = whenCond --> (P1 || P2) .
+eq mergeCasesSameConds
+   ((whenCond --> P1) ;; whenList1) 
+   ((whenCond --> P2) ;; whenList2)  = 
+    (whenCond --> (P1 || P2)) 
+    ;; mergeCasesSameConds whenList1 whenList2 .
+ 
+ *********************************************
+ *** extract a subgroup
+ 
+ rl [extract-subgroup] :
+ pConfig(Sigma, Delta, P, I, O, A)
+ =>
+ pConfig(Sigma, Delta, extractSubgroup P cnbl fns, I, O, A)
+ [nonexec]
+ .
+ 
+ op extractSubgroup___ : Protocol List{CNameBound} NameWithScripts -> Protocol .
+eq extractSubgroup 
+   (family (fns[blist]) nlist blist ::= whenList1)
+   cnbl
+   fns1
+ = esAux (family (fns[blist]) nlist blist ::= whenList1)
+   cnbl
+   fns1 emptyWhen emptyWhen .
+ 
+op esAux_____ : Protocol List{CNameBound} NameWithScripts WhenList WhenList -> Protocol .   
+eq esAux (family (fns[blist]) nlist blist ::= whenCond --> P)
+   cnbl
+   fns1 whenList1 whenList2 = 
+   (family (fns[blist]) nlist blist ::= (whenList1 ;; (whenCond --> removeAll P cnbl)) )
+   ||
+   (family (fns1[blist]) nlist blist ::= (whenList2 ;; (whenCond --> keepAll P cnbl)) )
+.
+eq esAux (family (fns[blist]) nlist blist ::= ((whenCond --> P) ;; whenList) )
+   cnbl
+   fns1 whenList1 whenList2 = 
+   esAux (family (fns[blist]) nlist blist ::= whenList)
+   cnbl
+   fns1
+   (whenList1 ;; (whenCond --> removeAll P cnbl))
+   (whenList2 ;; (whenCond --> keepAll P cnbl))
+.
+
+op removeAll__ : Protocol List{CNameBound} -> Protocol .
+eq removeAll P cnb = removeOne P cnb .
+eq removeAll P (cnb cnbl) = removeAll (removeOne P cnb) cnbl .
+
+op keepAll__ : Protocol List{CNameBound} -> Protocol .
+eq keepAll P cnb = keepOne P cnb .
+eq keepAll P (cnb cnbl) = (keepOne P cnb)  || (keepAll P cnbl) .
+ 
+ *********************************************
+ 
+ 
  
   ***( TODO: old idea, perhaps remove it
   crl [proof-composition] :
@@ -4058,19 +6009,56 @@ mod PROTOCOL-EQ-FAMILY is
              I, O, A) 
      => 
      pConfig(Sigma, Delta, newNF(ltq, P, del (fam (fns[blist])) cnbl), I, O, A) 
- if  typeOf(Sigma, 
-          addChannels ({(fns[blist]) nlist : T} ltq) Delta, 
-          insert(fam (fns[blist]), union(I, getOutputs(P))), 
-           A, 
-           family (fns[blist]) nlist blist ::= cases
-          )
-     /\
-     typeOf(Sigma, addChannels ltq Delta, I, A, P)  
-     /\ 
-     getOutputs(newNF2New(newNF(ltq, P, cnbl))) == O     
-     
+ if 
+ ***    typeOf(Sigma, 
+ ***         addChannels ({(fns[blist]) nlist : T} ltq) Delta, 
+ ***         insert(fam (fns[blist]), union(I, getOutputs(P))), 
+ ***          A, 
+ ***          family (fns[blist]) nlist blist ::= cases
+ ***         )
+     *** /\ 
+     *** typeOf(Sigma, addChannels ltq Delta, I, A, P)  
+      not readsFrom P (fam (fns[blist]))
+     *** /\ 
+     *** getOutputs(newNF2New(newNF(ltq, P, cnbl))) == O        
+ .  
+  
+ crl [absorb-new-nf-group] : 
+     pConfig(Sigma, Delta, 
+             newNF(ltq, 
+                   P || (family (fns[blist]) nlist blist ::= cases), cnbl), 
+             I, O, A) 
+     => 
+     pConfig(Sigma, Delta, 
+       newNF(remGroupTList ltq (getOutputs (family (fns[blist]) nlist blist ::= cases)), 
+             P, 
+             remGroupCNBs cnbl (getOutputs (family (fns[blist]) nlist blist ::= cases))), 
+             I, O, A) 
+ if 
+ ***    typeOf(Sigma, 
+ ***         addChannels ({(fns[blist]) nlist : T} ltq) Delta, 
+ ***         insert(fam (fns[blist]), union(I, getOutputs(P))), 
+ ***          A, 
+ ***          family (fns[blist]) nlist blist ::= cases
+ ***         )
+     *** /\ 
+     *** typeOf(Sigma, addChannels ltq Delta, I, A, P)  
+      not readsFromSet P (getOutputs (family (fns[blist]) nlist blist ::= cases))
+     *** /\ 
+     *** getOutputs(newNF2New(newNF(ltq, P, cnbl))) == O        
  .  
  
+op remGroupTList__ : TypedCNameList Set{CNameBound} -> TypedCNameList .
+eq remGroupTList ltq empty = ltq . 
+ceq remGroupTList ({(fns[blist]) nlist : T} ltq) O =
+   remGroupTList ltq (O \ (fam (fns[blist]))) 
+ if (fam (fns[blist])) in O .  
+   
+op remGroupCNBs__ : List{CNameBound} Set{CNameBound} -> List{CNameBound} .
+eq remGroupCNBs cnbl empty = cnbl .
+eq remGroupCNBs cnbl ( (fam (fns[blist])), O) = 
+   remGroupCNBs (del (fam (fns[blist])) cnbl) O . 
+  
   crl [absorb-reverse-new-nf-family] : 
      pConfig(Sigma, Delta, newNF(ltq, P, cnbl), I, O, A)
      =>
@@ -4194,6 +6182,29 @@ mod PROTOCOL-EQ-FAMILY is
      elem (fam (fns1[bound nt])) T1 Delta A
     .  
     
+    *** n-ary generalization
+    crl [DROP-SUBSUME-families-gen] :
+    pConfig(Sigma, Delta,
+            (family (fns1[blist1]) nlist1 blist1 ::= nf(BRL, samp Dist, QL)) || 
+            (family (fns2[blist2]) nlist2 blist2 ::= 
+              nf( (x : T1 <- read (fns1[tlist])) BRL' , R2, QL') ),
+            I, O, A) 
+    =>           
+     pConfig(Sigma, Delta,
+            (family (fns1[blist1]) nlist1 blist1 ::= nf(BRL, samp Dist, QL)) || 
+            (family (fns2[blist2]) nlist2 blist2 ::= 
+              nf(BRL BRL' , R2, del x (QL QL')) ),
+            I, O, A) 
+    if *** sameIndices nlist1 blist1 tlist 
+     *** /\
+     typeOf(Sigma, Delta, addDeclarations BRL (x : T1), 
+             insert(fam (fns2[blist2]), insert(fam (fns1[blist1]), I)), A, R2) 
+     == 
+     typeInCtx(fam (fns2[blist2]), A, Delta)
+     /\
+     elem (fam (fns1[blist1])) T1 Delta A
+    . 
+    
     *** drop for channel-family  
   crl [DROP-nf-cf] :
       pConfig(Sigma, Delta,
@@ -4215,6 +6226,71 @@ mod PROTOCOL-EQ-FAMILY is
      /\
      elem (fam (fns[bound nt])) T1 Delta A
   .
+  
+  *** variant with cases
+  
+  *** improvement, only add new reads, TODO: for other rules as well
+  
+  op addNewReads__ : BRList BRList -> BRList .
+  eq addNewReads emptyBRList BRL' = BRL' .
+  eq addNewReads ((q : T <- read cn) BRL) ((q' : T <- read cn) BRL') =
+     addNewReads                     BRL  ((q' : T <- read cn) BRL') .
+  eq addNewReads ((q : T <- read cn) BRL) BRL' =
+     addNewReads                     BRL  ((q : T <- read cn) BRL') 
+    [owise] .
+    
+  op addNewReadVars___ : BRList BRList List{NatTerm} -> List{NatTerm} .
+  eq addNewReadVars emptyBRList BRL' QL = QL .
+  eq addNewReadVars ((q : T <- read cn) BRL) ((q' : T <- read cn) BRL') QL =
+     addNewReadVars                     BRL  ((q' : T <- read cn) BRL') QL .
+  eq addNewReadVars ((q : T <- read cn) BRL) BRL' QL =
+     addNewReadVars                     BRL  ((q : T <- read cn) BRL') (QL q)
+    [owise] .  
+     
+  
+  crl [DROP-SUBSUME-families-gen-case] :
+    pConfig(Sigma, Delta,
+            (family (fns1[blist1]) nlist1 blist1 ::= 
+             whenList1 ;;
+             (when bt -->  nf(BRL, samp Dist, QL)) ;;
+             whenList2             
+            ) || 
+            (family (fns2[blist2]) nlist2 blist2 ::= 
+              nf( (x : T1 <- read (fns1[tlist])) BRL' , R2, QL') ),
+            I, O, A) 
+    =>           
+     pConfig(Sigma, Delta,
+            (family (fns1[blist1]) nlist1 blist1 ::= 
+             whenList1 ;;
+             (when bt -->  nf(BRL, samp Dist, QL)) ;;
+             whenList2             
+            ) || 
+            (family (fns2[blist2]) nlist2 blist2 ::= 
+              nf(addNewReads (replaceVarsB(BRL, mapFromLists nlist1 tlist))  BRL' , 
+                  R2, 
+                  del x 
+                  ((addNewReadVars (replaceVarsB(BRL, mapFromLists nlist1 tlist)) BRL' nil)
+                   QL')
+                ) 
+            ),
+            I, O, A) 
+    if addAssumptions
+     (addAssumptions (addAssumptions A nlist1 blist1) nlist1 (toFixedBounds tlist)) 
+     nlist2 blist2 |= bt 
+      with (mapFromLists nlist1 tlist)  *** empty
+     *** /\ 
+     *** sameIndices nlist1 blist1 tlist  do we need this?
+     /\
+     typeOf(Sigma, Delta, 
+             addDeclarations
+             (addNewReads (replaceVarsB(BRL, mapFromLists nlist1 tlist))  BRL')
+             (x : T1), 
+             insert(fam (fns2[blist2]), insert(fam (fns1[blist1]), I)), A, R2) 
+     == 
+     typeInCtx(fam (fns2[blist2]), A, Delta)
+     /\
+     elem (fam (fns1[blist1])) T1 Delta A
+    .
   
   *** drop for channel-family with cases 
   crl [DROP-nf-cf-cases] :
@@ -4343,10 +6419,26 @@ mod PROTOCOL-EQ-FAMILY is
       var C2 : Qid .
    var blist2 : List{Bounds} .
    
-    rl [subst-diverge-family] : 
+   op sameIndices___ : List{NatTerm} List{Bounds} List{NatTerm} -> Bool .
+   eq sameIndices nlist blist nil = true .
+   eq sameIndices (q nlist) (bd1 blist) (q nlist') =
+      sameIndices nlist blist nlist' .
+   eq sameIndices (q nlist) ((fixedBound nt) blist) (nt nlist') =
+      sameIndices nlist blist nlist' .   
+   eq sameIndices nlist blist nlist' = false [owise] . 
+   
+   op toTerms___ : List{NatTerm}  List{Bounds} List{NatTerm} ->  List{NatTerm} .
+   eq toTerms nil nil nlist = nlist .
+   eq toTerms (q nlist) ((fixedBound nt) blist) nlist' =
+      toTerms nlist blist (nlist' nt) .
+   eq toTerms (q nlist) (bd1 blist) nlist' =
+      toTerms nlist blist (nlist' q) .
+       
+   
+   crl [subst-diverge-family] : 
     pConfig(Sigma, Delta, 
               (family (cn1[blist]) nlist blist ::= 
-                 nf(x1 : T1 <- read (cn1[nlist]), return x1, x1)
+                 nf(x1 : T1 <- read (cn1[tlist]), return x1, x1)
               )
               || 
               (family (cn2[blist2]) nlist2 blist2 ::= 
@@ -4358,12 +6450,13 @@ mod PROTOCOL-EQ-FAMILY is
     =>
     pConfig(Sigma, Delta, 
               (family (cn1[blist]) nlist blist ::= 
-                 nf(x1 : T1 <- read (cn1[nlist]), return x1, x1))
+                 nf(x1 : T1 <- read (cn1[tlist]), return x1, x1))
               || 
               (family (cn2[blist2]) nlist2 blist2 ::= 
-                 nf(x3 : T2 <- read (cn2[nlist2]), return x3, x3)),
+                 nf(x3 : T2 <- read (cn2[toTerms nlist2 blist2 nil]), return x3, x3)),
               I, O, A
            ) 
+   if sameIndices nlist blist tlist        
    ***(  here subst fns1/2 with cn1/2          
    if        
    O == insert(fam (fns1[blist]), fam (fns2[blist2]))
@@ -4549,13 +6642,13 @@ mod PROTOCOL-EQ-FAMILY is
   
   crl [subst-families-one] :
      pConfig(Sigma, Delta, 
-             (family (fns[bound nt]) q (bound nt) ::= cases)
+             (family (fns[blist]) nlist blist ::= cases)
              ||
-             (cn2 ::= nf((x : T <- read (fns[nj])) BRL, R, QL)),
+             (cn2 ::= nf((x : T <- read (fns[tlist])) BRL, R, QL)),
              I, O, A)
      => 
      pConfig(Sigma, Delta, 
-             (family (fns[bound nt]) q (bound nt) ::= cases)
+             (family (fns[blist]) nlist blist ::= cases)
              ||
              (cn2 ::= preNF((x : T <~ R2) BRL, R, QL)
              )
@@ -4563,14 +6656,14 @@ mod PROTOCOL-EQ-FAMILY is
              I, O, A) 
      if 
       typeOf(Sigma, Delta, addDeclarations BRL (x : T), 
-            insert(fam (fns[bound nt]), insert(toBound cn2 , I)), A, R) 
+            insert(fam (fns[blist]), insert(toBound cn2 , I)), A, R) 
      == 
      typeInCtx(toBound cn2, A, Delta) 
      /\ 
-     typeInCtx(fam (fns[bound nt]), A, Delta) == T
+     typeInCtx(fam (fns[blist]), A, Delta) == T
      /\ 
-     (projectIndex (family (fns[bound nt]) q (bound nt)  ::= cases) nj 
-          insert(q =T= nj, A) empty) == (fns[nj] ::= R2)
+     (project2Index (family (fns[blist]) nlist blist ::= cases) nlist tlist 
+          (addAssumptions A nlist blist) empty) == (fns[tlist] ::= R2)
          
      [nonexec] 
      .
@@ -4643,11 +6736,12 @@ mod PROTOCOL-EQ-FAMILY is
      
      var C1 : Qid .
      
+     *** TODO: was made generic, one should go away!
      crl [subst-channel-one-family] :
      pConfig(Sigma, Delta, 
              (cn ::= R2)
              ||
-             (family (fns[bound nt1]) q' (bound nt1) ::= 
+             (family (fns[blist]) nlist blist ::= 
                 nf((x : T <- read cn) BRL, R, QL)
              ),
              I, O, A)
@@ -4655,21 +6749,47 @@ mod PROTOCOL-EQ-FAMILY is
      pConfig(Sigma, Delta, 
              (cn ::= R2)
              ||
-             (family (fns[bound nt1]) q' (bound nt1) ::= 
+             (family (fns[blist]) nlist blist ::= 
                preNF((x : T <~ R2) BRL, R, QL)
              ),
              I, O, A) 
      if isSampFree(R2) /\
-        O == insert(toBound cn, fam (fns[bound nt1])) /\ 
+        O == insert(toBound cn, fam (fns[blist])) /\ 
      typeOf(Sigma, Delta, emptyTypeContext, 
-            insert(toBound cn, insert(fam (fns[bound nt1]), I)), A, R2) == T /\
+            insert(toBound cn, insert(fam (fns[blist]), I)), A, R2) == T /\
      typeOf(Sigma, Delta, addDeclarations BRL (x : T), 
-            insert(toBound cn, insert(fam (fns[bound nt1]), I)), A, R) 
+            insert(toBound cn, insert(fam (fns[blist]), I)), A, R) 
      == 
-     typeInCtx(fam (fns[bound nt1]), A, Delta)
+     typeInCtx(fam (fns[blist]), A, Delta)
      /\ 
      elem (toBound cn) T Delta A 
      .  
+     
+     crl [subst-families-gen] :
+     pConfig(Sigma, Delta, 
+             (family (fns2[blist2]) nlist2 blist2 ::= cases) || 
+             (family (fns1[blist1]) nlist1 blist1 ::=
+               nf((x : T <- read (fns2[tlist]) ) BRL, 
+                  R, QL
+                 )
+             ),
+             I, O, A
+     )
+     => 
+     pConfig(Sigma, Delta, 
+             (family (fns2[blist2]) nlist2 blist2 ::= cases) || 
+             (family (fns1[blist1]) nlist1 blist1 ::=
+               preNF((x : T <~ R2) BRL, 
+                  R, QL
+                 )
+             ),
+             I, O, A
+     )
+     if (project2Index (family (fns2[blist2]) nlist2 blist2 ::= cases) nlist2 tlist
+          A empty) == (fns2[tlist] ::= R2)
+     [nonexec] 
+     .
+     
      
      crl [subst-families-one-family] :
      pConfig(Sigma, Delta, 
@@ -4777,6 +6897,7 @@ mod PROTOCOL-EQ-FAMILY is
      [nonexec] .
      
   rl [subst-rev-families] : *** TODO: turn 'x into a variable
+  *** TODO: check if this rule is sound!
      pConfig(Sigma, Delta, 
              (family (fns[blist])q (bound n) ::= 
                 whenList1 ;; (when (q =T= nj) --> R) ;; whenList2)
@@ -4898,14 +7019,18 @@ mod PROTOCOL-EQ-FAMILY is
      . 
      
   crl [use-family-p] : 
-     pConfig(Sigma, Delta, P1 || family (fns[blist]) lq blist ::= P, I, O, A)
+     pConfig(Sigma, Delta1, P1 || family (fns[blist]) lq blist ::= P, I, O1, A)
      => 
-     pConfig(Sigma, Delta, P2 || family (fns[blist]) lq blist ::= P, I, O, A)
+     pConfig(Sigma, Delta2, P2 || family (fns[blist]) lq blist ::= P, I, O2, A)
      if 
-     pConfig(Sigma, Delta, P1 || P, I, O, A)
+     pConfig(Sigma, Delta1, P1 || P, I, O1, A)
      => 
-     pConfig(Sigma, Delta, P2 || P, I, O, A)
-     [nonexec] .
+     pConfig(Sigma, Delta2, P2 || P, I, O2, A)
+     /\
+     Delta1 equiv Delta2 
+     /\ 
+     O1 equiv O2
+      .
      
   rl [fold-bind-new-nf-families] :
     pConfig(Sigma, Delta, 
@@ -4950,22 +7075,17 @@ mod PROTOCOL-EQ-FAMILY is
   .  
   
   *** congruence rules for families
-  
-     
+    
      crl [CONG-NEWFAMILY] : 
-     pConfig(Sigma, Delta, newfamily (fns[blist]) lq blist : T in P1, I, O, A)
+     pConfig(Sigma, Delta1, newfamily (fns[blist]) lq blist : T in P1, I, O1, A)
      =>  
-     pConfig(Sigma, Delta, newfamily (fns[blist]) lq blist : T in P2, I, O, A)
+     pConfig(Sigma, Delta2, newfamily (fns[blist]) lq blist : T in P2, 
+             I, O2 \ (fam (fns[blist])), A)
      if 
-     pConfig(Sigma, Delta ((fam (fns[blist])) :: T), P1, I, insert(fam (fns[blist]), O), A)
+     pConfig(Sigma, Delta1 ((fam (fns[blist])) :: T), P1, I, insert(fam (fns[blist]), O1), A)
      =>
-     pConfig(Sigma, Delta', P2, I, O', A)
-     /\
-     O' == insert(fam (fns[blist]), O)
-     /\
-     Delta' == Delta ((fam (fns[blist])) :: T)
-     [nonexec]
-     . 
+     pConfig(Sigma, Delta2 ((fam (fns[blist])) :: T), P2, I, O2, A)
+     . *** adding the old fns in Delta2 ensures that we cannot split fns!
      
      crl [CONG-FAMILY-R] : 
      pConfig(Sigma, Delta, family (fns[blist]) lq blist ::= R, I, O, A)
@@ -4978,31 +7098,40 @@ mod PROTOCOL-EQ-FAMILY is
      rConfig(Sigma, Delta, emptyTypeContext, R', I', A, T) 
      /\ I' == insert(fam (fns[blist]), I)  
      /\ T == typeInCtx(fam (fns[blist]), A, Delta)
-     [nonexec] .
+     .
      
      crl [CONG-FAMILY-P] : 
-     pConfig(Sigma, Delta, family (fns[blist]) lq blist ::= P1, I, O, A)
+     pConfig(Sigma, Delta1, family (fns[blist]) lq blist ::= P1, I, O1, A)
      => 
-     pConfig(Sigma, Delta, family (fns[blist]) lq blist ::= P2, I, O, A)
+     pConfig(Sigma, Delta2, family (fns[blist]) lq blist ::= P2, I, O2, A)
      if
-     pConfig(Sigma, Delta, P1, I, O, A)
+     pConfig(Sigma, Delta1, P1, I, O1, A)
      =>
-     pConfig(Sigma, Delta, P2, I, O, A) [nonexec] . 
+     pConfig(Sigma, Delta2, P2, I, O2, A) 
+     /\
+     Delta1 equiv Delta2 
+     /\ 
+     O1 equiv O2 . 
      
      crl [CONG-FAMILY-WHENLIST-P] : 
-     pConfig(Sigma, Delta, 
+     pConfig(Sigma, Delta1, 
              family (fns[blist]) lq blist ::= whenList1 ;; (when bt --> P1) ;; whenList2, 
-             I, O, A)
+             I, O1, A)
      => 
-     pConfig(Sigma, Delta, 
+     pConfig(Sigma, Delta2, 
              family (fns[blist]) lq blist ::= whenList1 ;; (when bt --> P2) ;; whenList2, 
-             I, O, A) 
+             I, O2, A) 
      if 
-     pConfig(Sigma, Delta, P1, I, O, insert(bt, A) )
+     pConfig(Sigma, Delta1, P1, I, O1, insert(bt, A) )
      =>  
-     pConfig(Sigma, Delta, P2, I, O, A')
+     pConfig(Sigma, Delta2, P2, I, O2, A')
      /\ 
-     A' == insert(bt, A) [nonexec] . 
+     A' == insert(bt, A)
+     /\
+     Delta1 equiv Delta2 
+     /\ 
+     O1 equiv O2
+     . 
      
      crl [CONG-FAMILY-WHENLIST-R] : 
      pConfig(Sigma, Delta, 
@@ -5014,15 +7143,18 @@ mod PROTOCOL-EQ-FAMILY is
         (whenList1 ;; (when bt --> R2) ;; whenList2), I, O, A) 
      if 
      rConfig(Sigma, Delta, emptyTypeContext, R1, insert(fam (fns[blist]), I), 
-             insert(bt, A), typeOf(Sigma, Delta, emptyTypeContext, I, A, R1))
+              addAssumptions insert(bt, A) nlist blist, 
+              typeOf(Sigma, Delta, emptyTypeContext, I, 
+                     addAssumptions insert(bt, A) nlist blist, R1))
      =>  
      rConfig(Sigma, Delta, emptyTypeContext, R2, I', A', T)
      /\
-     A' == insert(bt, A) 
+     A' == addAssumptions insert(bt, A) nlist blist 
      /\
      I' == insert(fam (fns[blist]), I)
      /\
-     T ==  typeOf(Sigma, Delta, emptyTypeContext, I, A, R1)
+     T ==  typeOf(Sigma, Delta, emptyTypeContext, I, 
+                  addAssumptions insert(bt, A) nlist blist, R1)
      [nonexec] .                                  
      
   *** case distinction
@@ -5645,7 +7777,11 @@ mod PROTOCOL-EQ-FAMILY is
              || 
              ( family (fns1[blist1]) nlist1 blist1 ::= R2),
              I, insert(fam (fns2[blist2]), fam(fns1[blist1])), 
-             addAssumptions insert(bt, A) nlist1 blist1
+             addAssumptions
+            (addAssumptions 
+             insert(bt, A) 
+             nlist1 blist1)
+             nlist2 blist2
            )
     =>
     pConfig(Sigma, Delta, 
@@ -5653,7 +7789,11 @@ mod PROTOCOL-EQ-FAMILY is
              (family (fns1[blist1]) nlist1 blist1 ::= R3),
              I, O', A'
            )       
-    /\ A' == addAssumptions insert(bt, A) nlist1 blist1   
+    /\ A' == addAssumptions
+            (addAssumptions 
+             insert(bt, A) 
+             nlist1 blist1)
+             nlist2 blist2
     /\ O' == insert(fam (fns2[blist2]), fam(fns1[blist1]))
     /\
     pConfig(Sigma, Delta, 
@@ -5685,6 +7825,47 @@ mod PROTOCOL-EQ-FAMILY is
     ****************************
      **** case substitution
      ****************************
+     
+     *** diverge if  we diverge on a condition of the branch 
+     *** of the family that we read from, and that condition holds for the terms
+     
+     crl[diverge-case] :
+     pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= 
+                 nf( ( x : T <- read (fns2[tlist]) ) BRL, 
+                     R1, 
+                     QL
+                   )
+               )
+                || 
+               (family (fns2[blist2]) nlist2 blist2 ::= 
+                 whenList1 ;;
+                 (when bt --> nf(y : T <- read (fns2[nlist2]), return y, y))
+                 ;;
+                 whenList2
+               ),
+               I, O, A
+         ) 
+         =>
+     pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= 
+                 nf(q : T1 <- read (fns1[nlist1]), return q, q)
+               )
+                || 
+               (family (fns2[blist2]) nlist2 blist2 ::= 
+                 whenList1 ;;
+                 (when bt --> nf(y : T <- read (fns2[nlist2]), return y, y)
+                 )
+                 ;;
+                 whenList2
+               ),
+               I, O, A
+         ) 
+     if addAssumptions
+        (addAssumptions A nlist1 blist1)
+        nlist2 blist2 |= bt with mapFromLists nlist2 tlist   
+        [nonexec]
+     .
      
      *** derived rule
      *** NB: z must be specified by the strategy!
@@ -6357,6 +8538,38 @@ mod PROTOCOL-EQ-FAMILY is
       
    *** same rules for channels
    
+   *** subst on a branch
+      crl [subst-channel-case-channel] :
+       pConfig(Sigma, Delta, 
+               (cn1 ::= cases) || 
+               (cn2 ::= 
+                whenList1 ;;
+                (when bt --> nf((x : T <- read cn1 ) BRL, R, QL)
+                ) ;;
+                whenList2), I, O, A)
+       =>    
+       pConfig(Sigma, Delta, 
+               (cn1 ::= cases) || 
+               (cn2 ::= 
+                whenList1 ;;
+                (when bt --> R'
+                ) ;;
+                whenList2), I, O, A)
+       if 
+       pConfig(Sigma, Delta, 
+               (cn1 ::= cases) || 
+               (cn2 ::= nf((x : T <- read cn1 ) BRL, R, QL)), 
+               I, O, (A, bt)
+              )
+      =>
+      pConfig(Sigma, Delta, 
+               (cn1 ::= cases) || 
+               (cn ::= R'), 
+               I, O, A')
+     /\
+     A' == (A, bt)
+    .  
+   
    crl [subst-channel-case] :
        pConfig(Sigma, Delta, 
                (family (fns1[bound nt1]) i (bound nt1) ::= cases) || 
@@ -6436,7 +8649,8 @@ mod PROTOCOL-EQ-FAMILY is
                ||
                (family (fns2[blist2]) nlist2 blist2 ::= R'),
                I, O, A)
-      if A |= bt with empty
+      if *** A |= bt with empty
+         addAssumptions A nlist2 blist2 |= bt with (mapFromLists nlist1 tlist)
       /\
          pConfig(Sigma, Delta, 
                (family (fns1[blist1]) nlist1 blist1 ::= R1)
@@ -6452,33 +8666,256 @@ mod PROTOCOL-EQ-FAMILY is
                I, O, A)      
     .
     
+    var P' : Protocol . 
+    
+      crl [select-case-family-p] :
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= 
+                 whenList1 ;; (when bt --> P1) ;; whenList2)
+               ||
+               P,
+               I, O, A)
+       =>       
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= 
+                 whenList1 ;; (when bt --> P1) ;; whenList2)
+               ||
+               P',
+               I, O, A)
+      if A |= bt with empty
+      /\
+         pConfig(Sigma, Delta, 
+               P1
+               ||
+               P,
+               I, O, A)
+       =>       
+       pConfig(Sigma, Delta, 
+               P1
+               ||
+               P',
+               I, O, A)      
+    .
+    
+     crl [select-case-channel-r] :
+       pConfig(Sigma, Delta, 
+               (cn ::= 
+                 whenList1 ;; (when bt --> R1) ;; whenList2)
+               ||
+               P,
+               I, O, A)
+       =>       
+       pConfig(Sigma, Delta, 
+               (cn ::= 
+                 whenList1 ;; (when bt --> R1) ;; whenList2)
+               ||
+               P',
+               I, O, A)
+      if A |= bt with empty
+      /\
+         pConfig(Sigma, Delta, 
+               (cn ::= R1)
+               ||
+               P,
+               I, O, (A, bt))
+       =>       
+       pConfig(Sigma, Delta, 
+               (cn ::= R1)
+               ||
+               P',
+               I, O, A') 
+      /\
+      A' == (A, bt)              
+    .
+    
+    crl [select-case-family-r] :
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= 
+                 whenList1 ;; (when bt --> R1) ;; whenList2)
+               ||
+               P,
+               I, O, A)
+       =>       
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= 
+                 whenList1 ;; (when bt --> R1) ;; whenList2)
+               ||
+               P',
+               I, O, A)
+      if addAssumptions A nlist1 blist1 |= bt with empty
+      /\
+         pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= R1)
+               ||
+               P,
+               I, O, (A, bt))
+       =>       
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= R1)
+               ||
+               P',
+               I, O, A') 
+      /\
+      A' == (A, bt)              
+    .
+    
+     crl [select-case-subst-family-p] :
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= 
+                 whenList1 ;; (when bt --> P1) ;; whenList2)
+               ||
+               (family (fns2[blist2]) nlist2 blist2 ::= 
+                 cases),
+               I, O, A)
+       =>       
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= 
+                 whenList1 ;; (when bt --> P1) ;; whenList2)
+               ||
+               (family (fns2[blist2]) nlist2 blist2 ::= cases'),
+               I, O, A)
+      if *** was A |= bt with empty
+         addAssumptions A nlist2 blist2 |= bt with empty
+      /\
+         pConfig(Sigma, Delta, 
+               P1
+               ||
+               (family (fns2[blist2]) nlist2 blist2 ::= cases),
+               I, O, A)
+       =>       
+       pConfig(Sigma, Delta, 
+               P1
+               ||
+               (family (fns2[blist2]) nlist2 blist2 ::= cases'),
+               I, O, A)      
+    .
+    
+    crl [select-case-subst-family-r] :
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= 
+                 whenList1 ;; (when bt --> R1) ;; whenList2)
+               ||
+               (family (fns2[blist2]) nlist2 blist2 ::= 
+                 cases),
+               I, O, A)
+       =>       
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= 
+                 whenList1 ;; (when bt --> R1) ;; whenList2)
+               ||
+               (family (fns2[blist2]) nlist2 blist2 ::= cases'),
+               I, O, A)
+      if *** was A |= bt with empty
+         addAssumptions A nlist2 blist2 |= bt with empty
+      /\
+         pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= R1)
+               ||
+               (family (fns2[blist2]) nlist2 blist2 ::= cases),
+               I, O, (A, bt))
+       =>       
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= R1)
+               ||
+               (family (fns2[blist2]) nlist2 blist2 ::= cases'),
+               I, O, A')
+               /\     
+               A' == insert(bt, A)
+    .
+    
+       crl [select-case-subst-family-r-gen] :
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= 
+                 whenList1 ;; (when bt --> R1) ;; whenList2)
+               ||
+               (cn2 ::= nf((x : T <- read (fns1[tlist])) BRL, R2, QL)),
+               I, O, A)
+       =>       
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= 
+                 whenList1 ;; (when bt --> R1) ;; whenList2)
+               ||
+               P',
+               I, O, A)
+      if A |= bt with (mapFromLists nlist1 tlist)
+         *** addAssumptions A tlist blist1 |= bt with empty
+      /\
+         pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= R1)
+               ||
+               (cn2 ::= nf((x : T <- read (fns1[tlist])) BRL, R2, QL)),
+               I, O, (A, bt))
+       =>       
+       pConfig(Sigma, Delta, 
+               (family (fns1[blist1]) nlist1 blist1 ::= R1)
+               ||
+               P',
+               I, O, A')
+               /\     
+               A' == insert(bt, A)
+    .
+
+***(    
+     crl [select-case-subst-channel-r-gen] :
+       pConfig(Sigma, Delta, 
+               (cn1 ::= 
+                 whenList1 ;; (when bt --> R1) ;; whenList2)
+               ||
+               (cn2 ::= nf((x : T <- read (fns1[tlist])) BRL, R2, QL)),
+               I, O, A)
+       =>       
+       pConfig(Sigma, Delta, 
+               (cn1 ::= 
+                 whenList1 ;; (when bt --> R1) ;; whenList2)
+               ||
+               P',
+               I, O, A)
+      if A |= bt with (mapFromLists nlist1 tlist)
+         *** addAssumptions A tlist blist1 |= bt with empty
+      /\
+         pConfig(Sigma, Delta, 
+               (cn1 ::= R1)
+               ||
+               (cn2 ::= nf((x : T <- read (fns1[tlist])) BRL, R2, QL)),
+               I, O, (A, bt))
+       =>       
+       pConfig(Sigma, Delta, 
+               (cn1 ::= R1)
+               ||
+               P',
+               I, O, A')
+               /\     
+               A' == insert(bt, A)
+    .
+    )
     *** case distinction for family with protocols on cases
      
      crl [CASE-DISTINCTION-one] :
      pConfig (Sigma, Delta, 
-               P || family (fns[bound n]) q (bound n) ::= 
+               P || family (fns[blist]) nlist (blist) ::= 
                  ((when bt --> aP1) ;; whenList),
                I, O, A)
      => 
      pConfig(Sigma, Delta, 
-              P || family (fns[bound n]) q (bound n) ::= 
+              P || family (fns[blist]) nlist (blist) ::= 
                ((when bt --> aP2) ;; whenList'),
                I, O, A) 
      if 
-     pConfig(Sigma, Delta, P || aP1, insert(fam (fns[bound n]), I), O, insert(bt, A))
+     *** was pConfig(Sigma, Delta, P || aP1, insert(fam (fns[blist]), I), O, insert(bt, A))
+     pConfig(Sigma, Delta, P || aP1, I, O, insert(bt, A))
      =>
-     pConfig(Sigma, Delta, P || aP2, I', O, A')
+     pConfig(Sigma, Delta, P || aP2, I, O, A')
      /\
      A' == insert(bt, A)
-     /\
-     I' == insert(fam (fns[bound n]), I)
+     *** /\
+     *** I' == insert(fam (fns[blist]), I)
      /\
      pConfig (Sigma, Delta, 
-               P || family (fns[bound n]) q (bound n) ::= whenList,
+               P || family (fns[blist]) nlist (blist) ::= whenList,
                I, O, insert(neg bt, A)) 
      =>
      pConfig(Sigma, Delta, 
-              P || family (fns[bound n]) q (bound n) ::= whenList',
+              P || family (fns[blist]) nlist (blist) ::= whenList',
                I, O, A'')
      /\
      A'' == insert(neg bt, A)
@@ -6502,35 +8939,35 @@ mod PROTOCOL-EQ-FAMILY is
      
   crl [CASE-DISTINCTION-one-end] :
      pConfig (Sigma, Delta, 
-               P || family (fns[bound n]) q (bound n) ::= (otherwise --> aP1),
+               P || family (fns[blist]) nlist (blist) ::= (otherwise --> aP1),
                I, O, A)
      => 
      pConfig(Sigma, Delta, 
-              P || family (fns[bound n]) q (bound n) ::= (otherwise --> aP2),
+              P || family (fns[blist]) nlist (blist) ::= (otherwise --> aP2),
                I, O, A) 
      if 
-     pConfig(Sigma, Delta, P || aP1, insert(fam (fns[bound n]), I), O, A) 
+     pConfig(Sigma, Delta, P || aP1, insert(fam (fns[blist]), I), O, A) 
              *** A already has all negated conditions
      =>
      pConfig(Sigma, Delta, P || aP2, I', O, A)            
      /\
-     I' == insert(fam (fns[bound n]), I)
+     I' == insert(fam (fns[blist]), I)
      .
      
      crl [CASE-DISTINCTION-one-end-when] :
      pConfig (Sigma, Delta, 
-               P || family (fns[bound n]) q (bound n) ::= (when bt --> aP1),
+               P || family (fns[blist]) nlist (blist) ::= (when bt --> aP1),
                I, O, A)
      => 
      pConfig(Sigma, Delta, 
-              P || family (fns[bound n]) q (bound n) ::= (when bt --> aP2),
+              P || family (fns[blist]) nlist (blist) ::= (when bt --> aP2),
                I, O, A) 
      if 
-     pConfig(Sigma, Delta, P || aP1, insert(fam (fns[bound n]), I), O, insert(bt, A)) 
+     pConfig(Sigma, Delta, P || aP1, insert(fam (fns[blist]), I), O, insert(bt, A)) 
      =>
      pConfig(Sigma, Delta, P || aP2, I', O, A')            
      /\
-     I' == insert(fam (fns[bound n]), I)
+     I' == insert(fam (fns[blist]), I)
      /\
      A' == insert(bt, A)
      .
@@ -6538,67 +8975,67 @@ mod PROTOCOL-EQ-FAMILY is
    *** case distinction for families with reactions on cases
      crl [CASE-DISTINCTION-one-R] :
      pConfig (Sigma, Delta, 
-               P || family (fns[bound n])q (bound n) ::= ((when bt --> R1) ;; whenList),
+               P || family (fns[blist]) nlist (blist) ::= ((when bt --> R1) ;; whenList),
                I, O, A)
      => 
      pConfig(Sigma, Delta, 
-              P || family (fns[bound n])q (bound n) ::= ((when bt --> R2) ;; whenList'),
+              P || family (fns[blist]) nlist (blist) ::= ((when bt --> R2) ;; whenList'),
                I, O, A) 
      if 
-     pConfig(Sigma, Delta, P || family (fns[bound n])q (bound n) ::= R1, 
-             insert(fam (fns[bound n]), I), O, insert(bt, A))
+     pConfig(Sigma, Delta, P || family (fns[blist]) nlist (blist) ::= R1, 
+             (fam (fns[blist]), I), O, (A, bt))
      =>
-     pConfig(Sigma, Delta, P || family (fns[bound n])q (bound n) ::= R2, I', O, A')
+     pConfig(Sigma, Delta, P || family (fns[blist]) nlist (blist) ::= R2, I', O, A')
      /\
-     A' == insert(bt, A)
+     A' == (A, bt)
      /\ 
-     I' == insert(fam (fns[bound n]), I)
+     I' == (fam (fns[blist]), I)
      /\
      pConfig (Sigma, Delta, 
-               P || family (fns[bound n]) q (bound n) ::= whenList,
-               I, O, insert(neg bt, A)) 
+               P || family (fns[blist]) nlist (blist) ::= whenList,
+               I, O, (neg bt, A)) 
      =>
      pConfig(Sigma, Delta, 
-              P || family (fns[bound n]) q (bound n) ::= whenList',
+              P || family (fns[blist]) nlist (blist) ::= whenList',
                I, O, A'')
      /\
-     A'' == insert(neg bt, A) 
+     A'' == (neg bt, A) 
      .   
                
      crl [CASE-DISTINCTION-one-R-end] :
      pConfig (Sigma, Delta, 
-               P || family (fns[bound n]) q (bound n) ::= (otherwise --> R1),
+               P || family (fns[blist]) nlist (blist) ::= (otherwise --> R1),
                I, O, A)
      => 
      pConfig(Sigma, Delta, 
-              P || family (fns[bound n]) q (bound n) ::= (otherwise --> R2),
+              P || family (fns[blist]) nlist (blist) ::= (otherwise --> R2),
                I, O, A) 
      if 
-     pConfig(Sigma, Delta, P || family (fns[bound n]) q (bound n) ::= R1, 
-             insert(fam (fns[bound n]), I), O, A)
+     pConfig(Sigma, Delta, P || family (fns[blist]) nlist (blist) ::= R1, 
+             insert(fam (fns[blist]), I), O, A)
        *** A already has all negated conditions
      =>
-     pConfig(Sigma, Delta, P || family (fns[bound n])q (bound n) ::= R2, I', O, A)            
+     pConfig(Sigma, Delta, P || family (fns[blist]) nlist (blist) ::= R2, I', O, A)            
      /\
-     I' == insert(fam (fns[bound n]), I)
+     I' == insert(fam (fns[blist]), I)
      .
      
      crl [CASE-DISTINCTION-one-R-end-when] :
      pConfig (Sigma, Delta, 
-               P || family (fns[bound n])q (bound n) ::= (when bt --> R1),
+               P || family (fns[blist]) nlist (blist) ::= (when bt --> R1),
                I, O, A)
      => 
      pConfig(Sigma, Delta, 
-              P || family (fns[bound n])q (bound n) ::= (when bt --> R2),
+              P || family (fns[blist]) nlist (blist) ::= (when bt --> R2),
                I, O, A) 
      if 
-     pConfig(Sigma, Delta, P || family (fns[bound n])q (bound n) ::= R1, 
-             insert(fam (fns[bound n]), I), O, insert(bt, A)) 
+     pConfig(Sigma, Delta, P || family (fns[blist]) nlist (blist) ::= R1, 
+             insert(fam (fns[blist]), I), O, insert(bt, A)) 
        *** A already has all negated conditions
      =>
-     pConfig(Sigma, Delta, P || family (fns[bound n])q (bound n) ::= R2, I', O, A')            
+     pConfig(Sigma, Delta, P || family (fns[blist]) nlist (blist) ::= R2, I', O, A')            
      /\
-     I' == insert(fam (fns[bound n]), I)
+     I' == insert(fam (fns[blist]), I)
      /\
      A' == insert(bt, A)
      .           
@@ -6669,29 +9106,33 @@ mod PROTOCOL-EQ-FAMILY is
     
   *** apply a rule on a branch of a family
  crl [select-branch-family-p] :
- pConfig(Sigma, Delta, 
+ pConfig(Sigma, Delta1, 
                newNF(ltq, 
                P || 
                (family (fns[blist]) nlist blist ::= 
                 whenList1 ;;
                 (when bt --> P1) ;;
                 whenList2), ql),
-                I, O, A)
+                I, O1, A)
  =>
- pConfig(Sigma, Delta, 
+ pConfig(Sigma, Delta2, 
                newNF(ltq', 
                P || 
                (family (fns[blist]) nlist blist ::= 
                 whenList1 ;;
                 (when bt --> P2) ;;
                 whenList2), ql),
-                I, O, A)
+                I, O2, A)
  if 
-  pConfig(Sigma, Delta, newNF(ltq, P || P1, ql), I, O, (A, bt)) 
+  pConfig(Sigma, Delta1, newNF(ltq, P || P1, ql), I, O1, (A, bt)) 
   =>
-  pConfig(Sigma, Delta, newNF(ltq', P || P2, ql), I, O, A')
+  pConfig(Sigma, Delta2, newNF(ltq', P || P2, ql), I, O2, A')
   /\
   A' == (A, bt)
+  /\
+     Delta1 equiv Delta2 
+     /\ 
+     O1 equiv O2
 .    
 
 *** can't call it in a strategy because these aren't higher order
@@ -6718,6 +9159,30 @@ mod PROTOCOL-EQ-FAMILY is
   pConfig(Sigma, Delta, P || (family (fns[blist])nlist blist ::= R2), I, O, A')
   /\
   A' == (A, bt)
+ .  
+ 
+ crl [select-branch-channel-r] :  
+ pConfig(Sigma, Delta, 
+               P || 
+               (cn ::= 
+                whenList1 ;;
+                (when bt --> R1) ;;
+                whenList2),
+                I, O, A)
+ =>
+ pConfig(Sigma, Delta, 
+               P || 
+               (cn ::= 
+                whenList1 ;;
+                (when bt --> R2) ;;
+                whenList2),
+                I, O, A)
+ if 
+  pConfig(Sigma, Delta, P || (cn ::= R1), I, O, insert(bt, A)) 
+  =>
+  pConfig(Sigma, Delta, P || (cn ::= R2), I, O, A')
+  /\
+  A' == insert(bt, A)
  .              
             
      *** induction
@@ -6751,6 +9216,75 @@ mod PROTOCOL-EQ-FAMILY is
         isSubprotocolOf (substIndex P2 q idx A) P3
         [nonexec]
         .
+        
+       crl [SINGLE-INDUCTION-new] : 
+       pConfig(Sigma, Delta, 
+               P || family (cn[blist])qlist blist ::= P1, 
+               I, O, A)
+       =>         
+       pConfig(Sigma, Delta, 
+               P || family (cn[blist])qlist blist ::= P2, 
+               I, O, A)
+       if *** no base, q = 0 means emptyProtocol
+        pConfig(Sigma, 
+               deltaInd Delta P2 q idx,
+               getInductionBase (P || family (cn[blist])qlist blist ::= P1) cn q idx A P2, 
+               I, 
+               getOutputs(
+                  getInductionBase (P || family (cn[blist])qlist blist ::= P1) cn q idx A P2
+               ), 
+               insert(genBoundCond q idx qlist blist, A))       
+        =>  
+        pConfig(Sigma, Delta', 
+               P3,
+               I, O', A')
+        /\
+        A' == insert(genBoundCond q idx qlist blist, A)
+        /\
+        isSubprotocolOf (substIndex P2 q idx A) P3
+        *** /\
+        *** allFixed q qlist blist
+        *** add Delta' equiv, O' equiv
+        *** add type checking condition 
+        *** that P typechecks without P2
+        [nonexec]
+        .  
+        
+       crl [SINGLE-INDUCTION-new-R] : 
+       pConfig(Sigma, Delta, 
+               P || family (cn[blist]) qlist blist ::= cases, 
+               I, O, A)
+       =>         
+       pConfig(Sigma, Delta, 
+               P || family (cn[blist]) qlist blist ::= cases', 
+               I, O, A)
+       if
+        pConfig(Sigma, 
+               deltaInd Delta (family (cn[blist])qlist blist ::= cases') q idx, 
+               P || (adjustIndexP q idx (family (cn[blist])qlist blist ::= cases'))
+                 || (substIndex (family (cn[blist])qlist blist ::= cases) q idx A), 
+               I, 
+               getOutputs(
+                 P || 
+                 (adjustIndexP q idx (family (cn[blist])qlist blist ::= cases'))
+                 || (substIndex (family (cn[blist])qlist blist ::= cases) q idx A)),
+               insert(genBoundCond q idx qlist blist, A))       
+        =>  
+        pConfig(Sigma, Delta', 
+               P3,
+               I, O', A')
+        /\
+        A' == insert(genBoundCond q idx qlist blist, A)
+        /\
+        isSubprotocolOf (substIndex (family (cn[blist])qlist blist ::= cases') q idx A) P3
+        *** /\
+        *** allFixed q qlist blist
+        *** add Delta' equiv, O' equiv
+        *** add type checking condition 
+        *** that P typechecks without P2       
+        [nonexec]
+        .  
+        
         
       crl [SINGLE-INDUCTION] : 
        pConfig(Sigma, Delta, 
@@ -7114,18 +9648,7 @@ mod PROTOCOL-EQ-FAMILY is
            (projectIndex (family C (q q') ((bound n1) (bound n2)) ::= cases') 
                          (q (idx ++ 1)) A empty)
        [nonexec] .  )
-    
    
- 
-   
-   
-   
- 
-   
-           
-   
-
-     
   
   *** copy over this line   
  
@@ -7233,6 +9756,19 @@ mod PROTOCOL-EQ-FAMILY is
      if replaceVars(R2, q |-> nt1) == R1 
    .
    
+   crl [merge-drop-cases] : 
+    pConfig(Sigma, Delta, 
+            family (fns[blist]) nlist blist ::= 
+                          (when (q =T= nt1) --> R1) ;;
+                          (otherwise --> R2),
+                         I, O, A) 
+     => 
+       pConfig(Sigma, Delta, 
+            family (fns[blist]) nlist blist ::= R2,                          
+                         I, O, A) 
+     if replaceVars(R2, q |-> nt1) == R1 
+   .
+   
     ***(                         
     rl [convert-combined] :
        family (fns[blist]) q (bound n) ::=
@@ -7255,9 +9791,20 @@ mod PROTOCOL-EQ-FAMILY is
        I, O, A) 
    if typeOf(Sigma, Delta, I, A, family (fns[blist]) nlist blist ::= cases)    
    .    
+   
+   crl [convert-combined-new-group] :
+      pConfig(Sigma, Delta,
+       family (fns[blist]) nlist blist ::= cases,
+       I, O, A)
+       => 
+       pConfig(Sigma, Delta,
+       family (fns[blist]) nlist blist ::= newCombine(family (fns[blist]) nlist blist ::= cases),
+       I, O, A) 
+   if typeOf(Sigma, Delta, I, A, family (fns[blist]) nlist blist ::= cases)    
+   .    
        
    rl [drop-group-name] :
-     family (fns[blist]) q (bound nt) ::= P 
+     family (fns[blist]) nlist blist ::= P 
      => 
      P . 
   
@@ -7345,8 +9892,71 @@ mod PROTOCOL-EQ-FAMILY is
    pConfig(Sigma, Delta, 
            family (fns[blist]) nlist blist ::= R, I, O, A) 
    if allSameReaction whenList R .  
+   
+    crl [all-same-cases-family-p] :
+   pConfig(Sigma, Delta, 
+           family (fns[blist]) nlist blist ::= ((whenCond1 --> P) ;; whenList), I, O, A)
+   =>         
+   pConfig(Sigma, Delta, 
+           family (fns[blist]) nlist blist ::= P, I, O, A) 
+   if allSameProtocol whenList P .
   
-      *** rules for grouping and ungrouping families  
+      *** rules for grouping and ungrouping families
+      
+  op mergeCasesChannels____ : ChannelName WhenList ChannelName WhenList -> WhenList .
+  eq mergeCasesChannels cn1 (whenCond --> R1) cn2 (whenCond --> R2) =
+     whenCond --> ((cn1 ::= R1) || (cn2 ::= R2)) .
+  eq mergeCasesChannels cn1 ((whenCond --> R1) ;; whenList1) 
+                        cn2 ((whenCond --> R2) ;; whenList2) =
+    (whenCond --> ((cn1 ::= R1) || (cn2 ::= R2)))
+    ;;
+    mergeCasesChannels cn1 whenList1 cn2 whenList2 .    
+  
+  rl [group-merge-channels] :
+   pConfig(Sigma, Delta, 
+   (cn1 ::= whenList1)  ||
+   (cn2 ::= whenList2),
+   I, O, A)
+   =>
+   pConfig(Sigma, Delta, 
+    family fns[nil] nil nil ::=
+    mergeCasesChannels cn1 whenList1 cn2 whenList2,
+   I, O, A)
+   [nonexec]
+   *** in order to apply the rule, the conditions must fit
+   *** impose this via a condition
+  .        
+  
+      
+  rl [group-families-new] :
+   pConfig( Sigma, Delta, 
+           (family (fns1[blist]) nlist (blist) ::= cases) || 
+           (family (fns2[blist]) nlist (blist) ::= cases'),
+           I, O, A)
+   => 
+   pConfig( Sigma, Delta, *** don't change context, temporary representation
+    family (('Comp[fns1 fns2])[blist]) nlist blist ::= 
+     ((family (fns1[blist]) nlist (blist) ::= cases) || 
+      (family (fns2[blist]) nlist (blist) ::= cases')
+     ),
+   I, O, A
+   )
+ .
+ 
+ rl [ungroup-families-new] :
+   pConfig( Sigma, Delta,
+   family (('Comp[fns1 fns2])[blist]) nlist blist ::= 
+     ((family (fns1[blist]) nlist (blist) ::= cases) || 
+      (family (fns2[blist]) nlist (blist) ::= cases')
+     ),
+   I, O, A
+   )
+   => 
+   pConfig( Sigma, Delta, 
+           (family (fns1[blist]) nlist (blist) ::= cases) || 
+           (family (fns2[blist]) nlist (blist) ::= cases'),
+           I, O, A)
+ .       
  
  rl [group-families] :
    pConfig( Sigma, Delta, 
@@ -7375,10 +9985,10 @@ mod PROTOCOL-EQ-FAMILY is
  .
  
  rl [add-same-cases] :
-   pConfig(Sigma, Delta, family (fns[blist]) q (bound nt) ::= R, I, O, A) 
+   pConfig(Sigma, Delta, family (fns[blist]) nlist blist ::= R, I, O, A) 
    =>
    pConfig(Sigma, Delta, 
-            family (fns[blist]) q (bound nt) ::= 
+            family (fns[blist]) nlist blist ::= 
               (when bt --> R)
               ;;
               (otherwise --> R), I, O, A) 
@@ -7400,6 +10010,37 @@ mod PROTOCOL-EQ-FAMILY is
  .
 
     *********** until here
+  
+ var cases1 cases2 : Cases . 
+    
+ rl [otherwise-to-neg] :
+ pConfig(Sigma, Delta, 
+            family (fns[blist]) nlist blist ::= 
+              (when bt --> cases1)
+              ;;
+              (otherwise --> cases2), I, O, A) 
+ =>
+ pConfig(Sigma, Delta, 
+            family (fns[blist]) nlist blist ::= 
+              (when bt --> cases1)
+              ;;
+              (when (neg bt) --> cases2), I, O, A)    
+ .  
+ 
+ rl [neg-to-otherwise] :
+ pConfig(Sigma, Delta, 
+            family (fns[blist]) nlist blist ::= 
+              (when bt --> cases1)
+              ;;
+              (when (neg bt) --> cases2), I, O, A) 
+ =>
+ pConfig(Sigma, Delta, 
+            family (fns[blist]) nlist blist ::= 
+              (when bt --> cases1)
+              ;;
+              (otherwise --> cases2), I, O, A)    
+ .                        
+    
 
 endm
 
@@ -7623,9 +10264,9 @@ mod APPROX-EQUALITY is
               ApproxEqConfig [ctor] .
   
  var Sigma : Signature .
- var Delta Delta' : ChannelContext .
+ var Delta Delta' Delta'' : ChannelContext .
  var P Q P' Q' : Protocol .
- var I O I' O' I1 O1 : Set{CNameBound} .
+ var I O I' O' I1 O1 O'' : Set{CNameBound} .
  var A A' : Set{BoolTerm} .
  var w w' : Width .
  var l l' : Length .
@@ -7636,73 +10277,75 @@ mod APPROX-EQUALITY is
  crl [STRICT] :
    aConfig(Sigma, Delta, P, I, O, A, w, l) 
    =>
-   aConfig(Sigma, Delta, Q, I, O, A, w, l)
+   aConfig(Sigma, Delta', Q, I, O', A, w, l)
  if
   pConfig(Sigma, Delta, P, I, O, A)
   => 
-  pConfig(Sigma, Delta, Q, I, O, A)
+  pConfig(Sigma, Delta', Q, I, O', A)
+  *** implies the equivalences
  .  
  
  crl [SYM-APPROX] :
    aConfig(Sigma, Delta, P, I, O, A, w, l) 
    =>
-   aConfig(Sigma, Delta, Q, I, O, A, w', l')
+   aConfig(Sigma, Delta', Q, I, O', A, w', l')
    if
-    aConfig(Sigma, Delta, Q, I, O, A, w, l) 
+    aConfig(Sigma, Delta', Q, I, O', A, w, l) 
    =>
-   aConfig(Sigma, Delta, P, I, O, A, w', l')
+    aConfig(Sigma, Delta, P, I, O, A, w', l')  
  [nonexec]
  .
  
  crl [TRANS] :
   aConfig(Sigma, Delta, P, I, O, A, width nw, length nl)
   => 
-  aConfig(Sigma, Delta, P2, I, O, A, width (nw + nw1 + nw2), length (nl + defMax(nl1, nl2)))
+  aConfig(Sigma, Delta'', P2, I, O'', A, width (nw + nw1 + nw2), length (nl + defMax(nl1, nl2)))
  if
   aConfig(Sigma, Delta, P, I, O, A, width 0, length 0)
   => 
-  aConfig(Sigma, Delta, P1, I, O, A, width nw1, length nl1)
+  aConfig(Sigma, Delta', P1, I, O', A, width nw1, length nl1)
   /\ 
-  aConfig(Sigma, Delta, P1, I, O, A, width 0, length 0)
+  aConfig(Sigma, Delta', P1, I, O', A, width 0, length 0)
   => 
-  aConfig(Sigma, Delta, P2, I, O, A, width nw2, length nl2)
+  aConfig(Sigma, Delta'', P2, I, O'', A, width nw2, length nl2)
  .  
   
  crl [CONG-COMP-APPROX] :
   aConfig(Sigma, Delta, P1 || Q, I, O, A, width nw, length nl)
   =>
-  aConfig(Sigma, Delta, P2 || Q, I, O, A, width (nw + nw1), length (nl + nl1 + | Q | ))
+  aConfig(Sigma, Delta', P2 || Q, I, union (O1, getOutputs(Q)), A, 
+          width (nw + nw1), length (nl + nl1 + | Q | ))
  if 
   aConfig(Sigma, Delta, P1, union(I, getOutputs(Q)), getOutputs(P1), A, width 0, length 0)
   => 
-  aConfig(Sigma, Delta, P2, I1, O1, A, width nw1, length nl1)
-  /\ O1 == getOutputs(P1) 
+  aConfig(Sigma, Delta', P2, I1, O1, A, width nw1, length nl1)
+  /\ O1 == getOutputs(P2) 
   /\ I1 == union(I, getOutputs(Q))
-  /\ O == union (getOutputs(P1), getOutputs(Q))
   /\ typeOf(Sigma, Delta, union(I, getOutputs(P1)), A, Q) 
  .
   
  crl [CONG-NEW-APPROX] :
    aConfig(Sigma, Delta, new cn : T in P , I, O, A, width nw, length nl)
   =>
-   aConfig(Sigma, Delta, new cn : T in P' , I, O, A, width (nw + nw1), length (nl + nl1 ))
+   aConfig(Sigma, Delta', new cn : T in P' , I, O', A, width (nw + nw1), length (nl + nl1 ))
  if 
    aConfig(Sigma, Delta (chn cn :: T), P, I, union (chn cn, O), A, width 0, length 0)
   =>   
-  aConfig(Sigma, Delta  (chn cn :: T), P', I, O', A, width nw1, length nl1)
-  /\ O' == union (chn cn, O)
+  aConfig(Sigma, Delta' (chn cn :: T), P', I, (chn cn, O'), A, width nw1, length nl1)
  .  
  
  crl [CONG-NEW-NF-APPROX] :
    aConfig(Sigma, Delta, newNF(ltq, P, cnbl), I, O, A, width nw, length nl)
   =>
-   aConfig(Sigma, Delta, newNF(ltq, P', cnbl) , I, O, A, width (nw + nw1), length (nl + nl1 ))
+   aConfig(Sigma, diff Delta' (addChannels ltq emptyChannelCtx), 
+           newNF(ltq, P', cnbl) , I, O' \ (chansInList ltq), A, 
+           width (nw + nw1), length (nl + nl1 ))
  if 
    aConfig(Sigma, addChannels ltq Delta, P, I, union(chansInList ltq, O), A, width 0, length 0)
   =>   
-  aConfig(Sigma, Delta', P', I, O', A, width nw1, length nl1)
-  /\ O' == union(chansInList ltq, O)
-  /\ Delta' == addChannels ltq Delta
+   aConfig(Sigma, Delta', P', I, O', A, width nw1, length nl1)
+  /\ O' equiv union(chansInList ltq, O)
+  /\ Delta' equiv addChannels ltq Delta
  .  
  
  *** for some reason Maude does not set the max between anything and 0

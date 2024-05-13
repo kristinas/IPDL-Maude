@@ -178,16 +178,16 @@ smod EXECUTE is
  
  var i m ml mr k l ka kb C sk : Qid .
  var Key Enc Msg Msg-L Msg-R : Qid .
- var Sigma : Signature .
- var Delta Delta' : ChannelContext .
+ var Sigma Sigma1 : Signature .
+ var Delta Delta' Delta1 : ChannelContext .
  var Gamma : TypeContext .
- var I O : Set{CNameBound} .
+ var I O I1 O1 : Set{CNameBound} .
  var li : List{NatTerm} .
- var A : Set{BoolTerm} .
+ var A A1 : Set{BoolTerm} .
  var wid len : Nat . 
- var pConf : ProtocolConfig .
+ var pConf pConf' : ProtocolConfig .
  var aConf : ApproxEqConfig .
- var P : Protocol .
+ var P P1 : Protocol .
 
  crl [cm] : 
     aConfig(Sigma, Delta ,
@@ -290,7 +290,10 @@ smod EXECUTE is
    sd applySym1 :=
       matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using 
-       SYM[P1:Protocol <- 
+       SYM[
+       Delta1:ChannelContext <- Delta,
+       O1:Set{CNameBound} <- O,
+       P1:Protocol <- 
        addInternalFamily 'Msg-L
        typed msg 
        params 'i (bound q) 
@@ -327,7 +330,12 @@ srew [1]
 using TRANS{
       STRICT{
         sugar-newNF
-      ; SYM[P1:Protocol <- int0]{
+      ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using 
+       SYM[
+       Delta1:ChannelContext <- Delta,
+       O1:Set{CNameBound} <- O,
+       P1:Protocol <- int0]{
        sugar-newNF
      ; moveNewToFront
      ; foldNFFamily(fam ('Msg-L[bound q]), fam ('Enc[bound q]))
@@ -347,11 +355,16 @@ using TRANS{
        moveNewToFront
      ; foldNFFamily(fam ('Msg-L[bound q]), fam ('Enc[bound q]))
      ; foldNFFamily(fam ('Msg-R[bound q]), fam ('Enc[bound q]))
-     ; SYM[P1:Protocol <- cmRight]{sugar-newNF}
+     ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using 
+       SYM[
+       Delta1:ChannelContext <- Delta,
+       O1:Set{CNameBound} <- O,
+       P1:Protocol <- cmRight]{sugar-newNF}
       }
       }
       }
-.       
+.  
 
 srew [1]
  aConfig(sig, (fam ('Msg-L[bound q]) :: msg) 
@@ -367,7 +380,12 @@ using
       TRANS{
       STRICT{
        sugar-newNF
-      ; SYM[P1:Protocol <- int1]{
+      ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using 
+       SYM[
+       Delta1:ChannelContext <- Delta,
+       O1:Set{CNameBound} <- O,
+       P1:Protocol <- int1]{
          sugar-newNF
      ; moveNewToFront
      ; foldNFFamily(fam ('Msg[bound q]), fam ('Enc[bound q]))
@@ -379,7 +397,12 @@ using
       STRICT{
         moveNewToFront
       ; foldNFFamily(fam ('Msg[bound q]), fam ('Enc[bound q]))
-      ; SYM[P1:Protocol <- int2]{
+      ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using 
+       SYM[
+       Delta1:ChannelContext <- Delta,
+       O1:Set{CNameBound} <- O,
+       P1:Protocol <- int2]{
          sugar-newNF
      ; moveNewToFront
      ; foldNFFamily(fam ('Msg[bound q]), fam ('Enc[bound q]))
@@ -387,7 +410,12 @@ using
       ; sugar-newNF
       }  
       },
-      SYM-APPROX[Q:Protocol <- int3]{
+      matchrew aConf s.t. aConfig(Sigma, Delta, P, I, O, A, 
+                                  width wid, length len) := aConf by aConf 
+       using 
+      SYM-APPROX[Q:Protocol <- int3,
+      Delta':ChannelContext <- Delta,
+      O':Set{CNameBound} <- O]{
         TRANS{
           STRICT{sugar-newNF},
           applyCM
@@ -398,12 +426,93 @@ using
        sugar-newNF
      ; moveNewToFront
      ; foldNFFamily(fam ('Msg[bound q]), fam ('Enc[bound q]))
-     ; SYM[P1:Protocol <- lrRight]{sugar-newNF}
+     ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using 
+       SYM[
+       Delta1:ChannelContext <- Delta,
+       O1:Set{CNameBound} <- O,
+       P1:Protocol <- lrRight]{sugar-newNF}
    } 
    }    
 .
+ 
+     
+***(
+srew [1]
+ aConfig(sig, (fam ('Msg-L[bound q]) :: msg) 
+              (fam ('Msg-R[bound q]) :: msg)
+              (fam ('Enc[bound q]) :: ctxt), 
+              lrLeft, 
+              insert(fam ('Msg-L[bound q]) , fam ('Msg-R[bound q])), 
+              getOutputs(lrLeft), empty, width 0, length 0)
+using   TRANS{
+      TRANS{
+      TRANS{
+      STRICT{
+       sugar-newNF
+      ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using 
+       SYM[
+       Delta1:ChannelContext <- Delta,
+       O1:Set{CNameBound} <- O,
+       P1:Protocol <- int1]{
+         sugar-newNF
+     ; moveNewToFront
+     ; foldNFFamily(fam ('Msg[bound q]), fam ('Enc[bound q]))
+       }
+     ; sugar-newNF   
+      },
+      applyCM
+      },
+      STRICT{
+        moveNewToFront
+      ; foldNFFamily(fam ('Msg[bound q]), fam ('Enc[bound q]))
+      ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using 
+       SYM[
+       Delta1:ChannelContext <- Delta,
+       O1:Set{CNameBound} <- O,
+       P1:Protocol <- int2]{
+         sugar-newNF
+     ; moveNewToFront
+     ; foldNFFamily(fam ('Msg[bound q]), fam ('Enc[bound q]))
+      }
+      ; sugar-newNF
+      }  
+      }
+      , 
+      matchrew aConf s.t. aConfig(Sigma, Delta, P, I, O, A, 
+                                  width wid, length len) := aConf by aConf 
+       using 
+      SYM-APPROX[Q:Protocol <- P,
+      Delta':ChannelContext <- Delta,
+      O':Set{CNameBound} <- O
+      ]{
+        idle
+      }
+      }
 
-*** test
+.
+
+set trace off .
+
+srew [1]
+ aConfig(sig, (fam ('Msg-L[bound q]) :: msg) 
+              (fam ('Msg-R[bound q]) :: msg)
+              (fam ('Enc[bound q]) :: ctxt), 
+              int3, 
+              insert(fam ('Msg-L[bound q]) , fam ('Msg-R[bound q])), 
+              getOutputs(int3), empty, width 0, length 0)
+using              
+      STRICT{
+        sugar-newNF
+      }   
+      ; applyCM
+      
+.    
+)
+
+***( test 
 srew [1]
  aConfig(sig, (fam ('Msg[bound q]) :: msg) 
           (fam ('Enc[bound q]) :: ctxt), cmLeft, insert(fam ('Msg[bound q]), empty),   getOutputs(cmLeft), empty, width 0, length 0)
@@ -413,4 +522,4 @@ using
       ; applySym1
      } 
 .      
-
+)

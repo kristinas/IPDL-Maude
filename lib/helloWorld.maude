@@ -124,12 +124,14 @@ using
      ; foldNF('Key, 'Ctxt)
      ; foldNF('Ctxt, 'LeakCtxt ^^ 'Alice .. 'adv)
      ; applyAssumption('LeakCtxt ^^ 'Alice .. 'adv)
-     ; SYM[P1:Protocol <- idealPlusSim]{
+     ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using
+       SYM[P1:Protocol <- idealPlusSim, Delta1:ChannelContext <- Delta, 
+           O1:Set{CNameBound} <- O]{
        sugar-newNF
      ; foldNF('LeakCtxt ^^ 'id .. 'adv, 'LeakCtxt ^^ 'Alice .. 'adv) 
      ; foldNF('Ctxt, 'LeakCtxt ^^ 'Alice .. 'adv)  
-     }
-     
+     }     
 .  
  
 ***( Here we record the proof from idealPlusSim.
