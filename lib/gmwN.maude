@@ -9842,10 +9842,7 @@ select-case-family-r[
        {   
                sugar-newNF
        ; ((COMP-NEW-newNF-inside-new ; lift-inner-new-nf) !)        
-       ***( 
-       ; (moveProtocolUnderNewNF !)
-       ; (lift-inner-new-nf !)
-       )           
+              
        ; applyNewCombine(fam ('Adv[bound K]))
        ; applyNewCombine(fam ('Shares[bound K]))
        ; applyNewCombine(fam ('1OutOf4OT[bound K]))
@@ -22634,9 +22631,11 @@ srew [1] pConfig(sig,
              genA) 
 using  
        sugar-newNF
+       ; ((COMP-NEW-newNF-inside-new ; lift-inner-new-nf) !)
+       ***(
        ; (moveProtocolUnderNewNF !)
        ; (lift-inner-new-nf !)
-
+       ) 
        ; applyAddToGroupCases(
           fam (('OTChc-0 ^^ 'ot .. 'adv)[(bound (N + 2)) (bound (N + 2)) (bound K)]), 
           fam ('Circuit[(bound (N + 2)) (bound K)])
@@ -22728,9 +22727,11 @@ using
         ]
        }
        ; sugar-newNF
+       ; ((COMP-NEW-newNF-inside-new ; lift-inner-new-nf) !)
+       ***(
        ; (moveProtocolUnderNewNF !)
        ; (lift-inner-new-nf !)
-             
+       )      
        *** 10.4.1 Simplifying The Real Protocol: Initial Phase
        
        ; applySubstFamily3IdxCase(
@@ -23177,9 +23178,11 @@ using
          ; slowSym *** this brings me to pInt0
      *** end comment     
      ; sugar-newNF
+     ; ((COMP-NEW-newNF-inside-new ; lift-inner-new-nf) !)
+     ***(
        ; (moveProtocolUnderNewNF !)
        ; (lift-inner-new-nf !)
-
+     )
        ; applyNewCombine(fam ('Adv[bound K]))
                 
        ; applyNewCombine(fam ('Shares[bound K]))
