@@ -1443,1300 +1443,6 @@ nf('s : bool <- read (('Out ^^ 'party .. 'adv)['n 'k]), return 's, 's)
       )
      )
   .
-
-  
-  ***( sim protocol
-  old version
-  
-  op sim : -> Protocol .
-  eq sim = 
-     newfamily ('InShare[((bound (N + 1)) (bound (N + 2)) (dependentBound 'I))]) 
-               ('m 'n 'i) 
-               ((bound (N + 1)) (bound (N + 2)) (dependentBound 'I)) : bool in
-     newfamily ('Share[((bound (N + 2))(bound K))]) 
-               ('n 'k) ((bound (N + 2))(bound K)) : bool in
-     newfamily ('Share-Sum[((bound (N + 1))(bound K))]) 
-               ('m 'k) ((bound (N + 1))(bound K)) : bool in          
-     initialSim || inductiveSim || finalSim || shareSim  
-  . 
-  
-  op initialSim : -> Protocol .
-  eq initialSim = 
-     newfamily ('InShare$[((bound (N + 1))(bound (N + 2))(dependentBound 'I))]) ('m 'n 'i) 
-                ((bound (N + 1))(bound (N + 2))(dependentBound 'I)) : bool in
-     newfamily ('InShare$-Sum[((bound (N + 1))(bound (N + 2))(dependentBound 'I))]) 
-                ('m 'n 'i) 
-                ((bound (N + 1))(bound (N + 2))(dependentBound 'I)) : bool in
-     (
-     (family (('In ^^ 'party .. 'adv)[((bound (N + 2))(dependentBound 'I))]) ('n 'i)
-             ((bound (N + 2))(dependentBound 'I)) ::=
-       ( (when (apply 'isSemiHonest 'n) -->
-           nf('in : bool <- read (('In ^^ 'id .. 'adv) ['n 'i]), 
-               return 'in, 'in)  
-         ) 
-         ;;
-         (when (apply 'isHonest 'n) --> *** diverge
-           nf('in : bool <- read (('In ^^ 'party .. 'adv) ['n 'i]), 
-               return 'in, 'in)  
-         )
-       
-       )      
-     )
-     ||
-     (family (('InRcvd ^^ 'party .. 'adv)[((bound (N + 2))(dependentBound 'I))]) ('n 'i)
-             ((bound (N + 2))(dependentBound 'I)) ::=
-       ( (when (apply 'isHonest 'n) -->
-           nf('in : bool <- read (('InRcvd ^^ 'id .. 'adv) ['n 'i]), 
-               return 'in, 'in)  
-         ) 
-         ;;
-         (when (apply 'isSemiHonest 'n) --> *** diverge
-           nf('in : bool <- read (('InRcvd ^^ 'party .. 'adv) ['n 'i]), 
-               return 'in, 'in)  
-         )
-       
-       )   
-     )
-     ||
-     (family ('InShare$[((bound (N + 1))(bound (N + 2))(dependentBound 'I))]) ('m 'n 'i) 
-             ((bound (N + 1))(bound (N + 2))(dependentBound 'I)) ::= 
-       ( (when (apply 'isSemiHonest 'n) -->
-           nf('x : bool <- read (('In ^^ 'id .. 'adv) ['n 'i]), 
-              samp ('flip < () >), 'x)  
-         ) 
-         ;;
-         (when (apply 'isHonest 'n) -->
-           nf('x : bool <- read (('InRcvd ^^ 'id .. 'adv) ['n 'i]), 
-              samp ('flip < () >), 'x)  
-         )
-       
-       )         
-     ) 
-     ||
-     (family (('InShare$ ^^ 'party .. 'adv)[((bound (N + 2))(bound (N + 2))(dependentBound 'I))])
-             ('m 'n 'i) 
-             ((bound (N + 2))(bound (N + 2))(dependentBound 'I)) ::= 
-       ( (when ((apply 'isSemiHonest 'n) conj ('m =T= N + 1)) -->
-           nf( ('xs : bool <- read ('InShare$-Sum [N 'n 'i]))
-               ('x : bool <- read (('In ^^ 'id .. 'adv)['n 'i])), 
-               return (ap 'xor pair('xs, 'x)), 'xs 'x)  
-         ) 
-         ;;
-         (when ((apply 'isSemiHonest 'n) conj ('m <T N + 1)) -->
-           nf('in : bool <- read ('InShare$ ['n 'i]), 
-               return 'in, 'in)  
-         ) 
-         ;;
-         (when (apply 'isHonest 'n) --> *** diverge
-          nf('in : bool <- read (('InShare$ ^^ 'party .. 'adv)['n 'i]), 
-               return 'in, 'in) 
-         )
-       
-       )  
-     ) *** 
-     ||
-     (family ('InShare$-Sum[((bound (N + 1))(bound (N + 2))(dependentBound 'I))]) 
-             ('m 'n 'i) 
-             ((bound (N + 1))(bound (N + 2))(dependentBound 'I)) ::= 
-       ( (when ('m =T= 0) --> 
-           nf('in : bool <- read ('InShare$ [0 'n 'i]), return 'in, 'in)
-         ) 
-         ;; 
-         (otherwise --> 
-          nf( ('xs : bool <- read ('InShare$-Sum [('m -- 1) 'n 'i]) )
-              ('xm : bool <- read ('InShare$ ['m 'n 'i])) ,
-             return (ap 'xor pair('xs, 'xm)), 'xs 'xm) 
-         )
-       )      
-     )
-     ||
-     (family (('InShare$-Sum ^^ 'party .. 'adv)
-              [((bound (N + 1))(bound (N + 2))(dependentBound 'I))])
-             ('m 'n 'i) 
-             ((bound (N + 1))(bound (N + 2))(dependentBound 'I)) ::=
-       ( (when (('m =T= N + 1) conj (apply 'isSemiHonest 'n)) --> 
-           nf( ('xs : bool <- read ('InShare$-Sum [N 'n 'i]) )
-               ('x  : bool <- read (('In ^^ 'id .. 'adv) ['n 'i])) ,
-             return (ap 'xor pair('xs, 'x)), 'xs 'x) 
-         ) 
-          ;; 
-         (when (('m =T= N + 1) conj (apply 'isHonest 'n)) --> *** diverge
-           nf('in : bool <- read (('InShare$-Sum ^^ 'party .. 'adv)[(N + 1) 'n 'i]), 
-               return 'in, 'in) 
-         ) 
-          ;; 
-         (when (('m <=T N) conj (apply 'isSemiHonest 'n)) -->
-          nf('in : bool <- read ('InShare$-Sum['m 'n 'i]), 
-               return 'in, 'in) 
-         ) 
-          ;; 
-         (when (('m <=T N) conj (apply 'isHonest 'n)) --> *** diverge
-           nf('in : bool <- read (('InShare$-Sum ^^ 'party .. 'adv)['m 'n 'i]), 
-               return 'in, 'in) 
-         )
-       
-       )       
-     ) 
-     ||
-     (family (('SendInShare ^^ 'party .. 'adv)
-               [((bound (N + 2))(bound (N + 2))(dependentBound 'I))]) 
-             ('m 'n 'i) 
-             ((bound (N + 2))(bound (N + 2))(dependentBound 'I)) ::= 
-       ( (when (('m =T= N + 1) conj (apply 'isSemiHonest 'n)) --> 
-           nf( ('xs : bool <- read ('InShare$-Sum [N 'n 'i]) )
-               ('x  : bool <- read (('In ^^ 'id .. 'adv) ['n 'i])) ,
-             return (ap 'xor pair('xs, 'x)), 'xs 'x) 
-         ) 
-          ;; 
-         (when (('m =T= N + 1) conj (apply 'isHonest 'n)) --> *** diverge
-           nf('in : bool <- read (('SendInShare ^^ 'party .. 'adv)[(N + 1) 'n 'i]), 
-               return 'in, 'in) 
-         ) 
-          ;; 
-         (when (('m <=T N) conj (apply 'isSemiHonest 'n)) -->
-          nf('in : bool <- read ('InShare$['m 'n 'i]), 
-               return 'in, 'in) 
-         ) 
-          ;; 
-         (when (('m <=T N) conj (apply 'isHonest 'n)) --> *** diverge
-           nf('in : bool <- read (('SendInShare ^^ 'party .. 'adv)['m 'n 'i]), 
-               return 'in, 'in) 
-         )
-       )             
-     ) 
-     || 
-     (family (('RcvdInShare ^^ 'party .. 'adv)
-               [((bound (N + 2))(bound (N + 2))(dependentBound 'I))]) 
-             ('m 'n 'i) 
-             ((bound (N + 2))(bound (N + 2))(dependentBound 'I)) ::= 
-       (
-          (when ('m =T= N + 1) --> *** diverge!
-            nf('in : bool <- read (('RcvdInShare ^^ 'party .. 'adv) [(N + 1) 'n 'i]), 
-               return 'in, 'in)  
-          ) 
-          ;; 
-          (when (('m <=T N) conj (apply 'isSemiHonest 'm)) --> 
-            nf('in : bool <- read ('InShare$ ['m 'n 'i]), return 'in, 'in)
-          ) 
-          ;; 
-          (when (('m <=T N) conj (apply 'isHonest 'm)) --> 
-            nf('in : bool <- read (('RcvdInShare ^^ 'party .. 'adv) ['m 'n 'i]), 
-               return 'in, 'in)
-          )
-        )
-     )    
-     ||
-     (family ('InShare[((bound (N + 1))(bound (N + 2))(dependentBound 'I))])
-             ('m 'n 'i) 
-             ((bound (N + 1))(bound (N + 2))(dependentBound 'I)) ::= 
-        nf('in : bool <- read ('InShare$ ['m 'n 'i]), return 'in, 'in)     
-     ) 
-     ||
-     (family (('InShare ^^ 'party .. 'adv)
-              [((bound (N + 2))(bound (N + 2))(dependentBound 'I))])
-             ('m 'n 'i) 
-             ((bound (N + 2))(bound (N + 2))(dependentBound 'I)) ::= 
-       (
-          (when ('m =T= N + 1) --> *** diverge!
-            nf('in : bool <- read (('InShare ^^ 'party .. 'adv) [(N + 1) 'n 'i]), 
-               return 'in, 'in)  
-          ) 
-          ;; 
-          (when (('m <=T N) conj (apply 'isSemiHonest 'm)) --> 
-            nf('in : bool <- read ('InShare ['m 'n 'i]), return 'in, 'in)
-          ) 
-          ;; 
-          (when (('m <=T N) conj (apply 'isHonest 'm)) --> 
-            nf('in : bool <- read (('InShare ^^ 'party .. 'adv) ['m 'n 'i]), 
-               return 'in, 'in)
-          )       
-       )      
-     ) 
-    ) *** end new 
-  .   
-  
-  op inductiveSim : -> Protocol .
-  eq inductiveSim = 
-      newfamily ('SendBit[((bound (N + 1))(bound (N + 2))(bound K))]) ('n 'm 'k) 
-                 ((bound (N + 1))(bound (N + 2))(bound K)) : bool in
-      newfamily ('RcvdBit[((bound (N + 1))(bound (N + 2))(bound K))]) ('n 'm 'k)
-                 ((bound (N + 1))(bound (N + 2))(bound K)) : bool in 
-      newfamily ('Ctrb[((bound (N + 1))(bound (N + 2))(bound K))]) ('n 'm 'k) 
-                 ((bound (N + 1))(bound (N + 2))(bound K)) : bool in
-      newfamily ('CtrbSum[((bound (N + 1))(bound (N + 2))(bound K))]) ('n 'm 'k) 
-                 ((bound (N + 1))(bound (N + 2))(bound K)) : bool in
-      family ('Circ[bound K]) 'k (bound K) ::=
-      ( *** start circuit
-      ( *** start when input gate
-      when (apply 'isInputGate 'k) --> 
-( *** start when
-  (family ('SendBit[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::= 
-     nf('sb : bool <- read ('SendBit ['n 'm 'k]), return 'sb, 'sb)      
-  )
-  ||
-  (family (('SendBit ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::= 
-     nf('sb : bool <- read (('SendBit  ^^ 'party .. 'adv)['n 'm 'k]), 
-        return 'sb, 'sb)      
-  )
-  ||
-  (family ('RcvdBit[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-     nf('rb : bool <- read ('RcvdBit ['n 'm 'k]), return 'rb, 'rb)       
-  )
-  ||
-  (family (('RcvdBit ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('rb : bool <- read (('RcvdBit  ^^ 'party .. 'adv)['n 'm 'k]), 
-        return 'rb, 'rb)       
-  )
-  ||
-  (family ('Ctrb[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-     nf('c : bool <- read ('Ctrb ['n 'm 'k]), return 'c, 'c)     
-  )
-  ||
-  (family (('Ctrb ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('c : bool <- read (('Ctrb  ^^ 'party .. 'adv)['n 'm 'k]), 
-        return 'c, 'c)         
-  )
-  ||
-  (family ('CtrbSum[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-     nf('cs : bool <- read ('CtrbSum ['n 'm 'k]), return 'cs, 'cs)     
-  )
-  ||
-  (family (('CtrbSum ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('cs : bool <- read (('CtrbSum  ^^ 'party .. 'adv)['n 'm 'k]), 
-        return 'cs, 'cs)              
-  )
-  ||
-  (family ('Share[((bound (N + 2)) (bound K) )]) ('n 'k) 
-          ((bound (N + 2)) (bound K) ) ::=
-     nf('is : bool <- read ('InShare ['n (fun 'wire0 'k) (fun 'wire1 'k)]), 
-        return 'is, 'is)     
-  )
-  ||
-  (family (('Share ^^ 'party .. 'adv)[((bound (N + 2)) (bound K) )]) ('n 'k) 
-          ((bound (N + 2)) (bound K) ) ::=
-     (when ('n =T= N + 1) --> 
-      nf('s : bool <- read (('Share ^^ 'party .. 'adv)[(N + 1) 'k]), 
-         return 's, 's)
-     )
-     ;;     
-     (when (('n <=T N) conj (apply 'isSemiHonest 'n)) --> 
-       nf('s : bool <- read ('Share ['n 'k]), return 's, 's)
-     ) 
-     ;;  
-     (when (('n <=T N) conj (apply 'isHonest 'n)) -->
-      nf('s : bool <- read (('Share ^^ 'party .. 'adv)['n 'k]), return 's, 's)
-     ) 
-  )
-  ||
-  (family (('OTMsg-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('om : bool <- read (('OTMsg-0  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'om, 'om)        
-  )
-  ||
-  (family (('OTMsg-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('om : bool <- read (('OTMsg-1 ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'om, 'om)     
-  )
-  ||
-  (family (('OTMsg-2 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('om : bool <- read (('OTMsg-2 ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'om, 'om)     
-  )
-  ||
-  (family (('OTMsg-3 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('om : bool <- read (('OTMsg-3  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'om, 'om)     
-  )
-  ||
-  (family (('OTMsgRcvd-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('omr : bool <- read (('OTMsgRcvd-0  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'omr, 'omr)     
-  )
-  ||
-  (family (('OTMsgRcvd-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('omr : bool <- read (('OTMsgRcvd-1  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'omr, 'omr)          
-  )
-  ||
-  (family (('OTMsgRcvd-2 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('omr : bool <- read (('OTMsgRcvd-2  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'omr, 'omr)          
-  )
-  ||
-  (family (('OTMsgRcvd-3 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('omr : bool <- read (('OTMsgRcvd-3  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'omr, 'omr)           
-  )
-  ||
-  (family (('OTChc-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('oc : bool <- read (('OTChc-0  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'oc, 'oc)          
-  )
-  ||
-  (family (('OTChc-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('oc : bool <- read (('OTChc-1  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'oc, 'oc)     
-  )
-  ||
-  (family (('OTChcRcvd-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-    nf('ocr : bool <- read (('OTChcRcvd-0  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'ocr, 'ocr)      
-  )
-  ||
-  (family (('OTChcRcvd-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-    nf('ocr : bool <- read (('OTChcRcvd-1  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'ocr, 'ocr)       
-  )
-  ||
-  (family (('OTOut ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('o : bool <- read (('OTOut  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'o, 'o)      
-  )
-   ) *** end when
-   ) *** end when input gate
-   ;;
-   ( *** start when not gate
-      when (apply 'isNotGate 'k) --> 
-( *** start when
-  (family ('SendBit[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::= 
-     nf('sb : bool <- read ('SendBit ['n 'm 'k]), return 'sb, 'sb)      
-  )
-  ||
-  (family (('SendBit ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::= 
-     nf('sb : bool <- read (('SendBit  ^^ 'party .. 'adv)['n 'm 'k]), 
-        return 'sb, 'sb)      
-  )
-  ||
-  (family ('RcvdBit[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-     nf('rb : bool <- read ('RcvdBit ['n 'm 'k]), return 'rb, 'rb)       
-  )
-  ||
-  (family (('RcvdBit ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('rb : bool <- read (('RcvdBit  ^^ 'party .. 'adv)['n 'm 'k]), 
-        return 'rb, 'rb)       
-  )
-  ||
-  (family ('Ctrb[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-     nf('c : bool <- read ('Ctrb ['n 'm 'k]), return 'c, 'c)     
-  )
-  ||
-  (family (('Ctrb ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('c : bool <- read (('Ctrb  ^^ 'party .. 'adv)['n 'm 'k]), 
-        return 'c, 'c)         
-  )
-  ||
-  (family ('CtrbSum[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-     nf('cs : bool <- read ('CtrbSum ['n 'm 'k]), return 'cs, 'cs)     
-  )
-  ||
-  (family (('CtrbSum ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('cs : bool <- read (('CtrbSum  ^^ 'party .. 'adv)['n 'm 'k]), 
-        return 'cs, 'cs)              
-  )
-  ||
-  (family ('Share[((bound (N + 2)) (bound K) )]) ('n 'k) 
-          ((bound (N + 2)) (bound K) ) ::=
-     nf('is : bool <- read ('Share ['n (fun 'wire0 'k)]), 
-        return 'is, 'is)     
-  )
-  ||
-  (family (('Share ^^ 'party .. 'adv)[((bound (N + 2)) (bound K) )]) ('n 'k) 
-          ((bound (N + 2)) (bound K) ) ::=
-     (when ('n =T= N + 1) --> 
-      nf('s : bool <- read (('Share ^^ 'party .. 'adv)[(N + 1) 'k]), 
-         return 's, 's)
-     )
-     ;;     
-     (when (('n <=T N) conj (apply 'isSemiHonest 'n)) --> 
-       nf('s : bool <- read ('Share ['n 'k]), return 's, 's)
-     ) 
-     ;;  
-     (when (('n <=T N) conj (apply 'isHonest 'n)) -->
-      nf('s : bool <- read (('Share ^^ 'party .. 'adv)['n 'k]), return 's, 's)
-     ) 
-  )
-  ||
-  (family (('OTMsg-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('om : bool <- read (('OTMsg-0  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'om, 'om)        
-  )
-  ||
-  (family (('OTMsg-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('om : bool <- read (('OTMsg-1 ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'om, 'om)     
-  )
-  ||
-  (family (('OTMsg-2 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('om : bool <- read (('OTMsg-2 ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'om, 'om)     
-  )
-  ||
-  (family (('OTMsg-3 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('om : bool <- read (('OTMsg-3  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'om, 'om)     
-  )
-  ||
-  (family (('OTMsgRcvd-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('omr : bool <- read (('OTMsgRcvd-0  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'omr, 'omr)     
-  )
-  ||
-  (family (('OTMsgRcvd-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('omr : bool <- read (('OTMsgRcvd-1  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'omr, 'omr)          
-  )
-  ||
-  (family (('OTMsgRcvd-2 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('omr : bool <- read (('OTMsgRcvd-2  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'omr, 'omr)          
-  )
-  ||
-  (family (('OTMsgRcvd-3 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('omr : bool <- read (('OTMsgRcvd-3  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'omr, 'omr)           
-  )
-  ||
-  (family (('OTChc-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('oc : bool <- read (('OTChc-0  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'oc, 'oc)          
-  )
-  ||
-  (family (('OTChc-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('oc : bool <- read (('OTChc-1  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'oc, 'oc)     
-  )
-  ||
-  (family (('OTChcRcvd-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-    nf('ocr : bool <- read (('OTChcRcvd-0  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'ocr, 'ocr)      
-  )
-  ||
-  (family (('OTChcRcvd-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-    nf('ocr : bool <- read (('OTChcRcvd-1  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'ocr, 'ocr)       
-  )
-  ||
-  (family (('OTOut ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('o : bool <- read (('OTOut  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'o, 'o)      
-  )
-   ) *** end when
-   ) *** end when not gate
-   ;;
-   ( *** start when xor gate
-      when (apply 'isXorGate 'k) --> 
-( *** start when
-  (family ('SendBit[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::= 
-     nf('sb : bool <- read ('SendBit ['n 'm 'k]), return 'sb, 'sb)      
-  )
-  ||
-  (family (('SendBit ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::= 
-     nf('sb : bool <- read (('SendBit  ^^ 'party .. 'adv)['n 'm 'k]), 
-        return 'sb, 'sb)      
-  )
-  ||
-  (family ('RcvdBit[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-     nf('rb : bool <- read ('RcvdBit ['n 'm 'k]), return 'rb, 'rb)       
-  )
-  ||
-  (family (('RcvdBit ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('rb : bool <- read (('RcvdBit  ^^ 'party .. 'adv)['n 'm 'k]), 
-        return 'rb, 'rb)       
-  )
-  ||
-  (family ('Ctrb[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-     nf('c : bool <- read ('Ctrb ['n 'm 'k]), return 'c, 'c)     
-  )
-  ||
-  (family (('Ctrb ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('c : bool <- read (('Ctrb  ^^ 'party .. 'adv)['n 'm 'k]), 
-        return 'c, 'c)         
-  )
-  ||
-  (family ('CtrbSum[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-     nf('cs : bool <- read ('CtrbSum ['n 'm 'k]), return 'cs, 'cs)     
-  )
-  ||
-  (family (('CtrbSum ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('cs : bool <- read (('CtrbSum  ^^ 'party .. 'adv)['n 'm 'k]), 
-        return 'cs, 'cs)              
-  )
-  ||
-  (family ('Share[((bound (N + 2)) (bound K) )]) ('n 'k) 
-          ((bound (N + 2)) (bound K) ) ::=
-     nf(('x : bool <- read ('Share ['n (fun 'wire0 'k)]))
-        ('y : bool <- read ('Share ['n (fun 'wire1 'k)])) , 
-        return (ap 'xor pair('x, 'y)), 'x 'y)     
-  )
-  ||
-  (family (('Share ^^ 'party .. 'adv)[((bound (N + 2)) (bound K) )]) ('n 'k) 
-          ((bound (N + 2)) (bound K) ) ::=
-     (when ('n =T= N + 1) --> 
-      nf('s : bool <- read (('SendBit  ^^ 'party .. 'adv)[(N + 1) 'k]), 
-         return 's, 's)
-     )
-     ;;     
-     (when (('n <=T N) conj (apply 'isSemiHonest 'n)) --> 
-       nf('s : bool <- read ('Share ['n 'k]), return 's, 's)
-     ) 
-     ;;  
-     (when (('n <=T N) conj (apply 'isHonest 'n)) -->
-      nf('s : bool <- read (('SendBit  ^^ 'party .. 'adv)['n 'k]), return 's, 's)
-     ) 
-  )
-  ||
-  (family (('OTMsg-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('om : bool <- read (('OTMsg-0  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'om, 'om)        
-  )
-  ||
-  (family (('OTMsg-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('om : bool <- read (('OTMsg-1  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'om, 'om)     
-  )
-  ||
-  (family (('OTMsg-2 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('om : bool <- read (('OTMsg-2  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'om, 'om)     
-  )
-  ||
-  (family (('OTMsg-3 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('om : bool <- read (('OTMsg-3  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'om, 'om)     
-  )
-  ||
-  (family (('OTMsgRcvd-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('omr : bool <- read (('OTMsgRcvd-0  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'omr, 'omr)     
-  )
-  ||
-  (family (('OTMsgRcvd-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('omr : bool <- read (('OTMsgRcvd-1  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'omr, 'omr)          
-  )
-  ||
-  (family (('OTMsgRcvd-2 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('omr : bool <- read (('OTMsgRcvd-2  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'omr, 'omr)          
-  )
-  ||
-  (family (('OTMsgRcvd-3 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('omr : bool <- read (('OTMsgRcvd-3  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'omr, 'omr)           
-  )
-  ||
-  (family (('OTChc-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('oc : bool <- read (('OTChc-0  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'oc, 'oc)          
-  )
-  ||
-  (family (('OTChc-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('oc : bool <- read (('OTChc-1  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'oc, 'oc)     
-  )
-  ||
-  (family (('OTChcRcvd-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-    nf('ocr : bool <- read (('OTChcRcvd-0  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'ocr, 'ocr)      
-  )
-  ||
-  (family (('OTChcRcvd-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-    nf('ocr : bool <- read (('OTChcRcvd-1  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'ocr, 'ocr)       
-  )
-  ||
-  (family (('OTOut ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-     nf('o : bool <- read (('OTOut  ^^ 'ot .. 'adv)['n 'm 'k]), 
-        return 'o, 'o)      
-  )
-   ) *** end when
-   ) *** end when xor gate 
-   ;;
-   ( *** start when and gate
-when (apply 'isAndGate 'k) --> 
-( *** start when
- (family ('SendBit[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-     (when ('n <T 'm) --> 
-       nf( ('xn : bool <- read ('Share['n (fun 'wire0 'k)]))
-           ('yn : bool <- read ('Share['n (fun 'wire1 'k)])), 
-          samp ('flip < () >),
-          'xn 'yn)
-     ) 
-     ;;
-     (when ('m <=T 'n) --> 
-       nf('sb : bool <- read ('SendBit['n 'm 'k]), 
-        return 'sb, 'sb) 
-     )     
-  )
-  ||
-  (family (('SendBit ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('n =T= N + 1) --> *** diverge!
-            nf('sb : bool <- read (('SendBit ^^ 'party .. 'adv) [(N + 1) 'm 'k]), 
-               return 'sb, 'sb)  
-          ) 
-          ;; 
-          (when (('n <=T N) conj (apply 'isSemiHonest 'n)) --> 
-            nf('sb : bool <- read ('SendBit ['n 'm 'k]), 
-               return 'sb, 'sb)
-          ) 
-          ;; 
-          (when (('n <=T N) conj (apply 'isHonest 'n)) -->  *** diverge!
-            nf('sb : bool <- read (('SendBit ^^ 'party .. 'adv) ['n 'm 'k]), 
-               return 'sb, 'sb)  
-          )            
-          
-  )
-  ||
-  (family ('RcvdBit[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-     (when ('m =T= N + 1) --> 
-       nf( ('b : bool <- read ('SendBit['m 'n 'k]))
-           ('xm : bool <- read ('Share['m (fun 'wire0 'k)]))
-           ('ym : bool <- read ('Share['m (fun 'wire1 'k)]))
-           ('xn : bool <- read ('Share['n (fun 'wire0 'k)]))
-           ('yn : bool <- read ('Share['n (fun 'wire1 'k)])),
-           return (ap 'xor 
-                    pair('b,
-                         ap 'xor pair(ap 'and pair('xm, 'yn), 
-                                      ap 'and pair('xn, 'ym))
-                        )
-                  ),
-           'b 'xm 'ym 'xn 'yn
-         )
-     ) 
-     ;;
-     (otherwise --> *** diverge
-       nf('rb : bool <- read ('RcvdBit['n 'm 'k]), 
-           return 'rb, 'rb) 
-     )     
-          
-  )
-  ||
-  (family (('RcvdBit ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('n =T= N + 1) --> *** diverge!
-            nf('rb : bool <- read (('RcvdBit ^^ 'party .. 'adv)[(N + 1) 'm 'k]), 
-               return 'rb, 'rb)  
-          ) 
-          ;; 
-          (when (('n <=T N) conj (apply 'isSemiHonest 'n)) --> 
-            nf('rb : bool <- read ('RcvdBit ['n 'm 'k]), 
-               return 'rb, 'rb)
-          ) 
-          ;; 
-          (when (('n <=T N) conj (apply 'isHonest 'n)) -->  *** diverge!
-            nf('rb : bool <- read (('RcvdBit ^^ 'party .. 'adv)['n 'm 'k]), 
-               return 'rb, 'rb)  
-          )           
-  )
-  ||
-  (family ('Ctrb[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-          (when ('n <T 'm) --> 
-            nf('sb : bool <- read ('SendBit ['n 'm 'k]), 
-               return 'sb, 'sb)
-          )
-          ;;
-          (when ('m <T 'n) --> 
-            nf('rb : bool <- read ('RcvdBit ['n 'm 'k]), 
-               return 'rb, 'rb)
-          )
-          ;;
-          (when ('m =T= 'n) --> 
-            nf(('xn : bool <- read ('Share['n (fun 'wire0 'k)]))
-               ('yn : bool <- read ('Share['n (fun 'wire1 'k)])), 
-               return (ap 'and pair('xn, 'yn)), 'xn 'yn)
-          )
-  )
-  ||
-  (family (('Ctrb ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('n =T= N + 1) --> *** diverge!
-            nf('cb : bool <- read (('Ctrb ^^ 'party .. 'adv)[(N + 1) 'm 'k]), 
-               return 'cb, 'cb)  
-          ) 
-          ;; 
-          (when (('n <=T N) conj (apply 'isSemiHonest 'n)) --> 
-            nf('cb : bool <- read ('Ctrb ['n 'm 'k]), 
-               return 'cb, 'cb)
-          ) 
-          ;; 
-          (when (('n <=T N) conj (apply 'isHonest 'n)) -->  *** diverge!
-            nf('cb : bool <- read (('Ctrb ^^ 'party .. 'adv)['n 'm 'k]), 
-               return 'cb, 'cb)  
-          )           
-  )
-  ||
-  (family ('CtrbSum[((bound (N + 1)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 1)) (bound (N + 2))(bound K) ) ::=
-          (when ('m =T= 0) --> 
-             nf('cb : bool <- read ('Ctrb ['n 0 'k]), 
-               return 'cb, 'cb)
-          )
-          ;;
-          (when (neg ('m =T= 0)) --> 
-             nf(('bs : bool <- read ('CtrbSum ['n ('m -- 1) 'k]))
-                ('b : bool <- read ('Ctrb['n 'm 'k])), 
-               return (ap 'xor pair('bs, 'b)), 'bs 'b)
-          )
-  )
-  ||
-  (family (('CtrbSum ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('n =T= N + 1) --> *** diverge!
-            nf('cs : bool <- read (('CtrbSum ^^ 'party .. 'adv)[(N + 1) 'm 'k]), 
-               return 'cs, 'cs)  
-          ) 
-          ;; 
-          (when (('n <=T N) conj (apply 'isSemiHonest 'n)) --> 
-            nf('cs : bool <- read ('CtrbSum ['n 'm 'k]), 
-               return 'cs, 'cs)
-          ) 
-          ;; 
-          (when (('n <=T N) conj (apply 'isHonest 'n)) -->  *** diverge!
-            nf('cs : bool <- read (('CtrbSum ^^ 'party .. 'adv)['n 'm 'k]), 
-               return 'cs, 'cs)  
-          )           
-  )
-  ||
-  (family ('Share[((bound (N + 2)) (bound K) )]) ('n 'k) 
-          ((bound (N + 2)) (bound K) ) ::=
-      nf('cs : bool <- read ('CtrbSum ['n (N + 1) 'k]), 
-         return 'cs, 'cs)     
-  )
-  ||
-  (family (('Share ^^ 'party .. 'adv)[((bound (N + 2)) (bound K) )]) ('n 'k) 
-          ((bound (N + 2)) (bound K) ) ::=
-           (when ('n =T= N + 1) --> *** diverge!
-            nf('cs : bool <- read (('Share ^^ 'party .. 'adv)[(N + 1) 'm 'k]), 
-               return 'cs, 'cs)  
-          ) 
-          ;; 
-          (when (('n <=T N) conj (apply 'isSemiHonest 'n)) --> 
-            nf('cs : bool <- read ('Share ['n 'k]), 
-               return 'cs, 'cs)
-          ) 
-          ;; 
-          (when (('n <=T N) conj (apply 'isHonest 'n)) -->  *** diverge!
-            nf('cs : bool <- read (('Share ^^ 'party .. 'adv)['n 'm 'k]), 
-               return 'cs, 'cs)  
-          ) 
-  )
-  ||
-  (family (('OTMsg-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('n =T= N + 1) --> *** diverge!
-            nf('om : bool <- read (('OTMsg-0 ^^ 'ot .. 'adv)[(N + 1) 'm 'k]), 
-               return 'om, 'om)  
-          )
-          ;; 
-          (when (('n <=T N) conj ((apply 'isSemiHonest 'n) conj ('n <T 'm)) ) -->
-            nf(('b : bool <- read ('SendBit['n 'm 'k]))
-               ('xn : bool <- read ('Share['n (fun 'wire0 'k)]))
-               ('yn : bool <- read ('Share['n (fun 'wire1 'k)])), 
-               return 'b, 'b 'xn 'yn)  
-          )     
-          ;; 
-          (when (('n <=T N) conj ((apply 'isHonest 'n) disj ('m <=T 'n))) --> *** diverge!
-            nf('om : bool <- read (('OTMsg-0 ^^ 'ot .. 'adv)['n 'm 'k]), 
-               return 'om, 'om)  
-          ) 
-  )
-  ||
-  (family (('OTMsg-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('n =T= N + 1) --> *** diverge!
-            nf('om : bool <- read (('OTMsg-1 ^^ 'ot .. 'adv)[(N + 1) 'm 'k]), 
-               return 'om, 'om)  
-          )
-          ;; 
-          (when (('n <=T N) conj ((apply 'isSemiHonest 'n) conj ('n <T 'm)) ) -->
-            nf(('b : bool <- read ('SendBit['n 'm 'k]))
-               ('xn : bool <- read ('Share['n (fun 'wire0 'k)]))
-               ('yn : bool <- read ('Share['n (fun 'wire1 'k)])), 
-               return (ap 'xor pair('b, 'xn)), 'b 'xn 'yn)  
-          )     
-          ;; 
-          (when (('n <=T N) conj ((apply 'isHonest 'n) disj ('m <=T 'n))) --> *** diverge!
-            nf('om : bool <- read (('OTMsg-1 ^^ 'ot .. 'adv)['n 'm 'k]), 
-               return 'om, 'om)  
-          )     
-  )
-  ||
-  (family (('OTMsg-2 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('n =T= N + 1) --> *** diverge!
-            nf('om : bool <- read (('OTMsg-2 ^^ 'ot .. 'adv)[(N + 1) 'm 'k]), 
-               return 'om, 'om)  
-          )
-          ;; 
-          (when (('n <=T N) conj ((apply 'isSemiHonest 'n) conj ('n <T 'm)) ) -->
-            nf(('b : bool <- read ('SendBit['n 'm 'k]))
-               ('xn : bool <- read ('Share['n (fun 'wire0 'k)]))
-               ('yn : bool <- read ('Share['n (fun 'wire1 'k)])), 
-               return (ap 'xor pair('b, 'yn)), 'b 'xn 'yn)  
-          )     
-          ;; 
-          (when (('n <=T N) conj ((apply 'isHonest 'n) disj ('m <=T 'n))) --> *** diverge!
-            nf('om : bool <- read (('OTMsg-2 ^^ 'ot .. 'adv)['n 'm 'k]), 
-               return 'om, 'om)  
-          )    
-  )
-  ||
-  (family (('OTMsg-3 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('n =T= N + 1) --> *** diverge!
-            nf('om : bool <- read (('OTMsg-3 ^^ 'ot .. 'adv)[(N + 1) 'm 'k]), 
-               return 'om, 'om)  
-          )
-          ;; 
-          (when (('n <=T N) conj ((apply 'isSemiHonest 'n) conj ('n <T 'm)) ) -->
-            nf(('b : bool <- read ('SendBit['n 'm 'k]))
-               ('xn : bool <- read ('Share['n (fun 'wire0 'k)]))
-               ('yn : bool <- read ('Share['n (fun 'wire1 'k)])), 
-               return (ap 'xor pair('b, ap 'xor pair('xn, 'yn))), 
-               'b 'xn 'yn)  
-          )     
-          ;; 
-          (when (('n <=T N) conj ((apply 'isHonest 'n) disj ('m <=T 'n))) --> *** diverge!
-            nf('om : bool <- read (('OTMsg-3 ^^ 'ot .. 'adv)['n 'm 'k]), 
-               return 'om, 'om)  
-          )    
-  )
-  ||
-  (family (('OTMsgRcvd-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-           (when ('n =T= N + 1) --> *** diverge!
-            nf('om : bool <- read (('OTMsgRcvd-0 ^^ 'ot .. 'adv)[(N + 1) 'm 'k]), 
-               return 'om, 'om)  
-          )
-          ;; 
-          (when (('n <=T N) conj ((apply 'isHonest 'n) conj ('n <T 'm)) ) -->
-            nf(('b : bool <- read ('SendBit['n 'm 'k]))
-               ('xn : bool <- read ('Share['n (fun 'wire0 'k)]))
-               ('yn : bool <- read ('Share['n (fun 'wire1 'k)])), 
-               return (), 
-               'b 'xn 'yn)  
-          )     
-          ;; 
-          (when (('n <=T N) conj ((apply 'isSemiHonest 'n) disj ('m <=T 'n))) --> *** diverge!
-            nf('om : bool <- read (('OTMsgRcvd-0 ^^ 'ot .. 'adv)['n 'm 'k]), 
-               return 'om, 'om)  
-          )
-  )
-  ||
-  (family (('OTMsgRcvd-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('n =T= N + 1) --> *** diverge!
-            nf('om : bool <- read (('OTMsgRcvd-1 ^^ 'ot .. 'adv)[(N + 1) 'm 'k]), 
-               return 'om, 'om)  
-          )
-          ;; 
-          (when (('n <=T N) conj ((apply 'isHonest 'n) conj ('n <T 'm)) ) -->
-            nf(('b : bool <- read ('SendBit['n 'm 'k]))
-               ('xn : bool <- read ('Share['n (fun 'wire0 'k)]))
-               ('yn : bool <- read ('Share['n (fun 'wire1 'k)])), 
-               return (), 
-               'b 'xn 'yn)  
-          )     
-          ;; 
-          (when (('n <=T N) conj ((apply 'isSemiHonest 'n) disj ('m <=T 'n))) --> *** diverge!
-            nf('om : bool <- read (('OTMsgRcvd-1 ^^ 'ot .. 'adv)['n 'm 'k]), 
-               return 'om, 'om)  
-          )
-  )
-  ||
-  (family (('OTMsgRcvd-2 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('n =T= N + 1) --> *** diverge!
-            nf('om : bool <- read (('OTMsgRcvd-2 ^^ 'ot .. 'adv)[(N + 1) 'm 'k]), 
-               return 'om, 'om)  
-          )
-          ;; 
-          (when (('n <=T N) conj ((apply 'isHonest 'n) conj ('n <T 'm)) ) -->
-            nf(('b : bool <- read ('SendBit['n 'm 'k]))
-               ('xn : bool <- read ('Share['n (fun 'wire0 'k)]))
-               ('yn : bool <- read ('Share['n (fun 'wire1 'k)])), 
-               return (), 
-               'b 'xn 'yn)  
-          )     
-          ;; 
-          (when (('n <=T N) conj ((apply 'isSemiHonest 'n) disj ('m <=T 'n))) --> *** diverge!
-            nf('om : bool <- read (('OTMsgRcvd-2 ^^ 'ot .. 'adv)['n 'm 'k]), 
-               return 'om, 'om)  
-          )
-  )
-  ||
-  (family (('OTMsgRcvd-3 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('n =T= N + 1) --> *** diverge!
-            nf('om : bool <- read (('OTMsgRcvd-3 ^^ 'ot .. 'adv)[(N + 1) 'm 'k]), 
-               return 'om, 'om)  
-          )
-          ;; 
-          (when (('n <=T N) conj ((apply 'isHonest 'n) conj ('n <T 'm)) ) -->
-            nf(('b : bool <- read ('SendBit['n 'm 'k]))
-               ('xn : bool <- read ('Share['n (fun 'wire0 'k)]))
-               ('yn : bool <- read ('Share['n (fun 'wire1 'k)])), 
-               return (), 
-               'b 'xn 'yn)  
-          )     
-          ;; 
-          (when (('n <=T N) conj ((apply 'isSemiHonest 'n) disj ('m <=T 'n))) --> *** diverge!
-            nf('om : bool <- read (('OTMsgRcvd-3 ^^ 'ot .. 'adv)['n 'm 'k]), 
-               return 'om, 'om)  
-          )
-  )
-  ||
-  (family (('OTChc-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('m =T= N + 1) --> *** diverge!
-            nf('om : bool <- read (('OTChc-0 ^^ 'ot .. 'adv)['n (N + 1) 'k]), 
-               return 'om, 'om)  
-          )
-          ;; 
-          (when (('m <=T N) conj ((apply 'isHonest 'm) conj ('n <T 'm)) ) -->
-            nf(('xn : bool <- read ('Share['m (fun 'wire0 'k)])), 
-               return 'xn, 
-               'xn)  
-          )     
-          ;; 
-          (when (('m <=T N) conj ((apply 'isSemiHonest 'm) disj ('m <=T 'n))) --> *** diverge!
-            nf('om : bool <- read (('OTChc-0 ^^ 'ot .. 'adv)['n 'm 'k]), 
-               return 'om, 'om)  
-          )
-  )
-  ||
-  (family (('OTChc-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('m =T= N + 1) --> *** diverge!
-            nf('om : bool <- read (('OTChc-1 ^^ 'ot .. 'adv)['n (N + 1) 'k]), 
-               return 'om, 'om)  
-          )
-          ;; 
-          (when (('m <=T N) conj ((apply 'isHonest 'm) conj ('n <T 'm)) ) -->
-            nf(('yn : bool <- read ('Share['m (fun 'wire1 'k)])), 
-               return 'yn, 
-               'yn)  
-          )     
-          ;; 
-          (when (('m <=T N) conj ((apply 'isSemiHonest 'm) disj ('m <=T 'n))) --> *** diverge!
-            nf('om : bool <- read (('OTChc-1 ^^ 'ot .. 'adv)['n 'm 'k]), 
-               return 'om, 'om)  
-          )
-  )
-  ||
-  (family (('OTChcRcvd-0 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when (('m =T= N + 1) conj ('n =T= N + 1)) --> *** diverge
-             nf('om : bool <- read (('OTChcRcvd-0 ^^ 'ot .. 'adv)[(N + 1) (N + 1) 'k]), 
-               return 'om, 'om)            
-          )
-          ;;
-          (when ('m =T= N + 1) --> 
-            nf('xs : bool <- read ('ShareSum[N (fun 'wire0 'k)]) , 
-               return (), 'xs)
-          )
-          ;;
-          (when ((apply 'isHonest 'm) conj ('n <T 'm)) --> 
-            nf('xs : bool <- read ('ShareSum['m (fun 'wire0 'k)]) , 
-               return (), 'xs)
-          )
-          ;;
-          (when ((apply 'isSemiHonest 'm) disj ('m <=T 'n)) --> *** diverge
-            nf('om : bool <- read (('OTChcRcvd-0 ^^ 'ot .. 'adv)['n 'm 'k]), 
-               return 'om, 'om)    
-          )
-  )
-  ||
-  (family (('OTChcRcvd-1 ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-            (when (('m =T= N + 1) conj ('n =T= N + 1)) --> *** diverge
-             nf('om : bool <- read (('OTChcRcvd-1 ^^ 'ot .. 'adv)[(N + 1) (N + 1) 'k]), 
-               return 'om, 'om)            
-          )
-          ;;
-          (when ('m =T= N + 1) --> 
-            nf('xs : bool <- read ('ShareSum[N (fun 'wire1 'k)]) , 
-               return (), 'xs)
-          )
-          ;;
-          (when ((apply 'isHonest 'm) conj ('n <T 'm)) --> 
-            nf('xs : bool <- read ('ShareSum['m (fun 'wire1 'k)]) , 
-               return (), 'xs)
-          )
-          ;;
-          (when ((apply 'isSemiHonest 'm) disj ('m <=T 'n)) --> *** diverge
-            nf('om : bool <- read (('OTChcRcvd-1 ^^ 'ot .. 'adv)['n 'm 'k]), 
-               return 'om, 'om)    
-          )
-  )
-  ||
-  (family (('OTOut ^^ 'ot .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) ('n 'm 'k) 
-          ((bound (N + 2)) (bound (N + 2))(bound K) ) ::=
-          (when ('m =T= N + 1) --> *** diverge!
-            nf('cs : bool <- read (('OTOut ^^ 'party .. 'adv)[(N + 1) 'm 'k]), 
-               return 'cs, 'cs)  
-          ) 
-          ;; 
-          (when (('m <=T N) conj (apply 'isSemiHonest 'm)) --> 
-            nf('cs : bool <- read ('RcvdBit ['m 'n 'k]), 
-               return 'cs, 'cs)
-          ) 
-          ;; 
-          (when (('m <=T N) conj (apply 'isHonest 'm)) -->  *** diverge!
-            nf('cs : bool <- read (('OTOut ^^ 'party .. 'adv)['n 'm 'k]), 
-               return 'cs, 'cs)  
-          )     
-  )
-
- ) *** end when
-) *** end when and gate
-      ) *** end circuit
-  . 
-  
-   op finalSim : -> Protocol .
-  eq finalSim = 
-    ( *** start 'Fin
-      (family (('SendOutShare ^^ 'party .. 'adv)[((bound (N + 2))(bound (N + 2))(bound K))]) 
-          ('m 'n 'k) 
-          ((bound (N + 2))(bound (N + 2))(bound K)) ::=
-       (
-       ( when ('n =T= N + 1) --> 
-          nf('sos : bool <- read (('SendOutShare ^^ 'party .. 'adv)['m (N + 1) 'k]),
-             return 'sos, 'sos)
-       ) ;;
-       ( when ((apply 'isSemiHonest 'n) conj (apply 'isOutputWire 'k)) --> 
-          nf('sos : bool <- read ('Share['n 'k]),
-             return 'sos, 'sos)
-       ) ;;
-       (when ((apply 'isHonest 'n) disj (neg (apply 'isOutputWire 'k))) --> 
-          nf('sos : bool <- read (('SendOutShare ^^ 'party .. 'adv)['m 'n 'k]),
-             return 'sos, 'sos)
-       ) 
-       ) 
-       )
-       ||
-       (family (('RcvdOutShare ^^ 'party .. 'adv)[((bound (N + 2))(bound (N + 2))(bound K))]) 
-           ('n 'm 'k)
-           ((bound (N + 2))(bound (N + 2))(bound K)) ::=
-         (
-          (when (('m =T= N + 1) conj 
-                 ((apply 'isSemiHonest 'n) conj (apply 'isOutputWire 'k))
-                ) --> 
-           nf(('xs : bool <- read ('ShareSum[N 'k]))
-              ('x : bool <- read (('Out ^^ 'id .. 'adv)['n 'k])), 
-               return (ap 'xor pair('xs, 'x)), 
-               'xs 'x)      
-          ) 
-          ;;
-          (when (('m =T= N + 1) conj 
-                 ((apply 'isHonest 'n) disj (neg (apply 'isOutputWire 'k)))
-                ) --> 
-           nf('r : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]),
-              return 'r,
-              'r)     
-          ) 
-          ;;
-          (when (('m <=T N) conj 
-                 ((apply 'isSemiHonest 'n) conj (apply 'isOutputWire 'k))
-                ) --> 
-            nf('r : bool <- read ('Share ['m 'k]),
-              return 'r,
-              'r)      
-          ) 
-          ;;
-          (when (('m <=T N) conj 
-                 ((apply 'isHonest 'n) disj (neg (apply 'isOutputWire 'k)))
-                ) --> 
-             nf('r : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n 'm 'k]),
-              return 'r,
-              'r)          
-          )  
-         )       
-       ) 
-       ||
-       (family (('OutShare ^^ 'party .. 'adv)[((bound (N + 2))(bound (N + 2))(bound K))]) 
-         ('n 'm 'k)
-         ((bound (N + 2))(bound (N + 2))(bound K)) ::=
-         (
-          (when (('m =T= N + 1) conj 
-                 ((apply 'isSemiHonest 'n) conj (apply 'isOutputWire 'k))
-                ) --> 
-            nf(('xs : bool <- read ('ShareSum[N 'k]))
-              ('x : bool <- read (('Out ^^ 'id .. 'adv)['n 'k])), 
-               return (ap 'xor pair('xs, 'x)), 
-               'xs 'x)    
-          )
-          ;;
-          (when (('m =T= N + 1) conj 
-                 ((apply 'isHonest 'n) disj (neg (apply 'isOutputWire 'k)))
-                ) --> 
-           nf('r : bool <- read (('OutShare ^^ 'party .. 'adv)['n (N + 1) 'k]),
-              return 'r,
-              'r) )
-          ;;
-          (when (('m <=T N) conj 
-                 ((apply 'isSemiHonest 'n) conj (apply 'isOutputWire 'k))
-                ) --> 
-            nf('r : bool <- read ('Share ['m 'k]),
-              return 'r,
-              'r) 
-          )
-          ;;
-          (when (('m <=T N) conj 
-                 ((apply 'isHonest 'n) disj (neg (apply 'isOutputWire 'k)))
-                ) --> 
-             nf('r : bool <- read (('OutShare ^^ 'party .. 'adv)['n 'm 'k]),
-              return 'r,
-              'r)  
-          )
-         )
-       )
-       ||
-       (family (('OutShareSum ^^ 'party .. 'adv)[((bound (N + 2))(bound (N + 2))(bound K))]) 
-         ('n 'm 'k)
-         ((bound (N + 2))(bound (N + 2))(bound K)) ::=
-         (
-          (when (('m =T= N + 1) conj 
-                 ((apply 'isSemiHonest 'n) conj (apply 'isOutputWire 'k))
-                ) --> 
-            nf('r : bool <- read (('Out ^^ 'id .. 'adv)['n 'k]),
-              return 'r,
-              'r)  
-          )
-          ;;
-          (when (('m =T= N + 1) conj 
-                 ((apply 'isHonest 'n) disj (neg (apply 'isOutputWire 'k)))
-                ) --> 
-           nf('r : bool <- read (('OutShareSum ^^ 'party .. 'adv)['n 'k]),
-              return 'r,
-              'r) 
-          )     
-          ;;
-          (when (('m <=T N) conj 
-                 ((apply 'isSemiHonest 'n) conj (apply 'isOutputWire 'k))
-                ) --> 
-            nf('r : bool <- read ('ShareSum ['m 'k]),
-              return 'r,
-              'r) 
-          )
-          ;;
-          (when (('m <=T N) conj 
-                 ((apply 'isHonest 'n) disj (neg (apply 'isOutputWire 'k)))
-                ) --> 
-             nf('r : bool <- read (('OutShareSum ^^ 'party .. 'adv)['n 'm 'k]),
-              return 'r,
-              'r)  
-          )
-         )
-       )
-       ||
-       (family (('Out ^^ 'party .. 'adv)[((bound (N + 2))(bound K))]) ('n 'k)
-          ((bound (N + 2))(bound K)) ::=
-          (
-          (when (apply 'isSemiHonest 'n) --> 
-            nf('o : bool <- read (('Out ^^ 'id .. 'adv)['n 'k]),
-              return 'o,
-              'o) 
-          )
-          ;;
-          (when (apply 'isHonest 'n) --> 
-            nf('o : bool <- read (('Out ^^ 'party .. 'adv)['n 'k]),
-              return 'o,
-              'o) 
-          )
-          )
-       )
-    ) *** end 'Fin    
-  .
-  
-  op shareSim : -> Protocol .
-  eq shareSim = 
-     family ('Share-Sum[((bound (N + 1))(bound K))]) 
-            ('m 'k) ((bound (N + 1))(bound K)) ::=
-     (
-      (when ('m =T= 0) --> 
-        nf('s : bool <- read ('Share[0 'k]), return 's, 's)
-      )
-      ;;
-      (otherwise --> 
-        nf( ('xs : bool <- read ('Share-Sum[('m -- 1) 'k])) 
-            ('xm : bool <- read ('Share['m 'k])),
-            return (ap 'xor pair('xs, 'xm)),
-            'xs 'xm 
-          )
-      )
-     )
-  .
-  )
-  
-  
   
   *** idealplussim
   
@@ -8580,12 +7286,7 @@ smod EXECUTE is
     => 
     ap 'and pair(e1, ap 'and pair(e2, e3)) 
     .  
-    
- ***( distrib TODO: if this breaks something, turn into a rule!
- eq ap 'and pair(ap 'xor pair(e1, e2), e3) =
-    ap 'xor pair(ap 'and pair(e1, e3), ap 'and pair(e2, e3)) . 
- )   
-    
+
  *** xor axioms
  eq ap 'xor pair(e1, e1) = False .
  eq ap 'xor pair(e1, False) = e1 .
@@ -9534,22 +8235,7 @@ select-case-family-r[
            fam ('CtrbSum-OK[(bound (N + 2) fixedBound 'M fixedBound 'B)]) 
            )
  }
- ***(
-  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using
-       UNSAFE[
-       Delta':ChannelContext <- Delta,
-       O':Set{CNameBound} <- O,
-       I':Set{CNameBound} <- I,
-       A':Set{BoolTerm} <- A,
-       P1:Protocol <- change 
-        fam ('CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound 'B])
-        with
-         nf('c : bool <- read ('CtrbSum['n 'm 'B]), return (), 'c)
 
-        in P
-       ] 
-  )     
  .   
  
  strat inIndSym11 @ ProtocolConfig .
@@ -10518,34 +9204,7 @@ nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
  
  
  strat setIndConfSymProof @ ProtocolConfig .
- sd setIndConfSymProof := ***(
-    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (UNSAFE[
-       Delta':ChannelContext <- 
-        getInductionDelta
-          (addInternalChannels Delta P)
-          want0 'k 'B,
-       I':Set{CNameBound} <- (fam ('In[bound (N + 2) dependentBound 'I]), 
- fam ('InShare[bound (N + 2) bound (N + 2) dependentBound 'I]),
- fam ('InShare$[bound (N + 2) bound (N + 2) dependentBound 'I]),
- fam ('InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound 'I])
- ),   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBaseSym (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Shares 'SharesOK][bound K]))
-                      )  ('Comp['Shares 'SharesOK]) 
-                      'k 'B A want0),
-       P1:Protocol <- getInductionBaseSym 
-                      (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Shares 'SharesOK][bound K]))
-                      )  
-                      ('Comp['Shares 'SharesOK]) 
-                      'k 'B A want0,
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ] ) 
-    )
+ sd setIndConfSymProof := 
          applyDropName(fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
        ; CASE-DISTINCTION-one[
           fns:NameWithScripts <- 'SharesOK,
@@ -10919,38 +9578,6 @@ nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
                   
  .      
  
- 
- ***( TEST for end
- with an unsafe here we get the same result!
- strat setIndConfSymProofEnd @ ProtocolConfig .
- sd setIndConfSymProofEnd :=
-    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using SYM[
-       Delta1:ChannelContext <- 
-        getInductionDelta
-          (addInternalChannels Delta P)
-          want0 'k 'B,
-          
-       O1:Set{CNameBound} <- 
-        getOutputs(getInductionEndSym (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Shares 'SharesOK][bound K]))
-                      )  ('Comp['Shares 'SharesOK]) 
-                      'k 'B A want0),
-       P1:Protocol <- getInductionEndSym
-                      (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Shares 'SharesOK][bound K]))
-                      )  
-                      ('Comp['Shares 'SharesOK]) 
-                      'k 'B A want0
-       ]
-       { 
-       applyDropName(fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I]))
-       } 
- . 
- )     
- 
  strat setIndConf @ ProtocolConfig .
  sd setIndConf :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -11106,186 +9733,7 @@ nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
          }
          
        )
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       ***(
-       ; CASE-DISTINCTION-one[
-          fns:NameWithScripts <- 'SharesOK,
-          blist:List{Bounds} <- fixedBound 'B]{
-          *** for input gate
-         
-         ***(
-          applySubstDivergeFromBranchP(
-            fam ('Shares[fixedBound 'B]), 
-            fam ('Ctrb[(bound (N + 2))(bound (N + 2))(fixedBound 'B)]), 
-            fam ('Ctrb-OK[(bound (N + 2))(bound (N + 2))(fixedBound 'B)]),
-            apply 'isInputGate 'B,
-            'c, unit
-            )
-          ) idle  
-         
-          ,
-          idle          
-          }
-        )  
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       ***(
-       ;
-       CASE-DISTINCTION-one-R[
-         fns:NameWithScripts <- 'SendBit-OK,
-         blist:List{Bounds} <- ((bound (N + 2)) (bound (N + 2)) (fixedBound 'B))
-       ]
-       { *** for input gate 
-        
-       applySelectCaseDiverge(
-        fam ('SendBit[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        fam ('SendBit-OK[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        apply 'isInputGate 'B, 
-        's, 
-        unit)
-       , 
-       CASE-DISTINCTION-one-R[
-         fns:NameWithScripts <- 'SendBit-OK,
-         blist:List{Bounds} <- ((bound (N + 2)) (bound (N + 2)) (fixedBound 'B))
-       ]
-       { *** for not gate 
-        
-       applySelectCaseDiverge(
-        fam ('SendBit[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        fam ('SendBit-OK[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        apply 'isNotGate 'B, 
-        's, 
-        unit)
-        
-       , 
-       CASE-DISTINCTION-one-R[
-         fns:NameWithScripts <- 'SendBit-OK,
-         blist:List{Bounds} <- ((bound (N + 2)) (bound (N + 2)) (fixedBound 'B))
-       ]
-       { *** for xor gate 
-        
-       applySelectCaseDiverge(
-        fam ('SendBit[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        fam ('SendBit-OK[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        apply 'isXorGate 'B, 
-        's, 
-        unit)
-        
-       , *** for and gate
-       CASE-DISTINCTION-one-R-end-when[
-         fns:NameWithScripts <- 'SendBit-OK,
-         blist:List{Bounds} <- ((bound (N + 2)) (bound (N + 2)) (fixedBound 'B))
-       ]{ ***(
-       applySubstOnBranch(
-        fam ('RcvdBit[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        fam ('RcvdBit-OK[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        apply 'isAndGate 'B, 
-        nf(('b : bool <- read ('SendBit['m 'n 'B])) 
-           ('xm : bool <- read ('Share['m (fun 'wire0 'B)])) 
-           ('xn : bool <- read ('Share['n (fun 'wire0 'B)])) 
-           ('ym : bool <- read ('Share['m (fun 'wire1 'B)])) 
-            'yn : bool <- read ('Share['n (fun 'wire1 'B)]), 
-            return (ap 'xor pair(ap 'xor pair(ap 'and pair('xm, 'yn), 
-                                 ap 'and pair('xn, 'ym)), 'b)), 
-          'b 'xm 'ym 'xn 'yn)
-       )
-       ) *** end comment
-       idle
-       }
-       }}
-       }
-       ;
-       CASE-DISTINCTION-one-R[
-         fns:NameWithScripts <- 'RcvdBit-OK,
-         blist:List{Bounds} <- ((bound (N + 2)) (bound (N + 2)) (fixedBound 'B))
-       ]
-       { *** for input gate 
-        
-       applySelectCaseDiverge(
-        fam ('RcvdBit[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        fam ('RcvdBit-OK[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        apply 'isInputGate 'B, 
-        'r, 
-        unit)
-       , 
-       CASE-DISTINCTION-one-R[
-         fns:NameWithScripts <- 'RcvdBit-OK,
-         blist:List{Bounds} <- ((bound (N + 2)) (bound (N + 2)) (fixedBound 'B))
-       ]
-       { *** for not gate 
-        
-       applySelectCaseDiverge(
-        fam ('RcvdBit[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        fam ('RcvdBit-OK[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        apply 'isNotGate 'B, 
-        'r, 
-        unit)
-        
-       , 
-       CASE-DISTINCTION-one-R[
-         fns:NameWithScripts <- 'RcvdBit-OK,
-         blist:List{Bounds} <- ((bound (N + 2)) (bound (N + 2)) (fixedBound 'B))
-       ]
-       { *** for xor gate 
-        
-       applySelectCaseDiverge(
-        fam ('RcvdBit[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        fam ('RcvdBit-OK[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        apply 'isXorGate 'B, 
-        'r, 
-        unit)
-        
-       , *** for and gate
-       CASE-DISTINCTION-one-R-end-when[
-         fns:NameWithScripts <- 'RcvdBit-OK,
-         blist:List{Bounds} <- ((bound (N + 2)) (bound (N + 2)) (fixedBound 'B))
-       ]{
-       applySubstOnBranch(
-        fam ('RcvdBit[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        fam ('RcvdBit-OK[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        apply 'isAndGate 'B, 
-        nf(('b : bool <- read ('SendBit['m 'n 'B])) 
-           ('xm : bool <- read ('Share['m (fun 'wire0 'B)])) 
-           ('xn : bool <- read ('Share['n (fun 'wire0 'B)])) 
-           ('ym : bool <- read ('Share['m (fun 'wire1 'B)])) 
-            'yn : bool <- read ('Share['n (fun 'wire1 'B)]), 
-            return (ap 'xor pair(ap 'xor pair(ap 'and pair('xm, 'yn), 
-                                 ap 'and pair('xn, 'ym)), 'b)), 
-          'b 'xm 'ym 'xn 'yn)
-       )
-       }
-       }}
-       }
-       )
+
  .    
  
  strat setIndConfSym @ ProtocolConfig .
@@ -12499,32 +10947,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
  
  strat setIndWiresShares @ ProtocolConfig .
  sd setIndWiresShares :=
- ***( this is the start configuration
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          want1 'k 'B,
-       I':Set{CNameBound} <- (I, fam ('In-OK[bound (N + 2) dependentBound 'I])),   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Wires-OK 'SharesOK][bound K]))
-                      )  ('Comp['Wires-OK 'SharesOK]) 
-                      'k 'B A want1),
-       P1:Protocol <- getInductionBase 
-                      (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Wires-OK 'SharesOK][bound K]))
-                      )  
-                      ('Comp['Wires-OK 'SharesOK]) 
-                      'k 'B A want1,
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ] ) 
-       ; 
-       *** and from here on is the induction proof
-       )
          applyDropName(fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I]))
         
        ; applyRemoveFromGroupCases(
@@ -13391,28 +11813,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k]))
   @ ProtocolConfig .
  sd indSharesTiming1(Delta, P, O, A) 
    :=
- ***(
-    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using
-        
-        UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          want2 'k 'B,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(
-          getInductionBase P  ('Comp['HiddenGroup 'Shares]) 'k 'B A want2
-        ),
-       P1:Protocol <- getInductionBase P  ('Comp['HiddenGroup 'Shares]) 'k 'B A want2,
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ]
-       
-         
-        
-      ;  *** up to here worked with unsafe 
-  ) 
         applyDropName(fam ('InitOK[(bound (N + 2))(bound (N + 2))(dependentBound 'I)]))
       ; applyNewCombine(fam ('Ctrbs-OK[bound K]))
       
@@ -14109,37 +12509,7 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k])) 'xs : unit <- read ('Shar
   cases':Cases <- 
    nf('s : bool <- read ('ShareSum['m 'k]), return (), 's)
   ]     
-       { ***(
-       matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (family 'ShareSum-OK[bound (N + 1) bound K] 
-            ('m 'k) (bound (N + 1) bound K) ::=
-           nf('s : bool <- read ('ShareSum['m 'k]), return (), 's)
-          ) 'm 'M,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(
-          getInductionBase P  'ShareSum-OK 'm 'M A 
-          (family 'ShareSum-OK[bound (N + 1) bound K] 
-            ('m 'k) (bound (N + 1) bound K) ::=
-           nf('s : bool <- read ('ShareSum['m 'k]), return (), 's)
-          )
-        ),
-       P1:Protocol <- 
-         getInductionBase P  'ShareSum-OK 'm 'M A 
-          (family 'ShareSum-OK[bound (N + 1) bound K] 
-            ('m 'k) (bound (N + 1) bound K) ::=
-           nf('s : bool <- read ('ShareSum['m 'k]), return (), 's)
-          )
-       ,
-       A':Set{BoolTerm} <-  (A,'M <T N + 1)                
-       ] 
-       ; 
-              *** ind proof starts here
-     )         
+       {       
        CASE-DISTINCTION-one-R[
         fns:NameWithScripts <- 'ShareSum-OK
        ]{
@@ -15372,33 +13742,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
  
  strat setIndWiresShares' @ ProtocolConfig .
  sd setIndWiresShares' :=
- ***( this is the start configuration
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          want1' 'k 'B,
-       I':Set{CNameBound} <- (I, fam ('In-OK[bound (N + 2) dependentBound 'I])),   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Wires-OK 'SharesOK][bound K]))
-                      )  ('Comp['Wires-OK 'SharesOK]) 
-                      'k 'B A want1'),
-       P1:Protocol <- getInductionBase 
-                      (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Wires-OK 'SharesOK][bound K]))
-                      )  
-                      ('Comp['Wires-OK 'SharesOK]) 
-                      'k 'B A want1',
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ] ) 
-        
-       *** and from here on is the induction proof
-      
-       ; )
          applyDropName(fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I]))
         
        ; applyRemoveFromGroupCases(
@@ -16157,33 +14500,8 @@ strat indSharesTiming2End
        ]
  .      
 
- strat indSharesTiming2
-  @ ProtocolConfig .
- sd indSharesTiming2
-   :=
-***(
-    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using
-        
-        UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          want2 'k 'B,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(
-          getInductionBase P  ('Comp['HiddenGroup 'Shares]) 'k 'B A want2
-        ),
-       P1:Protocol <- getInductionBase P  ('Comp['HiddenGroup 'Shares]) 'k 'B A want2,
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ]
-       
-         
-        
-      ;  *** up to here worked with unsafe 
-)
-            
+ strat indSharesTiming2 @ ProtocolConfig .
+ sd indSharesTiming2 :=   
         CASE-DISTINCTION-one[
           fns:NameWithScripts <- 'Shares,
           blist:List{Bounds} <- fixedBound 'B]{
@@ -17956,22 +16274,6 @@ sd inductionWireShares :=
              in P
             ]
             {
-  ***( ;
-  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          knowSharesWire 'k 'B,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P ('Comp['Shares 'Wire]) 'k 'B A knowSharesWire),
-       P1:Protocol <- 
-        *** getInductionBase P ('Comp['Shares 'Wire]) 'k 'B A knowSharesWire,
-        getInductionBase P ('Comp['Shares 'Wire]) 'k 'B A knowSharesWire,
-       A':Set{BoolTerm} <-  (A, 'B <T K)
-       ] ; 
-    )
     CONG-NEW-NF{ 
        SINGLE-INDUCTION-new[
   idx:Qid <- 'B,
@@ -18141,22 +16443,6 @@ sd symInputWS :=
   blist:List{Bounds} <- bound K,
   cases':Cases <- know3
  ]{ 
- ***(
-    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          know3 'k 'B,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'Shares 'k 'B A know3),
-       P1:Protocol <- 
-        getInductionBase
-        P 'Shares 'k 'B A know3,
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ] ;)
-       
     *** change otherwise to neg in 'InShare$-Sum
        applyOtherwiseToNeg( 
           fam ('InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound 'I]) 
@@ -18218,22 +16504,7 @@ sd setupIndColRowPartTwoNZ :=
        with wantColRowSumPartTwoNZ
        in P
        ]
- {       ***(  
-       matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          knowColRowSumPartTwoNZ 'j 'Y,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P ('Comp['RowSum 'ColSum]) 'j 'Y A knowColRowSumPartTwoNZ),
-       P1:Protocol <- 
-        getInductionBase P ('Comp['RowSum 'ColSum]) 'j 'Y A knowColRowSumPartTwoNZ,
-       A':Set{BoolTerm} <-  (A,'Y <T (N + 2))
-       ] ;
-       )
-       
+ {     
        SINGLE-INDUCTION-new[
   idx:Qid <- 'Y,
   q:Qid <- 'j,
@@ -18538,65 +16809,6 @@ sd symSqrBranchNZ :=
 
 strat symSqrToClosedAnd @ ProtocolConfig .
 sd symSqrToClosedAnd :=
- ***( to be removed and pointer
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using
-        UNSAFE[
-       Delta':ChannelContext <- Delta,
-       O':Set{CNameBound} <- O,
-       I':Set{CNameBound} <- I,
-       A':Set{BoolTerm} <- A,
-       P1:Protocol <-
-        change fam ('Sqr[bound (N + 2)])
-        with
-        nf(
-            ('x : bool <- read('ShareSum['i (fun 'wire0 'B)]) )
-            ('y : bool <- read('ShareSum['i (fun 'wire1 'B)]) ),
-            return (ap 'and pair('x, 'y)),
-            'x 'y
-        )
-        in P
-       ] 
- )  
- ***(
-  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (family ('Sqr[bound (N + 2)]) 'i bound (N + 2) ::=
-nf(
- ('xs : bool <- read ('ShareSum['i (fun 'wire0 'B)]))
- ('ys : bool <- read ('ShareSum['i (fun 'wire1 'B)])),
- return ( ap 'and pair('xs, 'ys) ),
- 'xs 'ys   
-)
-)
- 'i 'Z,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'Sqr 'i 'Z A 
-        (family 'Sqr[bound (N + 2)] 'i bound (N + 2) ::=
-nf(
- ('xs : bool <- read ('ShareSum['i (fun 'wire0 'B)]))
- ('ys : bool <- read ('ShareSum['i (fun 'wire1 'B)])),
- return (ap 'and pair('xs, 'ys)),
- 'xs 'ys   
-)
-)),
-       P1:Protocol <- getInductionBase P 'Sqr 'i 'Z A 
-       (family 'Sqr[bound (N + 2)] 'i bound (N + 2) ::=
-nf(
- ('xs : bool <- read ('ShareSum['i (fun 'wire0 'B)]))
- ('ys : bool <- read ('ShareSum['i (fun 'wire1 'B)])),
- return (ap 'and pair('xs, 'ys)),
- 'xs 'ys   
-))
-,
-       A':Set{BoolTerm} <-  (A,'Z <T (N + 2))                
-       ]    
-       ;)
-       
        CONG-NEW-NF{
        
        SINGLE-INDUCTION-new-R[
@@ -18784,36 +16996,6 @@ sd symRowColToInd :=
         in P
        ]
        { 
-        ***(
-       matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (family 'RowCol[bound (N + 1)] 'i
-bound (N + 1)
-::=
-nf(('bc : bool <- read ('Col['Z 'i])) 'br : bool <- read ('Row['i 'Z]), return (ap 'xor pair('br,
-    'bc)), 'br 'bc)
-) 'i 'M,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'RowCol 'i 'M A 
-        (family 'RowCol[bound (N + 1)] 'i
-bound (N + 1)
-::=
-nf(('bc : bool <- read ('Col['Z 'i])) 'br : bool <- read ('Row['i 'Z]), return (ap 'xor pair('br,
-    'bc)), 'br 'bc)
-)),
-       P1:Protocol <- getInductionBase P 'RowCol 'i 'M A 
-       (family 'RowCol[bound (N + 1)] 'i
-bound (N + 1)
-::=
-nf(('bc : bool <- read ('Col['Z 'i])) 'br : bool <- read ('Row['i 'Z]), return (ap 'xor pair('br,
-    'bc)), 'br 'bc)
-),
-       A':Set{BoolTerm} <-  (A,'M <T (N + 1))                
-       ] ;)
        CONG-NEW-NF{
        SINGLE-INDUCTION-new-R[
   idx:Qid <- 'M,
@@ -18984,69 +17166,6 @@ CONG-NEW-NF{
 
 strat indRowColToClosed @ ProtocolConfig .
 sd indRowColToClosed :=
-***(
-   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (
-family 'RowCol[bound 'Z] 'i
-bound 'Z
-::=
-nf(
-   ('xs : bool <- read ('ShareSum['i (fun 'wire0 'B)]))
-  ('ys : bool <- read ('ShareSum['i (fun 'wire1 'B)]))
-  ('xn : bool <- read ('Share['Z (fun 'wire0 'B)]))
-  ('yn : bool <- read ('Share['Z (fun 'wire1 'B)])),
-  return (ap 'xor pair(
-               ap 'and pair('xs, 'yn),
-               ap 'and pair('xn, 'ys)
-            )),
-  'xs 'ys 'xn 'yn
-)
-) 'i 'M,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'RowCol 'i 'M A 
-        (
-family 'RowCol[bound 'Z] 'i
-bound 'Z
-::=
-nf(
-   ('xs : bool <- read ('ShareSum['i (fun 'wire0 'B)]))
-  ('ys : bool <- read ('ShareSum['i (fun 'wire1 'B)]))
-  ('xn : bool <- read ('Share['Z (fun 'wire0 'B)]))
-  ('yn : bool <- read ('Share['Z (fun 'wire1 'B)])),
-  return (ap 'xor pair(
-               ap 'and pair('xs, 'yn),
-               ap 'and pair('xn, 'ys)
-            )),
-  'xs 'ys 'xn 'yn
-)
-)
-        ),
-       P1:Protocol <- getInductionBase P 'RowCol 'i 'M A 
-       (
-family 'RowCol[bound 'Z] 'i
-bound 'Z
-::=
-nf(
-  ('xs : bool <- read ('ShareSum['i (fun 'wire0 'B)]))
-  ('ys : bool <- read ('ShareSum['i (fun 'wire1 'B)]))
-  ('xn : bool <- read ('Share['Z (fun 'wire0 'B)]))
-  ('yn : bool <- read ('Share['Z (fun 'wire1 'B)])),
-  return (ap 'xor pair(
-               ap 'and pair('xs, 'yn),
-               ap 'and pair('xn, 'ys)
-            )),
-  'xs 'ys 'xn 'yn
-)
-),
-       A':Set{BoolTerm} <-  (A,'M <T 'Z)                
-       ]
-       ;
-       )
       CONG-NEW-NF{ 
        SINGLE-INDUCTION-new-R[
   idx:Qid <- 'M,
@@ -19393,28 +17512,6 @@ sd symSqrToInductive :=
         in P
        ] 
        {
-       ***(
-       matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (family 'Sqr[bound (N + 2)] 'i bound (N + 2) ::=
-            nf('c : bool <- read ('ColSum['i 'i]), return 'c, 'c)
-          ) 'i 'B,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'Sqr 'i 'B A 
-         (family 'Sqr[bound (N + 2)] 'i bound (N + 2) ::=
-            nf('c : bool <- read ('ColSum['i 'i]), return 'c, 'c)
-          ) ),
-       P1:Protocol <- getInductionBase P 'Sqr 'i 'B A 
-          (family 'Sqr[bound (N + 2)] 'i bound (N + 2) ::=
-            nf('c : bool <- read ('ColSum['i 'i]), return 'c, 'c)
-          ) ,
-       A':Set{BoolTerm} <-  (A,'B <T N + 2)                
-       ] ;
-       )
        CONG-NEW-NF{
        SINGLE-INDUCTION-new-R[
   idx:Qid <- 'B,
@@ -19749,20 +17846,7 @@ sd symColSumSameCasesPartTwo :=
 .        
 
 strat setupIndColRowPartTwo @ ProtocolConfig .
-sd setupIndColRowPartTwo := ***(
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          knowColRowSumPartTwo 'j 'Y,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P ('Comp['RowSum 'ColSum]) 'j 'Y A knowColRowSumPartTwo),
-       P1:Protocol <- getInductionBase P ('Comp['RowSum 'ColSum]) 'j 'Y A knowColRowSumPartTwo,
-       A':Set{BoolTerm} <-  (A,'Y <T (N + 2))
-       ] 
-       ;)
+sd setupIndColRowPartTwo := 
        SINGLE-INDUCTION-new[
   idx:Qid <- 'Y,
   q:Qid <- 'j,
@@ -19892,20 +17976,7 @@ sd symRowToCol0Part2 :=
 .
 
 strat setupIndColRow @ ProtocolConfig .
-sd setupIndColRow := ***(
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          wantColRowSum 'i 'X,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P ('Comp['RowSum 'ColSum]) 'i 'X A wantColRowSum),
-       P1:Protocol <- getInductionBase P ('Comp['RowSum 'ColSum]) 'i 'X A wantColRowSum,
-       A':Set{BoolTerm} <-  (A,'X <T (N + 2))
-       ] ;  )
-       
+sd setupIndColRow := 
        SINGLE-INDUCTION-new[
   idx:Qid <- 'X,
   q:Qid <- 'i,
@@ -20094,32 +18165,6 @@ sd setupIndColRow := ***(
 *** first induction for row on non-zero case
 strat setupIndRowPartOneNZCase @ ProtocolConfig .
 sd setupIndRowPartOneNZCase := 
-***(
-matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (family 'RowSum[fixedBound 'X bound (N + 2)]
-    'i 'j
-fixedBound 'X bound (N + 2)
-::= nf('c : bool <- read ('ColSum['X 'j]), return 'c, 'c)
-) 'j 'Y,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'RowSum 'j 'Y A (family 'RowSum[fixedBound 'X bound (N + 2)]
-    'i 'j
-fixedBound 'X bound (N + 2)
-::= nf('c : bool <- read ('ColSum['X 'j]), return 'c, 'c)
-)),
-       P1:Protocol <- getInductionBase P 'RowSum 'j 'Y A (family 'RowSum[fixedBound 'X bound (N + 2)]
-    'i 'j
-fixedBound 'X bound (N + 2)
-::= nf('c : bool <- read ('ColSum['X 'j]), return 'c, 'c)
-),
-       A':Set{BoolTerm} <-  (A,'Y <T (N + 2))                
-       ]
-    )
      SINGLE-INDUCTION-new-R[
   idx:Qid <- 'Y,
   q:Qid <- 'j,
@@ -20193,31 +18238,6 @@ fixedBound 'X bound (N + 2)
 *** first induction for row on 0 case
 strat setupIndRowPartOneZeroCase @ ProtocolConfig .
 sd setupIndRowPartOneZeroCase := 
-***(
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (family 'RowSum[fixedBound 'X bound (N + 2)]
-    'i 'j
-fixedBound 'X bound (N + 2)
-::= nf('c : bool <- read ('ColSum[0 'j]), return 'c, 'c)
-) 'j 'Y,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'RowSum 'j 'Y A (family 'RowSum[fixedBound 'X bound (N + 2)]
-    'i 'j
-fixedBound 'X bound (N + 2)
-::= nf('c : bool <- read ('ColSum[0 'j]), return 'c, 'c)
-)),
-       P1:Protocol <- getInductionBase P 'RowSum 'j 'Y A (family 'RowSum[fixedBound 'X bound (N + 2)]
-    'i 'j
-fixedBound 'X bound (N + 2)
-::= nf('c : bool <- read ('ColSum[0 'j]), return 'c, 'c)
-),
-       A':Set{BoolTerm} <-  (A,'Y <T (N + 2))                
-       ] ;)
        SINGLE-INDUCTION-new-R[
   idx:Qid <- 'Y,
   q:Qid <- 'j,
@@ -20447,34 +18467,6 @@ nf(('bj : bool <- read ('Row['i 'j])) 'r : bool <- read ('RowSum['i ('j -- 1)]),
               )
              in P
             ] {
-            ***(
-     ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (family 'Col[bound (N + 2) bound (N + 2)] 'i
-    'j
-bound (N + 2) bound (N + 2)
-::=
-nf('c : bool <- read ('CtrbSum['i 'j 'B]), return 'c, 'c)
-) 'j 'J,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'Col 'j 'J A (family 'Col[bound (N + 2) bound (N + 2)] 'i
-    'j
-bound (N + 2) bound (N + 2)
-::=
-nf('c : bool <- read ('CtrbSum['i 'j 'B]), return 'c, 'c)
-)),
-       P1:Protocol <- getInductionBase P 'Col 'j 'J A (family 'Col[bound (N + 2) bound (N + 2)] 'i
-    'j
-bound (N + 2) bound (N + 2)
-::=
-nf('c : bool <- read ('CtrbSum['i 'j 'B]), return 'c, 'c)
-),
-       A':Set{BoolTerm} <-  (A,'J <T (N + 2))                
-       ]       ;)
        CONG-NEW-NF{
        SINGLE-INDUCTION-new-R[
   idx:Qid <- 'J,
@@ -20669,32 +18661,6 @@ sd substFamCaseChnColSumSSAnd2 :=
 
 strat setupIndSSAnd @ ProtocolConfig .
 sd setupIndSSAnd := 
-***(
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (family 'ShareSum[bound (N + 1) fixedBound 'B]
-    'm 'k
-bound (N + 1) fixedBound 'B
-::= nf('c : bool <- read ('ColSum['m (N + 1)]), return 'c, 'c)
- ) 'm 'M,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'ShareSum 'm 'M A (family 'ShareSum[bound (N + 1) fixedBound 'B]
-    'm 'k
-bound (N + 1) fixedBound 'B
-::= nf('c : bool <- read ('ColSum['m (N + 1)]), return 'c, 'c)
- )),
-       P1:Protocol <- getInductionBase P 'ShareSum 'm 'M A (family 'ShareSum[bound (N + 1) fixedBound 'B]
-    'm 'k
-bound (N + 1) fixedBound 'B
-::= nf('c : bool <- read ('ColSum['m (N + 1)]), return 'c, 'c)
- ),
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ]
-)
 SINGLE-INDUCTION-new-R[
   idx:Qid <- 'M,
   q:Qid <- 'm,
@@ -21104,41 +19070,6 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1) 
  
 strat setupIndShareSumXor @ ProtocolConfig .
 sd setupIndShareSumXor := 
-***(
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (
-          family 'ShareSum[bound (N + 1) fixedBound 'B] 'm 'k
-bound (N + 1) fixedBound 'B
-          ::= nf( ('x : bool <- read ('ShareSum['m (fun 'wire0 'B)])) 
-                  ('y : bool <- read ('ShareSum['m (fun 'wire1 'B)])) , 
-                  return (ap 'xor pair('x, 'y)), 'x 'y)
-          ) 'm 'M,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'ShareSum 'm 'M A 
-        (
-          family 'ShareSum[bound (N + 1) fixedBound 'B] 'm 'k
-bound (N + 1) fixedBound 'B
-          ::= 
-          nf( ('x : bool <- read ('ShareSum['m (fun 'wire0 'k)])) 
-                  ('y : bool <- read ('ShareSum['m (fun 'wire1 'k)])) , 
-                  return (ap 'xor pair('x, 'y)), 'x 'y)
-          )),
-       P1:Protocol <- getInductionBase P 'ShareSum 'm 'M A (
-          family 'ShareSum[bound (N + 1) fixedBound 'B] 'm 'k
-bound (N + 1) fixedBound 'B
-          ::= 
-          nf( ('x : bool <- read ('ShareSum['m (fun 'wire0 'B)])) 
-                  ('y : bool <- read ('ShareSum['m (fun 'wire1 'B)])) , 
-                  return (ap 'xor pair('x, 'y)), 'x 'y)
-          ),
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ]
-       ;)
    SINGLE-INDUCTION-new-R[
   idx:Qid <- 'M,
   q:Qid <- 'm,
@@ -21346,36 +19277,6 @@ sd pSubstFamCaseChn0(R) :=
  
  strat rewriteSharesBoundNotAux @ ProtocolConfig .
  sd rewriteSharesBoundNotAux := 
- ***(
-   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-         (family 'ShareSum[bound (N + 1) fixedBound 'B]
-    'm 'k
-bound (N + 1) fixedBound 'B
-::=
-nf('s : bool <- read ('ShareSum['m (fun 'wire0 'B)]), return 's, 's) 
- ) 'm 'M,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'ShareSum 'm 'M A (family 'ShareSum[bound (N + 1) fixedBound 'B]
-    'm 'k
-bound (N + 1) fixedBound 'B
-::=
-nf('s : bool <- read ('ShareSum['m (fun 'wire0 'B)]), return 's, 's) 
- )),
-       P1:Protocol <- getInductionBase P 'ShareSum 'm 'M A (family 'ShareSum[bound (N + 1) fixedBound 'B]
-    'm 'k
-bound (N + 1) fixedBound 'B
-::=
-nf('s : bool <- read ('ShareSum['m (fun 'wire0 'B)]), return 's, 's) 
- ),
-       A':Set{BoolTerm} <-  (A,'M <T (N + 1))                
-       ]
-       ;)
-       
       SINGLE-INDUCTION-new-R[
   idx:Qid <- 'M,
   q:Qid <- 'm,
@@ -21590,48 +19491,6 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1)
        fam ('ShareSum[fixedBound (N + 1) bound 'B]), 
        fam ('Shares[bound 'B]) )
   }
-  
-     
-     
-     
-       ***( this was here, keep to see if you need it later
-       
-       
-       ;
-       substNF('Share[(N + 1) 'B], 'ShareSum[(N + 1) 'B])
-   ; revertShareNot
-   
-   
-   ; applyRemoveMergeFromGroupCases(
-       fam ('Shares[bound 'B]),
-       fam ('ShareSum[bound (N + 1) bound 'B])
-     )
-   ; rewriteSharesBoundNotAux
-   
-   ; substNFFamilyOne(
-           fam ('ShareSum[bound (N + 1) bound 'B]), 
-           'ShareSum[(N + 1) 'B],
-           nf('s : bool <- read ('ShareSum[N (fun 'wire0 'B)]), return 's, 's)
-     )
-   ; revertSharesBoundNotAux 
-   
-   
-   ; applyReturnNegOverXor(chn ('ShareSum[(N + 1) 'B]))
-   
-   ; applyAddToGroupCases( fam ('ShareSum[bound (N + 1) bound 'B]), fam ('Shares[bound 'B]) )
-   
-   ; applyRemoveFromGroupCases(
-       fam ('Shares[bound 'B]),
-       fam ('ShareSum[fixedBound (N + 1) bound 'B])
-     )
-   ; applyAllSameCases(fam ('ShareSum[fixedBound (N + 1) bound 'B]))  
-   
-   ; psymNot
-    
-   ; applyAddToGroupCases( 
-       fam ('ShareSum[fixedBound (N + 1) bound 'B]), 
-       fam ('Shares[bound 'B]) )
-   )     
  .      
 
 *** strategies for input
@@ -21701,40 +19560,6 @@ nf(('s : unit <- read ('InShare$Sum-OK[('m -- 1) 'p 'i]))
  
  strat pSetupInd1 @ ProtocolConfig .
  sd pSetupInd1 := 
- ***(
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (family ('InShare$Sum-OK[(bound (N + 1))(bound (N + 2))(dependentBound 'I)])
- ('m 'p 'i)
- ((bound (N + 1))(bound (N + 2))(dependentBound 'I) ) 
- ::= 
-  nf('i : bool  <- read ('In-OK['p 'i]),
-             return (), 'i)
- ) 'm 'M,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'InShare$Sum-OK 'm 'M A 
-        (family ('InShare$Sum-OK[(bound (N + 1))(bound (N + 2))(dependentBound 'I)])
- ('m 'p 'i)
- ((bound (N + 1))(bound (N + 2))(dependentBound 'I) ) 
- ::= 
-  nf('i : bool  <- read ('In-OK['p 'i]),
-             return (), 'i)
- )),
-       P1:Protocol <- getInductionBase P 'InShare$Sum-OK 'm 'M A
-       (family ('InShare$Sum-OK[(bound (N + 1))(bound (N + 2))(dependentBound 'I)])
- ('m 'p 'i)
- ((bound (N + 1))(bound (N + 2))(dependentBound 'I) ) 
- ::= 
-  nf('i : unit  <- read ('In-OK['p 'i]),
-             return (), 'i)
- ),
-       A':Set{BoolTerm} <-  (A,'M <T N + 1)                
-       ] ;
-      ) 
       SINGLE-INDUCTION-new-R[
   idx:Qid <- 'M,
   q:Qid <- 'm,
@@ -21780,41 +19605,6 @@ nf(('s : unit <- read ('InShare$Sum-OK[('m -- 1) 'p 'i]))
   
  strat pSetupInd0 @ ProtocolConfig .
  sd pSetupInd0 :=
- ***( 
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (family ('InShare$Sum-OK[(bound (N + 1))(bound (N + 2))(dependentBound 'I)])
- ('m 'p 'i)
- ((bound (N + 1))(bound (N + 2))(dependentBound 'I) ) 
- ::= 
-  nf('i : bool  <- read ('InShare$-Sum['m 'p 'i]),
-             return (), 'i)
- ) 'm 'M,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'InShare$Sum-OK 'm 'M A 
-        (family ('InShare$Sum-OK[(bound (N + 1))(bound (N + 2))(dependentBound 'I)])
- ('m 'p 'i)
- ((bound (N + 1))(bound (N + 2))(dependentBound 'I) ) 
- ::= 
-  nf('i : bool  <- read ('InShare$-Sum['m 'p 'i]),
-             return (), 'i)
- )),
-       P1:Protocol <- getInductionBase P 'InShare$Sum-OK 'm 'M A
-       (family ('InShare$Sum-OK[(bound (N + 1))(bound (N + 2))(dependentBound 'I)])
- ('m 'p 'i)
- ((bound (N + 1))(bound (N + 2))(dependentBound 'I) ) 
- ::= 
-  nf('i : bool  <- read ('InShare$-Sum['m 'p 'i]),
-             return (), 'i)
- ),
-       A':Set{BoolTerm} <-  (A,'M <T N + 1)                
-       ]
-       
-       ; )
        SINGLE-INDUCTION-new-R[
   idx:Qid <- 'M,
   q:Qid <- 'm,
@@ -22138,39 +19928,7 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1) 
   cases':Cases <- 
    nf('i : bool <- read ('InShare$-Sum['m (fun 'wire0 'B) (fun 'wire1 'B)]), 
               return 'i, 'i)
-   ] ***(
-       matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (family 'ShareSum[bound (N + 1) fixedBound 'B] 
-            ('m 'k) (bound (N + 1) fixedBound 'B) ::=
-           nf('i : bool <- read ('InShare$-Sum['m (fun 'wire0 'B) (fun 'wire1 'B)]), 
-              return 'i, 'i)
-          ) 'm 'M,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(
-          getInductionBase P  'ShareSum 'm 'M A 
-          (family 'ShareSum[bound (N + 1) fixedBound 'B] 
-            ('m 'k) (bound (N + 1) fixedBound 'B) ::=
-           nf('i : bool <- read ('InShare$-Sum['m (fun 'wire0 'B) (fun 'wire1 'B)]), 
-              return 'i, 'i)
-          )
-        ),
-       P1:Protocol <- 
-         getInductionBase P  'ShareSum 'm 'M A 
-          (family 'ShareSum[bound (N + 1) fixedBound 'B] 
-            ('m 'k) (bound (N + 1) fixedBound 'B) ::=
-           nf('i : bool <- read ('InShare$-Sum['m (fun 'wire0 'B) (fun 'wire1 'B)]), 
-              return 'i, 'i)
-          )
-       ,
-       A':Set{BoolTerm} <-  (A,'M <T N + 1)                
-       ] 
-       ;
-       )
+   ] 
        {
         CASE-DISTINCTION-channel[
          cn:ChannelName <- 'ShareSum['M 'B]
@@ -22632,10 +20390,7 @@ srew [1] pConfig(sig,
 using  
        sugar-newNF
        ; ((COMP-NEW-newNF-inside-new ; lift-inner-new-nf) !)
-       ***(
-       ; (moveProtocolUnderNewNF !)
-       ; (lift-inner-new-nf !)
-       ) 
+      
        ; applyAddToGroupCases(
           fam (('OTChc-0 ^^ 'ot .. 'adv)[(bound (N + 2)) (bound (N + 2)) (bound K)]), 
           fam ('Circuit[(bound (N + 2)) (bound K)])
@@ -22728,10 +20483,7 @@ using
        }
        ; sugar-newNF
        ; ((COMP-NEW-newNF-inside-new ; lift-inner-new-nf) !)
-       ***(
-       ; (moveProtocolUnderNewNF !)
-       ; (lift-inner-new-nf !)
-       )      
+          
        *** 10.4.1 Simplifying The Real Protocol: Initial Phase
        
        ; applySubstFamily3IdxCase(
@@ -23179,10 +20931,7 @@ using
      *** end comment     
      ; sugar-newNF
      ; ((COMP-NEW-newNF-inside-new ; lift-inner-new-nf) !)
-     ***(
-       ; (moveProtocolUnderNewNF !)
-       ; (lift-inner-new-nf !)
-     )
+   
        ; applyNewCombine(fam ('Adv[bound K]))
                 
        ; applyNewCombine(fam ('Shares[bound K]))
@@ -23494,39 +21243,7 @@ using
         applyOtherwiseToNeg(
       fam ('OutShareSum[bound (N + 2) bound (N + 2) bound K])
     )
-    ***(
-    ;
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          (family 'OutShareSum[bound (N + 2) bound (N + 2) bound K] 'n 'm 'k
-bound (N + 2) bound (N + 2) bound K
-::=
-           nf('s : bool <- read ('ShareSum['m 'k]), return 's, 's)
-          ) 'm 'M,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(
-          getInductionBase P  'OutShareSum 'm 'M A 
-          (family 'OutShareSum[bound (N + 2) bound (N + 2) bound K] 'n 'm 'k
-bound (N + 2) bound (N + 2) bound K
-::=
-           nf('s : bool <- read ('ShareSum['m 'k]), return 's, 's)
-          ) 
-        ),
-       P1:Protocol <- 
-         getInductionBase P  'OutShareSum 'm 'M A
-          (family 'OutShareSum[bound (N + 2) bound (N + 2) bound K] 'n 'm 'k
-bound (N + 2) bound (N + 2) bound K
-::=
-           nf('s : bool <- read ('ShareSum['m 'k]), return 's, 's)
-          ) 
-       ,
-       A':Set{BoolTerm} <-  (A,'M <T (N + 2))                
-       ] ;
-       )
+    
       ; SINGLE-INDUCTION-new-R[
   idx:Qid <- 'M,
   q:Qid <- 'm,
@@ -24157,8 +21874,5 @@ fam ('InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound 'I])
 }
     
  ***  DONE main proof ends here, below just checks  
-
- ; get-structure  
-
 .
 
