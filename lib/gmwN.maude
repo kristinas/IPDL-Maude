@@ -178,11 +178,7 @@ mod GMWN is
  
  eq (A, apply 'isHonest nt) |= neg (apply 'isSemiHonest nt) with f = true .
  eq (A, apply 'isSemiHonest nt) |= neg (apply 'isHonest nt) with f = true .
- 
- *** record that a honest channel is not semi-honest
- *** sh to h (A, sh) |= h = false 
- *** h to sh (A, h) |= sh = false 
- 
+  
  *** delta
  
  op deltaIdealPlusSim : -> ChannelContext .
@@ -8919,7 +8915,7 @@ nf('oc : unit <- read (('OTChcRcvd-1 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
        )
  . 
  
- *** just to force typechecks, delete
+ *** dummy family to create groups
  strat addHidden @ ProtocolConfig .
  sd addHidden := 
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -9577,277 +9573,7 @@ nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
            )
                   
  .      
- 
- strat setIndConf @ ProtocolConfig .
- sd setIndConf :=
-    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (UNSAFE[
-       Delta':ChannelContext <- 
-        getInductionDelta
-          (addInternalChannels Delta P)
-          want0 'k 'B,
-       I':Set{CNameBound} <- (fam ('In[bound (N + 2) dependentBound 'I]), 
- fam ('InShare[bound (N + 2) bound (N + 2) dependentBound 'I]),
- fam ('InShare$[bound (N + 2) bound (N + 2) dependentBound 'I]),
- fam ('InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound 'I])
- ),   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Shares 'SharesOK][bound K]))
-                      )  ('Comp['Shares 'SharesOK]) 
-                      'k 'B A want0),
-       P1:Protocol <- getInductionBase 
-                      (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Shares 'SharesOK][bound K]))
-                      )  
-                      ('Comp['Shares 'SharesOK]) 
-                      'k 'B A want0,
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ]
-       
-       ; applyDropName(fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-       ; CASE-DISTINCTION-one[
-          fns:NameWithScripts <- 'SharesOK,
-          blist:List{Bounds} <- fixedBound 'B]{
-          *** for input gate
-          select-case-family-p[
-           fns1:NameWithScripts <- 'Shares,
-           blist1:List{Bounds} <- fixedBound 'B,
-           bt:BoolTerm <- apply 'isInputGate 'B
-           ]
-           { 
-           applySubstDivergeFamily(
-            fam ('Ctrb[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            fam ('Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            'c, unit) 
-           ;
-           applySubstDivergeFamily(
-            fam ('CtrbSum[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            fam ('CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            'c, unit)  
-           ;
-           applySubstDivergeFamily(
-            fam ('RcvdBit[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            fam ('RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            'r, unit)  
-           ;
-           applySubstDivergeFamily(
-            fam ('SendBit[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            fam ('SendBit-OK[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            's, unit)  
-           ;
-           substNFFamiliesGen(
-             fam ('Share[bound (N + 1) fixedBound 'B]),
-             fam ('ShareOK[bound (N + 1) fixedBound 'B]), 
-             nf('in : bool <- read ('InShare['n (fun 'wire0 'B) (fun 'wire1 'B)]), 
-                return 'in, 'in)
-            )
-           ; substNF('Share[(N + 1) 'B], 'ShareOK[(N + 1) 'B]) 
-           ; substNFFamilyOne(
-              fam ('InShareOK[bound (N + 2) bound (N + 2) dependentBound 'I]),
-              'ShareOK[(N + 1) 'B],
-              nf('is : bool <- read ('InShare[(N + 1) (fun 'wire0 'B) (fun 'wire1 'B)]), 
-                 return (), 'is)
-              )
-           *** now we do the sym proof for the channel 'Share[(N + 1) 'B]
-           ; inIndSym1  
-           *** and the sym proof for the family 'Share[bound (N + 1) fixedBound 'B]
-           ; inIndSym2
-           },
-          CASE-DISTINCTION-one[
-          fns:NameWithScripts <- 'SharesOK,
-          blist:List{Bounds} <- fixedBound 'B]{
-          *** for not gate
-          select-case-family-p[
-           fns1:NameWithScripts <- 'Shares,
-           blist1:List{Bounds} <- fixedBound 'B,
-           bt:BoolTerm <- apply 'isNotGate 'B
-           ]
-           { 
-           applySubstDivergeFamily(
-            fam ('Ctrb[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            fam ('Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            'c, unit) 
-           ;
-           applySubstDivergeFamily(
-            fam ('CtrbSum[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            fam ('CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            'c, unit)  
-           ;
-           applySubstDivergeFamily(
-            fam ('RcvdBit[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            fam ('RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            'r, unit)  
-           ;
-           applySubstDivergeFamily(
-            fam ('SendBit[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            fam ('SendBit-OK[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            's, unit)  
-            ; substNF('Share[(N + 1) 'B], 'ShareOK[(N + 1) 'B]) 
-            ;
-           substNFFamiliesGen(
-             fam ('Share[bound (N + 1) fixedBound 'B]),
-             fam ('ShareOK[bound (N + 1) fixedBound 'B]), 
-             nf('s : bool <- read ('Share['n (fun 'wire0 'B)]), return 's, 's)
-            )
-            
-           },
-          CASE-DISTINCTION-one[
-          fns:NameWithScripts <- 'SharesOK,
-          blist:List{Bounds} <- fixedBound 'B]{
-          *** for xor gate
-          select-case-family-p[
-           fns1:NameWithScripts <- 'Shares,
-           blist1:List{Bounds} <- fixedBound 'B,
-           bt:BoolTerm <- apply 'isXorGate 'B
-           ]
-           { 
-           applySubstDivergeFamily(
-            fam ('Ctrb[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            fam ('Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            'c, unit) 
-           ;
-           applySubstDivergeFamily(
-            fam ('CtrbSum[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            fam ('CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            'c, unit)  
-           ;
-           applySubstDivergeFamily(
-            fam ('RcvdBit[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            fam ('RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            'r, unit)  
-           ;
-           applySubstDivergeFamily(
-            fam ('SendBit[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            fam ('SendBit-OK[bound (N + 2) bound (N + 2) fixedBound 'B]), 
-            's, unit)  
-           
-           },
-          CASE-DISTINCTION-one-end-when{
-           idle
-          }
-         }
-         }
-         }
-         
-       )
-
- .    
- 
- strat setIndConfSym @ ProtocolConfig .
- sd setIndConfSym :=
-    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       Delta':ChannelContext <- 
-        getInductionDelta
-          (addInternalChannels Delta P)
-          want0 'k 'B,
-       O':Set{CNameBound} <- getOutputs(getInductionEnd P ('Comp['Shares 'SharesOK]) 
-                      'k 'B A want0),
-       P1:Protocol <- getInductionEnd P ('Comp['Shares 'SharesOK]) 
-                      'k 'B A want0 
-       ]
-       ***( needs to happen last
-       ;
-       CASE-DISTINCTION-one-R[
-         fns:NameWithScripts <- 'RcvdBit-OK,
-         blist:List{Bounds} <- ((bound (N + 2)) (bound (N + 2)) (fixedBound 'B))
-       ]
-       { *** for input gate 
-        
-       idle
-       , 
-       CASE-DISTINCTION-one-R[
-         fns:NameWithScripts <- 'RcvdBit-OK,
-         blist:List{Bounds} <- ((bound (N + 2)) (bound (N + 2)) (fixedBound 'B))
-       ]
-       { *** for not gate 
-        
-       idle
-        
-       , 
-       CASE-DISTINCTION-one-R[
-         fns:NameWithScripts <- 'RcvdBit-OK,
-         blist:List{Bounds} <- ((bound (N + 2)) (bound (N + 2)) (fixedBound 'B))
-       ]
-       { *** for xor gate 
-        
-       idle
-        
-       , *** for and gate
-       CASE-DISTINCTION-one-R-end-when[
-         fns:NameWithScripts <- 'RcvdBit-OK,
-         blist:List{Bounds} <- ((bound (N + 2)) (bound (N + 2)) (fixedBound 'B))
-       ]{ idle ***(
-       applySubstOnBranch(
-        fam ('Share[(bound (N + 2)) (fixedBound 'B)]), 
-        fam ('RcvdBit-OK[(bound (N + 2)) (bound (N + 2)) (fixedBound 'B)]), 
-        apply 'isAndGate 'B, 
-        nf(('b : bool <- read ('SendBit['m 'n 'B])) 
-           ('xm : bool <- read ('Share['m (fun 'wire0 'B)])) 
-           ('xn : bool <- read ('Share['n (fun 'wire0 'B)])) 
-           ('ym : bool <- read ('Share['m (fun 'wire1 'B)])) 
-            'yn : bool <- read ('Share['n (fun 'wire1 'B)]), 
-            return (ap 'xor pair(ap 'xor pair(ap 'and pair('xm, 'yn), 
-                                 ap 'and pair('xn, 'ym)), 'b)), 
-          'b 'xm 'ym 'xn 'yn)
-       )
-      ) 
-       }
-       }}
-       }
-     )  
- .    
- 
- strat setInduction @ ProtocolConfig .
- sd setInduction :=
-    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using UNSAFE[
-       P1:Protocol <- 
-        getInductionBase P 'SharesOK 'k 'B genA 
-        (
-(family  ('Ctrb-OK[((bound (N + 2))(bound (N + 2))(bound K))]) ('n 'm 'k)
-((bound (N + 2))(bound (N + 2))(bound K))
-::=
-nf('c : bool <- read ('Ctrb['n 'm 'k]), return (), 'c)
-)
-||
-(family ('CtrbSum-OK[((bound (N + 2))(bound (N + 2))(bound K))]) ('n 'm 'k)
-((bound (N + 2))(bound (N + 2))(bound K))
-::=
-nf('c : bool <- read ('CtrbSum['n 'm 'k]), return (), 'c)
-)
-||
-(family ('RcvdBit-OK[((bound (N + 2))(bound (N + 2))(bound K))]) ('n 'm 'k)
-((bound (N + 2))(bound (N + 2))(bound K))
-::=
-nf('r : bool <- read ('RcvdBit['n 'm 'k]), return (), 'r)
-)
-||
-(family ('SendBit-OK[((bound (N + 2))(bound (N + 2))(bound K))]) ('n 'm 'k)
-((bound (N + 2))(bound (N + 2))(bound K))
-::=
-nf('s : bool <- read ('SendBit['n 'm 'k]), return (), 's)
-)
-||
-(family ('ShareOK[(bound (N + 1)) (bound K)]) ('n 'k)
-((bound (N + 1)) (bound K))
-::=
-nf('x : bool <- read ('Share['n 'k]), return (), 'x)        
-)        
-||
-(family ('ShareOK[(fixedBound (N + 1)) (bound K)]) ('n 'k)
-((fixedBound (N + 1)) (bound K))
-::=
-nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)        
-)
-       
-  )      
-       ]
- .
- 
+   
  var tlist : List{NatTerm} .
  var blist1 blist2 : List{Bounds} .
  var q1 q2 : Qid .
@@ -9869,12 +9595,9 @@ nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
             fam (fns2[blist2]), 
             fam (fns1[blist1]), 
             q2, unit)   
-       }
-       
+       }   
     . 
     
- 
- 
  var R : Reaction .
     
  strat scp2 : BoolTerm Reaction @ ProtocolConfig .
@@ -10577,155 +10300,6 @@ nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
        } ***sym   
       
  .  
-  
-  *** TODO: old, delete!
-  strat indSetup @ ProtocolConfig .
-  sd indSetup :=
-   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-           (
-                      
-(family 'InShare$-OK[bound (N + 2) bound (N + 2) dependentBound 'I] 'm 'n 'i
-bound (N + 2) bound (N + 2) dependentBound 'I
-::=
-nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-)
-||
-(family 'InShare$Sum-OK[bound (N + 1) bound (N + 2) dependentBound 'I] 'm 'n 'i
-bound (N + 1) bound (N + 2) dependentBound 'I
-::=
-nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-)
-||
-family 'InShareOK[bound (N + 2) bound (N + 2) dependentBound 'I] 'm 'n 'i
-bound (N + 2) bound (N + 2) dependentBound 'I
-::=
-nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-                      
-                      ) 'm 'M,
-                       
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase P 'InitOK
-                      'm 'M A 
-                      (
-                      
-(family 'InShare$-OK[bound (N + 2) bound (N + 2) dependentBound 'I] 'm 'n 'i
-bound (N + 2) bound (N + 2) dependentBound 'I
-::=
-nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-)
-||
-(family 'InShare$Sum-OK[bound (N + 1) bound (N + 2) dependentBound 'I] 'm 'n 'i
-bound (N + 1) bound (N + 2) dependentBound 'I
-::=
-nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-)
-||
-family 'InShareOK[bound (N + 2) bound (N + 2) dependentBound 'I] 'm 'n 'i
-bound (N + 2) bound (N + 2) dependentBound 'I
-::=
-nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-                      
-                      )),
-                
-                      
-              
-       P1:Protocol <- 
-       getInductionBase
-                      P
-                      'InitOK
-                      'm 'M A 
-                      (
-                      
-                      
-                      
-(family 'InShare$-OK[bound (N + 2) bound (N + 2) dependentBound 'I] 'm 'n 'i
-bound (N + 2) bound (N + 2) dependentBound 'I
-::=
-nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-)
-||
-(family 'InShare$Sum-OK[bound (N + 1) bound (N + 2) dependentBound 'I] 'm 'n 'i
-bound (N + 1) bound (N + 2) dependentBound 'I
-::=
-nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-)
-||
-(family 'InShareOK[bound (N + 2) bound (N + 2) dependentBound 'I] 'm 'n 'i
-bound (N + 2) bound (N + 2) dependentBound 'I
-::=
-nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-)                      
-                    
-                      
-                      )
-             ,      
-                      
-       A':Set{BoolTerm} <-  (A,'M <T N + 2)                
-       ] ) 
-       
-       ; applyDropName(fam ('InitOK[fixedBound 'M bound (N + 2) dependentBound 'I]))
-   
-   *** first  'InShare$-OK  
-       ; CASE-DISTINCTION-one-R[
-   fns:NameWithScripts <- 'InShare$-OK,
-   blist:List{Bounds} <- (fixedBound 'M bound (N + 2) dependentBound 'I)
- ]{ *** M = N + 1
-    substNFFamiliesGen(
-             fam ('InShare$Sum-OK[bound 'M bound (N + 2) dependentBound 'I]),
-             fam ('InShare$-OK[fixedBound 'M bound (N + 2) dependentBound 'I]), 
-             nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-             )
-   , *** here we already have what we want
-     idle
-   } 
-   ; applyAllSameCases(fam ('InShare$-OK[fixedBound 'M bound (N + 2) dependentBound 'I]))
-   
-   *** then 'InShareOK
-   ; substNFFamiliesGen(
-             fam ('InShare$-OK[fixedBound 'M bound (N + 2) dependentBound 'I]),
-             fam ('InShareOK[fixedBound 'M bound (N + 2) dependentBound 'I]), 
-             nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-             )
-   
-   *** then  'InShare$Sum-OK 
-   
-   ; applyOtherwiseToNeg(fam ('InShare$Sum-OK[fixedBound 'M bound (N + 2) dependentBound 'I]))
-   
-   ; CASE-DISTINCTION-one-R[
-   fns:NameWithScripts <- 'InShare$Sum-OK,
-   blist:List{Bounds} <- (fixedBound 'M bound (N + 2) dependentBound 'I)
- ]{ *** M = 0
-    substNFFamiliesGen(
-             fam ('InShare$-OK[fixedBound 'M bound (N + 2) dependentBound 'I]),
-             fam ('InShare$Sum-OK[fixedBound 'M bound (N + 2) dependentBound 'I]), 
-             nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-             )
-            
-   , CASE-DISTINCTION-one-R-end-when[
-   fns:NameWithScripts <- 'InShare$Sum-OK,
-   blist:List{Bounds} <- (fixedBound 'M bound (N + 2) dependentBound 'I)
-   ]{
-          substNFFamiliesGen(
-             fam ('InShare$Sum-OK[bound 'M bound (N + 2) dependentBound 'I]),
-             fam ('InShare$Sum-OK[fixedBound 'M bound (N + 2) dependentBound 'I]), 
-             nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-             )
-         ; substNFFamiliesGen(
-             fam ('InShare$-OK[fixedBound 'M bound (N + 2) dependentBound 'I]),
-             fam ('InShare$Sum-OK[fixedBound 'M bound (N + 2) dependentBound 'I]), 
-             nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
-             )    
-   }          
-     }
-  ; applyAllSameCases(fam ('InShare$Sum-OK[fixedBound 'M bound (N + 2) dependentBound 'I]))
-  ; regroupInitOK      
- ***  ; applyGetChannel(fam ('InitOK[fixedBound 'M bound (N + 2) dependentBound 'I]))
-   .       
  
  op want1 : -> Protocol .
  eq want1 = 
@@ -11564,33 +11138,7 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
            }     
               
             .  
-            
- strat setIndWiresSharesEnd @ ProtocolConfig .
- sd setIndWiresSharesEnd :=
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          want1 'k 'B,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Wires-OK 'SharesOK][bound K]))
-                      )  ('Comp['Wires-OK 'SharesOK]) 
-                      'k 'B A want1),
-       P1:Protocol <- getInductionEnd
-                      (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Wires-OK 'SharesOK][bound K]))
-                      )  
-                      ('Comp['Wires-OK 'SharesOK]) 
-                      'k 'B A want1,
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ] ) 
- .                           
- 
+                          
  *** for the last induction of timing 1
  
  op want2 : -> Protocol .
@@ -11890,30 +11438,9 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k]))
         { applyDropName(fam ('InitOK[(bound (N + 2))(bound (N + 2))(dependentBound 'I)]))
      ; applyNewCombine(fam ('Ctrbs-OK[bound K]))
      }
-     
-        
+         
  .
- 
- strat indSharesTimingEnd @ ProtocolConfig .
- sd indSharesTimingEnd :=
-    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          want2 'k 'B,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(
-          getInductionBase P  'Shares 'k 'B A want2
-        ),
-       P1:Protocol <- getInductionEnd P 'Shares 'k 'B A want2,
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ] ) 
-     ; applyDropName(fam ('InitOK[(bound (N + 2))(bound (N + 2))(dependentBound 'I)]))
-     ; applyNewCombine(fam ('Ctrbs-OK[bound K]))
- .
- 
+
  strat symSharesInput @ ProtocolConfig .
  sd symSharesInput := 
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -12038,7 +11565,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k]))
                 }
            }   
  .
- 
  
  *** hidden group
  strat addHiddenGroup @ ProtocolConfig .
@@ -13712,34 +13238,7 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
        applyReturnUnit(chn ('ShareSum-OK['M 'B]))
        } 
   .
- 
- strat setIndWiresSharesEnd' @ ProtocolConfig .
- sd setIndWiresSharesEnd' :=
- *** this is the end configuration
- matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          want1' 'k 'B,
-       I':Set{CNameBound} <- (I, fam ('In-OK[bound (N + 2) dependentBound 'I])),   
-       O':Set{CNameBound} <- 
-        getOutputs(getInductionBase (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Wires-OK 'SharesOK][bound K]))
-                      )  ('Comp['Wires-OK 'SharesOK]) 
-                      'k 'B A want1'),
-       P1:Protocol <- getInductionEnd 
-                      (keepTwo P 
-                        (fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I])) 
-                        (fam ('Comp['Wires-OK 'SharesOK][bound K]))
-                      )  
-                      ('Comp['Wires-OK 'SharesOK]) 
-                      'k 'B A want1',
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ] ) 
- .      
- 
+  
  strat setIndWiresShares' @ ProtocolConfig .
  sd setIndWiresShares' :=
          applyDropName(fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I]))
@@ -14474,31 +13973,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
      
  }
  . 
-
-
-strat indSharesTiming2End
-    *** : ChannelContext Protocol Set{CNameBound} Set{BoolTerm} 
-  @ ProtocolConfig .
- sd indSharesTiming2End
-    ***      (Delta, P, O, A) 
-   :=
-    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using
-        
-        UNSAFE[
-       Delta':ChannelContext <- 
-        deltaInd
-          (addInternalChannels Delta P)
-          want2 'k 'B,
-       I':Set{CNameBound} <- I,   
-       O':Set{CNameBound} <- 
-        getOutputs(
-          getInductionBase P  ('Comp['HiddenGroup 'Shares]) 'k 'B A want2
-        ),
-       P1:Protocol <- getInductionEnd P  ('Comp['HiddenGroup 'Shares]) 'k 'B A want2,
-       A':Set{BoolTerm} <-  (A,'B <T K)                
-       ]
- .      
 
  strat indSharesTiming2 @ ProtocolConfig .
  sd indSharesTiming2 :=   
@@ -21106,9 +20580,6 @@ using
          neg ('m =T= N + 1)
         )
         
-        
-     
-
       *** for N + 1 in 'InShare$-OK 
       ; substNFFamiliesGen(
              fam ('InShare$[bound (N + 2) bound (N + 2) dependentBound 'I]),
@@ -21125,7 +20596,6 @@ using
       fam ('InShare$-OK[fixedBound (N + 1) bound (N + 2) dependentBound 'I])
      )  
   
-
        *** for 'InShare$Sum-OK we need an induction proof
        
        ; asym2
@@ -21133,9 +20603,7 @@ using
        *** and now we can deal with the missing bit on 'InShare$-OK
         *** ; applySplitFst(fam ('InShare$-OK[bound (N + 2) bound (N + 2) dependentBound 'I]))
        ; asym01  
-       
-      
-      
+          
       *** here we put back InitOK
       ; sym6 
       
@@ -21282,10 +20750,7 @@ using
        }
        }
        ; applyAllSameCases(fam ('OutShareSum[bound (N + 2) fixedBound 'M bound K]) )
-       }
-
-        
-        
+       }      
         ,
         CASE-DISTINCTION-one-end-when[fns:NameWithScripts <- 'GroupOS]{
          
