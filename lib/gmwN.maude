@@ -1,68 +1,47 @@
 ***( IPDL
-
   Copyright : (C) 2022-23, Kristina Sojakova, Mihai Codescu
   License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
   Authors   : Mihai Codescu <mscodescu@gmail.com>
               Kristina Sojakova <sojakova.kristina@gmail.com>
-
 Multi-Party GMW Protocol
 See Sec. 9 in doc/case-studies.pdf
-
 )
 
 load ../src/strategies
-
 mod GMWN is
  including APPROX-EQUALITY .
  protecting LIST{NatPairs} .
  
- 
  op sumF : -> SigElem .
  eq sumF = 'xor : (bool * bool) ~> bool .
  *** xor is +
- 
  op mulF : -> SigElem .
  eq mulF = 'and : (bool * bool) ~> bool .
  *** and is *
- 
  op negF : -> SigElem .
  eq negF = 'neg : bool ~> bool .
- 
  op flipF : -> SigElem .
  eq flipF = 'flip : unit ~>> bool .
- 
  op sig : -> Signature .
  eq sig = sumF mulF negF flipF .
- 
  var i j l k n : Nat .
- 
  *** global parameters
- 
  op N : -> Nat . 
- 
  op K : -> Nat .
- 
  *** for each party p, I(p) is the number of inputs for p
  op I : Nat -> Nat . 
- 
  op C : -> Circuit . *** the circuit acting as parameter
- 
  *** gates and circuits
- 
  sort Gate .
- 
  op input-gate : Nat Nat -> Gate [ctor] . *** first nat is the party
  op not-gate : Nat -> Gate [ctor] .
  op xor-gate : Nat Nat -> Gate [ctor] .
  op and-gate : Nat Nat -> Gate [ctor] .
- 
  sort Circuit . *** list of gates
  subsort Gate < Circuit .
  op emptyCircuit : -> Circuit [ctor] .
  op __ : Circuit Circuit -> Circuit [ctor assoc id: emptyCircuit] .
-
  op wellFormed : Circuit Nat -> Bool .
- 
  var circuit : Circuit .
  eq wellFormed(emptyCircuit, 0) = true .
  ceq wellFormed(circuit input-gate(i, j), s(n)) = true 
@@ -78,34 +57,27 @@ mod GMWN is
  *** get the gate at the start of the circuit, after i pops
  *** i must be at most the length of circuit
  *** the circuit must be non-empty
- 
  var gate : Gate .
- 
  op gateAt : Circuit Nat -> Gate .
  eq gateAt(gate circuit, 0) = gate .
  eq gateAt(gate circuit, s(n)) = gateAt(circuit, n) .
- 
  *** the wires of a gate, as a list
  op wiresOf : Gate -> List{NatPairs} .
  eq wiresOf(input-gate(i, j)) = (0 ;; i) (1 ;; j) .
  eq wiresOf(not-gate(i)) = (0 ;; i) .
  eq wiresOf(and-gate(k, l)) = (0 ;; k) (1 ;; l) .
  eq wiresOf(xor-gate(k, l)) = (0 ;; k) (1 ;; l) .
- 
  *** list as an unsafe map
  var natPairs : List{NatPairs} .
  op _@@_ : List{NatPairs} Nat -> Nat .
  eq ( (i ;; k) natPairs) @@ i = k .
  ceq ( (l ;; k) natPairs) @@ i = natPairs @@ i if l =/= i .
- 
  *** wire 0 of the circuit C at a given gate
  op wire0 : Nat -> Nat .
  eq wire0(i) = wiresOf(gateAt(C, i)) @@ 0 .
- 
  *** wire 1 of the circuit C at a given gate
  op wire1 : Nat -> Nat .
  eq wire1(i) = wiresOf(gateAt(C, i)) @@ 1 .
- 
   *** here we connect 'wire0 with wire0 
  var nt nt1 nt2 : NatTerm .
  var f : Map{Qid, NatTerm} .
@@ -115,44 +87,34 @@ mod GMWN is
  ceq evalTerm (fun 'wire1 nt) f = wire1(evalTerm nt f) 
   if (evalTerm nt f) : Nat .
  eq evalTerm (fun 'wire1 nt) f = fun 'wire1 nt [owise] .
- 
  *** for I
  eq evalTerm (fun 'I nt) f = fun 'I (evalTerm nt f) . 
-
  *** here we record the assumptions on indices
  var q : Qid .
  var A : Set{BoolTerm} .
- 
  ceq A |= fun 'wire0 nt <T (N + 2) with f = true 
    if (apply 'isInputGate (evalTerm nt f)) in A .
- 
  ceq A |= fun 'wire0 nt <T K with f = true 
     if (apply 'isNotGate (evalTerm nt f)) in A .
- 
  ceq A |= fun 'wire0 nt <T K with f = true 
     if (apply 'isXorGate (evalTerm nt f)) in A .
  ceq A |= fun 'wire1 nt <T K with f = true 
     if (apply 'isXorGate (evalTerm nt f)) in A .   
- 
  ceq A |= fun 'wire0 nt <T K with f = true 
     if (apply 'isAndGate (evalTerm nt f)) in A .
  ceq A |= fun 'wire1 nt <T K with f = true 
     if (apply 'isAndGate (evalTerm nt f)) in A .
- 
  
  ceq A |= fun 'wire0 nt <T nt with f = true  *** was N + 2
    if (apply 'isInputGate (evalTerm nt f)) in A .
  ceq A |= (fun 'wire1 nt <T fun 'I (fun 'wire0 nt)) with f = true 
     if (apply 'isInputGate (evalTerm nt f)) in A [label depBounds] .
- 
  ceq A |= fun 'wire0 nt <T nt with f = true  *** was K here and below
     if (apply 'isNotGate (evalTerm nt f)) in A [label notIndex].
- 
  ceq A |= fun 'wire0 nt <T nt with f = true 
     if (apply 'isXorGate (evalTerm nt f)) in A .
  ceq A |= fun 'wire1 nt <T nt with f = true 
     if (apply 'isXorGate (evalTerm nt f)) in A .   
- 
  ceq A |= fun 'wire0 nt <T nt with f = true 
     if (apply 'isAndGate (evalTerm nt f)) in A [label andIndex] .
  ceq A |= fun 'wire1 nt <T nt with f = true 
@@ -162,7 +124,6 @@ mod GMWN is
   if A |= nt1 <T nt2 with f [label wireSmallThen0] .
  ceq A |= fun 'wire1 nt1 <T nt2 with f = true 
   if A |= nt1 <T nt2 with f [label wireSmallThen1] . 
- 
   *** generic assumptions shared by both proofs
  op genA : -> Set{BoolTerm} .
  eq genA = ( neg (apply 'isXorGate 0), 
@@ -175,12 +136,10 @@ mod GMWN is
              N + 1 <T N + 2, 
              apply 'isHonest (N + 1) )
  . 
- 
  eq (A, apply 'isHonest nt) |= neg (apply 'isSemiHonest nt) with f = true .
  eq (A, apply 'isSemiHonest nt) |= neg (apply 'isHonest nt) with f = true .
   
  *** delta
- 
  op deltaIdealPlusSim : -> ChannelContext .
  eq deltaIdealPlusSim =
   (fam (('InRcvd ^^ 'party .. 'adv)[((bound (N + 2))(dependentBound 'I))]) :: unit) 
@@ -223,8 +182,6 @@ mod GMWN is
              (fam (('CtrbSum ^^ 'party .. 'adv)[((bound (N + 2)) (bound (N + 2))(bound K) )]) :: bool)  
              (fam ('In[(bound (N + 2)) (dependentBound 'I)]) :: bool)
  . 
- 
- 
  
  op delta : -> ChannelContext .
  eq delta = 
@@ -503,7 +460,6 @@ nf(('s : bool <- read ('InShare$-Sum[N 'n 'i])) 'x : bool <- read (('In ^^ 'id .
 ;;
 when (apply 'isHonest 'n) -->
 nf('s : bool <- read (('SendInShare ^^ 'party .. 'adv)[(N + 1) 'n 'i]), return 's, 's)
-
       )
      || 
      (family ('RcvdInShare ^^ 'party ..
@@ -712,7 +668,6 @@ nf('s : bool <- read ('Share['n 'k]), return 's, 's))
 when (apply 'isHonest 'n) -->
 nf('s : bool <- read (('Share ^^ 'party .. 'adv)['n 'k]), return 's, 's)
 )
-
    ) *** end when
    ) *** end when input gate
    ;;
@@ -878,7 +833,6 @@ nf('s : bool <- read ('Share['n 'k]), return 's, 's))
 when (apply 'isHonest 'n) -->
 nf('s : bool <- read (('Share ^^ 'party .. 'adv)['n 'k]), return 's, 's)
 )
-
 ) *** end when
    ) *** end when not gate
    ;;
@@ -1045,7 +999,6 @@ nf('s : bool <- read ('Share['n 'k]), return 's, 's))
 when (apply 'isHonest 'n) -->
 nf('s : bool <- read (('Share ^^ 'party .. 'adv)['n 'k]), return 's, 's)
 )
-
 ) *** end when
    ) *** end when xor gate 
    ;;
@@ -1334,7 +1287,6 @@ nf('s : bool <- read ('Share['n 'k]), return 's, 's))
 ;;
 when (neg (apply 'isOutputWire 'k) disj apply 'isHonest 'n) -->
 nf('s : bool <- read (('SendOutShare ^^ 'party .. 'adv)['m 'n 'k]), return 's, 's)
-
        )
        ||
        (family ('RcvdOutShare ^^ 'party ..
@@ -1403,7 +1355,6 @@ nf('w : bool <- read (('Out ^^ 'id .. 'adv)['n 'k]), return 'w, 'w))
 ;;
 when (neg (apply 'isOutputWire 'k) disj apply 'isHonest 'n) -->
 nf('s : bool <- read (('OutShareSum ^^ 'party .. 'adv)['n (N + 1) 'k]), return 's, 's)
-
  ) 
        ||
        (family (('Out ^^ 'party .. 'adv)[((bound (N + 2))(bound K))]) ('n 'k)
@@ -1415,7 +1366,6 @@ nf('s : bool <- read (('Out ^^ 'id .. 'adv)['n 'k]), return 's, 's))
 ;;
 when (apply 'isHonest 'n) -->
 nf('s : bool <- read (('Out ^^ 'party .. 'adv)['n 'k]), return 's, 's)
-
          
        )
     ) *** end 'Fin    
@@ -2453,7 +2403,6 @@ bound (N + 2) bound K : bool in
              ((bound (N + 2)) (bound K) ) : bool in
      restrInitial || restrInductive || restrFinal
   .
-
   op restrInitial : -> Protocol . 
   eq restrInitial = 
    newfamily ('InShare$[((bound (N + 2)) (bound (N + 2)) (dependentBound 'I))]) ('m 'n 'i)  
@@ -3739,10 +3688,8 @@ bound (N + 2) bound K : bool in
          'm0 'm1 'm2 'm3 'c0 'c1
       )        
    ) 
-
    )
    ) *** end new
-
   . 
      
   op restrFinal : -> Protocol .  
@@ -3853,9 +3800,7 @@ bound (N + 2) bound K : bool in
        )       
      )
    ) *** end new
-
  . 
- 
   *** before restructuring Circuit, store the results
  op simplRestrInitial : -> Protocol .
   
@@ -3989,7 +3934,6 @@ bound (N + 2) bound K : bool in
 eq shares = 
  family ('Shares[bound K]) 'k (bound K) ::=
  ( *** start family
- 
   (when (apply 'isInputGate 'k) --> 
     (family ('RcvdBit[((bound (N + 2))(bound (N + 2))(bound K))]) ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::=
       nf('rb : bool <- read ('RcvdBit['n 'm 'k]), return 'rb, 'rb)
@@ -4122,19 +4066,14 @@ nf(('b : bool <- read ('Ctrb['n 'm 'k]))
     )
   ) *** end when and gate
   
- 
  ) *** end family
- 
 . 
-
   *** 2. Adv
   op adv : -> Protocol .
 eq adv = 
  family ('Adv[bound K]) 'k (bound K) ::=
  ( *** start family
- 
 (when (apply 'isInputGate 'k) -->
-
 (family (('Ctrb ^^ 'party .. 'adv)[((bound (N + 2))(bound (N + 2))(bound K))])   ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::=
 nf('b : bool <- read (('Ctrb ^^ 'party .. 'adv)['n 'm 'k]), return 'b, 'b)
 )
@@ -4564,12 +4503,8 @@ nf('s : bool <- read ('Share['n 'k]), return 's, 's))
 nf('s : bool <- read (('Share ^^ 'party .. 'adv)['n 'k]), return 's, 's)
 )
 ) *** end when and gate
-
- 
  ) *** end family
- 
 .
-
   *** 3. 1OutOf4OT
   op 1OutOf4OT : -> Protocol .
   
@@ -4683,7 +4618,6 @@ nf('s : bool <- read (('Share ^^ 'party .. 'adv)['n 'k]), return 's, 's)
     
     
     (when (apply 'isAndGate 'k) -->
-
 ( family ('OTMsg-0[((bound (N + 2)) (bound (N + 2)) (bound K))]) ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::=
 (when ('n <T 'm) -->
 nf(('b : bool <- read ('SendBit['n 'm 'k])) 
@@ -4754,7 +4688,6 @@ nf('om : bool <- read ('OTMsg-3['n 'm 'k]), return 'om, 'om)
           nf('oc : bool <- read ('OTChc-1['m 'n 'k]), return 'oc, 'oc)
         )
       )
-
       ||
 ( family ('OTOut[((bound (N + 2)) (bound (N + 2)) (bound K))]) ('n 'm 'k) ((bound (N + 2)) (bound (N + 2)) (bound K)) ::=
 nf(('c0 : bool <- read ('OTChc-0['n 'm 'k])) 
@@ -4772,7 +4705,6 @@ nf(('c0 : bool <- read ('OTChc-0['n 'm 'k]))
     ) *** end family
 . 
 
-
  op splitCirc : -> Protocol .
  eq splitCirc = 
     newfamily ('SendBit[((bound (N + 2))(bound (N + 2))(bound K))]) ('n 'm 'k) 
@@ -4785,7 +4717,6 @@ nf(('c0 : bool <- read ('OTChc-0['n 'm 'k]))
              ((bound (N + 2)) (bound (N + 2)) (bound K)) : bool in 
    (adv || shares || 1OutOf4OT)          
  .
- 
   op pInt0 : -> Protocol .
  eq pInt0 = 
     newfamily ('InShare[((bound (N + 2)) (bound (N + 2)) (dependentBound 'I))]) ('n 'm 'i) 
@@ -4794,7 +4725,6 @@ nf(('c0 : bool <- read ('OTChc-0['n 'm 'k]))
              ((bound (N + 2)) (bound K) ) : bool in
     restrFinal || splitCirc || simplRestrInitial
  .
- 
   op splitCirc1 : -> Protocol .
  eq splitCirc1 = 
     newfamily ('SendBit[((bound (N + 2))(bound (N + 2))(bound K))]) ('n 'm 'k) 
@@ -4816,12 +4746,9 @@ nf(('c0 : bool <- read ('OTChc-0['n 'm 'k]))
              ((bound (N + 2)) (bound K) ) : bool in
     restrFinal || splitCirc1 || simplRestrInitial
  .
- 
 endm
-
 mod PROTOCOLS is
  pr GMWN .
- 
  
  op delta0 : -> ChannelContext .
  eq delta0 = 
@@ -4863,7 +4790,6 @@ mod PROTOCOLS is
 (fam (('SendInShare ^^ 'party .. 'adv)[bound (N + 2) bound (N + 2) dependentBound 'I]) :: bool)
 (fam (('SendOutShare ^^ 'party .. 'adv)[bound (N + 2) bound (N + 2) bound K]) :: bool)
 fam (('Share ^^ 'party .. 'adv)[bound (N + 2) bound K]) :: bool) 
-
 newNF({('Ctrb[bound (N + 2) bound (
     N + 2) bound K]) ('n 'm 'k) : bool} {('Ctrb-OK[bound (N + 2) bound (N + 2) bound K]) ('n 'm 'k)
     : unit} {('CtrbSum[bound (N + 2) bound (N + 2) bound K]) ('n 'm 'k) : bool} {('CtrbSum-OK[bound
@@ -4884,9 +4810,7 @@ newNF({('Ctrb[bound (N + 2) bound (
 ) 
 want0 'k 'B
 .
- 
  *************************************************************
- 
  op want0 : -> Protocol .
  eq want0 =
 (family 'Shares[bound K] 'k
@@ -5094,7 +5018,6 @@ bound K
 cases0
 )
 .
-
  op know0 : -> Protocol .
  eq know0 =
 (family 'Shares[bound K] 'k
@@ -5335,7 +5258,6 @@ fixedBound (N + 1) bound K
 nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
 )
 .
-
 op cases0 : -> Cases .
 eq cases0 = 
 (when (apply 'isInputGate 'k) -->
@@ -5527,7 +5449,6 @@ nf('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]), return 'c, 'c)
 )
 ) *** end when and gate
 .
- 
  op want10old : -> Protocol .
  eq want10old =
 (family 'Shares[bound K] 'k
@@ -5651,7 +5572,6 @@ nf(('a : unit <- read ('ShareOK[(N + 1) (fun 'wire0 'k)])) ('b : unit <- read ('
 when (apply 'isAndGate 'k) -->
 nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k])) 'x : unit <- read ('CtrbSum-OK[(N + 1) (N +
     1) 'k]), return 'bs, 'x 'bs)
-
 )
 ||
 family 'SharesOK[bound K] 'k
@@ -5753,15 +5673,11 @@ nf(('x : unit <- read ('ShareOK['n (fun 'wire0 'k)])) 'y : unit <- read ('ShareO
 ;;
 when (apply 'isAndGate 'k) -->
 nf('c : unit <- read ('CtrbSum-OK['n (N + 1) 'k]), return 'c, 'c)
-
 .
 
-
  *** TODO: copy the protocol!
- 
  op delta1 : -> ChannelContext .
 eq delta1 =
-
 (fam ('In[bound (N + 2) dependentBound 'I]) :: bool)
 (fam ('Out[bound (N + 2) bound K]) :: bool)
 (fam (('Ctrb ^^ 'party .. 'adv)[bound (N + 2) bound (N + 2) bound K]) :: bool)
@@ -5817,7 +5733,6 @@ eq delta1 =
     :: bool)
 fam (('Share ^^ 'party .. 'adv)[bound (N + 2) bound K]) :: bool
 .
-
 *************
 op indBase1 : -> Protocol .
 eq indBase1 = getInductionBase (emptyProtocol || (family ('Comp['G 'H][bound N]) 'i
@@ -5838,7 +5753,6 @@ bound N
 ::=
 read ('In['i])
 )
-
 )
 )
 ||
@@ -5858,7 +5772,6 @@ bound N
 read ('In['i])
 )
 )
-
 )) ('Comp['G 'H]) 'i 'B empty 
 ((family 'G[bound N] 'i
 bound N
@@ -5893,10 +5806,8 @@ bound N
 read ('In['i])
 )
 )
-
 )
  .
-
 op indP1 : -> Protocol .
 eq indP1 = 
 ((family 'G[bound N] 'i
@@ -5932,12 +5843,9 @@ bound N
 read ('In1['i])
 )
 )
-
 )
 .
-
 ****************
- 
  op indBase0 : -> Protocol .
  eq indBase0 = 
    getInductionBase p0 'SharesOK 'k 'B genA 
@@ -5980,7 +5888,6 @@ nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
        
   )
  .
- 
  op indP0 : -> Protocol .
  eq indP0 = 
   (family ('Ctrb-OK[bound (N + 2) bound (N + 2) bound K]) ('n 'm 'k)
@@ -6019,10 +5926,8 @@ fixedBound (N + 1) bound K
 nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
 )
  .
- 
  op p0 : -> Protocol .
 eq p0 =
-
 newNF({('Ctrb[
     bound (N + 2) bound (N + 2) bound K]) ('n 'm 'k) : bool} {('Ctrb-OK[bound (
     N + 2) bound (N + 2) bound K]) ('n 'm 'k) : unit} {('CtrbSum[bound (N + 2)
@@ -6720,7 +6625,6 @@ nf('s : bool <- read ('Share['n 'k]), return 's, 's))
 ;;
 when (apply 'isHonest 'n) -->
 nf('s : bool <- read (('Share ^^ 'party .. 'adv)['n 'k]), return 's, 's)
-
 )
 ||
 (family 'In-OK[bound (N + 2) dependentBound 'I] 'n 'i
@@ -6776,7 +6680,6 @@ family 'InShareOK[bound (N + 2) bound (N + 2) dependentBound 'I] 'm 'n 'i
 bound (N + 2) bound (N + 2) dependentBound 'I
 ::=
 nf('is : bool <- read ('InShare['m 'n 'i]), return (), 'is)
-
 )
 ||
 (family 'Out[bound (N + 2) bound K] 'n 'k
@@ -6986,7 +6889,6 @@ fixedBound (N + 1) bound K
 ::=
 nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k])) 'x : unit <- read (
     'CtrbSum-OK[(N + 1) (N + 1) 'k]), return 'bs, 'x 'bs)
-
 )
 ||
 (family 'SharesOK[bound K] 'k
@@ -7049,7 +6951,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[
 when (apply 'isAndGate 'k) -->
 nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[
     fun 'wire1 'k]), return (), 'w0 'w1)
-
 )
 ||
 (family ('In ^^ 'party .. 'adv)[bound (N + 2) dependentBound 'I] 'n 'i
@@ -7207,12 +7108,10 @@ nf('s : bool <- read (('SendOutShare ^^ 'party .. 'adv)['m 'n 'k]), return 's,
     
 .    
 endm
-
 smod EXECUTE is
  *** pr GMWN .
  pr PROTOCOLS .
  pr STRATS .
- 
  var e1 e2 e3 e4 e5 e6 : Expression . 
  var Sigma Sigma' : Signature .
  var Delta Delta' : ChannelContext .
@@ -7225,9 +7124,7 @@ smod EXECUTE is
  var T : Type .
  var cn : ChannelName .
  var bounds : List{Bounds} .
-
 *** xor & and are comm and assoc
-
  rl [comm-xor] : 
     ap 'xor pair(e1, e2) => ap 'xor pair(e2, e1) . 
     
@@ -7259,7 +7156,6 @@ smod EXECUTE is
                       )
              )
  .
- 
  rl [comm-and] : 
     ap 'and pair(e1, e2) => ap 'and pair(e2, e1) . 
     
@@ -7282,12 +7178,10 @@ smod EXECUTE is
     => 
     ap 'and pair(e1, ap 'and pair(e2, e3)) 
     .  
-
  *** xor axioms
  eq ap 'xor pair(e1, e1) = False .
  eq ap 'xor pair(e1, False) = e1 .
  eq ap 'xor pair(False, e2) = e2 .
- 
  *** neg axioms
  rl [neg-xor-1] : 
     ap 'neg e1 => ap 'xor pair(e1, True) .
@@ -7332,13 +7226,11 @@ smod EXECUTE is
             
   *** until we do expression equality we need this
    *** x = () if x : unit
- 
  rl [return-unit] :
    rConfig(Sigma, Delta, Gamma (x : unit), return x, I, A, T)
    => 
    rConfig(Sigma, Delta, Gamma (x : unit), return (), I, A, T)
  .
- 
  strat applyReturnUnit : CNameBound @ ProtocolConfig .
  sd applyReturnUnit(chn cn) :=
     match pConf s.t. startsWithNew pConf
@@ -7364,13 +7256,11 @@ smod EXECUTE is
                       )
              )
  .  
- 
  rl [return-idem-rev] :
    return (ap 'xor pair(ap 'xor pair(e1, e2), e2) )
    => 
    return e1
  .
- 
  strat applyReturnIdemRev : CNameBound @ ProtocolConfig .
  sd applyReturnIdemRev(chn cn) :=
     match pConf s.t. startsWithNew pConf
@@ -7396,13 +7286,11 @@ smod EXECUTE is
                       )
              )
  .  
- 
  rl [return-idem] :
    return (ap 'xor pair(e1, ap 'xor pair(e1, e2)))
    => 
    return e2
  .
- 
  strat applyReturnIdem : CNameBound @ ProtocolConfig .
  sd applyReturnIdem(chn cn) :=
     match pConf s.t. startsWithNew pConf
@@ -7428,13 +7316,11 @@ smod EXECUTE is
                       )
              )
  .  
- 
   rl [return-idem-2] :
    return (ap 'xor pair(e1, ap 'xor pair(e2, e1)))
    => 
    return e2
  .
- 
  strat applyReturnIdem2 : CNameBound @ ProtocolConfig .
  sd applyReturnIdem2(chn cn) :=
     match pConf s.t. startsWithNew pConf
@@ -7460,7 +7346,6 @@ smod EXECUTE is
                       )
              )
  .  
- 
   rl [rearrange-xor] :
    return (ap 'xor pair(
               ap 'xor pair(e1, e2)
@@ -7474,7 +7359,6 @@ smod EXECUTE is
             )
           )
  .
- 
  strat applyRearrangeXor : CNameBound @ ProtocolConfig .
  sd applyRearrangeXor(chn cn) :=
     match pConf s.t. startsWithNew pConf
@@ -7488,7 +7372,6 @@ smod EXECUTE is
                       )
              )
  .
- 
   rl [middle-xor] :
    return (ap 'xor pair(
               ap 'xor pair(e1, e2)
@@ -7502,7 +7385,6 @@ smod EXECUTE is
             )
           )
  .
- 
  strat applyMiddleXor : CNameBound @ ProtocolConfig .
  sd applyMiddleXor(chn cn) :=
     match pConf s.t. startsWithNew pConf
@@ -7518,7 +7400,6 @@ smod EXECUTE is
  .
   
  *** a derived rule, distributivity twice
- 
  rl [derived-xor-and-rule] :
     return (
     ap 'xor 
@@ -7552,7 +7433,6 @@ smod EXECUTE is
                       )
              )
  .        
- 
   *** another derived rule based on assoc
  rl [derived-xor-rule] :
     return (
@@ -7586,7 +7466,6 @@ smod EXECUTE is
                       )
              )
  . 
- 
  rl [distrib-twice]:
  return (
    ap 'and pair(ap 'xor pair(e1, e2),
@@ -7602,7 +7481,6 @@ smod EXECUTE is
    )
  )
  .
- 
  strat applyDistribTwice : CNameBound @ ProtocolConfig .
  sd applyDistribTwice(chn cn) :=
     match pConf s.t. startsWithNew pConf
@@ -7619,9 +7497,7 @@ smod EXECUTE is
   
   *** SYM strategies
  *** because only there we have access to current protocol
- 
  *** sym strategies for extracting the protocol
- 
  strat symWireOSS @ ProtocolConfig .
  sd symWireOSS :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -7649,12 +7525,10 @@ nf('s : bool <- read (('OutShareSum ^^ 'party .. 'adv)['n (N + 1) 'k]), return '
      fam (('OutShareSum ^^ 'party .. 'adv)[bound (N + 2) fixedBound (N + 1) bound K]),
      nf('w : bool <- read ('Wire['k]), return 'w, 'w)
     )
- 
    }
    }
  }
 .  
-
  strat symWireOS @ ProtocolConfig .
  sd symWireOS :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -7671,7 +7545,6 @@ nf(('out : bool <- read ('Out['n 'k])) 'xs : bool <- read ('ShareSum[N 'k]), ret
 ;;
 when (neg (apply 'isOutputWire 'k) disj apply 'isHonest 'n) -->
 nf('s : bool <- read (('OutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 's, 's)
-
         in P
        ] 
        
@@ -7689,9 +7562,7 @@ nf('s : bool <- read (('OutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 's, 
    }
    }
   }
- 
 .    
-
 strat symWireROS @ ProtocolConfig .
  sd symWireROS :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -7708,7 +7579,6 @@ nf(('out : bool <- read ('Out['n 'k])) 'xs : bool <- read ('ShareSum[N 'k]), ret
 ;;
 when (neg (apply 'isOutputWire 'k) disj apply 'isHonest 'n) -->
 nf('s : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 's, 's)
-
         in P
        ] 
        
@@ -7726,11 +7596,9 @@ nf('s : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 
    }
    }
   }
- 
 .                    
   
  ***********************************************
- 
  strat indSharedOK @ ProtocolConfig .
  sd indSharedOK :=
  CONG-NEW-NF{ 
@@ -7761,7 +7629,6 @@ nf('s : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 
  }
  .
  
- 
  strat inIndSym1 @ ProtocolConfig .
  sd inIndSym1 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -7788,7 +7655,6 @@ nf('s : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 
        } 
        
  .
- 
  strat inIndSym2 @ ProtocolConfig .
  sd inIndSym2 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -7800,7 +7666,6 @@ nf('s : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 
         fam ('ShareOK[(bound (N + 1)) (fixedBound 'B)])
         with
          nf('x : bool <- read ('Share['n 'B]), return (), 'x)
-
         in P
        ]
        {
@@ -7812,7 +7677,6 @@ nf('s : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 
             )
        }          
  .
- 
  strat inIndSym3 @ ProtocolConfig .
  sd inIndSym3 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -7843,7 +7707,6 @@ nf('s : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 
            } 
         }   
  .  
- 
  strat inIndSym4 @ ProtocolConfig .
  sd inIndSym4 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -7855,7 +7718,6 @@ nf('s : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 
         fam ('ShareOK[(bound (N + 1)) (fixedBound 'B)])
         with
          nf('x : bool <- read ('Share['n 'B]), return (), 'x)
-
         in P
        ]
        {
@@ -7869,7 +7731,6 @@ nf('s : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 
       }    
              
  .  
- 
  strat inIndSym5 @ ProtocolConfig .
  sd inIndSym5 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -7909,7 +7770,6 @@ nf('s : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 
            } 
         }  
  .  
- 
  strat inIndSym6 @ ProtocolConfig .
  sd inIndSym6 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -7921,7 +7781,6 @@ nf('s : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 
         fam ('ShareOK[(bound (N + 1)) (fixedBound 'B)])
         with
          nf('x : bool <- read ('Share['n 'B]), return (), 'x)
-
         in P
        ]
        {
@@ -7936,7 +7795,6 @@ nf('s : bool <- read (('RcvdOutShare ^^ 'party .. 'adv)['n (N + 1) 'k]), return 
        }
                      
  .   
- 
  strat inIndSym7 @ ProtocolConfig .
  sd inIndSym7 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -8022,7 +7880,6 @@ select-case-family-r[
        } 
    }    
  .  
- 
  strat inIndSym8 @ ProtocolConfig .
  sd inIndSym8 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -8034,7 +7891,6 @@ select-case-family-r[
         fam ('RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound 'B])
         with
          nf('r : bool <- read ('RcvdBit['n 'm 'B]), return (), 'r)
-
         in P
        ]
        {
@@ -8061,7 +7917,6 @@ select-case-family-r[
   }    
                      
  .  
- 
  strat inIndSym9 @ ProtocolConfig .
  sd inIndSym9 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -8074,7 +7929,6 @@ select-case-family-r[
         fam ('Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound 'B])
         with
          nf('c : bool <- read ('Ctrb['n 'm 'B]), return (), 'c)
-
         in P
        ] 
        {
@@ -8180,7 +8034,6 @@ select-case-family-r[
        }
  }    
  . 
- 
  strat inIndSym10 @ ProtocolConfig .
  sd inIndSym10 :=
   SINGLE-INDUCTION-new-R[
@@ -8231,9 +8084,7 @@ select-case-family-r[
            fam ('CtrbSum-OK[(bound (N + 2) fixedBound 'M fixedBound 'B)]) 
            )
  }
-
  .   
- 
  strat inIndSym11 @ ProtocolConfig .
  sd inIndSym11 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -8246,7 +8097,6 @@ select-case-family-r[
         fam ('ShareOK[bound (N + 1) fixedBound 'B])
         with
          nf('x : bool <- read ('Share['n 'B]), return (), 'x)
-
         in P
        ]
  {
@@ -8268,7 +8118,6 @@ select-case-family-r[
 }    
                         
  .  
- 
  strat inIndSym12 @ ProtocolConfig .
  sd inIndSym12 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -8330,7 +8179,6 @@ select-case-family-r[
                  << 'b, 'c >> emptyQidPairList)          
        }
  . 
- 
  strat inIndSym14 @ ProtocolConfig .
  sd inIndSym14 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -8358,7 +8206,6 @@ select-case-family-r[
             ) }
        }     
  .                        
- 
  strat sym1 @ ProtocolConfig .
  sd sym1 := 
     match pConf s.t. startsWithNew pConf
@@ -8371,7 +8218,6 @@ select-case-family-r[
        P1:Protocol <- 
         change (fam ('RcvdBit[((bound (N + 2)) (bound (N + 2))(bound K) )]))
         with ( (when ('m <T 'n) -->
-
            nf(('b : bool <- read ('SendBit['m 'n 'k])) 
     ('xm : bool <- read ('Share['m (fun 'wire0 'k)])) 
     ('xn : bool <- read ('Share['n (fun 'wire0 'k)])) 
@@ -8393,7 +8239,6 @@ select-case-family-r[
        {auxSym1}
        )
  .
- 
  strat auxSym1 @ ProtocolConfig .
  sd auxSym1 := 
     match pConf s.t. startsWithNew pConf
@@ -8453,7 +8298,6 @@ select-case-family-r[
         *** was P
         change (fam ('RcvdBit[((bound (N + 2)) (bound (N + 2))(bound K) )]))
         with ( (when ('m <T 'n) -->
-
            nf(('b : bool <- read ('SendBit['m 'n 'k])) 
     ('xm : bool <- read ('Share['m (fun 'wire0 'k)])) 
     ('xn : bool <- read ('Share['n (fun 'wire0 'k)])) 
@@ -8484,7 +8328,6 @@ select-case-family-r[
         } ***sym
        )
  .
- 
  strat auxSym2 @ ProtocolConfig .
  sd auxSym2 := 
     match pConf s.t. startsWithNew pConf
@@ -8511,7 +8354,6 @@ select-case-family-r[
        }                
              
      .   
-
      
  strat slowSym @ ProtocolConfig .
  sd slowSym := 
@@ -8589,7 +8431,6 @@ fam ('Share[bound (N + 2) bound K])
         } ***sym
        )
  .   
- 
  strat sym4 @ ProtocolConfig .
  sd sym4 := 
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -8649,7 +8490,6 @@ nf('oc : unit <- read (('OTChcRcvd-1 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
         } ***sym
        )
  .  
- 
  strat sym5 @ ProtocolConfig .
  sd sym5 := 
      matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -8727,7 +8567,6 @@ nf('oc : unit <- read (('OTChcRcvd-1 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
         } ***sym
        )
  .  
- 
  strat sym6 @ ProtocolConfig .
  sd sym6 := 
      matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -8750,7 +8589,6 @@ nf('oc : unit <- read (('OTChcRcvd-1 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
        } ***sym
        )
  . 
- 
  strat sym7 @ ProtocolConfig .
  sd sym7 := 
      matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -8774,14 +8612,12 @@ nf('oc : unit <- read (('OTChcRcvd-1 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
        } ***sym
        )
  .
- 
  strat sym8 @ ProtocolConfig .
  sd sym8 := 
      matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using ( 
         applyDropName(fam ('SharesOK[bound K]) )
       ; applyDropName(fam ('InitOK[(bound (N + 2))(bound (N + 2))(dependentBound 'I)]))  
- 
       ; SYM[
        Delta1:ChannelContext <- Delta,
        O1:Set{CNameBound} <- O,
@@ -8806,7 +8642,6 @@ nf('oc : unit <- read (('OTChcRcvd-1 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
          with 
           nf( ('s : unit <- read ('ShareOK[(N + 1) (fun 'wire0 'k)]))
               'x : bool <- read ('Share[(N + 1) (fun 'wire0 'k)]), return (ap 'neg 'x), 's 'x)
-
          in 
          ( (branch
            (when (apply 'isXorGate 'k)) 
@@ -8914,7 +8749,6 @@ nf('oc : unit <- read (('OTChcRcvd-1 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
        } ***sym
        )
  . 
- 
  *** dummy family to create groups
  strat addHidden @ ProtocolConfig .
  sd addHidden := 
@@ -8939,7 +8773,6 @@ nf('oc : unit <- read (('OTChcRcvd-1 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
        } ***sym
        )
  . 
- 
  strat sym10 @ ProtocolConfig .
  sd sym10 := 
      matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -8999,7 +8832,6 @@ nf('oc : unit <- read (('OTChcRcvd-1 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
        
        )
  .
- 
  strat sym11 @ ProtocolConfig .
  sd sym11 := 
     
@@ -9124,7 +8956,6 @@ nf('x : bool <- read ('Share['n 'k]), return (), 'x)
 ::=
 nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
 )
-
         ) *** end xor gate   
 ;;
  (when (apply 'isAndGate 'k) --> 
@@ -9171,12 +9002,10 @@ nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
        }
     
  .  
- 
  var fns1 fns2 : NameWithScripts .
  var q : Qid .
  var bt : BoolTerm .
  var A' : Set{BoolTerm} .
- 
  strat changeComp @ ProtocolConfig .
  sd changeComp :=
  *** sym proof for 'SharesOK
@@ -9197,7 +9026,6 @@ nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
       { indSharedOK 
       }
  .           
- 
  
  strat setIndConfSymProof @ ProtocolConfig .
  sd setIndConfSymProof := 
@@ -9577,7 +9405,6 @@ nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
  var tlist : List{NatTerm} .
  var blist1 blist2 : List{Bounds} .
  var q1 q2 : Qid .
- 
  strat symSubstDiverge : CNameBound CNameBound List{NatTerm} Qid Qid @ ProtocolConfig .
  sd symSubstDiverge(fam (fns1[blist1]), fam (fns2[blist2]), tlist, q1, q2) :=          
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -9681,7 +9508,6 @@ nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
     .              
     
           
- 
  strat sym12 @ ProtocolConfig .
  sd sym12 := 
     
@@ -9862,7 +9688,6 @@ nf('c : unit <- read ('CtrbSum-OK['n (N + 1) 'k]), return 'c, 'c)
  .           
    
  *** sym proofs after the induction on sharesok
- 
  strat asym0 @ ProtocolConfig .
  sd asym0 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -9874,7 +9699,6 @@ nf('c : unit <- read ('CtrbSum-OK['n (N + 1) 'k]), return 'c, 'c)
         fam ('InShareOK[bound (N + 2) bound (N + 2) dependentBound 'I])
         with
         nf('is : unit <- read ('InShare$-OK['m 'n 'i]), return (), 'is)
-
         in P
        ] 
        {
@@ -9885,7 +9709,6 @@ nf('c : unit <- read ('CtrbSum-OK['n (N + 1) 'k]), return 'c, 'c)
             )
        }         
  .  
- 
  strat asym01 @ ProtocolConfig .
  sd asym01 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -9905,7 +9728,6 @@ nf('c : unit <- read ('CtrbSum-OK['n (N + 1) 'k]), return 'c, 'c)
         (when (neg ('m =T= N + 1)) -->
             nf( 'x : unit <- read ('In-OK['n 'i]), return (), 'x)
         )
-
         in P
        ] 
     {
@@ -9923,7 +9745,6 @@ nf('c : unit <- read ('CtrbSum-OK['n (N + 1) 'k]), return 'c, 'c)
            when (neg ('m =T= N + 1)))
  }
  . 
- 
  strat asym1 @ ProtocolConfig .
  sd asym1 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -9936,7 +9757,6 @@ nf('c : unit <- read ('CtrbSum-OK['n (N + 1) 'k]), return 'c, 'c)
         with
         nf(('s : unit <- read ('InShare$Sum-OK[N 'n 'i])) 
             'x : unit <- read ('In-OK['n 'i]), return (), 'x 's)
-
         in P
        ] 
        {
@@ -9973,7 +9793,6 @@ nf('c : unit <- read ('CtrbSum-OK['n (N + 1) 'k]), return 'c, 'c)
            nf(('s : unit <- read ('InShare$Sum-OK[('m -- 1) 'n 'i])) 
                'x : unit <- read ('InShare$-OK['m 'n 'i]),
               return (), 's 'x))
-
         in P']
   {
    CONG-NEW-NF{
@@ -10060,10 +9879,8 @@ nf('c : unit <- read ('CtrbSum-OK['n (N + 1) 'k]), return 'c, 'c)
  ; asym3
     } 
   }  
-
 }       
  . 
- 
  strat asym3 @ ProtocolConfig .
  sd asym3 := 
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -10127,7 +9944,6 @@ nf('c : unit <- read ('CtrbSum-OK['n (N + 1) 'k]), return 'c, 'c)
  ; applyNegToOtherwise(fam ('InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound 'I])) 
 } 
 . 
-
 strat asym4 @ ProtocolConfig .
 sd asym4 := 
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -10154,7 +9970,6 @@ sd asym4 :=
              
            }
 .
-
 strat asym5 @ ProtocolConfig .
 sd asym5 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -10177,13 +9992,11 @@ sd asym5 :=
              nf(('s : bool <- read ('InShare$-Sum[('M -- 1) 'n 'i])) 
                  'x : bool <- read ('InShare$['M 'n 'i]),
                  return (ap 'xor pair('s, 'x)), 's 'x)
-
              )
              
              }
            }
 . 
-
  strat indProofInitOK @ ProtocolConfig .
  sd indProofInitOK := 
    
@@ -10274,7 +10087,6 @@ nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
   
   }  
   }
-
   . 
   
  strat regroupInitOK @ ProtocolConfig .
@@ -10300,7 +10112,6 @@ nf('x : unit <- read ('In-OK['n 'i]), return (), 'x)
        } ***sym   
       
  .  
- 
  op want1 : -> Protocol .
  eq want1 = 
  (family 'SharesOK[bound K] 'k
@@ -10488,7 +10299,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
     return (), 'w0 'w1)
 )
 .
- 
  strat indWiresShares @ ProtocolConfig .
  sd indWiresShares := 
  CONG-NEW-NF{ 
@@ -10518,7 +10328,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
  }      
  }
  .  
- 
  strat setIndWiresShares @ ProtocolConfig .
  sd setIndWiresShares :=
          applyDropName(fam ('InitOK[bound (N + 2) bound (N + 2) dependentBound 'I]))
@@ -10787,7 +10596,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
   cases':Cases <- 
    nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'B])) 'w1 : unit <- read ('Wire-OK[
     fun 'wire1 'B]), return (), 'w0 'w1)
-
  ]{
   CASE-DISTINCTION-one-R[
            fns:NameWithScripts <- 'CtrbSum-OK,
@@ -10866,7 +10674,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
          fam ('SharesOK[bound 'B])
          )    
  .  
- 
  strat symRcvdBit @ ProtocolConfig .
  sd symRcvdBit :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -10885,7 +10692,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
                    ('ym : unit <- read ('ShareOK['m (fun 'wire1 'B)])) 
                     'yn : unit <- read ('ShareOK['n (fun 'wire1 'B)]), 
                     return (), 'sb 'xm 'ym 'xn 'yn)
-
               ) ;;
               (when ('n <=T 'm) --> 
                 nf(('sb : unit <- read ('SendBit-OK['m 'n 'B])) 
@@ -10900,7 +10706,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
             {applyAllSameCases(fam ('RcvdBit-OK[(bound (N + 2) bound (N + 2) fixedBound 'B)]) )
             }
             .
- 
  strat wireSymAnd @ ProtocolConfig .
  sd wireSymAnd :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -10928,7 +10733,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
                  )}}
             }  
  .
- 
  strat wireSymAndC @ ProtocolConfig .
  sd wireSymAndC :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -10956,7 +10760,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
                  }}
             }  
  .
- 
  strat wireSymXor @ ProtocolConfig .
  sd wireSymXor :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -10984,7 +10787,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
                  )}}
             }  
  .
- 
  strat wireSymXorC @ ProtocolConfig .
  sd wireSymXorC :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -11012,7 +10814,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
                  }}
             }  
  .
- 
  strat wireSymNot @ ProtocolConfig .
  sd wireSymNot :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -11040,7 +10841,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
                  )}}
             }     
  .
- 
  strat wireSymNotC @ ProtocolConfig .
  sd wireSymNotC :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -11067,7 +10867,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
                  }}
             }     
  .
- 
  strat symInputC @ ProtocolConfig .
  sd symInputC :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -11104,7 +10903,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
           }  
            
   .        
- 
  strat symInput @ ProtocolConfig .
  sd symInput :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -11140,7 +10938,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
             .  
                           
  *** for the last induction of timing 1
- 
  op want2 : -> Protocol .
  eq want2 = 
 (family 'HiddenGroup[bound K] 'k
@@ -11150,7 +10947,6 @@ family 'Hidden[bound K] 'k
 bound K
 ::=
 return ()
-
 )
 ||
  (
@@ -11336,8 +11132,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k]))
     'w 'bs)
 ) 
  .   
- 
-
  strat indSharesT1 @ ProtocolConfig .
  sd indSharesT1 := 
  CONG-NEW-NF{ 
@@ -11440,7 +11234,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k]))
      }
          
  .
-
  strat symSharesInput @ ProtocolConfig .
  sd symSharesInput := 
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -11475,7 +11268,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k]))
                       emptyQidPairList)  
             }             
  .
- 
   strat symSharesNot @ ProtocolConfig .
  sd symSharesNot := 
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -11504,7 +11296,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k]))
                 }
            }   
  .
- 
   strat symSharesXor @ ProtocolConfig .
  sd symSharesXor := 
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -11535,7 +11326,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k]))
                 }
            }   
  .
- 
   strat symSharesAnd @ ProtocolConfig .
  sd symSharesAnd := 
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -11565,7 +11355,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k]))
                 }
            }   
  .
- 
  *** hidden group
  strat addHiddenGroup @ ProtocolConfig .
  sd addHiddenGroup := 
@@ -11588,9 +11377,7 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k]))
        } ***sym
        )
  . 
- 
  ***
- 
  strat addShareSum @ ProtocolConfig .
  sd addShareSum := 
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -11621,7 +11408,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k]))
        } ***sym
        )
  . 
- 
  strat introShareSumOK @ ProtocolConfig .
  sd introShareSumOK := 
     
@@ -11929,7 +11715,6 @@ fixedBound (N + 1) bound K
 ::=
 nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k])) 'xs : unit <- read ('ShareSum-OK[N 'k]), return
     'bs, 'xs 'bs)
-
     in P]
 {
    
@@ -11998,7 +11783,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k])) 'xs : unit <- read ('Shar
    }
 }   
  .
- 
  strat indShareSum-OK @ ProtocolConfig .
  sd indShareSum-OK :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -12080,7 +11864,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k])) 'xs : unit <- read ('Shar
 }
 }  
  .   
- 
  strat symShareSumOK0 @ ProtocolConfig .
  sd symShareSumOK0 := 
       matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -12103,7 +11886,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k])) 'xs : unit <- read ('Shar
        
              
  .
-
  strat subst1 @ ProtocolConfig .
  sd subst1 := 
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -12131,9 +11913,7 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k])) 'xs : unit <- read ('Shar
               }
        )       
  . 
- 
  ***
- 
  strat symShareSumOKM @ ProtocolConfig .
  sd symShareSumOKM := 
       matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -12156,7 +11936,6 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k])) 'xs : unit <- read ('Shar
        
              
  .
-
  strat subst2 @ ProtocolConfig .
  sd subst2 := 
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -12186,12 +11965,9 @@ nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k])) 'xs : unit <- read ('Shar
               }
        )       
  . 
- 
  *** induction in timing 2
- 
  op know0' : -> Protocol .
  eq know0' = 
-
 (family 'Shares[bound K] 'k
 bound K
 ::=
@@ -12367,7 +12143,6 @@ fixedBound (N + 1) bound K
 ::=
 nf(('bs : bool <- read ('CtrbSum[(N + 1) (N + 1) 'k])) 'xs : unit <- read ('ShareSum-OK[N 'k]),
     return 'bs, 'xs 'bs)
-
 )
 ||
 family 'SharesOK[bound K] 'k
@@ -12407,9 +12182,7 @@ family 'ShareOK[fixedBound (N + 1) bound K] 'n 'k
 fixedBound (N + 1) bound K
 ::=
 nf('x : bool <- read ('Share[(N + 1) 'k]), return (), 'x)
-
  .
- 
  op cases0' : -> Cases .
  eq cases0' =
    (when (apply 'isInputGate 'k) -->
@@ -12605,7 +12378,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
 )
 ) *** end when and gate
 . 
- 
  strat changeComp' @ ProtocolConfig .
  sd changeComp' :=
  *** sym proof for 'SharesOK
@@ -12622,7 +12394,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
              in P
             ]
          {  CONG-NEW-NF{ 
- 
  matchrew pConf' s.t. pConfig(Sigma', Delta', P', I', O', A') := pConf' by pConf' 
        using
  SINGLE-INDUCTION-new[
@@ -12637,7 +12408,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
  }
  }
  .           
- 
  strat setIndConfSymProof' : 
        ChannelContext Protocol Set{CNameBound} Set{CNameBound} Set{BoolTerm} @ ProtocolConfig .
  sd setIndConfSymProof'(Delta, P, I, O, A) := 
@@ -12658,7 +12428,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
                       'k 'B A know0',
        A':Set{BoolTerm} <-  (A,'B <T K)               
        ];
-
       
        *** ind proof starts here
         applyDropName(
@@ -13048,7 +12817,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
      }
 )
  .
- 
  strat iSymInput @ ProtocolConfig .
  sd iSymInput :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -13073,7 +12841,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
             << 'in, 'is >> << 'xs, 'ss >>  emptyQidPairList) 
             }
   .     
-
  strat iSymNot @ ProtocolConfig .
  sd iSymNot :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -13099,7 +12866,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
             }
             
   .     
-
  strat iSymXor @ ProtocolConfig .
  sd iSymXor :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -13152,9 +12918,7 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
   .
   
  *************************************************************** 
- 
  *** induction on SharesOK to Ctrbs-OK with ShareSum-OK
- 
  strat indWiresShares' @ ProtocolConfig .
  sd indWiresShares' := 
  CONG-NEW-NF{ 
@@ -13184,7 +12948,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
  }      
  }
  . 
- 
  strat symInputC' @ ProtocolConfig .
  sd symInputC' :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -13220,7 +12983,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
           }
            
   .        
- 
  strat iSymSumSharesOK @ ProtocolConfig .
  sd iSymSumSharesOK :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -13480,7 +13242,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
   cases':Cases <- 
    nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'B])) 'w1 : unit <- read ('Wire-OK[
     fun 'wire1 'B]), return (), 'w0 'w1)
-
  ]{
   CASE-DISTINCTION-one-R[
            fns:NameWithScripts <- 'CtrbSum-OK,
@@ -13592,7 +13353,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
            fam ('SharesOK[fixedBound 'B]),
            fam ('ShareSum-OK[bound (N + 1) fixedBound 'B])
            )   
-
            *** now case distinction for the channel 
            ; CASE-DISTINCTION-one[
           fns:NameWithScripts <- 'SharesOK,
@@ -13740,7 +13500,6 @@ nf( ('c : unit <- read ('CtrbSum-OK[(N + 1) (N + 1) 'k]))
          fam ('SharesOK[bound 'B])
          )           
  .
- 
    op want1' : -> Protocol .
  eq want1' = 
  (family 'SharesOK[bound K] 'k
@@ -13953,9 +13712,7 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
 )
 .
 
-
 *****
-
 ***
  strat indSharesT2 @ ProtocolConfig .
  sd indSharesT2 := 
@@ -13973,7 +13730,6 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
      
  }
  . 
-
  strat indSharesTiming2 @ ProtocolConfig .
  sd indSharesTiming2 :=   
         CASE-DISTINCTION-one[
@@ -14017,10 +13773,8 @@ nf(('w0 : unit <- read ('Wire-OK[fun 'wire0 'k])) 'w1 : unit <- read ('Wire-OK[f
         
  .
 
-
 *******************************************************
 *** 10.4.5 timing 2
-
 strat timing2 : ChannelContext Protocol 
                 Set{CNameBound} Set{CNameBound} Set{BoolTerm} 
                 @ ProtocolConfig .
@@ -14199,7 +13953,6 @@ nf('oc : unit <- read (('OTChcRcvd-0 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
         
         
      
-
       *** for N + 1 in 'InShare$-OK 
       ; substNFFamiliesGen(
              fam ('InShare$[bound (N + 2) bound (N + 2) dependentBound 'I]),
@@ -14216,7 +13969,6 @@ nf('oc : unit <- read (('OTChcRcvd-0 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
       fam ('InShare$-OK[fixedBound (N + 1) bound (N + 2) dependentBound 'I])
      )  
   
-
        *** for 'InShare$Sum-OK we need an induction proof
        
        ; asym2
@@ -14354,9 +14106,7 @@ nf('oc : unit <- read (('OTChcRcvd-0 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
     *** end of timing2
  }
 .
-
 *****************************************************************
-
  strat addGroupOS @ ProtocolConfig .
  sd addGroupOS := 
      matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -14378,7 +14128,6 @@ nf('oc : unit <- read (('OTChcRcvd-0 ^^ 'ot .. 'adv)['n (N + 1) 'k]), return 'oc
        } ***sym
        )
  . 
- 
  strat addBranchGroupOS @ ProtocolConfig .
  sd addBranchGroupOS := 
      matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -14421,7 +14170,6 @@ nf(('s : bool <- read ('OutShareSum['n ('m -- 1) 'k])) 'x : bool <- read ('OutSh
        } ***sym
        )
  . 
-
   strat subst3 @ ProtocolConfig .
  sd subst3 := 
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -14448,7 +14196,6 @@ nf(('s : bool <- read ('OutShareSum['n ('m -- 1) 'k])) 'x : bool <- read ('OutSh
               }
        )       
  . 
- 
  strat subst3sym @ ProtocolConfig .
  sd subst3sym :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -14485,10 +14232,8 @@ nf(('s : bool <- read ('OutShareSum['n ('m -- 1) 'k])) 'x : bool <- read ('OutSh
            
               }
        )       
-
  }
  .          
- 
   strat subst4 @ ProtocolConfig .
  sd subst4 := 
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -14515,7 +14260,6 @@ nf(('s : bool <- read ('OutShareSum['n ('m -- 1) 'k])) 'x : bool <- read ('OutSh
               }
        )       
  . 
-
 
  strat subst4sym @ ProtocolConfig .
  sd subst4sym :=
@@ -14549,17 +14293,14 @@ nf(('s : bool <- read ('OutShareSum['n ('m -- 1) 'k])) 'x : bool <- read ('OutSh
      fam ('OutShareSum[bound (N + 2) fixedBound 'M bound K]), 
      nf(('xm : bool <- read ('Share['M 'k])) 'xs : bool <- read ('ShareSum[('M -- 1)
     'k]), return (ap 'xor pair('xs, 'xm)), 'xs 'xm)
-
      )       
            }
             
            
               }
        )       
-
  }
  .   
- 
  
  strat addBranchOut @ ProtocolConfig .
  sd addBranchOut := 
@@ -14587,7 +14328,6 @@ nf('s : bool <- read ('OutShareSum['n (N + 1) 'k]), return 's, 's)
        } ***sym
        )
  . 
- 
  strat subst5 @ ProtocolConfig .
  sd subst5 := 
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -14614,7 +14354,6 @@ nf('s : bool <- read ('OutShareSum['n (N + 1) 'k]), return 's, 's)
               }
        )       
  .    
- 
  strat subst6 @ ProtocolConfig .
  sd subst6 := 
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -14637,10 +14376,8 @@ nf('s : bool <- read ('OutShareSum['n (N + 1) 'k]), return 's, 's)
               }
        )       
  .   
- 
  *********************************
  *** for the induction in sum of shares
- 
  op know3 : -> Protocol .
 eq know3 = 
 (when (apply 'isInputGate 'k) -->
@@ -14691,7 +14428,6 @@ when neg (0 =T= 'm) -->
 nf(('xm : bool <- read ('Share['m 'k])) 'xs : bool <- read ('ShareSum[('m -- 1) 'k]), return (ap
     'xor pair('xs, 'xm)), 'xs 'xm)
 )
-
 ||
 family 'ShareSum[fixedBound (N + 1) bound K] 'm 'k
 fixedBound (N + 1) bound K
@@ -14889,7 +14625,6 @@ fixedBound (N + 1) bound K
 nf(('xm : bool <- read ('Share[(N + 1) 'k])) 'xs : bool <- read ('ShareSum[N 'k]), return (ap 'xor
     pair('xs, 'xm)), 'xs 'xm)
 .    
- 
 op want3 : -> WhenList .
 eq want3 = 
 (when (apply 'isInputGate 'k) -->
@@ -14941,7 +14676,6 @@ when neg (0 =T= 'm) -->
 nf(('xm : bool <- read ('Share['m 'k])) 'xs : bool <- read ('ShareSum[('m -- 1) 'k]), return (ap
     'xor pair('xs, 'xm)), 'xs 'xm)
 )
-
 ||
 family 'ShareSum[fixedBound (N + 1) bound K] 'm 'k
 fixedBound (N + 1) bound K
@@ -14999,7 +14733,6 @@ when neg (0 =T= 'm) -->
 nf(('xm : bool <- read ('Share['m 'k])) 'xs : bool <- read ('ShareSum[('m -- 1) 'k]), return (ap
     'xor pair('xs, 'xm)), 'xs 'xm)
 )
-
 ||
 family 'ShareSum[fixedBound (N + 1) bound K] 'm 'k
 fixedBound (N + 1) bound K
@@ -15137,7 +14870,6 @@ when neg (0 =T= 'm) -->
 nf(('xm : bool <- read ('Share['m 'k])) 'xs : bool <- read ('ShareSum[('m -- 1) 'k]), return (ap
     'xor pair('xs, 'xm)), 'xs 'xm)
 )
-
 ||
 family 'ShareSum[fixedBound (N + 1) bound K] 'm 'k
 fixedBound (N + 1) bound K
@@ -15146,9 +14878,7 @@ nf(('x : bool <- read ('ShareSum[(N + 1) (fun 'wire0 'k)]))
     'y : bool <- read ('ShareSum[(N + 1) (fun 'wire1 'k)]), 
     return (ap 'and pair('x, 'y)), 'x 'y)
 .
-
 *** add wire as internal channels
-
 strat addWire @ ProtocolConfig .
 sd addWire := 
    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -15171,7 +14901,6 @@ sd addWire :=
        )
       }
 .
-
 *** 
 strat addWiresGroup @ ProtocolConfig .
  sd addWiresGroup := 
@@ -15195,9 +14924,7 @@ strat addWiresGroup @ ProtocolConfig .
        )
  . 
 
-
 *** last induction of sum of shares
-
 op knowSharesWire : -> Protocol .
 eq knowSharesWire =
 (family 'Shares[bound K] 'k
@@ -15445,7 +15172,6 @@ fixedBound (N + 1) bound K
 ::=
 nf(('x : bool <- read ('ShareSum[(N + 1) (fun 'wire0 'k)])) 'y : bool <- read ('ShareSum[(N + 1) (
     fun 'wire1 'k)]), return (ap 'and pair('x, 'y)), 'x 'y)
-
 )
 ||
 (
@@ -15455,7 +15181,6 @@ bound K
 nf('s : bool <- read ('ShareSum[(N + 1) 'k]), return 's, 's)
 )
 .
-
 op wantSharesWire : -> Protocol .
 eq wantSharesWire =
 (family 'Shares[bound K] 'k
@@ -15625,7 +15350,6 @@ family 'ShareSum[fixedBound (N + 1) bound K] 'm 'k
 fixedBound (N + 1) bound K
 ::=
 nf('w : bool <- read ('Wire['k]), return 'w, 'w)
-
 )
 ;;
 when (apply 'isAndGate 'k) -->
@@ -15703,7 +15427,6 @@ fixedBound (N + 1) bound K
 ::=
 nf('w : bool <- read ('Wire['k]), return 'w, 'w)
 
-
 )
 ||
 (
@@ -15731,7 +15454,6 @@ bound K
    ) 
 )
 .
-
 strat inductionWireShares @ ProtocolConfig .
 sd inductionWireShares :=
 *** sym + induction again
@@ -15873,7 +15595,6 @@ sd inductionWireShares :=
          ; applyAllSameCases( chn ('Wire['B])  )
         }} } *** ind, cong, sym     
 .
-
 strat symInputWS @ ProtocolConfig .
 sd symInputWS :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -15887,14 +15608,10 @@ sd symInputWS :=
        in P
        ] 
        { substNF( 'ShareSum[(N + 1) 'B], 'Wire['B])}
-
 .
-
 *** the huge induction
-
  strat setupIndSumShares @ ProtocolConfig .
  sd setupIndSumShares := 
- 
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using
         SYM[
@@ -15906,7 +15623,6 @@ sd symInputWS :=
          want3
         in P
        ] 
-
 {     
     
     CONG-NEW-NF{
@@ -15963,9 +15679,7 @@ sd symInputWS :=
  } *** cong new end
 } *** sym end
 .   
-
 *** strats for and
-
 strat setupIndColRowPartTwoNZ @ ProtocolConfig .
 sd setupIndColRowPartTwoNZ := 
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16054,7 +15768,6 @@ sd setupIndColRowPartTwoNZ :=
    } *** induction end    
  } *** sym end 
  .
- 
  strat symRSPartTwoNZ @ ProtocolConfig .
  sd symRSPartTwoNZ :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16067,7 +15780,6 @@ sd setupIndColRowPartTwoNZ :=
         nf(('bi : bool <- read ('Col['X 'Y])) 
             'bs : bool <- read ('ColSum[('X -- 1) 'Y]), 
             return (ap 'xor pair('bs, 'bi)), 'bi 'bs)
-
         in P
        ] 
        { substNFFamilyOne(
@@ -16099,7 +15811,6 @@ sd setupIndColRowPartTwoNZ :=
        }
  .
  
- 
  strat symForRowSumPart2Zero @ ProtocolConfig .
  sd symForRowSumPart2Zero :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16115,7 +15826,6 @@ sd setupIndColRowPartTwoNZ :=
        ] 
        {substNF('ColSum['X 'Y], 'RowSum['X 'Y])}
 .     
-
 strat symForColSumPart2Zero @ ProtocolConfig .
  sd symForColSumPart2Zero :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16127,13 +15837,10 @@ strat symForColSumPart2Zero @ ProtocolConfig .
        with 
         nf(('bi : bool <- read ('Col['X 'Y])) 'bs : bool <- read ('ColSum[('X -- 1) 'Y]),
     return (ap 'xor pair('bs, 'bi)), 'bi 'bs)
-
        in P
        ] 
        { applyAlphaAssumChn('ColSum['X 'Y], 'Y)}
 .        
-
- 
  strat symBranchYZeroAnd @ ProtocolConfig .
  sd symBranchYZeroAnd :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16171,8 +15878,6 @@ strat symForColSumPart2Zero @ ProtocolConfig .
         }              
 .       
 
-
-
 op wantColRowSumPartTwoNZ : -> Protocol .
 eq wantColRowSumPartTwoNZ = 
 (family 'ColSum[fixedBound 'X bound (N + 2)] 'i 'j
@@ -16192,10 +15897,8 @@ nf(('bj : bool <- read ('Row['X 'j])) 'r : bool <- read ('RowSum['X ('j -- 1)]),
     return (ap 'xor pair('r, 'bj)), 'r 'bj)
 )
 .
-
 op knowColRowSumPartTwoNZ : -> Protocol .
 eq knowColRowSumPartTwoNZ = 
-
 (family 'ColSum[fixedBound 'X bound (N + 2)] 'i 'j
 fixedBound 'X bound (N + 2)
 ::=
@@ -16210,7 +15913,6 @@ fixedBound 'X bound (N + 2)
 nf('c : bool <- read ('ColSum['X 'j]), return 'c, 'c)
 )
 .
-
 strat revertShareSumInductiveAnd @ ProtocolConfig .
 sd revertShareSumInductiveAnd :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16231,7 +15933,6 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1) 
         in P
        ] {CONG-NEW-NF{setupIndSSAnd}}
 .       
-
 strat symSqrBranchNZ @ ProtocolConfig .
 sd symSqrBranchNZ :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16280,7 +15981,6 @@ sd symSqrBranchNZ :=
           )
        }
 .          
-
 strat symSqrToClosedAnd @ ProtocolConfig .
 sd symSqrToClosedAnd :=
        CONG-NEW-NF{
@@ -16394,7 +16094,6 @@ sd symSqrToClosedAnd :=
        } *** end induction
        } *** end cong
 .    
-
 strat symZBranchNZSqr @ ProtocolConfig .
 sd symZBranchNZSqr :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16439,9 +16138,7 @@ sd symZBranchNZSqr :=
        ]{applyAlphaAssumChn('Sqr['Z], 'Z), idle}
        }
 .
-
   
-
 strat symRowColToInd @ ProtocolConfig .
 sd symRowColToInd :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16521,7 +16218,6 @@ sd symRowColToInd :=
      }
      }
 .  
-
  strat symRowColNZero @ ProtocolConfig .
  sd symRowColNZero :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16560,7 +16256,6 @@ sd symRowColToInd :=
       ; changeOrder(chn ('RowCol['M]), 'br 'bc 'b 'sb) 
       }                             
   .     
-
  strat symRowColZero @ ProtocolConfig .
  sd symRowColZero :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16594,7 +16289,6 @@ sd symRowColToInd :=
                          << 'c, 'sb >> emptyQidPairList)  
        }                  
  .
-
 strat rewriteDiagRef @ ProtocolConfig .
 sd rewriteDiagRef := 
 CONG-NEW-NF{
@@ -16637,7 +16331,6 @@ CONG-NEW-NF{
    
 }      
 .
-
 strat indRowColToClosed @ ProtocolConfig .
 sd indRowColToClosed :=
       CONG-NEW-NF{ 
@@ -16716,7 +16409,6 @@ sd indRowColToClosed :=
   } *** ind
   } *** cong
 .
-
 strat symBranch2RowColAnd @ ProtocolConfig .
 sd symBranch2RowColAnd :=
    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16777,7 +16469,6 @@ sd symBranch2RowColAnd :=
           ) 
      }      
 .       
-
 strat symBranch1RowColAnd @ ProtocolConfig .
 sd symBranch1RowColAnd :=
    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16826,7 +16517,6 @@ sd symBranch1RowColAnd :=
           ) 
        }     
 .
-
 strat dropWithCase @ ProtocolConfig .
  sd dropWithCase :=
   match pConf s.t. startsWithNew pConf
@@ -16851,7 +16541,6 @@ strat dropWithCase @ ProtocolConfig .
        }
              )
  . 
-
 strat symRowColInSqr @ ProtocolConfig .
 sd symRowColInSqr :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16880,7 +16569,6 @@ sd symRowColInSqr :=
        )
        }
 .       
-
 strat addInternalsDiagRefRowCol @ ProtocolConfig .
  sd addInternalsDiagRefRowCol := 
      matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16913,9 +16601,7 @@ strat addInternalsDiagRefRowCol @ ProtocolConfig .
             absorbFamilyDeleteEmpty( fam ('RowCol[bound 'Z]) )
           ; absorbFamilyDeleteEmpty( fam ('DiagRef[bound 'Z]) )
         }  
-
 . 
-
 strat sym1SqrToAnd @ ProtocolConfig .
 sd sym1SqrToAnd :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -16960,7 +16646,6 @@ sd sym1SqrToAnd :=
           )  
        }    
 .     
-
 strat symSqrToInductive @ ProtocolConfig .
 sd symSqrToInductive :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17012,7 +16697,6 @@ sd symSqrToInductive :=
        }
        }
 .   
-
 *** I shouldn't need to do this, investigate why
 strat symMergeBranchesSqr @ ProtocolConfig .
 sd symMergeBranchesSqr :=
@@ -17053,7 +16737,6 @@ sd symMergeBranchesSqr :=
        }
        }
 .
-
 strat symSqrIndNZero @ ProtocolConfig .
 sd symSqrIndNZero :=
    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17094,7 +16777,6 @@ sd symSqrIndNZero :=
         ; unsafeColSumInductive
         }
 .          
-
 strat symColToRowNZ @ ProtocolConfig .
 sd symColToRowNZ :=
    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17125,7 +16807,6 @@ sd symColToRowNZ :=
        }
        
 .
-
 strat symSqrIndZero @ ProtocolConfig .
 sd symSqrIndZero :=
    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17146,7 +16827,6 @@ sd symSqrIndZero :=
        } 
        
 .
-
 strat unsafeColSumClosed @ ProtocolConfig .
 sd unsafeColSumClosed :=
    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17163,7 +16843,6 @@ sd unsafeColSumClosed :=
        in P
        ]
 .
-
 strat unsafeColSumInductive @ ProtocolConfig .
 sd unsafeColSumInductive :=
    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17186,7 +16865,6 @@ nf(('bi : bool <- read ('Col['i 'j])) 'bs : bool <- read ('ColSum[('i -- 1) 'j])
        in P
        ]
 .
-
 strat symSqrInSSNPlus1 @ ProtocolConfig .
   sd symSqrInSSNPlus1 :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17208,7 +16886,6 @@ strat symSqrInSSNPlus1 @ ProtocolConfig .
              return 'c, 'c))
         }
   .
-
 strat addSqr @ ProtocolConfig .
 sd addSqr :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17229,7 +16906,6 @@ sd addSqr :=
          absorbFamily( fam ('Sqr[(bound (N + 2))]) )
          }
  .        
-
 strat unsafeIndStepAnd @ ProtocolConfig .
 sd unsafeIndStepAnd :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17247,7 +16923,6 @@ sd unsafeIndStepAnd :=
         P
        ] 
 .       
-
 op wantColRowSumPartTwo : -> Protocol .
 eq wantColRowSumPartTwo = 
 (family 'ColSum[fixedBound 'X bound (N + 2)] 'i 'j
@@ -17267,7 +16942,6 @@ nf(('bj : bool <- read ('Row['X 'j])) 'r : bool <- read ('RowSum['X ('j -- 1)]),
     return (ap 'xor pair('r, 'bj)), 'r 'bj)
 )
 .
-
 strat setupIndSymPartTwo @ ProtocolConfig .
 sd setupIndSymPartTwo :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17282,7 +16956,6 @@ sd setupIndSymPartTwo :=
        ]
        { setupIndColRowPartTwo }
  .       
-
 op knowColRowSumPartTwo : -> Protocol .
 eq knowColRowSumPartTwo = 
  (family 'RowSum[fixedBound 'X bound (N + 2)]
@@ -17299,7 +16972,6 @@ fixedBound 'X bound (N + 2)
 nf('c : bool <- read ('Col[0 'j]), return 'c, 'c)
 )
 .
-
 strat symColSumSameCasesPartTwo @ ProtocolConfig .
 sd symColSumSameCasesPartTwo :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17318,7 +16990,6 @@ sd symColSumSameCasesPartTwo :=
         in P
         ]{applyAllSameCases(chn ('ColSum['X 'Y]))}
 .        
-
 strat setupIndColRowPartTwo @ ProtocolConfig .
 sd setupIndColRowPartTwo := 
        SINGLE-INDUCTION-new[
@@ -17377,7 +17048,6 @@ sd setupIndColRowPartTwo :=
       ; applyDropName(fam ('CGroup[nil]))
   }
  . 
- 
 strat lastSymBaseCase @ ProtocolConfig .
 sd lastSymBaseCase :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17392,7 +17062,6 @@ sd lastSymBaseCase :=
        ]{
        substNF('ColSum['X 'Y], 'RowSum['X 'Y])}
 .  
-
 strat symRowToColSumNzPart2 @ ProtocolConfig .
 sd symRowToColSumNzPart2 := 
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17414,7 +17083,6 @@ sd symRowToColSumNzPart2 :=
       ; applyAlphaAssumChn('RowSum['X 'Y], 'X)
       } 
 .
-
 strat symRowToColSum0Part2 @ ProtocolConfig .
 sd symRowToColSum0Part2 := 
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17429,7 +17097,6 @@ sd symRowToColSum0Part2 :=
        { substNF('ColSum['X 'Y], 'RowSum['X 'Y])
        }
 .
- 
 strat symRowToCol0Part2 @ ProtocolConfig .
 sd symRowToCol0Part2 := 
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17448,7 +17115,6 @@ sd symRowToCol0Part2 :=
         nf('c : bool <- read ('Ctrb[0 0 'B]), return 'c, 'c)
       )}
 .
-
 strat setupIndColRow @ ProtocolConfig .
 sd setupIndColRow := 
        SINGLE-INDUCTION-new[
@@ -17492,14 +17158,12 @@ sd setupIndColRow :=
   
  *** part one, induction
 ; setupIndRowPartOneNZCase
-
 ; applyDropName(fam ('HiddenGroup[bound 'X bound (N + 2)]) )
 *** now we get to part two, another induction
 ; applyGroupFamiliesNew(
     fam ('RowSum[fixedBound 'X bound (N + 2)]), 
     fam ('ColSum[fixedBound 'X bound (N + 2)])
   )
-
 ; setupIndColRowPartTwoNZ  
 ; applyUngroupFamiliesNew(
     fam ('RowSum[fixedBound 'X bound (N + 2)]), 
@@ -17511,7 +17175,6 @@ sd setupIndColRow :=
        ; applyAllSameCases(fam ('ColSum[fixedBound 'X bound (N + 2)]))
 }
 .
-
 *** quickfix for a bug
  strat addRowSumGroup @ ProtocolConfig .
  sd addRowSumGroup := 
@@ -17534,7 +17197,6 @@ sd setupIndColRow :=
        } ***sym
        )
  .     
- 
  strat symRSYNZero @ ProtocolConfig .
  sd symRSYNZero :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17585,7 +17247,6 @@ sd setupIndColRow :=
         ; changeOrder(chn ('RowSum['X 'Y]), 'r 'bc 'br 'bi) 
        }      
  .
- 
  strat symRSYZero @ ProtocolConfig .
  sd symRSYZero :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17634,8 +17295,6 @@ sd setupIndColRow :=
         }
        
 .       
-
- 
 *** first induction for row on non-zero case
 strat setupIndRowPartOneNZCase @ ProtocolConfig .
 sd setupIndRowPartOneNZCase := 
@@ -17708,7 +17367,6 @@ sd setupIndRowPartOneNZCase :=
        ; addRowSumGroup
      } *** induction end  
 .            
-
 *** first induction for row on 0 case
 strat setupIndRowPartOneZeroCase @ ProtocolConfig .
 sd setupIndRowPartOneZeroCase := 
@@ -17762,7 +17420,6 @@ sd setupIndRowPartOneZeroCase :=
       ; applyAllSameCases( chn ('RowSum['X 'Y]) )
       }
 .
-
 strat symRowSumPart1Branch2 @ ProtocolConfig .
 sd symRowSumPart1Branch2 :=
    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17789,7 +17446,6 @@ sd symRowSumPart1Branch2 :=
     return (ap 'xor pair('bs, 'bj)), 'bs 'bj)
       ) }
 .
-
 strat symRowSumPart1Branch1 @ ProtocolConfig .
 sd symRowSumPart1Branch1 :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17812,9 +17468,7 @@ sd symRowSumPart1Branch1 :=
         'RowSum['X 'Y], (0 =T= 'j), 
         nf('c : bool <- read ('Ctrb[0 0 'B]), return 'c, 'c)
       )}
-
 .       
-
 
 op knowColRowSum : -> Protocol .
 eq knowColRowSum =
@@ -17842,7 +17496,6 @@ nf(('bj : bool <- read ('Row['i 'j])) 'r : bool <- read ('RowSum['i ('j -- 1)]),
 )
 )
 .
-
 op wantColRowSum : -> Protocol .
 eq wantColRowSum =
 (family 'ColSum[bound (N + 2) bound (N + 2)] 'i 'j
@@ -17863,7 +17516,6 @@ nf(('bj : bool <- read ('Row['i 'j])) 'r : bool <- read ('RowSum['i ('j -- 1)]),
 )
 )
 .
-
  strat addRowAndRowSum @ ProtocolConfig .
  sd addRowAndRowSum :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17916,7 +17568,6 @@ nf(('bj : bool <- read ('Row['i 'j])) 'r : bool <- read ('RowSum['i ('j -- 1)]),
           }
         
  .
-
 
  strat changeColToInductive @ ProtocolConfig .
  sd changeColToInductive :=
@@ -17972,7 +17623,6 @@ nf(('bj : bool <- read ('Row['i 'j])) 'r : bool <- read ('RowSum['i ('j -- 1)]),
          ; applyAllSameCases( fam ('Col[bound (N + 2) fixedBound 'J]) )
          }}}
  .  
-
 strat sym2ColAnd @ ProtocolConfig .
 sd sym2ColAnd :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -17997,7 +17647,6 @@ sd sym2ColAnd :=
                          << 'b, 'bj >> << 's, 'c >> emptyQidPairList)      
         }                 
 .       
- 
 strat sym1ColAnd @ ProtocolConfig .
 sd sym1ColAnd :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18021,7 +17670,6 @@ sd sym1ColAnd :=
                          << 'b, 'c >> emptyQidPairList)    
        } 
 .                 
-
 strat substFamCaseChnColSumSSAnd3 @ ProtocolConfig .
 sd substFamCaseChnColSumSSAnd3 :=
   match pConf s.t. startsWithNew pConf
@@ -18046,7 +17694,6 @@ sd substFamCaseChnColSumSSAnd3 :=
           )} 
         }       
 .
-
 strat symSSColSumAnd @ ProtocolConfig .
 sd symSSColSumAnd :=
   match pConf s.t. startsWithNew pConf
@@ -18083,7 +17730,6 @@ sd symSSColSumAnd :=
                          } 
       )  
 .        
-
 strat substFamCaseChnColSumSSAnd @ ProtocolConfig .
 sd substFamCaseChnColSumSSAnd :=
   match pConf s.t. startsWithNew pConf
@@ -18106,7 +17752,6 @@ sd substFamCaseChnColSumSSAnd :=
           )} 
         }       
 .
-
 strat substFamCaseChnColSumSSAnd2 @ ProtocolConfig .
 sd substFamCaseChnColSumSSAnd2 :=
   match pConf s.t. startsWithNew pConf
@@ -18131,7 +17776,6 @@ sd substFamCaseChnColSumSSAnd2 :=
           )} 
         }       
 .
-
 
 strat setupIndSSAnd @ ProtocolConfig .
 sd setupIndSSAnd := 
@@ -18174,7 +17818,6 @@ SINGLE-INDUCTION-new-R[
  ; applyAllSameCases(chn ('ShareSum['M 'B]))  
 }      
 .
-
   strat symSSInd2And @ ProtocolConfig .
   sd symSSInd2And :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18206,7 +17849,6 @@ SINGLE-INDUCTION-new-R[
                          << 't, 'bs >> emptyQidPairList)  
         }                                                
   .      
-
   strat symSSInd1And @ ProtocolConfig .
   sd symSSInd1And :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18232,7 +17874,6 @@ SINGLE-INDUCTION-new-R[
         }
         
  .
-
  strat addColAndColSum @ ProtocolConfig .
  sd addColAndColSum :=
     matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18275,7 +17916,6 @@ SINGLE-INDUCTION-new-R[
           }
         
  .
-
  strat revertShareAnd @ ProtocolConfig .
  sd revertShareAnd := 
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18294,7 +17934,6 @@ SINGLE-INDUCTION-new-R[
       ; applyReturnIdem(chn ('Share[(N + 1) 'B]))
       }
  .
-
  strat setupSymAnd @ ProtocolConfig .
  sd setupSymAnd :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18323,7 +17962,6 @@ SINGLE-INDUCTION-new-R[
 ; addColAndColSum
 *** turn the family ShareSum(up to N + 1, fixed B) into closed form, reads from ColSum
 ; CONG-NEW-NF{setupIndSSAnd}
-
 ; substNFFamilyOne(
     fam ('ShareSum[bound (N + 1) fixedBound 'B]),
     'ShareSum[(N + 1) 'B],
@@ -18335,19 +17973,15 @@ SINGLE-INDUCTION-new-R[
 ; symSSColSumAnd
 *** change col to inductive form
 ; changeColToInductive
-
 *** add Row and RowSum
 ; addRowAndRowSum
-
 *** here we get ColSum to read from RowSum!
 ; applyGroupFamiliesNew(
     fam ('RowSum[bound (N + 2) bound (N + 2)]), 
     fam ('ColSum[bound (N + 2) bound (N + 2)])
   )
- 
 ; CONG-NEW-NF{setupIndColRow}
   
-
 ; applyUngroupFamiliesNew(
     fam ('RowSum[bound (N + 2) bound (N + 2)]), 
     fam ('ColSum[bound (N + 2) bound (N + 2)])
@@ -18361,16 +17995,13 @@ SINGLE-INDUCTION-new-R[
 *** ColSum RowSum are unused and we can absorb them
 ; absorbFamily( fam ('ColSum[bound (N + 2) bound (N + 2)]) )
 ; absorbFamily( fam ('RowSum[bound (N + 2) bound (N + 2)]) )
-
 *** next proof step says that we can unsplit Share upto bound 'B
 *** but we can choose to keep them separated!
 *** last thing to show is that we can turn Sqr to a closed form involving and
 ; symSqrToClosedAnd
-
 *** we can discard Row and Col
 ; absorbFamily( fam ('Col[bound (N + 2) bound (N + 2)]) )
 ; absorbFamilyDeleteEmpty( fam ('Row[bound (N + 2) bound (N + 2)]) )
-
 *** then we can subst Sqr(N+1) in 'ShareSum[(N+1) 'B] to get what we wanted
 ; substNFFamilyOne(
     fam ('Sqr[bound (N + 2)]),
@@ -18386,14 +18017,11 @@ SINGLE-INDUCTION-new-R[
             chn ('ShareSum[(N + 1) 'B]), 
                          << 'xs, 'x >> << 'ys, 'y >> emptyQidPairList)
 *** discard Sqr
-
 ; absorbFamilyDeleteEmpty( fam ('Sqr[bound (N + 2)]) )  
        }
  .      
-
   
 *** strategies for xor  
-
  strat psymXor @ ProtocolConfig .
   sd psymXor :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18407,7 +18035,6 @@ SINGLE-INDUCTION-new-R[
          nf(('x : bool <- read ('ShareSum[(N + 1) (fun 'wire0 'B)])) 
              'y : bool <- read ('ShareSum[(N + 1) (fun 'wire1 'B)]), 
              return (ap 'xor pair('x, 'y)), 'x 'y)
-
         in P
         ]
          {
@@ -18438,7 +18065,6 @@ SINGLE-INDUCTION-new-R[
         }             
         
   .
-
  strat setupSymXor @ ProtocolConfig .
  sd setupSymXor :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18468,7 +18094,6 @@ SINGLE-INDUCTION-new-R[
         substNF('Share[(N + 1) 'B], 'ShareSum[(N + 1) 'B])
 ; revertShareXor
 ; setupIndShareSumXor
-
 ; applyAlphaNFPr(
              chn ('ShareSum[(N + 1) 'B]), 
                          << 'x, 'a >> << 'y, 'b >> emptyQidPairList)
@@ -18480,26 +18105,20 @@ SINGLE-INDUCTION-new-R[
        'y : bool <- read ('ShareSum[N (fun 'wire1 'B)]), 
        return (ap 'xor pair('x, 'y)), 'x 'y)
   ) 
-
 ; applyRearrangeXor(chn ('ShareSum[(N + 1) 'B]))
-
 ; applyRemoveFromGroupCases(
        fam ('Shares[bound 'B]),
        fam ('ShareSum[fixedBound (N + 1) bound 'B])
      )
    ; applyAllSameCases(fam ('ShareSum[fixedBound (N + 1) bound 'B]))  
-
 ; psymXor  
-
 ; revertShareSumIndXor
-
 ; applyAddToGroupCases(
        fam ('Shares[bound 'B]),
        fam ('ShareSum[fixedBound (N + 1) bound 'B])
      ) 
 } 
  . 
- 
  strat revertShareXor @ ProtocolConfig . 
  sd revertShareXor := 
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18520,7 +18139,6 @@ SINGLE-INDUCTION-new-R[
      ; changeOrder(chn ('Share[(N + 1) 'B]), 'xs 'x 'y)
      }
        .
-
   strat revertShareSumIndXor @ ProtocolConfig .
   sd revertShareSumIndXor :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18541,7 +18159,6 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1) 
         in P
         ]{setupIndShareSumXor}
  .  
- 
 strat setupIndShareSumXor @ ProtocolConfig .
 sd setupIndShareSumXor := 
    SINGLE-INDUCTION-new-R[
@@ -18600,7 +18217,6 @@ sd setupIndShareSumXor :=
   )
   }
 .
-
 strat symSS2Xor @ ProtocolConfig .
   sd symSS2Xor :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18635,7 +18251,6 @@ strat symSS2Xor @ ProtocolConfig .
         ; changeOrder(chn ('ShareSum['M 'B]), 'a 'b 'x 'y)                  
         }
 .        
- 
 strat pSubstFamCaseChn1 : Reaction @ ProtocolConfig .
 sd pSubstFamCaseChn1(R) :=
   match pConf s.t. startsWithNew pConf
@@ -18658,7 +18273,6 @@ sd pSubstFamCaseChn1(R) :=
           )
           }}   
  .  
- 
 strat symSS1Xor @ ProtocolConfig .
   sd symSS1Xor :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18708,7 +18322,6 @@ sd pSubstFamCaseChn0(R) :=
           }}   
  . 
 **** strategies for not
-
  strat psymNot @ ProtocolConfig .
   sd psymNot :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18734,7 +18347,6 @@ sd pSubstFamCaseChn0(R) :=
                          << 'xm, 'x >> << 'xs, 's >> emptyQidPairList)
         }
   .
-
  strat rewriteSharesBoundNot @ ProtocolConfig .
  sd rewriteSharesBoundNot :=
  match pConf s.t. startsWithNew pConf
@@ -18748,7 +18360,6 @@ sd pSubstFamCaseChn0(R) :=
        }
                              }           
  .    
- 
  strat rewriteSharesBoundNotAux @ ProtocolConfig .
  sd rewriteSharesBoundNotAux := 
       SINGLE-INDUCTION-new-R[
@@ -18802,7 +18413,6 @@ sd pSubstFamCaseChn0(R) :=
       )
    }  
  .  
- 
  strat symWithCasesSS @ ProtocolConfig .
  sd symWithCasesSS :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18844,7 +18454,6 @@ nf('s : bool <- read ('ShareSum['M (fun 'wire0 'B)]), return 's, 's)
       }
       }
  .
- 
 strat pSubstFamCaseChnSSNot : BoolTerm Reaction  @ ProtocolConfig .
 sd pSubstFamCaseChnSSNot(bt, R) :=
   match pConf s.t. startsWithNew pConf
@@ -18866,7 +18475,6 @@ sd pSubstFamCaseChnSSNot(bt, R) :=
          }
          }) 
  .        
- 
  strat revertSharesBoundNotAux @ ProtocolConfig .
  sd revertSharesBoundNotAux := 
    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18889,7 +18497,6 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1)
        { rewriteSharesBoundNotAux }
        
  .           
-
  strat revertShareNot @ ProtocolConfig . 
  sd revertShareNot := 
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -18937,7 +18544,6 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1)
        {
      
      substNF('Share[(N + 1) 'B], 'ShareSum[(N + 1) 'B])
- 
    ; revertShareNot
     
    ; rewriteSharesBoundNotAux
@@ -18966,7 +18572,6 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1)
        fam ('Shares[bound 'B]) )
   }
  .      
-
 *** strategies for input
   
  strat pSymInd0 @ ProtocolConfig .
@@ -19010,7 +18615,6 @@ nf(('s : unit <- read ('InShare$Sum-OK[('m -- 1) 'p 'i]))
            }
           
   ; CONG-NEW-NF{pSetupInd0
- 
   ; alpha-family-three-top[
            fns:NameWithScripts <- 'InShare$-Sum, 
            q1:Qid <- 'm,
@@ -19027,11 +18631,9 @@ nf(('s : unit <- read ('InShare$Sum-OK[('m -- 1) 'p 'i]))
            q4:Qid <- 'm,
            q5:Qid <- 'n,
            q6:Qid <- 'i]
-
         }    
         }                    
  . 
- 
  strat pSetupInd1 @ ProtocolConfig .
  sd pSetupInd1 := 
       SINGLE-INDUCTION-new-R[
@@ -19067,7 +18669,6 @@ nf(('s : unit <- read ('InShare$Sum-OK[('m -- 1) 'p 'i]))
       fam ('InShare$Sum-OK[fixedBound 'M bound (N + 2) dependentBound 'I]),
       nf('i : unit <- read ('In-OK['p 'i]), return (), 'i)
      )  
-
      }
      }
      ; applyAllSameCases( 
@@ -19075,7 +18676,6 @@ nf(('s : unit <- read ('InShare$Sum-OK[('m -- 1) 'p 'i]))
        )
     }   
  .
- 
   
  strat pSetupInd0 @ ProtocolConfig .
  sd pSetupInd0 :=
@@ -19128,7 +18728,6 @@ nf(('s : unit <- read ('InShare$Sum-OK[('m -- 1) 'p 'i]))
      ; applyAllSameCases( fam ('InShare$Sum-OK[fixedBound 'M (bound (N + 2))(dependentBound 'I)]) )  
      }  
 .
-
   strat sym2$SumOK @ ProtocolConfig .
   sd sym2$SumOK :=
   matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -19220,7 +18819,6 @@ nf(('s : unit <- read ('InShare$Sum-OK[('m -- 1) 'p 'i]))
        }
              )
  . 
-
  strat symInShare$ @ ProtocolConfig .
  sd symInShare$ :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -19321,7 +18919,6 @@ nf(('s : unit <- read ('InShare$Sum-OK[('m -- 1) 'p 'i]))
             fam ('InShare$Sum-OK[((bound (N + 1))(bound (N + 2))(dependentBound 'I))])
           )
  .
-
  strat addInternalsInputBranch @ ProtocolConfig .
  sd addInternalsInputBranch := 
     
@@ -19369,7 +18966,6 @@ nf(('s : unit <- read ('InShare$Sum-OK[('m -- 1) 'p 'i]))
         } ***sym
        )
  .   
- 
  strat revertShareSum @ ProtocolConfig . 
  sd revertShareSum := 
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -19454,7 +19050,6 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1) 
                             emptyQidPairList )
   }
  . 
- 
  strat symSS @ ProtocolConfig .
  sd symSS := matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using
@@ -19498,7 +19093,6 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1) 
        
        }
  .
- 
  strat symSS2 @ ProtocolConfig .
  sd symSS2 := matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using
@@ -19543,7 +19137,6 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1) 
          }
       
  .
- 
   
  strat setupSymInput @ ProtocolConfig .
  sd setupSymInput :=
@@ -19628,7 +19221,6 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1) 
       ; removeInternalsInputBranch 
       }
  .   
- 
  strat setupSymInput2 @ ProtocolConfig .
  sd setupSymInput2 :=
  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
@@ -19648,17 +19240,13 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1) 
        ; applyReturnIdem( chn ('Share[(N + 1) 'B]) )
        }
  .        
-
  ****************************************************************
- 
  strat eliminateOTDivergent @ ProtocolConfig .
  sd eliminateOTDivergent := 
- 
            applyDivergeChannel3FamilyBranch(
             fam ('OTMsg-0[((bound (N + 2)) (bound (N + 2)) (bound K))]) , 
             fam (('OTMsg-0 ^^ 'ot .. 'adv)[(bound (N + 2) (bound (N + 2)) (bound K))]) , 
             apply 'isSemiHonest 'n, 'om, bool)
-
          ; applyAllSameCases(
             fam (('OTMsg-0 ^^ 'ot .. 'adv)[(bound (N + 2) (bound (N + 2)) (bound K))])
            )
@@ -19672,7 +19260,6 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1) 
             fam (('OTMsgRcvd-0 ^^ 'ot .. 'adv) 
               [(bound (N + 2) (bound (N + 2)) (bound K))])   
            )
-
          ; applyDivergeChannel3FamilyBranch(
             fam ('OTMsg-1[((bound (N + 2)) (bound (N + 2)) (bound K))]) , 
             fam (('OTMsg-1 ^^ 'ot .. 'adv)[(bound (N + 2) (bound (N + 2)) (bound K))]) , 
@@ -19818,10 +19405,8 @@ nf(('xm : bool <- read ('Share['m 'B])) 'xs : bool <- read ('ShareSum[('m -- 1) 
  .    
           
 endsm 
-
 ************************************
 *** proofs start here
-
 *** real to restr
 srew [1] pConfig(sig,
              (fam (('InRcvd ^^ 'party .. 'adv)[((bound (N + 2))(dependentBound 'I))]) :: unit) 
@@ -19997,7 +19582,6 @@ using
                             nf('in : bool <- read ('InShare$['n 'm 'i]), 
                                return 'in, 'in)
                            ) 
-
        ; absorbFamily(
           fam ('SendInShare[((bound (N + 2)) (bound (N + 2)) (dependentBound 'I))])
          ) 
@@ -20018,7 +19602,6 @@ using
          } 
          
        ; select-branch-family-p[bt:BoolTerm <- apply 'isAndGate 'k]{
-
          substDivergeJoinCases(
             fam ('OTMsg-0[((bound (N + 2)) (bound (N + 2)) (bound K))]) , 
             fam (('OTMsg-0 ^^ 'ot .. 'adv)[(bound (N + 2) (bound (N + 2)) (bound K))]) , 
@@ -20418,10 +20001,8 @@ using
              
        ; absorbFamily(fam ('OTMsg-2[((bound (N + 2)) (bound (N + 2))(bound K) )]))
        ; absorbFamily(fam ('OTMsg-3[((bound (N + 2)) (bound (N + 2))(bound K) )]))
-
        ; absorbFamily(fam ('OTChc-0[((bound (N + 2)) (bound (N + 2))(bound K) )]))
        ; absorbFamily(fam ('OTChc-1[((bound (N + 2)) (bound (N + 2))(bound K) )]))
-
        ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using 
        SYM[
@@ -20490,7 +20071,6 @@ using
                                bt:BoolTerm <- apply 'isNotGate 'k]
          {  applyRemoveBranch(fam ('Share[(bound (N + 1)) (bound K)]))
          }
-
 
         
         
@@ -20688,7 +20268,6 @@ using
       ; applyUngroupFamiliesNew(fam ('HiddenGroup[bound K]), fam ('Shares[bound K]))
       ; applyDropName(fam ('HiddenGroup[bound K]) )
       ; absorbFamilyDeleteEmpty( fam ('Hidden[bound K]) )
-
      
      *** 10.4.5 timing of shares 2
      
@@ -20856,7 +20435,6 @@ using
     
     *** the rest goes here
     ; applySplitFst( fam (('InShare$ ^^ 'party .. 'adv)[bound (N + 2) bound (N + 2) dependentBound 'I])  ) 
-
 ; CONG-NEW-NF{
   select-branch-family-r[
     fns:NameWithScripts <- 'InShare$ ^^ 'party .. 'adv,
@@ -20874,7 +20452,6 @@ using
    
    }
   } 
-
 ; applySplitFst( fam (('SendInShare ^^ 'party .. 'adv)[bound (N + 2) bound (N + 2)
     dependentBound 'I])  ) 
     
@@ -20898,7 +20475,6 @@ using
   
 ;  applySplitFst( fam ('InShare [bound (N + 2) bound (N + 2) dependentBound 'I])  )   
 
-
 ; substNFFamiliesGen(     
      fam ('InShare$ [bound (N + 2) bound (N + 2) dependentBound 'I]),
      fam ('InShare [fixedBound (N + 1) bound (N + 2) dependentBound 'I]),
@@ -20908,16 +20484,11 @@ using
     )
     
 ;  applySplitFst( fam ('InShare$ [bound (N + 2) bound (N + 2) dependentBound 'I])  )     
- 
 ; absorbFamily( fam ('InShare$ [fixedBound (N + 1) bound (N + 2) dependentBound 'I]) )
-
 ; absorbFamily( fam ('InShare [fixedBound (N + 1) bound (N + 2) dependentBound 'I]) ) 
-
 *** RcvdBit must be split
 ; applyRemoveFromGroupCases(fam ('Shares[bound K]), fam ('RcvdBit[bound (N + 2) bound (N + 2) bound K]) )
-
 ; applySplit( fam ('RcvdBit[bound (N + 2) bound (N + 2) bound K]) )
-
 
 ; applyAddFamToGroupSameCases(
    fam ('Shares[bound K]), 
@@ -20951,7 +20522,6 @@ using
    fam ('Shares[ bound K]),
    fam ('SendBit[bound (N + 2) bound (N + 2) bound K])
   )  
-
 ; applySplitFstBranches(
    fam ('Shares[ bound K]),
    fam ('RcvdBit[bound (N + 2) bound (N + 1) bound K])
@@ -20966,12 +20536,10 @@ using
    fam ('Shares[ bound K]),
    fam ('CtrbSum[bound (N + 2) bound (N + 2) bound K])
   )
-
 ; applySplitFstBranches(
    fam ('Shares[ bound K]),
    fam ('Ctrb[bound (N + 2) bound (N + 2) bound K])
   )
-
 
 ; applyExtractSubgroup( 
    fam ('Shares[ bound K]), 
@@ -20984,15 +20552,12 @@ using
    'Ctrbs)
    
 *** 'Ctrbs needs to go  aici 
-
 ; absorbGroup( fam ('Ctrbs[bound K]) )
-
 ; applySplit( fam (('RcvdOutShare ^^ 'party .. 'adv)[bound (N + 2) bound (N + 2) bound K]) )
 ; applySplit( fam (('OutShare ^^ 'party .. 'adv)[bound (N + 2) bound (N + 2) bound K]) )
 ; applyRemoveMergeFromGroupCases(
     fam ('Shares[bound K]), 
     fam ('Share[fixedBound (N + 1) bound K])) 
-
   
 ; 
 CONG-NEW-NF{
@@ -21002,7 +20567,6 @@ CONG-NEW-NF{
     bt:BoolTerm <- ((apply 'isOutputWire 'k) conj apply 'isSemiHonest 'n) 
    ]{
    
-
     substNFFamiliesGen(     
      fam ('Share[fixedBound (N + 1) bound K]),
      fam (('RcvdOutShare ^^ 'party .. 'adv)[bound (N + 2) fixedBound (N + 1) bound K]),
@@ -21013,7 +20577,6 @@ CONG-NEW-NF{
    
    }
 } 
-
 ; 
 CONG-NEW-NF{
  select-branch-family-r[
@@ -21022,7 +20585,6 @@ CONG-NEW-NF{
     bt:BoolTerm <- ((apply 'isOutputWire 'k) conj apply 'isSemiHonest 'n) 
    ]{
    
-
     substNFFamiliesGen(     
      fam ('Share[fixedBound (N + 1) bound K]),
      fam (('OutShare ^^ 'party .. 'adv)[bound (N + 2) fixedBound (N + 1) bound K]),
@@ -21035,7 +20597,6 @@ CONG-NEW-NF{
 } 
      
 ; absorbFamily( fam ('Share[fixedBound (N + 1) bound K]) )
-
 ; 
 CONG-NEW-NF{
  select-branch-family-r[
@@ -21044,7 +20605,6 @@ CONG-NEW-NF{
     bt:BoolTerm <- ((apply 'isOutputWire 'k) conj apply 'isSemiHonest 'n) 
    ]{
    
-
     substNFFamiliesGen(     
      fam ('ShareSum[fixedBound (N + 1) bound K]),
      fam (('RcvdOutShare ^^ 'party .. 'adv)[bound (N + 2) fixedBound (N + 1) bound K]),
@@ -21053,7 +20613,6 @@ CONG-NEW-NF{
    
    }
 } 
-
 ; 
 CONG-NEW-NF{
  select-branch-family-r[
@@ -21062,7 +20621,6 @@ CONG-NEW-NF{
     bt:BoolTerm <- ((apply 'isOutputWire 'k) conj apply 'isSemiHonest 'n) 
    ]{
    
-
     substNFFamiliesGen(     
      fam ('ShareSum[fixedBound (N + 1) bound K]),
      fam (('OutShare ^^ 'party .. 'adv)[bound (N + 2) fixedBound (N + 1) bound K]),
@@ -21071,9 +20629,7 @@ CONG-NEW-NF{
    
    }
 } 
-
 ; applySplit( fam (('OutShareSum ^^ 'party .. 'adv)[bound (N + 2) bound (N + 2) bound K]) )
-
 ; 
 CONG-NEW-NF{
  select-branch-family-r[
@@ -21082,7 +20638,6 @@ CONG-NEW-NF{
     bt:BoolTerm <- ((apply 'isOutputWire 'k) conj apply 'isSemiHonest 'n) 
    ]{
    
-
     substNFFamiliesGen(     
      fam ('ShareSum[fixedBound (N + 1) bound K]),
      fam (('OutShareSum ^^ 'party .. 'adv)[bound (N + 2) fixedBound (N + 1) bound K]),
@@ -21091,7 +20646,6 @@ CONG-NEW-NF{
    
    }
 } 
-
 ; 
 CONG-NEW-NF{
  select-branch-family-r[
@@ -21100,7 +20654,6 @@ CONG-NEW-NF{
     bt:BoolTerm <- (apply 'isOutputWire 'k) 
    ]{
    
-
     substNFFamiliesGen(     
      fam ('ShareSum[fixedBound (N + 1) bound K]),
      fam ('Out[bound (N + 2) bound K]),
@@ -21109,39 +20662,30 @@ CONG-NEW-NF{
    
    }
 } 
-
 ; absorbFamily( fam ('ShareSum[fixedBound (N + 1) bound K]) )
-
 *** prepare for sym
 *** we can take ShareSum out of Shares
-
 ; applyRemoveMergeFromGroupCases(
     fam ('Shares[bound K]), 
     fam ('ShareSum[bound (N + 1) bound K])
  ) 
- 
 ; applyMergeGroups(fam ('Adv[bound K]), fam ('Shares[bound K]), 'Circ) 
-
 ; alpha-family-three[fns:NameWithScripts <- 'InShare,
      q4:Qid <- 'm,
      q5:Qid <- 'n,
      q6:Qid <- 'i
       ]  
 
-
 *** sym proofs from 10.4.8
 ; symWireOSS
 ; symWireOS
 ; symWireROS
-
 *** simplification
 ; applyDropBranch(fam ('InShare$ [bound (N + 1) bound (N + 2) dependentBound 'I]), 
                   'm, N + 1)
 ; applyRemoveOtherwiseBranch(fam ('InShare$ [bound (N + 1) bound (N + 2) dependentBound 'I]))
 
-
 *** finalize the proof
-
 ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using
         SYM[
@@ -21154,7 +20698,6 @@ CONG-NEW-NF{
              
      ; 
 CONG-NEW-NF{
-
  select-branch-family-r[
     fns:NameWithScripts <- 'InShare$,
     blist:List{Bounds}  <- bound (N + 1) bound (N + 2) dependentBound 'I,
@@ -21310,16 +20853,13 @@ CONG-NEW-NF{
    }
    
 } 
-
 ; applyAllSameCases( fam ('InShare$[bound (N + 1) bound (N + 2) dependentBound 'I]) )
 ; applyAlphaNFPr(
             fam ('InShare$[bound (N + 1) bound (N + 2) dependentBound 'I]), 
                          << 'in, 'x >> emptyQidPairList)
-
 ; absorbFamily( fam (('Out ^^ 'id .. 'adv)[bound (N + 2) bound K]) )
 ; absorbFamily( fam (('InRcvd ^^ 'id .. 'adv)[bound (N + 2) dependentBound 'I]) )
 ; absorbFamilyDeleteEmpty( fam (('In ^^ 'id .. 'adv)[bound (N + 2) dependentBound 'I]) )
-
 
 ; reorder-newNF[ql2:List{CNameBound} <- 
 ( 
