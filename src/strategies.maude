@@ -1309,10 +1309,10 @@ smod STRATS is
   *** add a newfamily to a named group of protocols
  strat addNewFamilyToGroup : Protocol CNameBound CNameBound @ ProtocolConfig .
  sd addNewFamilyToGroup(P, cnb1, cnb2) :=
-     applyAbsorbReverse(P)
-   ; moveProtocolUnderNewNF
-   ; lift-inner-new-nf
-   ; applyAddToGroup(cnb1, cnb2)
+   applyAbsorbReverse(P)
+ ; moveProtocolUnderNewNF
+ ; lift-inner-new-nf
+ ; applyAddToGroup(cnb1, cnb2)
  .  
  
  *** substrategies
@@ -1327,7 +1327,7 @@ smod STRATS is
  
  *** under the assumption that the current protocol is of the form
  ***     family q2 ::= P || family q1 ::= when cond1 --> P1 ;; otherwise --> P2
- *** do an absorb   
+ *** do an absorb in P1  
  strat applyCaseDistAbsorb : 
     ChannelName ChannelName CNameBound Protocol @ ProtocolConfig .
  sd applyCaseDistAbsorb(ns1, ns2, fam (ns3[bdlist3]), pr) := 

@@ -293,7 +293,9 @@ fmod NAT-TERM-EVAL is
  eq (nt -- x) -- y = nt -- (x + y) .
  ceq (nt -- x) ++ y = nt -- (x - y) if y <= x .
  ceq (nt -- x) ++ y = nt -- (y - x) if x < y .
- 
+
+ eq (nt + 1) -- 1 = nt .
+
  ***(
  eq (n - x) - y = n - (x + y) .
  ceq (n + x) - y = n + (x - y) if y < x .
@@ -327,6 +329,7 @@ fmod NAT-TERM-EVAL is
  
  op expandIneq__ : Set{BoolTerm} Set{BoolTerm} -> Set{BoolTerm} .
  eq expandIneq (A, nt <T t + 2) A' = expandIneq A (A', nt <T t + 2, nt <=T t + 1) .
+ eq expandIneq (A, nt <T t + 3) A' = expandIneq A (A', nt <T t + 3, nt <=T t + 2) .
  eq expandIneq A A' = union(A, A') [owise] .
   
  op evalBoolTermAux : BoolTerm Set{BoolTerm} Map{Qid, NatTerm} -> Bool .  
@@ -360,6 +363,8 @@ fmod NAT-TERM-EVAL is
  eq evalBoolTerm(t1 <T t2, (A, t1 <T t3, t3 <T t2), f) = true .
  eq evalBoolTermAux(n1 <T n2, A, f) = n1 < n2 .
  eq evalBoolTermAux(t + n1 <T t + n2, A, f) = n1 < n2 .
+ *** TODO: these two axioms seem wrong i < 4 if i <= 5 is definitely not true!
+ *** are they in use? 
  ceq evalBoolTermAux(t <T t1, A, f) = true if (t <=T t1 + 1) in A .
  ceq evalBoolTermAux(t <T t1, A, f) = true if (t <=T t1 + 2) in A .
  eq evalBoolTermAux(t -- n <T t, A, f) = true .
@@ -377,6 +382,15 @@ fmod NAT-TERM-EVAL is
  ceq evalBoolTermAux(t <T t1 + n1, (A, t <T t1 + n2), f) = true 
   if n2 < n1 . 
  eq evalBoolTermAux(t <T t + n, A, f) = n > 0 . 
+ 
+ eq evalBoolTermAux(t <T t1 + 1, (A, t <T t1 + 2, neg (t =T= t1 + 1)), f ) = true .
+ eq evalBoolTermAux(t -- n <T t1, 
+                    (A, t <T t1), f) = true .
+                    
+ eq (t + 1) - 1 = t .
+ eq (t + 2) - 1 = t + 1 .
+ ceq (t - n1) + n2 =  t + diff(n2, n1) if n1 <= n2 .
+ 
  
  eq evalBoolTermAux(0 <=T t, A, f) = true .
  eq evalBoolTermAux(t <=T t, A, f) = true . 
@@ -647,6 +661,10 @@ fmod CNAMEBOUND-SET is
  op mergeSplitFams_ : Set{CNameBound} -> Set {CNameBound} .
  *** for splits
  *** !!! also merge C[N+1 'B] with fixedBound N+1 bound B
+ eq mergeSplitFams
+    ( S, fam (q [bound (nt + 1)]), chn (q[nt + 1]) )
+    = mergeSplitFams(S, fam (q [bound (nt + 2)]))
+ .
  eq mergeSplitFams 
      (S, fam ( q[(bound (nt + 1)) bd2]), 
          fam ( q[(fixedBound (nt + 1)) bd2]) 
@@ -983,6 +1001,10 @@ fmod CHANNEL is
     Delta1 equiv Delta2 .
  eq ((fam (ns[bdlist]) :: T) Delta1) equiv ((fam (ns[bdlist]) :: T) Delta2) =
     Delta1 equiv Delta2 .
+ eq (( ( fam (ns[bound (n + 2)]) ) :: T ) Delta1) 
+    equiv
+    (( ( fam (ns[bound (n + 1)]) ) :: T ) (chn (ns[n + 1]) :: T) Delta2)  =
+    Delta1 equiv Delta2 . 
  eq ((fam (ns[(bound (n + 2)) bd2]) :: T) Delta1) equiv 
     ((fam (ns[(bound (n + 1)) bd2]) :: T) (fam (ns[(fixedBound (n + 1)) bd2]) :: T) Delta2) =
     Delta1 equiv Delta2 .   
@@ -1925,6 +1947,12 @@ fmod PROTOCOL is
  var evalMap : Map{Qid, NatTerm} .
  var A : Set{BoolTerm} .
  
+ *** helper: the reaction assigned to a channel
+ op getReaction__ : Protocol ChannelName -> Reaction .
+ eq getReaction (cn ::= R) cn = R .
+ eq getReaction ((cn ::= R) || P) cn = R .
+ *** partial function
+ 
  *** lookup cn ::= cases in P by cn
  
  op getChannel__ : Protocol CNameBound -> Protocol .
@@ -2283,13 +2311,47 @@ fmod PROTOCOL is
   
  var plist : List{NatPairs} .  
  
- vars C1 C2 C3 : ChannelName .
- vars R1 R2 R3 : Reaction .     
- var blist2 : List{Bounds} .
- var nlist2 : List{NatTerm} .
- var cases1 cases2 cases3 : Cases .
+ vars C1 C2 C3 C4 : ChannelName .
+ vars R1 R2 R3 R4 : Reaction .     
+ var blist2 blist3 : List{Bounds} .
+ var nlist2 nlist3 : List{NatTerm} .
+ var cases1 cases2 cases3 cases4 : Cases .
  
  *** next methods are needed to speed-up matching
+ 
+ op keepFour_____ : Protocol CNameBound CNameBound CNameBound CNameBound -> Protocol .
+ eq keepFour 
+     (P || (C1 ::= cases) || (C2 ::= cases1) || (C3 ::= cases2) || (C4 ::= cases3)) 
+              (chn C1) (chn C2) (chn C3) (chn C4) = 
+    (C1 ::= cases) || (C2 ::= cases1 ) || (C3 ::= cases2) || (C4 ::= cases3)
+ .
+
+ eq keepFour (P   || (family (C1[blist]) nlist blist ::= cases1)
+                   || (family (C2[blist']) nlist' blist' ::= cases2)
+                   || (family (C3[blist2]) nlist2 blist2 ::= cases3) 
+                   || (family (C4[blist3]) nlist3 blist3 ::= cases4) )
+                       (fam (C1[blist])) 
+                       (fam (C2[blist'])) 
+                       (fam (C3[blist2]))
+                       (fam (C4[blist3]))
+                         = 
+                      (family (C1[blist]) nlist blist ::= cases1)
+                   || (family (C2[blist']) nlist' blist' ::= cases2)
+                   || (family (C3[blist2]) nlist2 blist2 ::= cases3)
+                   || (family (C4[blist3]) nlist3 blist3 ::= cases4)
+ . 
+ 
+ op removeFour_____ :  Protocol CNameBound CNameBound CNameBound CNameBound -> Protocol .
+ eq removeFour (P || (C1 ::= cases) || (C2 ::= cases1) || (C3 ::= cases2) || (C4 ::= cases3)) 
+              (chn C1) (chn C2) (chn C3) (chn C4) = P .              
+ eq removeFour  (P   || (family (C1[blist]) nlist blist ::= cases1)
+                   || (family (C2[blist']) nlist' blist' ::= cases2)
+                   || (family (C3[blist2]) nlist2 blist2 ::= cases3) 
+                   || (family (C4[blist3]) nlist3 blist3 ::= cases4) )
+                       (fam (C1[blist])) 
+                       (fam (C2[blist'])) 
+                       (fam (C3[blist2]))
+                       (fam (C4[blist3]))  = P . 
  
  op keepThree____ : Protocol CNameBound CNameBound CNameBound -> Protocol .
  eq keepThree (P || (C1 ::= cases) || (C2 ::= cases1) || (C3 ::= cases2)) 
@@ -3377,7 +3439,7 @@ mod PROTOCOL-EQ-HELPERS is
                      fam (fns[bd1 (fixedBound (nt + 1)) bd2])) = 
     unsplitOutputs (I, fam (fns[bd1 (bound (nt + 2)) bd2]) ) O .
   
-  op deltaInd____ : ChannelContext Protocol Qid Qid -> ChannelContext .
+ op deltaInd____ : ChannelContext Protocol Qid Qid -> ChannelContext .
  eq deltaInd Delta 
     (family (cn[blist]) nlist blist ::= (whenCond --> P) ;; whenList)
     q idx = 
@@ -4023,13 +4085,14 @@ mod PROTOCOL-EQ-CORE is
      pConfig(Sigma, Delta1, P1, union(I, getOutputs(Q)), getOutputs(P1), A)
      => 
      pConfig(Sigma, Delta2, P2, I1, O2, A)
-     ***(
-     /\ O1 == getOutputs(P1) 
-     /\ I1 == union(I, getOutputs(Q))
-     *** the condition below made problems!
-     /\ typeOf(Sigma, Delta, union(I, getOutputs(P1)), A, Q) 
+     *** TODO: do these fail for gmwN?
+     *** the condition below made problems for multiparty too
+     *** with induction rule, because there we may read from AC(i N+2)
+     *** and we set the bound to B
+     *** solution is to get these under focus, so use a comp!
+     *** /\ typeOf(Sigma, Delta1, union(I, getOutputs(P1)), A, Q) 
      /\ O == union(getOutputs(P1), getOutputs(Q))
-     )
+     
      .
    
  crl [CONG-NEW] : 
@@ -4414,14 +4477,14 @@ mod PROTOCOL-EQ-DERIVED-NF is
     ***( FOR NOW
     /\ *** the channels in ltq have not changed
     diff (addChannels ltq emptyChannelCtx) Delta2 == emptyChannelCtx
-    )
+    
     /\
     O2 == getOutputs(P2)
     /\ 
     (addChannels ltq Delta1) equiv Delta2 
     /\ 
     O2 equiv (union(chansInList ltq, O1))
-    
+    )
   .
  
  var cnbl cnbl' : List{CNameBound} .
@@ -4600,7 +4663,7 @@ mod PROTOCOL-EQ-DERIVED-NF is
     =>           
      pConfig(Sigma, Delta,
             (cn1 ::= nf(BRL, samp Dist, QL)) || 
-            (cn2 ::= nf(BRL BRL' , R2, del x (QL ++ QL')) ),
+            (cn2 ::= nf(BRL BRL' , R2, del x (QL QL')) ),
             I, O, A) 
     if 
      typeOf(Sigma, Delta, addDeclarations BRL (x : T1), 
@@ -4864,7 +4927,34 @@ mod PROTOCOL-EQ-FAMILY is
       (fam (fns[(bound (n + 1)) bd2 bd3]), fam (fns[(fixedBound (n + 1)) bd2 bd3])), 
       A) 
  .
-  
+ 
+ var vNat : Nat .
+ 
+ *** split a one-index family inside a nf
+ rl [SPLIT-family-1-newnf] : 
+  pConfig(Sigma, Delta, 
+     newNF(ltq { (fns[bound (nt + vNat) ]) q1  : T },
+     P || family (fns[bound (nt + vNat) ]) q1 (bound (nt + vNat)) ::= cases, 
+     ql),
+     I, O, A) 
+  => 
+   pConfig(Sigma, 
+      Delta, 
+      newNF(ltq { (fns[bound (nt + diff(vNat, 1))]) q1 : T } 
+                < fns[(nt + diff(vNat, 1))] : T > , 
+      P ||
+      (family (fns[bound (nt + diff(vNat, 1))]) q1 (bound (nt + diff(vNat, 1))) ::= cases)
+      ||
+      (project2Index 
+        (family (fns[bound (nt + vNat) ]) q1 (bound (nt + vNat)) ::= cases) 
+        q1 (nt + diff(vNat, 1)) A  empty),
+      (fam (fns[(bound (nt + diff(vNat, 1)))])) 
+      (chn (fns[(nt + diff(vNat, 1))]))
+      (del (fam (fns[bound (nt + vNat)])) ql)
+      )        
+        , I, O, A)
+      
+ .   
  
  *** split a family inside a normal form, store the splits in order
  rl [SPLIT-family-2-newnf] : 
@@ -5087,7 +5177,35 @@ mod PROTOCOL-EQ-FAMILY is
       fam (fns[(bound (n + 2)) bd2 bd3]), 
       A) 
  .
-   
+  
+ rl [UNSPLIT-fst-family-1-nf] : 
+ pConfig(Sigma, 
+      Delta, 
+      newNF(ltq { (fns[bound (nt + vNat)]) q1 : T } 
+                < fns[n + vNat] : T > , 
+      P ||
+      (family (fns[bound (n + vNat) ]) q1 (bound (n + vNat)) ::= cases)
+      ||
+      (fns[n + vNat] ::= cases')
+     , 
+     ql),
+     I, O, A)
+  => 
+   pConfig(Sigma, 
+      Delta, 
+      newNF(ltq { (fns[bound (n + vNat + 1)]) q1 : T }, 
+      P ||
+      (family (fns[bound (n + vNat + 1) ]) q1 (bound (n + vNat + 1)) ::= 
+        (when (q1 =T= (n + vNat)) --> cases') ;;
+        (when (neg (q1 =T= (n + vNat))) --> cases)
+      )
+      , 
+     (fam (fns[bound (n + vNat + 1)])) 
+     
+      (del (fam (fns[bound (n + vNat)])) 
+        (del (chn (fns[n + vNat])) ql))),
+     I, O, A)
+ .  
    
  rl [UNSPLIT-fst-family-3-nf] : 
  pConfig(Sigma, 
@@ -6009,18 +6127,19 @@ eq keepAll P (cnb cnbl) = (keepOne P cnb)  || (keepAll P cnbl) .
              I, O, A) 
      => 
      pConfig(Sigma, Delta, newNF(ltq, P, del (fam (fns[blist])) cnbl), I, O, A) 
- if 
- ***    typeOf(Sigma, 
- ***         addChannels ({(fns[blist]) nlist : T} ltq) Delta, 
- ***         insert(fam (fns[blist]), union(I, getOutputs(P))), 
- ***          A, 
- ***          family (fns[blist]) nlist blist ::= cases
- ***         )
-     *** /\ 
+ if ***( TODO: where it fails for gmwN?
+     typeOf(Sigma, 
+          addChannels ({(fns[blist]) nlist : T} ltq) Delta, 
+          insert(fam (fns[blist]), union(I, getOutputs(P))), 
+           A, 
+           family (fns[blist]) nlist blist ::= cases
+          )
+     /\ 
+     )
      *** typeOf(Sigma, addChannels ltq Delta, I, A, P)  
       not readsFrom P (fam (fns[blist]))
-     *** /\ 
-     *** getOutputs(newNF2New(newNF(ltq, P, cnbl))) == O        
+     /\ 
+     getOutputs(newNF2New(newNF(ltq, P, cnbl))) == O        
  .  
   
  crl [absorb-new-nf-group] : 
@@ -6650,7 +6769,12 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
      pConfig(Sigma, Delta, 
              (family (fns[blist]) nlist blist ::= cases)
              ||
-             (cn2 ::= preNF((x : T <~ R2) BRL, R, QL)
+             (cn2 ::= preNF((x : T <~ (
+              getReaction 
+               (project2Index (family (fns[blist]) nlist blist ::= cases) nlist tlist 
+                (addAssumptions A nlist blist) empty) 
+               (fns[tlist])
+             ) ) BRL, R, QL)
              )
              ,
              I, O, A) 
@@ -6661,11 +6785,13 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
      typeInCtx(toBound cn2, A, Delta) 
      /\ 
      typeInCtx(fam (fns[blist]), A, Delta) == T
-     /\ 
+     *** (/\ 
+     (fns[tlist] ::= R2) == 
      (project2Index (family (fns[blist]) nlist blist ::= cases) nlist tlist 
-          (addAssumptions A nlist blist) empty) == (fns[tlist] ::= R2)
+          (addAssumptions A nlist blist) empty) 
          
      [nonexec] 
+     )
      .
 
    var t1 t2 t3 : NatTerm .
@@ -6791,7 +6917,7 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
      .
      
      
-     crl [subst-families-one-family] :
+     rl [subst-families-one-family] :
      pConfig(Sigma, Delta, 
              (family (fns2[bound nt]) q (bound nt) ::= cases)
              ||
@@ -6803,13 +6929,14 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
              (family (fns2[bound nt]) q (bound nt) ::= cases)
              ||
              (family (fns1[bound nt]) q' (bound nt1) ::= 
-              preNF((x : T <~ R2) BRL, R, QL)
+              preNF((x : T <~ 
+                 getReaction 
+                   (projectIndex (family (fns2[bound nt]) q (bound nt)  ::= cases) nj 
+                    insert(q =T= nj, A) empty) (fns2[nj])
+                 ) BRL, R, QL)
              )
              ,
              I, O, A) 
-     if (projectIndex (family (fns2[bound nt]) q (bound nt)  ::= cases) nj 
-          insert(q =T= nj, A) empty) == (fns2[nj] ::= R2)
-     [nonexec] 
      .
    
   crl [subst-families-three-family] :
@@ -8922,7 +9049,6 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
      . 
      
   *** congruence for cases
-     *** TODO: add a context P
      *** TODO: might need it for otherwise too?
     
      crl [cong-cases-reaction] :
@@ -9734,8 +9860,7 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
       
     crl [merge-cases] : 
     pConfig(Sigma, Delta, 
-             newNF( ltq { (fns[bound nt]) q : T }
-                   , 
+             newNF( ltq, 
                    P || family (fns[bound nt]) q (bound nt) ::= 
                          (whenList1 ;;
                           (when (q =T= nt1) --> R1) ;;
@@ -9745,8 +9870,7 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
              I, O, A) 
      => 
         pConfig(Sigma, Delta, 
-             newNF( ltq { (fns[bound nt]) q : T }
-                   , 
+             newNF( ltq, 
                    P || family (fns[bound nt]) q (bound nt) ::= 
                          (whenList1 ;;
                           whenList2 ;;
@@ -9760,7 +9884,7 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
     pConfig(Sigma, Delta, 
             family (fns[blist]) nlist blist ::= 
                           (when (q =T= nt1) --> R1) ;;
-                          (otherwise --> R2),
+                          (whenCond --> R2),
                          I, O, A) 
      => 
        pConfig(Sigma, Delta, 
