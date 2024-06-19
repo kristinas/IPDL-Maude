@@ -289,9 +289,9 @@ smod STRATS is
   ; (pre2Nf or-else idle)  
  .
  
- strat substNFFamiliesGen : CNameBound CNameBound Reaction @ ProtocolConfig .
- sd substNFFamiliesGen(cnb1, cnb2, R) :=
-     nTimesSubstNFFamiliesGen(cnb1, cnb2, R)
+ strat substNFFamiliesGen : CNameBound CNameBound @ ProtocolConfig .
+ sd substNFFamiliesGen(cnb1, cnb2) :=
+     nTimesSubstNFFamiliesGen(cnb1, cnb2)
   ; liftInnerBindsNFFamily(cnb2)
   ; handleRNFFamily(cnb2)
   ; (pre2Nf or-else idle)  
@@ -321,25 +321,23 @@ smod STRATS is
        )
  .
  
- strat nTimesSubstNFFamiliesGen : CNameBound CNameBound Reaction @ ProtocolConfig .
- sd nTimesSubstNFFamiliesGen(fam (ns1[bdlist1]), fam (ns2[bdlist2]), R) := 
+ strat nTimesSubstNFFamiliesGen : CNameBound CNameBound @ ProtocolConfig .
+ sd nTimesSubstNFFamiliesGen(fam (ns1[bdlist1]), fam (ns2[bdlist2])) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{nTimesSubstNFFamiliesGen(fam (ns1[bdlist1]), fam (ns2[bdlist2]), R)} 
+     ? CONG-NEW-NF{nTimesSubstNFFamiliesGen(fam (ns1[bdlist1]), fam (ns2[bdlist2]))} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using (CONG-COMP-RIGHT[
          Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2])), 
          P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2]))]{
           subst-families-gen[
                    fns2:NameWithScripts <- ns1, 
-                   fns1:NameWithScripts <- ns2,
-                   R2:Reaction <- R
+                   fns1:NameWithScripts <- ns2
                 ]
                    } 
                 or-else
                 subst-families-gen[
                    fns2:NameWithScripts <- ns1, 
-                   fns1:NameWithScripts <- ns2,
-                   R2:Reaction <- R
+                   fns1:NameWithScripts <- ns2
                 ]
        )
  .
@@ -2231,7 +2229,7 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
         ]{
  select-case-subst-family[
           bt:BoolTerm <- bt
-        ]{substNFFamiliesGen(cnb1, cnb2, R)
+        ]{substNFFamiliesGen(cnb1, cnb2)
          } 
         }       
 .
@@ -2313,13 +2311,13 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
         Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2])), 
         P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2]))]
               {subst-family-case-generic[R':Reaction <- R2, bt:BoolTerm <- bt]{ 
-                 substNFFamiliesGen(fam (ns1[bdlist1]), fam(ns2[bdlist2]), R1)
+                 substNFFamiliesGen(fam (ns1[bdlist1]), fam(ns2[bdlist2]))
                }
               }
               )
               or-else 
               subst-family-case-generic[R':Reaction <- R2, bt:BoolTerm <- bt]{
-                substNFFamiliesGen(fam (ns1[bdlist1]), fam(ns2[bdlist2]), R1)
+                substNFFamiliesGen(fam (ns1[bdlist1]), fam(ns2[bdlist2]))
                }
              ) .              
              
@@ -2594,7 +2592,7 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
                P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2]))]
               {
                 gen-same-cases-subst{
-                   substNFFamiliesGen(fam (ns1[bdlist1]), fam (ns2[bdlist2]), R),
+                   substNFFamiliesGen(fam (ns1[bdlist1]), fam (ns2[bdlist2])),
                   *** substNF(ns1[ind], ns2[ind]), 
                   idle
                 }
@@ -2614,9 +2612,9 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
                P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2]))]
               {
                 gen-same-cases-subst{
-                   substNFFamiliesGen(fam (ns1[bdlist1]), fam (ns2[bdlist2]), R1),
+                   substNFFamiliesGen(fam (ns1[bdlist1]), fam (ns2[bdlist2])),
                   gen-same-cases-subst-end-when{
-                   substNFFamiliesGen(fam (ns1[bdlist1]), fam (ns2[bdlist2]), R2)
+                   substNFFamiliesGen(fam (ns1[bdlist1]), fam (ns2[bdlist2]))
                   }
                 }
               }               
@@ -2647,8 +2645,7 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
           ]{
           substNFFamiliesGen(
             fam (ns1[bdlist1]), 
-            fam (ns2[bdlist2]),
-            R
+            fam (ns2[bdlist2])
             )  
            }
               }
@@ -2746,8 +2743,7 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
           ]{
           substNFFamiliesGen(
             fam (ns1[bdlist1]), 
-            fam (ns2[bdlist2]),
-            R
+            fam (ns2[bdlist2])
             )  
            }
               }

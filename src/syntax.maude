@@ -6891,7 +6891,8 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
      elem (toBound cn) T Delta A 
      .  
      
-     crl [subst-families-gen] :
+     *** TODO: conditions?
+     rl [subst-families-gen] :
      pConfig(Sigma, Delta, 
              (family (fns2[blist2]) nlist2 blist2 ::= cases) || 
              (family (fns1[blist1]) nlist1 blist1 ::=
@@ -6905,15 +6906,17 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
      pConfig(Sigma, Delta, 
              (family (fns2[blist2]) nlist2 blist2 ::= cases) || 
              (family (fns1[blist1]) nlist1 blist1 ::=
-               preNF((x : T <~ R2) BRL, 
+               preNF((x : T <~ (
+              getReaction 
+               (project2Index (family (fns2[blist2]) nlist2 blist2 ::= cases) nlist2 tlist 
+                (addAssumptions A nlist1 blist1) empty) 
+               (fns2[tlist])
+             )) BRL, 
                   R, QL
                  )
              ),
              I, O, A
      )
-     if (project2Index (family (fns2[blist2]) nlist2 blist2 ::= cases) nlist2 tlist
-          A empty) == (fns2[tlist] ::= R2)
-     [nonexec] 
      .
      
      

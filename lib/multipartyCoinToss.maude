@@ -382,8 +382,7 @@ smod EXECUTE is
        
         substNFFamiliesGen(
          fam ('AllCommitted[bound (N + 2) bound 'B]),
-         fam ('AllCommitted[bound (N + 2) fixedBound 'B]),
-         nf('x : unit <- read ('AllCommitted1['B -- 1]), return 'x, 'x)
+         fam ('AllCommitted[bound (N + 2) fixedBound 'B])
         )
         ; symACNZero
         
@@ -411,8 +410,7 @@ smod EXECUTE is
        ] 
      { substNFFamiliesGen(
           fam ('AllCommitted1[bound (N + 3)]),
-          fam ('AllCommitted[bound (N + 2) fixedBound 'B]),
-          nf(emptyBRList, return (), nil)
+          fam ('AllCommitted[bound (N + 2) fixedBound 'B])
        )
      }  
   . 
@@ -433,10 +431,7 @@ smod EXECUTE is
        ] 
      {  substNFFamiliesGen(
           fam ('AllCommitted1[bound (N + 3)]),
-          fam ('AllCommitted[bound (N + 2) fixedBound 'B]),
-          nf(('x : unit <- read ('AllCommitted1['B -- 1])) 
-              'y : unit <- read ('Committed['B -- 1]), 
-              return (), 'x 'y)
+          fam ('AllCommitted[bound (N + 2) fixedBound 'B])
        )
      ; changeOrder(fam ('AllCommitted[bound (N + 2) fixedBound 'B]), 'x 'y)  
      } 
@@ -716,8 +711,7 @@ nf(('x : bool <- read ('SumOpened['i ('j -- 1)])) 'y : bool <- read ('Opened['j 
        
         substNFFamiliesGen(
          fam ('SumOpened[bound (N + 2) bound 'B]),
-         fam ('SumOpened[bound (N + 2) fixedBound 'B]),
-         nf('x : bool <- read ('SumOpened1['B -- 1]), return 'x, 'x)
+         fam ('SumOpened[bound (N + 2) fixedBound 'B])
         )
        ; symSONZero
         
@@ -744,8 +738,7 @@ nf(('x : bool <- read ('SumOpened['i ('j -- 1)])) 'y : bool <- read ('Opened['j 
        ] 
      { substNFFamiliesGen(
           fam ('SumOpened1[bound (N + 3)]),
-          fam ('SumOpened[bound (N + 2) fixedBound 'B]),
-          nf(emptyBRList, return False, nil)
+          fam ('SumOpened[bound (N + 2) fixedBound 'B])
        )
      }  
   . 
@@ -767,11 +760,7 @@ nf(('x : bool <- read ('SumOpened['i ('j -- 1)])) 'y : bool <- read ('Opened['j 
        ] 
      {  substNFFamiliesGen(
           fam ('SumOpened1[bound (N + 3)]),
-          fam ('SumOpened[bound (N + 2) fixedBound 'B]),
-          nf(('x : bool <- read ('SumOpened1['B -- 1])) 
-               'y : bool <- read ('Opened['B -- 1]), 
-               return (ap 'xor  pair('x, 'y)), 'x 'y)
-
+          fam ('SumOpened[bound (N + 2) fixedBound 'B])
        )
      ; changeOrder(fam ('SumOpened[bound (N + 2) fixedBound 'B]), 'x 'y)  
      } 
@@ -1233,10 +1222,7 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
        { 
        substNFFamiliesGen(
         fam ('SumCommit[bound (N + 3)]),
-        (fam ('Out[bound (N + 2)]) ),
-        nf(('f : bool <- read 'LastCommit) 
-            'x : bool <- read ('SumCommit[N + 1]), 
-            return (ap 'xor pair('x, 'f)), 'x 'f)
+        (fam ('Out[bound (N + 2)]) )
        )
        ; substChannelFamilyOne(chn 'LastCommit, (fam ('Out[bound (N + 2)]) ))
        ; applyAlphaNFPr( fam ('Out[bound (N + 2)]), 
@@ -1264,13 +1250,14 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
        ] 
        { substNFFamiliesGen(
            fam ('Open[bound (N + 2)]),
-           fam ('Opened[bound (N + 2)]),
-           nf('sc : bool <- read ('SumCommit[N + 1]), return (), 'sc)
+           fam ('Opened[bound (N + 2)])
          )
        }  
   .   
       
 endsm
+
+*** set trace on .
 
 *** this is the main proof
 srew [1] pConfig(secSig, 
@@ -1302,7 +1289,7 @@ srew [1] pConfig(secSig,
              , fam ('Commitment[bound (N + 2)])
              , fam ('AllCommitted1[bound (N + 3)])
             ) 
-                 
+               
    ; CONG-NEW-NF{
        CASE-DISTINCTION-one[fns:NameWithScripts <- 'Party]
        { use-family-p[fns:NameWithScripts <- 'Commitment]
@@ -1321,7 +1308,6 @@ srew [1] pConfig(secSig,
         *** no changes for corrupt
         idle}
      } 
-    
       ; CONG-NEW-NF{
        
         CASE-DISTINCTION-one[fns:ChannelName <- 'Party]
@@ -1432,9 +1418,7 @@ srew [1] pConfig(secSig,
      CASE-DISTINCTION-one-R[fns:NameWithScripts <- 'Out]
      {substNFFamiliesGen(
        fam ('SumOpened1[bound (N + 3)]),
-       fam ('Out[bound (N + 2)]),
-       nf(('ao : unit <- read ('AllOpen[N + 2])) 
-           'sc : bool <- read ('SumCommit[N + 2]), return 'sc, 'ao 'sc)
+       fam ('Out[bound (N + 2)])
       ), 
       idle}
    
@@ -1470,8 +1454,7 @@ srew [1] pConfig(secSig,
      CASE-DISTINCTION-one-R[fns:NameWithScripts <- 'Open]
      {substNFFamiliesGen(
        fam ('AllCommitted1[bound (N + 2)]),
-       fam ('Open[bound (N + 2)]),
-       nf('sc : bool <- read ('SumCommit[N + 1]), return (), 'sc)
+       fam ('Open[bound (N + 2)])
       ), 
       idle}
    
@@ -1503,8 +1486,6 @@ srew [1] pConfig(secSig,
         SYM[
        Delta1:ChannelContext <- Delta,
        O1:Set{CNameBound} <- O,
-       *** I':Set{CNameBound} <- I,
-       *** A':Set{BoolTerm} <- A,
        P1:Protocol <-
         addInternalChannel 
          'Commit[N + 1]
@@ -1577,8 +1558,7 @@ srew [1] pConfig(secSig,
         CASE-DISTINCTION-one-R[fns:NameWithScripts <- 'Opened]{
          substNFFamiliesGen(
            fam ('Open[bound (N + 2)]),
-           fam ('Opened[bound (N + 2)]),
-           nf('sc : bool <- read ('SumCommit[N + 1]), return (), 'sc)
+           fam ('Opened[bound (N + 2)])
          )
          ; symOpened
          ; applyAlphaNFPr(
@@ -1612,5 +1592,6 @@ srew [1] pConfig(secSig,
        }
    ************************** results
    ***; get-structure 
+       
 .
 
