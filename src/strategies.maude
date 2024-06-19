@@ -639,34 +639,32 @@ smod STRATS is
   .   
                       
  *** subst-nf for a family into a channel
- strat substNFFamilyOne : CNameBound ChannelName Reaction @ ProtocolConfig .
- sd substNFFamilyOne(cnb1, C2, R) :=
-     nTimesSubstNFFamilyOne(cnb1, C2, R)
+ strat substNFFamilyOne : CNameBound ChannelName @ ProtocolConfig .
+ sd substNFFamilyOne(cnb1, C2) :=
+     nTimesSubstNFFamilyOne(cnb1, C2)
   ; liftInnerBindsNF(C2)
   ; handleRNF(C2)
   ; (pre2Nf or-else idle)  
  .   
  
  *** similar sub-strategy as for channels
- strat nTimesSubstNFFamilyOne : CNameBound ChannelName Reaction @ ProtocolConfig .
- sd nTimesSubstNFFamilyOne(fam (C1[bdlist1]), C2, R) := 
+ strat nTimesSubstNFFamilyOne : CNameBound ChannelName @ ProtocolConfig .
+ sd nTimesSubstNFFamilyOne(fam (C1[bdlist1]), C2) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{nTimesSubstNFFamilyOne(fam (C1[bdlist1]), C2, R)} 
+     ? CONG-NEW-NF{nTimesSubstNFFamilyOne(fam (C1[bdlist1]), C2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using (CONG-COMP-RIGHT[
        Q:Protocol  <- removeTwo P (fam (C1[bdlist1])) (chn C2), 
        P1:Protocol <- keepTwo P (fam (C1[bdlist1])) (chn C2)]{
           subst-families-one[
                    fns:NameWithScripts <- C1, 
-                   cn2:ChannelName <- C2,
-                   R2:Reaction <- R
+                   cn2:ChannelName <- C2
                 ]
                    } 
                    or-else
                    subst-families-one[
                    fns:NameWithScripts <- C1, 
-                   cn2:ChannelName <- C2,
-                   R2:Reaction <- R
+                   cn2:ChannelName <- C2
                 ]
                    )
  .  
@@ -2185,12 +2183,12 @@ sd substFamCaseChn(cnb, cn, bt, R) :=
         ]{
  select-case-subst-family-r-gen[
           bt:BoolTerm <- bt
-        ]{substNFFamilyOne(cnb, cn, R)} 
+        ]{substNFFamilyOne(cnb, cn)} 
         }
         or-else
         select-case-subst-family-r-gen[
           bt:BoolTerm <- bt
-        ]{substNFFamilyOne(cnb, cn, R)} 
+        ]{substNFFamilyOne(cnb, cn)} 
         )
               
 .     
@@ -2248,13 +2246,13 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
         Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2])), 
         P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2]))]
               {subst-family-case[R':Reaction <- R]{ *** TODO: I need two reactions here???
-                substNFFamilyOne(fam (ns1[bdlist1]), ns2[ind], R)
+                substNFFamilyOne(fam (ns1[bdlist1]), ns2[ind])
                }
               }
               )
               or-else 
               subst-family-case[R':Reaction <- R]{
-                substNFFamilyOne(fam (ns1[bdlist1]), ns2[ind], R)
+                substNFFamilyOne(fam (ns1[bdlist1]), ns2[ind])
                }
              ) .
              
@@ -2267,13 +2265,13 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
         Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2])), 
         P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2]))]
               {subst-family-case[R':Reaction <- R2]{ *** TODO: I need two reactions here???
-                substNFFamilyOne(fam (ns1[bdlist1]), ns2[ind], R1)
+                substNFFamilyOne(fam (ns1[bdlist1]), ns2[ind])
                }
               }
               )
               or-else 
               subst-family-case[R':Reaction <- R2]{
-                substNFFamilyOne(fam (ns1[bdlist1]), ns2[ind], R1)
+                substNFFamilyOne(fam (ns1[bdlist1]), ns2[ind])
                }
              ) .  
              
@@ -2288,13 +2286,13 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
         Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2])), 
         P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2]))]
               {subst-family-case[R':Reaction <- R2, bt:BoolTerm <- bt]{ 
-                 substNFFamilyOne(fam (ns1[bdlist1]), ns2[ind], R1)
+                 substNFFamilyOne(fam (ns1[bdlist1]), ns2[ind])
                }
               }
               )
               or-else 
               subst-family-case[R':Reaction <- R2, bt:BoolTerm <- bt]{
-                substNFFamilyOne(fam (ns1[bdlist1]), ns2[ind], R1)
+                substNFFamilyOne(fam (ns1[bdlist1]), ns2[ind])
                }
              ) . 
  
@@ -2352,13 +2350,13 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
         Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (chn cn2), 
         P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (chn cn2)]
               {subst-channel-case[R':Reaction <- R2, bt:BoolTerm <- bt]{ 
-                 substNFFamilyOne(fam (ns1[bdlist1]), cn2, R1)
+                 substNFFamilyOne(fam (ns1[bdlist1]), cn2)
                }
               }
               )
               or-else 
               subst-channel-case[R':Reaction <- R2, bt:BoolTerm <- bt]{
-                substNFFamilyOne(fam (ns1[bdlist1]), cn2, R1)
+                substNFFamilyOne(fam (ns1[bdlist1]), cn2)
                }
              ) .                                            
 
@@ -2541,7 +2539,7 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
               P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (chn (ns2[nt])) ]
               {
                 fc-cases-subst[cn:ChannelName <- ns2[nt], fns:ChannelName <- ns1]{
-                     substNFFamilyOne(fam (ns1[bdlist1]), ns2[nt], R)
+                     substNFFamilyOne(fam (ns1[bdlist1]), ns2[nt])
                    , 
                   fc-cases-subst-end-otherwise{ 
                     subst-diverge-family-channel[T2:Type <- T, x3:Qid <- x]
@@ -2551,7 +2549,7 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
              )
              or-else
               (fc-cases-subst[cn:ChannelName <- ns2[nt], fns:ChannelName <- ns1]{
-                     substNFFamilyOne(fam (ns1[bdlist1]), ns2[nt], R)
+                     substNFFamilyOne(fam (ns1[bdlist1]), ns2[nt])
                    , 
                   fc-cases-subst-end-otherwise{ 
                     subst-diverge-family-channel[T2:Type <- T, x3:Qid <- x]

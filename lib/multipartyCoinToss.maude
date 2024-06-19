@@ -979,14 +979,12 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
        CASE-DISTINCTION-channel-end-when[cn:ChannelName <- 'AllCommitted1['B]]{
         substNFFamilyOne(
               fam ('AllCommitted1[bound 'B]),
-              'AllCommitted1['B],
-              nf('sc : bool <- read ('SumCommit['B -- 1]), return (), 'sc)
+              'AllCommitted1['B]
               )  
         ;
         substNFFamilyOne(
               fam ('Committed[bound (N + 1)]),
-              'AllCommitted1['B],
-              nf('x : bool <- read ('Commit['B -- 1]), return (), 'x)
+              'AllCommitted1['B]
               ) 
         ; applyAlphaNFPr(chn ('AllCommitted1['B]), 
                  << 'sc, 'xj >> << 'x, 'cj >> emptyQidPairList)   
@@ -1015,8 +1013,7 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
        in P
        ] 
     { substNFFamilyOne(fam ('SumCommit[bound (N + 3)]),
-         'AllCommitted1['B],
-         nf(emptyBRList, return False, nil)
+         'AllCommitted1['B]
          )
     }
        
@@ -1040,10 +1037,7 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
        in P       
        ] 
        {  substNFFamilyOne(fam ('SumCommit[bound (N + 3)]),
-         'AllCommitted1['B],
-         nf(('cj : bool <- read ('Commit['B -- 1])) 
-             'xj : bool <- read ('SumCommit['B -- 1]), 
-             return (ap 'xor pair('xj, 'cj)), 'xj 'cj)
+         'AllCommitted1['B]
          )
      ; changeOrder(chn ('AllCommitted1['B]), 'xj 'cj)  
      } 
@@ -1110,17 +1104,12 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
        
         substNFFamilyOne(
               fam ('SumOpened1[bound 'B]),
-              'SumOpened1['B],
-              nf(('ao : unit <- read ('AllOpen['B -- 1])) 
-                  'sc : bool <- read ('SumCommit['B -- 1]), 
-                  return 'sc, 'ao 'sc)
+              'SumOpened1['B]
               )  
         ; 
         substNFFamilyOne(
               fam ('Opened[bound (N + 2)]),
-              'SumOpened1['B],
-              nf(('commit : bool <- read ('Commit['B -- 1])) 
-                  'x : unit <- read ('Open['B -- 1]), return 'commit, 'x 'commit)
+              'SumOpened1['B]
               )        
        
         ; symSO1NZero                    
@@ -1151,14 +1140,12 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
        {
         substNFFamilyOne(
               fam ('AllOpen[bound (N + 3)]),
-              'SumOpened1['B],
-              nf(emptyBRList, return (), nil)
+              'SumOpened1['B]
               )   
         ;
         substNFFamilyOne(
               fam ('SumCommit[bound (N + 3)]),
-              'SumOpened1['B],
-              nf(emptyBRList, return False, nil)
+              'SumOpened1['B]
               )         
        }                   
   . 
@@ -1184,17 +1171,12 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
        {
        substNFFamilyOne(
               fam ('AllOpen[bound (N + 3)]),
-              'SumOpened1['B],
-              nf(('x : unit <- read ('AllOpen['B -- 1])) 
-                  'y : unit <- read ('Open['B -- 1]), return (), 'x 'y)
+              'SumOpened1['B]
               ) 
         ;
         substNFFamilyOne(
               fam ('SumCommit[bound (N + 3)]),
-              'SumOpened1['B],
-              nf(('cj : bool <- read ('Commit['B -- 1])) 
-                  'xj : bool <- read ('SumCommit['B -- 1]), 
-                  return (ap 'xor pair('xj, 'cj)), 'xj 'cj)
+              'SumOpened1['B]
               )             
          ; applyAlphaNFPr(
               chn ('SumOpened1['B]),
