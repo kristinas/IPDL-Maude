@@ -59,12 +59,12 @@ mod COIN-TOSS is
  
  op real : -> Protocol .
  eq real =  
-    newfamily ('Commit[bound (N + 2)]) 'i (bound (N + 2)) : bool in
-    newfamily ('Committed[bound (N + 2)]) 'i (bound (N + 2)) : unit in
+   newfamily ('Commit[bound (N + 2)]) 'i (bound (N + 2)) : bool in
+   newfamily ('Committed[bound (N + 2)]) 'i (bound (N + 2)) : unit in
    *** newfamily (('LeakCommitted ^^ 'comm .. 'adv)[bound (N + 2)]) 'i (bound (N + 2)) : unit in
-    newfamily (('LeakOpened ^^ 'comm .. 'adv)[bound (N + 2)]) 'i (bound (N + 2)) : bool in
-    newfamily ('Open[bound (N + 2)]) 'i (bound (N + 2)) : unit in
-    newfamily ('Opened[bound (N + 2)]) 'i (bound (N + 2)) : bool in   
+   *** newfamily (('LeakOpened ^^ 'comm .. 'adv)[bound (N + 2)]) 'i (bound (N + 2)) : bool in
+   newfamily ('Open[bound (N + 2)]) 'i (bound (N + 2)) : unit in
+   newfamily ('Opened[bound (N + 2)]) 'i (bound (N + 2)) : bool in   
   (*** new
   (
   family ('Party[bound (N + 2)]) 'i (bound (N + 2)) ::= 
@@ -175,40 +175,48 @@ mod COIN-TOSS is
   ) *** end new
   .  
   
- op idealPlusSim : -> Protocol .
- eq idealPlusSim =
-    newfamily ('AllOpen[bound (N + 3)]) 'j (bound (N + 3)) : unit in
-    newfamily ('Commit[bound (N + 1)]) 'i (bound (N + 1)) : bool in
-    newfamily ('Committed[bound (N + 2)]) 'i (bound (N + 2)) : unit in
-    new 'Flip : bool in
-    new 'LastCommit : bool in
-    newfamily (('LeakOpened ^^ 'comm .. 'adv)[bound (N + 2)]) 'i (bound (N + 2)) : bool in
-    newfamily ('Open[bound (N + 2)]) 'i (bound (N + 2)) : unit in
-    newfamily ('Opened[bound (N + 2)]) 'i (bound (N + 2)) : bool in
-    newfamily ('SumCommit[bound (N + 3)]) 'j (bound (N + 3)) : bool in
-   ( *** new starts here 
-    ('Flip ::= nf(emptyBRList, samp ('flip < () >), nil))
+  
+  
+ op ideal : -> Protocol .
+ eq ideal = 
+   new 'Flip : bool in
+   ('Flip ::= nf(emptyBRList, samp ('flip < () >), nil))
     ||
-    (family ('Out[bound (N + 2)]) 'i (bound (N + 2)) ::= 
+   (family ('Out[bound (N + 2)]) 'i (bound (N + 2)) ::= 
         (when (apply 'honest 'i) --> nf(
-                                      ('ao : unit <- read ('AllOpen[N + 2]))
-                                      ('sc : bool <- read ('SumCommit[N + 1]))
+                                      ('ok : unit <- read ('Ok ^^ 'adv .. 'id))
                                       ('f : bool <- read 'Flip), 
                                       return 'f, 
-                                      'ao 'sc 'f )
+                                      'ok 'f )
         ) ;;
         (when (apply 'corrupt 'i) --> nf('out : bool <- read ('Out ['i]), return 'out, 'out )
         )
     )
-    || 
-   (family (('LeakCommitted ^^ 'comm .. 'adv)[bound (N + 2)]) 'i (bound (N + 2))  ::= 
-     nf( 'committed : unit <- read ('Committed ['i]),
-         return 'committed,
-         'committed
-       )
+     || 
+   (family (('LeakFlip ^^ 'id .. 'adv)[bound (N + 2)]) 'i (bound (N + 2))  ::= 
+     (when (apply 'honest 'i) --> 
+      nf('l : bool <- read (('LeakFlip ^^ 'id .. 'adv)['i]), return 'l, 'l )
+     )
+     ;;
+     (when (apply 'corrupt 'i) --> 
+      nf('f : bool <- read 'Flip, return 'f, 'f )
+     )
    )
-    ||
-    (family ('Commit[bound (N + 1)]) 'i (bound (N + 1)) ::= 
+ . 
+ 
+ op sim : -> Protocol .
+ eq sim = 
+  newfamily ('AllOpen[bound (N + 3)]) 'j (bound (N + 3)) : unit in
+  newfamily ('Commit[bound (N + 1)]) 'i (bound (N + 1)) : bool in
+  newfamily ('Committed[bound (N + 2)]) 'i (bound (N + 2)) : unit in
+  ***   new 'Flip : bool in
+    new 'LastCommit : bool in
+    *** newfamily (('LeakOpened ^^ 'comm .. 'adv)[bound (N + 2)]) 'i (bound (N + 2)) : bool in
+  newfamily ('Open[bound (N + 2)]) 'i (bound (N + 2)) : unit in
+  newfamily ('Opened[bound (N + 2)]) 'i (bound (N + 2)) : bool in
+  newfamily ('SumCommit[bound (N + 3)]) 'j (bound (N + 3)) : bool in
+  ( *** start new
+ (family ('Commit[bound (N + 1)]) 'i (bound (N + 1)) ::= 
        (when (apply 'honest 'i)  --> nf(emptyBRList, samp ('flip < () >), nil)) ;;
        (when (apply 'corrupt 'i) --> 
           nf('advCommit : bool <- read (('AdvCommit ^^ 'adv .. 'party)['i]), 
@@ -218,7 +226,7 @@ mod COIN-TOSS is
     )
     ||
     ('LastCommit ::= nf( ('x : bool <- read ('SumCommit [ N + 1 ]))
-                         ('f : bool <- read 'Flip),
+                         ('f : bool <- read (('LeakFlip ^^ 'id .. 'adv)[N])),
                          return (ap 'xor pair('x, 'f)),
                          'x  'f  
                      )
@@ -246,7 +254,14 @@ mod COIN-TOSS is
                        'x  )
         )
     )
-    ||
+    || 
+   (family (('LeakCommitted ^^ 'comm .. 'adv)[bound (N + 2)]) 'i (bound (N + 2))  ::= 
+     nf( 'committed : unit <- read ('Committed ['i]),
+         return 'committed,
+         'committed
+       )
+   )
+   ||
     (family ('Open[bound (N + 2)]) 'i (bound (N + 2)) ::= 
       (when (apply 'honest 'i)  --> 
         nf('sc : bool <- read ('SumCommit [N + 1]), return (), 'sc )
@@ -289,10 +304,28 @@ mod COIN-TOSS is
     (family (('LeakOpened ^^ 'comm .. 'adv)[bound (N + 2)]) 'i (bound (N + 2)) ::= 
        nf('opened : bool <- read ('Opened ['i]), return 'opened, 'opened )
     )
-   ) *** new ends here, leave here
-
-   .
-       
+    ||
+    (
+    'Ok ^^ 'adv .. 'id ::= 
+      nf( ('ao : unit <- read ('AllOpen[N + 2]))
+          ('sc : bool <- read ('SumCommit[N + 1])),
+          return (),
+          'ao 'sc
+       )   
+          
+    )
+  ) *** end new
+ .
+  
+ op idealPlusSim : -> Protocol .
+ eq idealPlusSim =  
+    new 'Ok ^^ 'adv .. 'id : unit in
+    newfamily (('LeakFlip ^^ 'id .. 'adv)[bound (N + 2)]) 'i (bound (N + 2)) : bool in 
+   ( 
+   ideal || sim
+   ) 
+ .  
+        
 endm
 
 smod EXECUTE is
@@ -1240,29 +1273,27 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
            fam ('Opened[bound (N + 2)])
          )
        }  
-  .   
+  .  
       
 endsm
 
-*** set trace on .
 
 *** this is the main proof
 srew [1] pConfig(secSig, 
     (fam (('AdvCommit ^^ 'adv .. 'party)[bound (N + 2)]) :: bool) 
     (fam (('AdvOpen ^^ 'adv .. 'party)[bound (N + 2)]) :: unit)
     (fam (('LeakCommitted ^^ 'comm .. 'adv)[bound (N + 2)]) :: unit)
+    (fam (('LeakOpened ^^ 'comm .. 'adv)[bound (N + 2)]) :: bool)
     (fam ('Out[bound (N + 2)]) :: bool),
                  real,
     (fam (('AdvCommit ^^ 'adv .. 'party)[bound (N + 2)]),
      fam (('AdvOpen ^^ 'adv .. 'party)[bound (N + 2)]) 
     ), 
-    (fam ('Out[bound (N + 2)]), 
-     fam (('LeakCommitted ^^ 'comm .. 'adv)[bound (N + 2)])
-    ),
+    getOutputs(real),
     genA
                 ) 
    using sugar-newNF
-   ; addNewFamilyToGroup(
+    ; addNewFamilyToGroup(
        newfamily ('AllCommitted1[bound (N + 3)]) 'i (bound(N + 3)) : unit in 
           family ('AllCommitted1[bound (N + 3)]) 'i (bound(N + 3)) ::= 
                 (when ('i =T= 0) --> nf(emptyBRList, return (), nil)) ;;
@@ -1276,8 +1307,7 @@ srew [1] pConfig(secSig,
              , fam ('Commitment[bound (N + 2)])
              , fam ('AllCommitted1[bound (N + 3)])
             ) 
-               
-   ; CONG-NEW-NF{
+      ; CONG-NEW-NF{
        CASE-DISTINCTION-one[fns:NameWithScripts <- 'Party]
        { use-family-p[fns:NameWithScripts <- 'Commitment]
           { 
@@ -1295,13 +1325,13 @@ srew [1] pConfig(secSig,
         *** no changes for corrupt
         idle}
      } 
-      ; CONG-NEW-NF{
+     ; CONG-NEW-NF{
        
         CASE-DISTINCTION-one[fns:ChannelName <- 'Party]
          { use-family-p[fns:ChannelName <- 'Commitment]
              { 
                COMP-NEW-newNF
-             ; *** applySubstReadFamilyTwoFamily(
+             ;
                subst(
                 fam ('Open[bound (N + 2)]), 
                 fam ('AllCommitted[bound (N + 2) bound (N + 3)])
@@ -1313,8 +1343,7 @@ srew [1] pConfig(secSig,
          }  
       
       }  
-      
-   *** absorb AllCommitted
+      *** absorb AllCommitted
    ; CONG-NEW-NF{
      CASE-DISTINCTION-one[fns:ChannelName <- 'Party]
          { use-family-p[fns:ChannelName <- 'Commitment]
@@ -1326,7 +1355,6 @@ srew [1] pConfig(secSig,
          , idle
          }
    }    
-   
    ; addNewFamilyToGroup(
              newfamily ('SumOpened1[bound (N + 3)]) 'j (bound (N + 3)) : bool in
               family ('SumOpened1[bound (N + 3)]) 'j (bound (N + 3)) ::= 
@@ -1359,14 +1387,13 @@ srew [1] pConfig(secSig,
         *** no changes for corrupt
         idle}
      } 
-        
      ; CONG-NEW-NF{
        
         CASE-DISTINCTION-one[fns:ChannelName <- 'Party]
          { use-family-p[fns:ChannelName <- 'Commitment]
              { 
                COMP-NEW-newNF
-             ; *** applySubstReadFamilyTwoFamily(
+             ; 
                subst(
                 fam ('Out[bound (N + 2)]), 
                 fam ('SumOpened[bound (N + 2) bound (N + 3)])
@@ -1378,8 +1405,7 @@ srew [1] pConfig(secSig,
          }  
       
       }      
-        
-     *** absorb AllCommitted
+      *** absorb AllCommitted
    ; CONG-NEW-NF{
      CASE-DISTINCTION-one[fns:ChannelName <- 'Party]
          { use-family-p[fns:ChannelName <- 'Commitment]
@@ -1395,7 +1421,7 @@ srew [1] pConfig(secSig,
    ; addSumCommit 
     
     ; addAllOpen  
-   *** induction for SumOpened1
+    *** induction for SumOpened1
    ; CONG-NEW-NF{
     
      inductionSO1
@@ -1411,7 +1437,7 @@ srew [1] pConfig(secSig,
       ), 
       idle}
    
-   }
+   }   
    ; absorbFamily(fam ('SumOpened1[bound (N + 3)])) 
    ; SPLIT-family-1-newnf[fns:NameWithScripts <- 'Commit]      
    ; SPLIT-family-1-newnf[fns:NameWithScripts <- 'Committed] 
@@ -1431,8 +1457,8 @@ srew [1] pConfig(secSig,
       idle}
    
      }
-   ; absorbChannel('AllCommitted1[N + 2])
-       
+   ; absorbChannel('AllCommitted1[N + 2])   
+   
    *** induction on AllCommitted1
    ; CONG-NEW-NF{
      
@@ -1455,17 +1481,34 @@ srew [1] pConfig(secSig,
    
    ; absorbFamily(fam ('AllCommitted1[bound (N + 2)]))   
    ; applyNegToOtherwise(fam ('Committed[bound (N + 2)]))
-   ; applyNegToOtherwise( fam ('SumCommit[bound (N + 3)]) )
-    ****************************
- *** now the sym proof
- ; matchrew pConf' s.t. pConfig(Sigma', Delta', P', I', O', A') := pConf' by pConf' 
+   ; applyNegToOtherwise( fam ('SumCommit[bound (N + 3)]) ) 
+   *** now the sym proof
+   ; matchrew pConf' s.t. pConfig(Sigma', Delta', P', I', O', A') := pConf' by pConf' 
        using
         SYM[
        Delta1:ChannelContext <- Delta',
        O1:Set{CNameBound} <- O',
        P1:Protocol <- idealPlusSim
        ]{
+       
        sugar-newNF
+   ; moveNewToFront
+   ; CONG-NEW-NF{
+   
+     CASE-DISTINCTION-one-R[fns:NameWithScripts <- 'Out]
+     {subst(
+       chn ('Ok ^^ 'adv .. 'id),
+       fam ('Out[bound (N + 2)])
+      ), 
+      idle}
+   
+   }  
+   ; absorbChannel('Ok ^^ 'adv .. 'id)
+   
+   ; subst(fam (('LeakFlip ^^ 'id .. 'adv)[bound (N + 2)]), chn 'LastCommit)
+   
+   ; absorbFamily( fam (('LeakFlip ^^ 'id .. 'adv)[bound (N + 2)]) )
+   
    ; CONG-NEW-NF{
    CASE-DISTINCTION-one-R[fns:NameWithScripts <- 'Out]{
     symOut, 
@@ -1474,7 +1517,8 @@ srew [1] pConfig(secSig,
    }
    ; foldNF('Flip, 'LastCommit)
    ; applyAR('LastCommit)
-   ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+   
+      ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using
         SYM[
        Delta1:ChannelContext <- Delta,
@@ -1578,17 +1622,15 @@ srew [1] pConfig(secSig,
           }
           ; reorder-newNF[ql2:List{CNameBound} <- 
 ( 
-            fam ('Committed[bound (N + 2)]) 
-            fam ('Commit[bound (N + 1)]) 
-            chn ('Commit[N + 1]) 
-            fam ('AllOpen[bound (N + 3)]) 
-            fam ('SumCommit[bound (N + 3)]) 
-            fam (('LeakOpened ^^ 'comm .. 'adv)[bound (N + 2)]) 
-            fam ('Open[bound (N + 2)]) fam ('Opened[bound (N + 2)])
- ) ] 
-       }
-   ************************** results
-   ***; get-structure 
+           fam ('Committed[bound (N + 2)]) 
+           fam ('Commit[bound (N + 1)]) 
+           chn ('Commit[N + 1]) 
+           fam ('AllOpen[bound (N + 3)]) 
+           fam ('SumCommit[bound (N + 3)]) 
+           fam ('Open[bound (N + 2)]) 
+           fam ('Opened[bound (N + 2)])
+)
+  ]
        
-.
-
+       }
+   .

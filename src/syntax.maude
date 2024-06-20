@@ -6129,7 +6129,7 @@ eq keepAll P (cnb cnbl) = (keepOne P cnb)  || (keepAll P cnbl) .
              I, O, A) 
      => 
      pConfig(Sigma, Delta, newNF(ltq, P, del (fam (fns[blist])) cnbl), I, O, A) 
- if ***( TODO: where it fails for gmwN?
+ if *** TODO: where it fails for gmwN?
      typeOf(Sigma, 
           addChannels ({(fns[blist]) nlist : T} ltq) Delta, 
           insert(fam (fns[blist]), union(I, getOutputs(P))), 
@@ -6137,7 +6137,6 @@ eq keepAll P (cnb cnbl) = (keepOne P cnb)  || (keepAll P cnbl) .
            family (fns[blist]) nlist blist ::= cases
           )
      /\ 
-     )
      *** typeOf(Sigma, addChannels ltq Delta, I, A, P)  
       not readsFrom P (fam (fns[blist]))
      /\ 
