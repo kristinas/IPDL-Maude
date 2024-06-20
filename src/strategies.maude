@@ -54,6 +54,25 @@ smod STRATS is
  *** substitution strategies
  ***************************************
  
+ 
+ *** meta-strategy that tries several substitution rules
+ 
+ strat subst : CNameBound CNameBound @ ProtocolConfig .
+ sd subst(chn C1, chn C2) :=
+            substNFRead(C1, C2) 
+    or-else substNF(C1, C2)
+ . 
+ sd subst(fam (fns1[bdlist1]), fam (fns2[bdlist2])) :=
+            applySubstReadFamilyTwoFamily(fam (fns1[bdlist1]), fam (fns2[bdlist2]))
+    or-else substNFFamiliesGen(fam (fns1[bdlist1]), fam (fns2[bdlist2]))
+ . 
+ sd subst(fam (fns1[bdlist1]), chn C2) :=
+    substNFFamilyOne(fam (fns1[bdlist1]), C2)
+ .
+ sd subst(chn C1, fam (fns2[bdlist2])) :=
+    substChannelFamilyOne(chn C1, fam (fns2[bdlist2]))
+ .
+ 
  *** try both channel substitution rules
  strat smart-subst-nf : ChannelName ChannelName @ ProtocolConfig . 
  sd smart-subst-nf(C1, C2) :=                        
@@ -241,12 +260,12 @@ smod STRATS is
              P1:Protocol <- keepTwo P (fam (C1[bdlist1])) 
                                       (fam (C2[bdlist2]))]{
                subst-or-diverge[q:Qid <- Q]{
-                 substNFFamiliesThree(fam (C1[bdlist1]), fam (C2[bdlist2]), R)} 
+                 substNFFamiliesGen(fam (C1[bdlist1]), fam (C2[bdlist2]))} 
               }
              )
              or-else
              subst-or-diverge[q:Qid <- Q]{
-              substNFFamiliesThree(fam (C1[bdlist1]), fam (C2[bdlist2]), R)} 
+              substNFFamiliesGen(fam (C1[bdlist1]), fam (C2[bdlist2]))} 
              )
  .
        
@@ -262,12 +281,16 @@ smod STRATS is
            P1:Protocol <- keepTwo P (fam (C1[bdlist1])) 
                                     (fam (C2[bdlist2]))]{
                subst-diverge-join-cases[R:Reaction <- R1]{ 
-                 substNFFamiliesThree(fam (C1[bdlist1]), fam (C2[bdlist2]), R2)}
+                 *** substNFFamiliesThree(fam (C1[bdlist1]), fam (C2[bdlist2]), R2)
+                 substNFFamiliesGen(fam (C1[bdlist1]), fam (C2[bdlist2]))
+                 }
               }
              )
              or-else
              subst-diverge-join-cases[R:Reaction <- R1]{ 
-              substNFFamiliesThree(fam (C1[bdlist1]), fam (C2[bdlist2]), R2)}  
+              *** substNFFamiliesThree(fam (C1[bdlist1]), fam (C2[bdlist2]), R2)
+              substNFFamiliesGen(fam (C1[bdlist1]), fam (C2[bdlist2]))
+              }  
              )
  .
  
@@ -2319,24 +2342,26 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
                }
              ) .              
              
- strat applySubstFamily3IdxCase : CNameBound CNameBound Qid Qid Qid 
-                               Reaction Reaction BoolTerm @ ProtocolConfig .
- sd applySubstFamily3IdxCase(fam (ns1[bdlist1]), fam (ns2[bdlist2]), i1, i2, i3, R1, R2, bt) :=
+ strat applySubstFamily3IdxCase : CNameBound CNameBound
+                               BoolTerm @ ProtocolConfig .
+ sd applySubstFamily3IdxCase(fam (ns1[bdlist1]), fam (ns2[bdlist2]), bt) :=
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{
-      applySubstFamily3IdxCase(fam (ns1[bdlist1]), fam (ns2[bdlist2]), i1, i2, i3, R1, R2, bt)}
+      applySubstFamily3IdxCase(fam (ns1[bdlist1]), fam (ns2[bdlist2]), bt)}
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using ((CONG-COMP-RIGHT[
         Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2])), 
         P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2]))]
-              {subst-family-case-generic[R':Reaction <- R2, bt:BoolTerm <- bt]{ 
-                 substNFFamiliesThree(fam (ns1[bdlist1]), fam(ns2[bdlist2]), R1)
+              {subst-family-case-generic[bt:BoolTerm <- bt]{ 
+                 *** was substNFFamiliesThree(fam (ns1[bdlist1]), fam(ns2[bdlist2]), R1)
+                  substNFFamiliesGen(fam (ns1[bdlist1]), fam(ns2[bdlist2]))
                }
               }
               )
               or-else 
-              subst-family-case-generic[R':Reaction <- R2, bt:BoolTerm <- bt]{
-                substNFFamiliesThree(fam (ns1[bdlist1]), fam(ns2[bdlist2]), R1)
+              subst-family-case-generic[bt:BoolTerm <- bt]{
+                *** substNFFamiliesThree(fam (ns1[bdlist1]), fam(ns2[bdlist2]), R1)
+                substNFFamiliesGen(fam (ns1[bdlist1]), fam(ns2[bdlist2]))
                }
              ) .                
              
@@ -2580,10 +2605,10 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
  .  
  
  strat applyGenSameCasesSubstFirstBranch : 
-       CNameBound CNameBound Reaction @ ProtocolConfig .
- sd applyGenSameCasesSubstFirstBranch(fam (ns1[bdlist1]), fam (ns2[bdlist2]), R) := 
+       CNameBound CNameBound @ ProtocolConfig .
+ sd applyGenSameCasesSubstFirstBranch(fam (ns1[bdlist1]), fam (ns2[bdlist2])) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applyGenSameCasesSubstFirstBranch(fam (ns1[bdlist1]), fam (ns2[bdlist2]), R)} 
+     ? CONG-NEW-NF{applyGenSameCasesSubstFirstBranch(fam (ns1[bdlist1]), fam (ns2[bdlist2]))} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using (CONG-COMP-RIGHT[
                Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2])), 

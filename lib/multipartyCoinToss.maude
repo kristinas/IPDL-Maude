@@ -380,7 +380,7 @@ smod EXECUTE is
        {symACZero,
        CASE-DISTINCTION-one-R-end-when[fns:NameWithScripts <- 'AllCommitted]{
        
-        substNFFamiliesGen(
+        subst(
          fam ('AllCommitted[bound (N + 2) bound 'B]),
          fam ('AllCommitted[bound (N + 2) fixedBound 'B])
         )
@@ -408,7 +408,7 @@ smod EXECUTE is
          nf('x : unit <- read ('AllCommitted1['B]), return 'x, 'x)
        in P
        ] 
-     { substNFFamiliesGen(
+     { subst(
           fam ('AllCommitted1[bound (N + 3)]),
           fam ('AllCommitted[bound (N + 2) fixedBound 'B])
        )
@@ -429,7 +429,7 @@ smod EXECUTE is
          nf('x : unit <- read ('AllCommitted1['B]), return 'x, 'x)
        in P
        ] 
-     {  substNFFamiliesGen(
+     { subst(
           fam ('AllCommitted1[bound (N + 3)]),
           fam ('AllCommitted[bound (N + 2) fixedBound 'B])
        )
@@ -707,9 +707,8 @@ nf(('x : bool <- read ('SumOpened['i ('j -- 1)])) 'y : bool <- read ('Opened['j 
        
        symSOZero,
        CASE-DISTINCTION-one-R-end-when[fns:NameWithScripts <- 'SumOpened]{
-       
-       
-        substNFFamiliesGen(
+              
+        subst(
          fam ('SumOpened[bound (N + 2) bound 'B]),
          fam ('SumOpened[bound (N + 2) fixedBound 'B])
         )
@@ -736,7 +735,7 @@ nf(('x : bool <- read ('SumOpened['i ('j -- 1)])) 'y : bool <- read ('Opened['j 
          nf('x : bool <- read ('SumOpened1['B]), return 'x, 'x)
        in P
        ] 
-     { substNFFamiliesGen(
+     { subst(
           fam ('SumOpened1[bound (N + 3)]),
           fam ('SumOpened[bound (N + 2) fixedBound 'B])
        )
@@ -758,7 +757,7 @@ nf(('x : bool <- read ('SumOpened['i ('j -- 1)])) 'y : bool <- read ('Opened['j 
          nf('x : bool <- read ('SumOpened1['B]), return 'x, 'x)
        in P
        ] 
-     {  substNFFamiliesGen(
+     { subst(
           fam ('SumOpened1[bound (N + 3)]),
           fam ('SumOpened[bound (N + 2) fixedBound 'B])
        )
@@ -977,14 +976,14 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
        CASE-DISTINCTION-channel[cn:ChannelName <- 'AllCommitted1['B]]{
        symAC1Zero, 
        CASE-DISTINCTION-channel-end-when[cn:ChannelName <- 'AllCommitted1['B]]{
-        substNFFamilyOne(
+        subst(
               fam ('AllCommitted1[bound 'B]),
-              'AllCommitted1['B]
+              chn ('AllCommitted1['B])
               )  
         ;
-        substNFFamilyOne(
+        subst(
               fam ('Committed[bound (N + 1)]),
-              'AllCommitted1['B]
+              chn ('AllCommitted1['B])
               ) 
         ; applyAlphaNFPr(chn ('AllCommitted1['B]), 
                  << 'sc, 'xj >> << 'x, 'cj >> emptyQidPairList)   
@@ -1012,9 +1011,10 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
               'sc)
        in P
        ] 
-    { substNFFamilyOne(fam ('SumCommit[bound (N + 3)]),
-         'AllCommitted1['B]
-         )
+    {subst(
+         fam ('SumCommit[bound (N + 3)]),
+         chn ('AllCommitted1['B])
+     )
     }
        
   . 
@@ -1036,8 +1036,9 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
               'sc)
        in P       
        ] 
-       {  substNFFamilyOne(fam ('SumCommit[bound (N + 3)]),
-         'AllCommitted1['B]
+       { subst(
+           fam ('SumCommit[bound (N + 3)]),
+           chn ('AllCommitted1['B])
          )
      ; changeOrder(chn ('AllCommitted1['B]), 'xj 'cj)  
      } 
@@ -1102,14 +1103,14 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
        symSO1Zero ,
        CASE-DISTINCTION-channel-end-when[cn:ChannelName <- 'SumOpened1['B]]{
        
-        substNFFamilyOne(
+        subst(
               fam ('SumOpened1[bound 'B]),
-              'SumOpened1['B]
+              chn ('SumOpened1['B])
               )  
         ; 
-        substNFFamilyOne(
+        subst(
               fam ('Opened[bound (N + 2)]),
-              'SumOpened1['B]
+              chn ('SumOpened1['B])
               )        
        
         ; symSO1NZero                    
@@ -1138,14 +1139,14 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
        in P
        ] 
        {
-        substNFFamilyOne(
+        subst(
               fam ('AllOpen[bound (N + 3)]),
-              'SumOpened1['B]
+              chn ('SumOpened1['B])
               )   
         ;
-        substNFFamilyOne(
+        subst(
               fam ('SumCommit[bound (N + 3)]),
-              'SumOpened1['B]
+              chn ('SumOpened1['B])
               )         
        }                   
   . 
@@ -1169,14 +1170,14 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
        in P
        ] 
        {
-       substNFFamilyOne(
+       subst(
               fam ('AllOpen[bound (N + 3)]),
-              'SumOpened1['B]
+              chn ('SumOpened1['B])
               ) 
         ;
-        substNFFamilyOne(
+        subst(
               fam ('SumCommit[bound (N + 3)]),
-              'SumOpened1['B]
+              chn ('SumOpened1['B])
               )             
          ; applyAlphaNFPr(
               chn ('SumOpened1['B]),
@@ -1202,11 +1203,14 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
          in P 
        ] 
        { 
-       substNFFamiliesGen(
+       subst(
         fam ('SumCommit[bound (N + 3)]),
         (fam ('Out[bound (N + 2)]) )
        )
-       ; substChannelFamilyOne(chn 'LastCommit, (fam ('Out[bound (N + 2)]) ))
+       ; 
+         subst(
+          chn 'LastCommit, (fam ('Out[bound (N + 2)]) )
+         )
        ; applyAlphaNFPr( fam ('Out[bound (N + 2)]), 
                          << 'x, 'sc >> emptyQidPairList)
                          }
@@ -1230,7 +1234,8 @@ nf('x : bool <- read ('SumOpened1['j]), return 'x, 'x)
         in P
          
        ] 
-       { substNFFamiliesGen(
+       {
+         subst(
            fam ('Open[bound (N + 2)]),
            fam ('Opened[bound (N + 2)])
          )
@@ -1296,10 +1301,11 @@ srew [1] pConfig(secSig,
          { use-family-p[fns:ChannelName <- 'Commitment]
              { 
                COMP-NEW-newNF
-             ; applySubstReadFamilyTwoFamily(
+             ; *** applySubstReadFamilyTwoFamily(
+               subst(
                 fam ('Open[bound (N + 2)]), 
                 fam ('AllCommitted[bound (N + 2) bound (N + 3)])
-             )
+               )
              ; symCNN(r2)
              
              }
@@ -1360,10 +1366,11 @@ srew [1] pConfig(secSig,
          { use-family-p[fns:ChannelName <- 'Commitment]
              { 
                COMP-NEW-newNF
-             ; applySubstReadFamilyTwoFamily(
+             ; *** applySubstReadFamilyTwoFamily(
+               subst(
                 fam ('Out[bound (N + 2)]), 
                 fam ('SumOpened[bound (N + 2) bound (N + 3)])
-             )
+               )
             ; symCNN(r5)
              
              }
@@ -1398,7 +1405,7 @@ srew [1] pConfig(secSig,
     ; CONG-NEW-NF{
    
      CASE-DISTINCTION-one-R[fns:NameWithScripts <- 'Out]
-     {substNFFamiliesGen(
+     {subst(
        fam ('SumOpened1[bound (N + 3)]),
        fam ('Out[bound (N + 2)])
       ), 
@@ -1410,11 +1417,15 @@ srew [1] pConfig(secSig,
    ; SPLIT-family-1-newnf[fns:NameWithScripts <- 'Committed] 
    ; applyDropSubsumeRevChannels('Commit[N + 1], 'Committed[N + 1]) 
    ;  SPLIT-family-1-newnf[fns:NameWithScripts <- 'AllCommitted1] 
-   ; substNF('Committed[N + 1], 'AllCommitted1[N + 2])
+   ; subst(
+       chn ('Committed[N + 1]), 
+       chn ('AllCommitted1[N + 2])
+     )
    ; CONG-NEW-NF{
    
      CASE-DISTINCTION-one-R[fns:NameWithScripts <- 'Open]
-     {substChannelFamilyOne(chn ('AllCommitted1[N + 2]),
+     {subst(
+       chn ('AllCommitted1[N + 2]),
        fam ('Open[bound (N + 2)])
       ), 
       idle}
@@ -1434,7 +1445,7 @@ srew [1] pConfig(secSig,
    ; CONG-NEW-NF{
    
      CASE-DISTINCTION-one-R[fns:NameWithScripts <- 'Open]
-     {substNFFamiliesGen(
+     {subst(
        fam ('AllCommitted1[bound (N + 2)]),
        fam ('Open[bound (N + 2)])
       ), 
@@ -1502,7 +1513,9 @@ srew [1] pConfig(secSig,
             fam ('Opened[bound (N + 2)]), 
                          << 'x, 'o >> emptyQidPairList)
                          ; 
-          substChannelFamilyOne(chn 'LastCommit, fam ('Opened[bound (N + 2)]) ), 
+          subst(
+           chn 'LastCommit, fam ('Opened[bound (N + 2)]) 
+          ), 
           
           idle
          }
@@ -1517,7 +1530,9 @@ srew [1] pConfig(secSig,
          CASE-DISTINCTION-one-R[fns:NameWithScripts <- 'SumCommit]{
           idle, 
           CASE-DISTINCTION-one-R[fns:NameWithScripts <- 'SumCommit]{
-          substChannelFamilyOne(chn 'LastCommit, fam ('SumCommit[bound (N + 3)]) )
+          subst(
+           chn 'LastCommit, fam ('SumCommit[bound (N + 3)]) 
+          )
           ; applyAlphaNFPr(
            fam ('SumCommit[bound (N + 3)]), 
                          << 'commit, 'c >> emptyQidPairList), 
@@ -1538,7 +1553,7 @@ srew [1] pConfig(secSig,
         P1:Protocol <- keepTwo P (fam ('Open[bound (N + 2)]))  
                                  (fam ('Opened[bound (N + 2)]) )]{
         CASE-DISTINCTION-one-R[fns:NameWithScripts <- 'Opened]{
-         substNFFamiliesGen(
+         subst(
            fam ('Open[bound (N + 2)]),
            fam ('Opened[bound (N + 2)])
          )

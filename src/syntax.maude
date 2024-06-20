@@ -1948,9 +1948,11 @@ fmod PROTOCOL is
  var A : Set{BoolTerm} .
  
  *** helper: the reaction assigned to a channel
- op getReaction__ : Protocol ChannelName -> Reaction .
- eq getReaction (cn ::= R) cn = R .
- eq getReaction ((cn ::= R) || P) cn = R .
+ op getReaction__ : Protocol CNameBound -> Reaction .
+ eq getReaction (cn ::= R) (chn cn) = R .
+ eq getReaction ((cn ::= R) || P) (chn cn) = R .
+ eq getReaction (family (cn[blist]) nlist blist ::= R) (fam (cn[blist])) = R .
+ eq getReaction (P || (family (cn[blist]) nlist blist ::= R)) (fam (cn[blist])) = R .
  *** partial function
  
  *** lookup cn ::= cases in P by cn
@@ -6642,7 +6644,7 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
               (family (fns2[blist2]) nlist2 blist2 ::= R2), 
               I, O, A') 
       /\
-      A' == (bt1, bt3, A)                           
+      A' == (bt1, bt3, A)          *** R can be computed!                 
   [nonexec]
   .
   
@@ -6773,8 +6775,8 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
               getReaction 
                (project2Index (family (fns[blist]) nlist blist ::= cases) nlist tlist 
                 (addAssumptions A nlist blist) empty) 
-               (fns[tlist])
-             ) ) BRL, R, QL)
+               (chn (fns[tlist]))
+                            ) ) BRL, R, QL)
              )
              ,
              I, O, A) 
@@ -6910,7 +6912,7 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
               getReaction 
                (project2Index (family (fns2[blist2]) nlist2 blist2 ::= cases) nlist2 tlist 
                 (addAssumptions A nlist1 blist1) empty) 
-               (fns2[tlist])
+               (chn (fns2[tlist]))
              )) BRL, 
                   R, QL
                  )
@@ -6935,7 +6937,7 @@ eq remGroupCNBs cnbl ( (fam (fns[blist])), O) =
               preNF((x : T <~ 
                  getReaction 
                    (projectIndex (family (fns2[bound nt]) q (bound nt)  ::= cases) nj 
-                    insert(q =T= nj, A) empty) (fns2[nj])
+                    insert(q =T= nj, A) empty) (chn (fns2[nj]))
                  ) BRL, R, QL)
              )
              ,
