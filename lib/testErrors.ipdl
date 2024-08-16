@@ -15,7 +15,7 @@ protocol P2 = o ::= read i .
 protocol E2 = o ::= read j .
 
 protocol P3 = o ::= x : bool <- return True ; return x .
-protocol P4 = (o1 ::= return True) || (o2 ::= read o1) . 
+protocol P4 = (o1 ::= return True) || (o2 ::= x : bool <- read o1 ; return x) . 
 
 protocol E3 = o ::= if () then return True else return False .
 protocol E4 = o ::= if True then return True else return () .
@@ -24,5 +24,10 @@ protocol P5 = o ::= x : bool <- return True ; return x .
 protocol E5 = o ::= x : bool <- return () ; return True .
 protocol E6 = new o : unit in emptyProtocol .
 protocol E7 = i ::= return True .
+
+protocol P = o1 ::= return True || o2 ::= return False .
+
+start with P then
+fold o1 into o2
 
 
