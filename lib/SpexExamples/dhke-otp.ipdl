@@ -602,14 +602,3 @@ check-proof idealPlusSimDHKE
  restructure idealPlusSimOTP
 
  check-proof idealPlusSimOTP
- 
- current-protocol
- eof
-
-  start with idealPlusSimOTP over delta
-
-  fold chn OkMsgAdvId into chn Out then
-  fold chn LeakMsgRcvdIdAdv into chn LeakCtxtNetAdv
-  
-  current-protocol
-
