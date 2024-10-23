@@ -12,33 +12,6 @@ distribution mu_key : unit -> key .
 
 parameter n : nat .
 
-approx assumption cpa-newnf using m k  :
- (fam Enc[bound n] :: ctxt) (fam In[bound n] :: msg); 
-  fam In[bound n] ; no assumptions |= 
-  newNF( < Key : key >, 
-   ( 
-    (Key ::= samp mu_key (()))
-    ||
-    (family Enc[bound n] indices: i bounds: bound n ::= 
-       m : msg <- read In[i] ;
-       k : key <- read Key ;
-       samp enc((m, k))
-    ) 
-   )
-    )
-   =
-   newNF( < Key : key >, 
-   ( 
-    (Key ::= samp mu_key (()))
-    ||
-    (family Enc[bound n] indices: i bounds: bound n ::= 
-       m : msg <- read In[i] ;
-       k : key <- read Key ;
-       samp enc(( zeros(()), k))
-    ) 
-   )
-   ) .
-
 approx assumption cpa using m k  :
  (fam Enc[bound n] :: ctxt) (fam In[bound n] :: msg); 
   fam In[bound n] ; no assumptions |= 
