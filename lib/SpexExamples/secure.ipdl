@@ -219,23 +219,3 @@ sym from idealPlusSim (
 )
 
 check-proof idealPlusSim
-
-current-protocol
-eof
-
-start with idealPlusSim over delta
-
-subst fam OkMsgAdvId[bound n] into fam Out[bound n] then
-subst fam LeakMsgRcvdIdAdv[bound n] into fam LeakCtxtNetAdv[bound n] then
-absorb fam LeakMsgRcvdIdAdv[bound n] then
-absorb fam OkMsgAdvId[bound n]
-
-current-protocol
-eof
-
-
-
-
-
-
-
