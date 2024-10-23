@@ -499,8 +499,7 @@ on branch honest(i) of family Open[bound N + 2](
 absorb fam AllCommitted1[bound (N + 2)] then
 turn neg into otherwise for fam SumCommit[bound(N + 3)] then
 unsplit Committed then
-turn neg into otherwise for fam Committed[bound N + 2] 
-
+turn neg into otherwise for fam Committed[bound N + 2] then
 sym from idealPlusSim (
 on branch honest(i) of family Out[bound N + 2](
     subst chn OkAdvId into fam Out[bound (N + 2)]
