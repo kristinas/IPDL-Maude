@@ -104,11 +104,26 @@ protocol real =
     ) .    
 
 protocol idealPlusSim =
- new Key : key in
  newfamily LeakMsgRcvdIdAdv[bound n] indices: i bounds: bound n : unit in
  newfamily OkMsgAdvId[bound n] indices: i bounds: bound n : ctxt in 
+ ideal || sim 
+ where 
+ ideal = 
  (
-    ( Key ::= samp mu_key (()) )
+   (family LeakMsgRcvdIdAdv[bound n] indices: i bounds: bound n ::= 
+        in : msg <- read In[i] ; return ()
+    )
+    ||
+    (family Out[bound n] indices: i bounds: bound n ::= 
+        okMsg : ctxt <- read OkMsgAdvId[i] ;
+        in : msg <- read In[i] ;
+        return in
+    )  
+ )
+ and
+ sim = ( new Key : key in
+  (
+  ( Key ::= samp mu_key (()) )
     ||
     (family LeakCtxtNetAdv[bound n] indices: i bounds: bound n ::= 
         x : unit <- read LeakMsgRcvdIdAdv[i] ;
@@ -120,47 +135,9 @@ protocol idealPlusSim =
         okCtxt : ctxt <- read OkCtxtAdvNet[i] ;
         return okCtxt
     )   
-    ||
-    (family LeakMsgRcvdIdAdv[bound n] indices: i bounds: bound n ::= 
-        in : msg <- read In[i] ; return ()
-    )
-    ||
-    (family Out[bound n] indices: i bounds: bound n ::= 
-        okMsg : ctxt <- read OkMsgAdvId[i] ;
-        in : msg <- read In[i] ;
-        return in
-    )  
- )   
-.  
-
-protocol int0 =
-   newfamily Dec[bound n] indices: i bounds: bound n : msg in
-   newfamily Enc[bound n] indices: i bounds: bound n : ctxt in (
-    (family Dec[bound n] indices: i bounds: bound n ::= 
-        nf(in : msg <- read In[i], return in)
-    ) 
-    || 
-    (family LeakCtxtNetAdv[bound n] indices: i bounds: bound n ::= 
-        nf(e : ctxt <- read Enc[i], return e)
-    ) 
-    ||
-    (family Out[bound n] indices: i bounds: bound n ::= 
-      nf((d : msg  <- read Dec[i])
-          (okCtxt : ctxt <- read OkCtxtAdvNet[i]), 
-          return d 
-      )
-    )   
-    ||
-    (new Key : key in (
-    ( Key ::= nf(nil, samp mu_key(()) ))
-    ||
-    (family Enc[bound n] indices: i bounds: bound n ::= 
-      nf( (in : msg <- read In[i]) k : key <- read Key, samp enc((in, k)) )
-    )
-    )
-    )   
-  )     
-.
+  ) 
+ )
+ .
 
 start with real over delta
 
@@ -206,7 +183,8 @@ by induction on i bound B (
     use assumption enc-dec-correctness on chn Key, chn Dec[B], chn Enc[B]
 ) then
 decompose fam Dec[bound n] with fam Enc[bound n] then 
-restructure int0 then-approx
+restructure 
+ (gather chn Key , fam Enc[bound n] from currentProtocol hiding chn Key) then-approx
 use approx assumption cpa then-approx
 bring declarations of hidden channels in front then
 fold fam Enc[bound n] into fam LeakCtxtNetAdv[bound n] then
@@ -216,6 +194,7 @@ sym from idealPlusSim (
     subst fam LeakMsgRcvdIdAdv[bound n] into fam LeakCtxtNetAdv[bound n] then
     absorb fam LeakMsgRcvdIdAdv[bound n] then
     absorb fam OkMsgAdvId[bound n]
-)
+) then 
+restructure idealPlusSim
 
 check-proof idealPlusSim
