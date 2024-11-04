@@ -21,7 +21,7 @@
 
   `` assumptions
 
-  assumption %automatic xorIdemRight using x y : 
+  expression-assumption %automatic xorIdemRight using x y : 
    (x : bool) (y : bool) |= 
    xor(  (x, xor( (x, y) ) ) ) = y .
 
@@ -565,4 +565,4 @@ merge cases for fam Opened[bound N + 2]
 restructure idealPlusSim
 
 check-proof idealPlusSim
-
+current-protocol
