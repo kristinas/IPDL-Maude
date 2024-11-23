@@ -1,0 +1,27 @@
+lang IPDL
+
+channel context delta =
+ output c1 : bool ;
+ output c2 : bool ;
+ output c3 : bool 
+.
+
+protocol P = 
+ new c : bool in
+  (P1 || P2 || P3)
+ where
+  P1 = ((c ::= return True) || (c1 ::= return True))
+  and 
+  P2 = (c2 ::= return True)
+  and 
+  P3 = (c3 ::= return True) 
+. 
+
+protocol Q = 
+ new c : bool in
+  (Q1 || Q2 || P3)
+ where
+  Q1 = ((c ::= return False) || (c1 ::= return False))
+  and 
+  Q2 = (c2 ::= return False)
+. 

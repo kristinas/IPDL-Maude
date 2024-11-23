@@ -1,0 +1,759 @@
+***( SpeX/Lang/COMP/BObj
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Data.maude
+sload ../Data/Language.maude
+
+********************************************************************************
+
+fmod COMP/BOBJ/LANGUAGE is
+  protecting COMP/BOBJ/LID .
+  protecting GRAMMAR .
+
+  op decl-grammar : COMP/OL -> Grammar .
+  eq decl-grammar(COMP/OL)
+   = grammar 'COMP/OL/Syntax is
+       'BObjModule
+         ::= "bobj_is endbo" : 'Header
+             [format('! 'so 's! 'n 'o)]
+          |  "bobj_with states_is endbo" : 'Header 'Sort
+             [format('! 'so 's! 's 'so 's! 'n 'o)]
+          |  "bobj_is_endbo" : 'Header 'DeclList
+             [format('! 'so 's! 'on++i 'n--i! 'o)]
+          |  "bobj_with states_is_endbo" : 'Header 'Sort 'DeclList
+             [format('! 'so 's! 's 'so 's! 'on++i 'n--i! 'o)]
+          |  "bobj_is_endbo" : 'Header 'Composition
+             [format('! 'so 's! 'on++i 'n--i! 'o)]
+          |  "bobj_with states_is_endbo" : 'Header 'Sort 'Composition
+             [format('! 'so 's! 's 'so 's! 'on++i 'n--i! 'o)]
+          |  "bobj_is__endbo" : 'Header 'Composition 'DeclList
+             [gather('& '& '&) format('! 'so 's! 'on++i 'ni 'n--i! 'o)]
+          |  "bobj_with states_is__endbo" : 'Header 'Sort 'Composition 'DeclList
+             [gather('& '& '& '&)
+              format('! 'so 's! 's 'so 's! 'on++i 'ni 'n--i! 'o)]
+       'Composition
+         ::= "composing_." : 'BObjNameList
+             [format('! 'so 's! 'o)]
+          |  "syncing_." : 'BObjNameList
+             [format('! 'so 's! 'o)]
+          |  "syncing_." : 'BObjName
+             [format('! 'so 's! 'o)]
+          |  "indexing_on_by_." : 'BObjName 'ModuleName 'Sort
+             [format('! 'so 's! 'so 's! 'so 's! 'o)]
+       'DeclList
+         ::= "protecting_." : 'ModuleName
+             [format('! 'so '! 'o)]
+          |  "extending_." : 'ModuleName
+             [format('! 'so 's! 'o)]
+          |  "including_." : 'ModuleName
+             [format('! 'so 's! 'o)]
+          |  "_." : 'Declaration
+             [format('d 's! 'o)]
+          |  "__" : 'DeclList 'DeclList
+             [assoc format('d 'ni 'd)]
+       'Header
+         ::= token "header"
+       'Sort
+         ::= token "sort" [exclude("," "(" ")")]
+       'BObjName
+         ::= token "bobj-name"
+       'BObjNameList
+         ::= bubble "bobj-name-list" [min-tokens(3) exclude(".")]
+       'ModuleName
+         ::= token "module-name"
+       'Declaration
+         ::= bubble "declaration"
+             [exclude("protecting" "extending" "including"
+                      "composing" "syncing" "indexing" ".")]
+     endgr .
+
+  op bobj-name-list-grammar : COMP/OL -> Grammar .
+  eq bobj-name-list-grammar(COMP/OL)
+   = grammar 'COMP/OL/bobj-name-list-syntax is
+       'BObjNameList
+         ::= "_and_" : 'Name 'Name [format('d 's! 'so 'd)]
+          |  "_and_" : 'BObjNameList 'Name [format('d 's! 'so 'd)]
+       'Name ::= just 'BObjName | just 'QualifiedBObjName
+       'BObjName
+         ::= token "bobj-name"
+       'QualifiedBObjName
+         ::= "(_as_)" : 'BObjName 'BObjName [format('! 'o 's! 'so '! 'o)]
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view COMP/OL from LANGUAGE to COMP/BOBJ/LANGUAGE is
+  sort Lid to COMP/OL .
+  op Lid to term COMP/OL .
+  op grammar to decl-grammar .
+endv
+
+********************************************************************************
+
+fmod COMP/OL/READ  is
+  protecting COMP/OL/MODULE .
+  protecting ATERM/READ .
+
+  var  L : COMP/OL .
+  vars H S C CDL ON QN ONL MN D DL DL1 DL2 M T : ATerm .
+  var  ATE : ATermExpansion .
+  var  OM : Module{COMP/OL} .
+  var  CM? : [Module{COMP}] .
+  var  DB : DB{COMP} .
+
+  *** read module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-module : COMP/OL ATerm DB{COMP} ~> Module{COMP/OL} .
+  eq read-module(L, M, DB) = (undefined).[Module{COMP}] >>= M given [L] DB .
+
+  op _>>=_given[_]_ : Module{COMP/OL} ATerm COMP/OL DB{COMP}
+    ~> Module{COMP/OL} .
+
+  eq CM? >>= {'bobj_is`endbo[H] : 'BObjModule} given [L] DB
+   = empty-module(COMP/OL, read-header(COMP/OL, H)) .
+  eq CM? >>= {'bobj_with`states_is`endbo[H, S] : 'BObjModule} given [L] DB
+   = empty-module-with-states(L, read-header(L, H), read-sort(COMP/HA, S)) .
+  eq CM? >>= {'bobj_is_endbo[H, CDL] : 'BObjModule} given [L] DB
+   = empty-module(L, read-header(L, H)) >>= CDL given [L] DB .
+  eq CM? >>= {'bobj_with`states_is_endbo[H, S, CDL] : 'BObjModule} given [L] DB
+   = empty-module-with-states(L, read-header(L, H), read-sort(COMP/HA, S))
+     >>= CDL given [L] DB .
+  eq CM? >>= {'bobj_is__endbo[H, C, DL] : 'BObjModule} given [L] DB
+   = empty-module(L, read-header(L, H)) >>= C given [L] DB >>= DL given [L] DB .
+  eq CM? >>= {'bobj_with`states_is__endbo[H, S, C, DL] : 'BObjModule}
+     given [L] DB
+   = empty-module-with-states(L, read-header(L, H), read-sort(COMP/HA, S))
+     >>= C given [L] DB >>= DL given [L] DB .
+
+  eq OM >>= {C : 'Composition | ATE} given [L] DB
+   = set-composition(L, read-composition(L, {C : 'Composition}), ATE, OM, DB) .
+
+  eq OM >>= {'__[DL1, DL2] : 'DeclList} given [L] DB
+   = (OM >>= DL1 given [L] DB) >>= DL2 given [L] DB .
+  eq OM >>= {'protecting_.[{MN : 'ModuleName | ATE}] : 'DeclList} given [L] DB
+   = add-import(L, protecting read-module-name(COMP/OL, MN) ., ATE, OM, DB) .
+  eq OM >>= {'extending_.[{MN : 'ModuleName | ATE}] : 'DeclList} given [L] DB
+   = add-import(L, extending read-module-name(COMP/OL, MN) ., ATE, OM, DB) .
+  eq OM >>= {'including_.[{MN : 'ModuleName | ATE}] : 'DeclList} given [L] DB
+   = add-import(L, including read-module-name(COMP/OL, MN) ., ATE, OM, DB) .
+  eq OM >>= {'_.[D] : 'DeclList} given [L] DB
+   = add-declaration(L, D, OM) .
+  eq CM? >>= T given [L] DB = CM? [owise] .
+
+  *** read header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-header : COMP/OL ATerm ~> Qid .
+  eq read-header(L, H) = read-qid(H) .
+
+  *** read composition  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-composition : COMP/OL ATerm ~> Composition{COMP/OL} .
+  eq read-composition(L, {C : 'Composition | ATE}) = read-composition(L, C) .
+  eq read-composition(L, {C : 'Composition}) = read-composition(L, C) .
+  eq read-composition(L, 'composing_.[ONL])
+   = (composing read-bobj-name-list(L, ONL) .) .
+  eq read-composition(L, 'syncing_.[{ONL : 'BObjNameList}])
+   = (syncing read-bobj-name-list(L, {ONL : 'BObjNameList}) .) .
+  eq read-composition(L, 'syncing_.[{ON : 'BObjName | ATE}])
+   = (syncing object read-bobj-name(L, {ON : 'BObjName}) .) .
+  eq read-composition(L, 'indexing_on_by_.[ON, MN, S])
+   = (indexing read-bobj-name(L, ON)
+      on read-module-name(L, MN) by read-sort(COMP/HA, S) .) .
+
+  *** read bobj-name list  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-bobj-name-list : COMP/OL ATerm ~> NameList{COMP/OL} .
+  eq read-bobj-name-list(L, {ON : 'BObjName | ATE})
+   = read-bobj-name(L, {ON : 'BObjName}) .
+  eq read-bobj-name-list(L, {ON : 'QualifiedBObjName | ATE})
+   = read-qualified-bobj-name(L, {ON : 'QualifiedBObjName}) .
+  eq read-bobj-name-list(L, {'_and_[ONL, ON] : 'BObjNameList})
+   = read-bobj-name-list(L, ONL) read-bobj-name-list(L, ON) .
+
+  op read-bobj-name : COMP/OL ATerm ~> Name{COMP/OL} .
+  eq read-bobj-name(L, ON) = Name[L]{read-qid(ON)} .
+
+  op read-qualified-bobj-name : COMP/OL ATerm ~> QualifiedName{COMP/OL} .
+  eq read-qualified-bobj-name(L, {'`(_as_`)[ON, QN] : 'QualifiedBObjName})
+   = read-bobj-name(L, ON) as read-bobj-name(L, QN) .
+
+  *** read module name  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-module-name : COMP/OL ATerm ~> Qid .
+  eq read-module-name(L, MN) = read-qid(MN) .
+
+  *** read declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-declaration : COMP/OL ATerm ~> QidList .
+  eq read-declaration(L, D) = read-qids(D) .
+endfm
+
+********************************************************************************
+
+fmod COMP/OL/SHOW is
+  protecting COMP/OL/MODULE .
+  protecting COMP/HA/SHOW .
+  protecting PRINTING { COMP/OL } .
+
+  var  L : COMP/OL .
+  vars H MN : Qid .
+  var  S : Sort .
+  var  C : Composition{COMP/OL} .
+  vars ON QN : Name{COMP/OL} .
+  var  ONL : NameList{COMP/OL} .
+  var  NONL : NeNameList{COMP/OL} .
+  var  I : Import .
+  var  IL : ImportList .
+  var  SB : SpecBody{COMP/HA} .
+  var  DB : DB{COMP} .
+  var  T : Term .
+  var  NTL : NeTermList .
+  var  TL : TermList .
+
+  *** show module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-module : COMP/OL Module{COMP/OL} -> Term .
+  eq show-module(L, Module[L]{H with states S is IL TL:ATermList SB given DB})
+   = show-module(L, H, S, empty, (show-imports(L, IL),
+      format-decls(L, show-declarations(TL:ATermList, SB)))) .
+  eq show-module(L, Module[L]{H with states S is C IL TL:ATermList SB given DB})
+   = show-module(L, H, S, show-composition(L, C), (show-imports(L, IL),
+      format-decls(L, show-declarations(TL:ATermList, SB)))) .
+
+  op show-module : COMP/OL Qid Sort TermList TermList -> Term .
+  eq show-module(L, H, S, empty, empty)
+   = if S == implicit-states-sort(L)
+     then 'bobj_is`endbo [ show-header(L, H) ]
+     else 'bobj_with`states_is`endbo [ show-header(L, H),
+        show-sort(COMP/HA, S) ] fi .
+  eq show-module(L, H, S, empty, NTL)
+   = if S == implicit-states-sort(L)
+     then 'bobj_is_endbo [ show-header(L, H), pack('__, NTL) ]
+     else 'bobj_with`states_is_endbo [ show-header(L, H),
+        show-sort(COMP/HA, S), pack('__, NTL) ] fi .
+  eq show-module(L, H, S, (T, TL), empty)
+   = if S == implicit-states-sort(L)
+     then 'bobj_is_endbo [ show-header(L, H), T ]
+     else 'bobj_with`states_is_endbo [ show-header(L, H),
+        show-sort(COMP/HA, S), T ] fi .
+  eq show-module(L, H, S, (T, TL), NTL)
+   = if S == implicit-states-sort(L)
+     then 'bobj_is__endbo [ show-header(L, H), T, pack('__, NTL) ]
+     else 'bobj_with`states_is__endbo [ show-header(L, H),
+        show-sort(COMP/HA, S), T, pack('__, NTL) ] fi .
+
+  *** show header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-header : COMP/OL Qid -> Term .
+  eq show-header(L, H) = mk-bubble('header, show-qid(H)) .
+
+  *** show composition  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-composition : COMP/OL Composition{COMP/OL} -> Term .
+  eq show-composition(L, composing ONL .)
+   = 'composing_. [
+      format-bobj-name-list(L, show-bobj-name-list(L, ONL)) ] .
+  eq show-composition(L, syncing ONL .)
+   = 'syncing_. [
+      format-bobj-name-list(L, show-bobj-name-list(L, ONL)) ] .
+  eq show-composition(L, syncing object ON .)
+   = 'syncing_. [ show-bobj-name(L, ON) ] .
+  eq show-composition(L, indexing ON on MN by S .)
+   = 'indexing_on_by_. [
+      show-bobj-name(L, ON), show-module-name(L, MN), show-sort(COMP/HA, S) ] .
+
+  op format-bobj-name-list : COMP/OL Term -> Term .
+  eq format-bobj-name-list(L, T)
+   = mk-bubble('bobj-name-list,
+      show-qids(print term T given bobj-name-list-grammar(L))) .
+
+  op show-bobj-name-list : COMP/OL NeNameList{COMP/OL} -> NeTermList .
+  eq show-bobj-name-list(L, ON)
+   = show-bobj-name(L, ON) .
+  eq show-bobj-name-list(L, ON as QN)
+   = show-qualified-bobj-name(L, ON as QN) .
+  eq show-bobj-name-list(L, NONL ON)
+   = '_and_[show-bobj-name-list(L, NONL),
+      show-bobj-name(L, ON)] .
+  eq show-bobj-name-list(L, NONL (ON as QN))
+   = '_and_[show-bobj-name-list(L, NONL),
+      show-qualified-bobj-name(L, ON as QN)] .
+
+  op show-bobj-name : COMP/OL Name{COMP/OL} -> Term .
+  eq show-bobj-name(L, Name[L]{MN}) = mk-bubble('bobj-name, show-qid(MN)) .
+
+  op show-qualified-bobj-name : COMP/OL QualifiedName{COMP/OL} -> Term .
+  eq show-qualified-bobj-name(L, ON as QN)
+   = '`(_as_`) [ show-bobj-name(L, ON), show-bobj-name(L, QN) ] .
+
+  *** show imports  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-imports : COMP/OL ImportList -> TermList .
+  eq show-imports(L, protecting MN . IL)
+   = 'protecting_.[show-module-name(L, MN)], show-imports(L, IL) .
+  eq show-imports(L, extending MN . IL)
+   = 'extending_.[show-module-name(L, MN)], show-imports(L, IL) .
+  eq show-imports(L, including MN . IL)
+   = 'including_.[show-module-name(L, MN)], show-imports(L, IL) .
+  eq show-imports(L, I IL) = show-imports(L, IL) [owise] .
+  eq show-imports(L, nil) = empty .
+
+  op show-module-name : COMP/OL Qid -> Term .
+  eq show-module-name(L, MN) = mk-bubble('module-name, show-qid(MN)) .
+
+  *** format decls  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op format-decls : COMP/OL TermList -> TermList .
+  eq format-decls(L, empty) = empty .
+  eq format-decls(L, (T, TL))
+   = '_.[show-declaration(L, T)], format-decls(L, TL) .
+
+  op show-declaration : COMP/OL Term -> Term .
+  eq show-declaration(L, T)
+   = mk-bubble('declaration, show-qids(print COMP/HA term (T))) .
+endfm
+
+********************************************************************************
+
+fmod COMP/OL/ANALYSIS-STATE is
+  protecting COMP/OL/READ .
+  protecting COMP/HA/PARSING .
+
+  var  L : COMP/OL .
+  var  DB : DB{COMP} .
+  var  ONL : NameList{COMP/OL} .
+  var  SAS : AnalysisState{COMP/HA} .
+  var  B : Bool .
+  vars HS EHS : Sort .
+  vars I X : Qid .
+  vars H S C ON QN MN D T : ATerm .
+  vars ONL1 ONL2 TL : ATermList .
+  var  ATE : ATermExpansion .
+
+  *** COMP analysis state  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort AnalysisState{COMP/OL} .
+  op AnalysisState[_]{_} : COMP/OL DB{COMP} -> AnalysisState{COMP/OL} [ctor] .
+  op AnalysisState[_]{_&_&_&_&_} : COMP/OL DB{COMP} Bool Sort NameList{COMP/OL}
+    AnalysisState{COMP/HA} -> AnalysisState{COMP/OL} [ctor] .
+
+  *** db (database projection)  - - - - - - - - - - - - - - - - - - - - - - - --
+  op db : AnalysisState{COMP/OL} -> DB{COMP} .
+  eq db(AnalysisState[L]{DB}) = DB .
+  eq db(AnalysisState[L]{DB & B & HS & ONL & SAS}) = DB .
+
+  *** eds (explicitly declared states)  - - - - - - - - - - - - - - - - - - - --
+  op eds : AnalysisState{COMP/OL} ~> Bool .
+  eq eds(AnalysisState[L]{DB & B & HS & ONL & SAS}) = B .
+
+  *** hsort (states-sort projection)  - - - - - - - - - - - - - - - - - - - - --
+  op hsort : AnalysisState{COMP/OL} ~> Sort .
+  eq hsort(AnalysisState[L]{DB & B & HS & ONL & SAS}) = HS .
+
+  *** onl (object-name-list projection)  - - - - - - - - - - - - - - - - - - - -
+  op onl : AnalysisState{COMP/OL} ~> NameList{COMP/OL} .
+  eq onl(AnalysisState[L]{DB & B & HS & ONL & SAS}) = ONL .
+
+  *** bs (base-state projection)  - - - - - - - - - - - - - - - - - - - - - - --
+  op bs : AnalysisState{COMP/OL} ~> AnalysisState{COMP/HA} .
+  eq bs(AnalysisState[L]{DB & B & HS & ONL & SAS}) = SAS .
+
+  *** update  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _>>=_ : AnalysisState{COMP/OL} ATerm -> AnalysisState{COMP/OL} .
+
+  ceq AnalysisState[L]{DB}
+    >>= {H : 'Header}
+   = AnalysisState[L]{DB & false & HS & nil & base-bobj-state(L, HS)}
+   if HS := implicit-states-sort(L) .
+
+  eq AnalysisState[L]{DB} >>= T = AnalysisState[L]{DB} [owise] .
+
+  ceq AnalysisState[L]{DB & B & HS & ONL & SAS}
+    >>= {S : 'Sort}
+   = AnalysisState[L]{DB & true & EHS & ONL & base-bobj-state(L, EHS)}
+   if EHS := read-sort(COMP/HA, S) .
+
+  eq AnalysisState[L]{DB & B & HS & ONL & SAS}
+    >>= {C : 'Composition | expanding to TL}
+   = if bobj-sync(L, C)
+     then AnalysisState[L]{DB & B & HS & ONL & base-bobj-state-from-exp(L, TL)}
+     else AnalysisState[L]{DB & B & HS & ONL & SAS >>= successful-analysis(TL)}
+     fi .
+
+  eq AnalysisState[L]{DB & B & HS & ONL & SAS}
+    >>= {MN : 'ModuleName | expanding to TL}
+   = AnalysisState[L]{DB & B & HS & ONL & SAS >>= successful-analysis(TL) } .
+
+  eq AnalysisState[L]{DB & B & HS & ONL & SAS}
+    >>= {ON : 'BObjName | expanding to TL}
+   = AnalysisState[L]{DB & B & HS
+      & ONL read-bobj-name(L, {ON : 'BObjName})
+      & SAS >>= successful-analysis(TL)} .
+  eq AnalysisState[L]{DB & B & HS & ONL & SAS}
+    >>= {'`(_as_`)[ON, QN] : 'QualifiedBObjName | expanding to TL}
+   = AnalysisState[L]{DB & B & HS
+      & ONL read-bobj-name(L, QN)
+      & SAS >>= successful-analysis(TL)} .
+  eq AnalysisState[L]{DB & B & HS & ONL & SAS}
+    >>= {'_and_[ONL1, ONL2] : 'BObjNameList}
+   = AnalysisState[L]{DB & B & HS & ONL & SAS} >>= ONL1 >>= ONL2 .
+
+  ceq AnalysisState[L]{DB & B & HS & ONL & SAS}
+    >>= {I[{MN : X | expanding to TL}] : 'DeclList}
+   = AnalysisState[L]{DB & B & HS & ONL & SAS >>= successful-analysis(TL)}
+   if I in ('protecting_. ; 'extending_. ; 'including_.) .
+  eq AnalysisState[L]{DB & B & HS & ONL & SAS}
+    >>= {'_.[D] : 'DeclList}
+   = AnalysisState[L]{DB & B & HS & ONL & SAS >>= D} .
+
+  eq AnalysisState[L]{DB & B & HS & ONL & SAS} >>= T
+   = AnalysisState[L]{DB & B & HS & ONL & SAS} [owise] .
+
+  *** base bobj states  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op base-bobj-state : COMP/OL Sort -> AnalysisState{COMP/HA} .
+  eq base-bobj-state(L, HS)
+   = initial-state(add-hidden-sort(HS, (nil).SpecBody{COMP/HA})) .
+
+  op base-bobj-state-from-exp : COMP/OL ATermList -> AnalysisState{COMP/HA} .
+  eq base-bobj-state-from-exp(L, TL)
+   = initial-state((nil).SpecBody{COMP/HA}) >>= successful-analysis(TL) .
+
+  *** bobj-sync  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op bobj-sync : COMP/OL ATerm -> Bool .
+  eq bobj-sync(L, 'syncing_.[{ON : 'BObjName | ATE}]) = true .
+  eq bobj-sync(L, T) = false [owise] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view COMP/OL/AnalysisState from ANALYSIS-STATE to COMP/OL/ANALYSIS-STATE is
+  sort State to AnalysisState{COMP/OL} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod COMP/OL/PARSING is
+  including SYNTACTIC-ANALYSIS { COMP/OL, COMP/OL/AnalysisState } .
+  extending COMP/OL/COMPOSITION/EVAL .
+  extending COMP/OL/READ .
+  extending COMP/DL/SHOW .
+
+  var  L : COMP/OL .
+  var  DM : Module{COMP/DL} .
+  var  OM : Module{COMP/OL} .
+  vars SB ESB : SpecBody{COMP/HA} .
+  var  DB : DB{COMP} .
+  var  SAS : AnalysisState{COMP/OL} .
+  var  ESAS : AnalysisState{COMP/HA} .
+  vars I X : Qid .
+  var  QIL : QidList .
+  vars $H H $S S C $MN MN $D D DL DL1 DL2 : ATerm .
+  vars ONL ONL1 ONL2 $ON ON $QN QN T : ATerm .
+  vars MTL TL TL1 TL2 : ATermList .
+  vars $ QI : Qid .
+  var  QI? : [Qid] .
+  var  AO : AnalysisOutcome .
+  var  WA : WarningArgs .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse L input (QIL) in SAS = parse L declaration (QIL) in SAS .
+
+  op parse_declaration_in_ : COMP/OL QidList AnalysisState{COMP/OL}
+    -> ParsingOutcome .
+  eq parse L declaration (QIL) in SAS
+   = scan L input (QIL : 'BObjModule)
+     then analyse L module in SAS .
+
+  *** analyse module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_module : COMP/OL -> AnalysisAction{COMP/OL} .
+
+  eq analyse L module {'bobj_is`endbo[$H] : 'BObjModule}
+   = try {'bobj_is`endbo [ solve L header ($H) ] : 'BObjModule} .
+
+  eq analyse L module {'bobj_with`states_is`endbo[$H, $S] : 'BObjModule}
+   = try { 'bobj_with`states_is`endbo [
+        solve L header ($H),
+        solve L sort ($S)
+      ] : 'BObjModule } .
+
+  eq analyse L module {'bobj_is_endbo[$H, {DL : 'DeclList}] : 'BObjModule}
+   = try { 'bobj_is_endbo [
+        solve L header ($H),
+        analyse L declarations {DL : 'DeclList}
+      ] : 'BObjModule } .
+
+  eq analyse L module
+    {'bobj_with`states_is_endbo[$H, $S, {DL : 'DeclList}] : 'BObjModule}
+   = try { 'bobj_with`states_is_endbo [
+        solve L header ($H),
+        solve L sort ($S),
+        analyse L declarations {DL : 'DeclList}
+      ] : 'BObjModule } .
+
+  eq analyse L module
+    {'bobj_is_endbo[$H, {C : 'Composition}] : 'BObjModule}
+   = try { 'bobj_is_endbo [
+        solve L header ($H),
+        analyse L composition {C : 'Composition}
+      ] : 'BObjModule } .
+
+  eq analyse L module
+    {'bobj_with`states_is_endbo[$H, $S, {C : 'Composition}] : 'BObjModule}
+   = try { 'bobj_with`states_is_endbo [
+        solve L header ($H),
+        solve L sort ($S),
+        analyse L composition {C : 'Composition}
+      ] : 'BObjModule } .
+
+  eq analyse L module {'bobj_is__endbo[$H, C, DL] : 'BObjModule}
+   = try { 'bobj_is__endbo [
+        solve L header ($H),
+        analyse L composition (C),
+        analyse L declarations (DL)
+      ] : 'BObjModule } .
+
+  eq analyse L module {'bobj_with`states_is__endbo[$H, $S, C, DL] : 'BObjModule}
+   = try { 'bobj_with`states_is__endbo [
+        solve L header ($H),
+        solve L sort ($S),
+        analyse L composition (C),
+        analyse L declarations (DL)
+      ] : 'BObjModule } .
+
+  *** solve header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op solve_header : COMP/OL -> AnalysisAction{COMP/OL} .
+  ceq solve L header {$[H] : 'Header}
+   = check (QI? :: Sort and QI? is ordinary) and-then return {H : 'Header}
+     or-else
+     fail ('syntax 'error: emph(print L term ($[H]))
+      'is 'not 'a 'valid 'module 'header,
+      (at L term (H), include context))
+    if QI? := read-qid(H) .
+
+  *** solve sort  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op solve_sort : COMP/OL -> AnalysisAction{COMP/OL} .
+  eq solve L sort ($S) in SAS
+   = solve COMP/HA sort ($S) in bs(SAS) .
+
+  op check`that_sort`is`declared`visible : COMP/OL -> AnalysisAction{COMP/OL} .
+  eq check that L sort is declared visible (S) in SAS
+   = check that COMP/HA sort is declared (S)
+     then check that COMP/HA sort is visible in bs(SAS) .
+
+  *** analyse composition  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_composition : COMP/OL -> AnalysisAction{COMP/OL} .
+  eq analyse L composition {'composing_.[ONL] : 'Composition}
+   = try {'composing_.[analyse L name-list (ONL)] : 'Composition}
+     then compile L term expansion .
+  eq analyse L composition {'syncing_.[{ONL : 'BObjNameList}] : 'Composition}
+   = try { 'syncing_. [
+        analyse L name-list {ONL : 'BObjNameList}
+      ] : 'Composition }
+     then compile L term expansion .
+  eq analyse L composition {'syncing_.[{$ON : 'BObjName}] : 'Composition}
+   = try { 'syncing_. [
+        solve L bobj-name {$ON : 'BObjName}
+        then analyse L compound object
+      ] : 'Composition}
+     then compile L term expansion .
+  eq analyse L composition {'indexing_on_by_.[$ON, $MN, $S] : 'Composition}
+   = try { 'indexing_on_by_. [
+        solve L bobj-name ($ON) then analyse L component,
+        analyse L indexing module ($MN),
+        solve L sort ($S) then check that L sort is declared visible
+      ] : 'Composition }
+     then compile L term expansion .
+
+  op analyse_name-list : COMP/OL -> AnalysisAction{COMP/OL} .
+  eq analyse L name-list {$[ONL] : 'BObjNameList}
+   = decode input (read-qids(ONL) : 'BObjNameList)
+       given bobj-name-list-grammar(L)
+     then analyse L names .
+
+  op analyse_names : COMP/OL -> AnalysisAction{COMP/OL} .
+  eq analyse L names {$ON : 'BObjName}
+   = solve L bobj-name {$ON : 'BObjName}
+     then check L name uniqueness
+     then analyse L component .
+  eq analyse L names {ON : 'QualifiedBObjName}
+   = solve L qualified-bobj-name {ON : 'QualifiedBObjName}
+     then analyse L component .
+  eq analyse L names {'_and_[ONL1, ONL2] : 'BObjNameList} in SAS
+   = try { '_and_ [
+        analyse L names (ONL1),
+        analyse L names (ONL2)
+      ] : 'BObjNameList } in SAS .
+
+  op solve_bobj-name : COMP/OL -> AnalysisAction{COMP/OL} .
+  ceq solve L bobj-name {$[ON] : 'BObjName}
+   = check (QI? :: Sort and QI? is ordinary) and-then return {ON : 'BObjName}
+     or-else
+     fail ('syntax 'error: emph(print L term ($[ON]))
+      'is 'not 'a 'valid 'behavioural-object 'name,
+      (at L term (ON), include context))
+   if QI? := read-qid(ON) .
+
+  op solve_qualified-bobj-name : COMP/OL -> AnalysisAction{COMP/OL} .
+  eq solve L qualified-bobj-name {'`(_as_`)[$ON, $QN] : 'QualifiedBObjName}
+   = try { '`(_as_`) [
+        solve L bobj-name ($ON),
+        solve L bobj-name ($QN) then check L name uniqueness
+      ] : 'QualifiedBObjName } .
+
+  op check_name`uniqueness : COMP/OL -> AnalysisAction{COMP/OL} .
+  eq check L name uniqueness {ON : 'BObjName} in SAS
+   = check (not occurs(read-bobj-name(L, ON), onl(SAS)))
+     and-then return {ON : 'BObjName}
+     or-else
+     fail ('syntax 'error: 'object 'components 'should 'have 'distinct 'names,
+      (at L term (ON), include context))
+     in SAS .
+
+  *** analyse components  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_component : COMP/OL -> AnalysisAction{COMP/OL} .
+
+  ceq analyse L component {ON : 'BObjName} in SAS
+   = expand L term [AO] {ON : 'BObjName} in SAS
+   if QI := read-module-name(L, ON)
+      /\ OM := db(SAS)[QI]
+      /\ AO := reanalyse(qualify-sorts(body(L, OM), QI), bs(SAS)) .
+  eq analyse L component {ON : 'BObjName} in SAS
+   = fail ('undeclared 'behavioural 'object: emph(read-module-name(L, ON)),
+      (at L term (ON), include context))
+     in SAS [owise] .
+
+  ceq analyse L component {'`(_as_`)[ON, QN] : 'QualifiedBObjName} in SAS
+   = expand L term [AO] {'`(_as_`)[ON, QN] : 'QualifiedBObjName} in SAS
+   if QI := read-module-name(L, QN)
+      /\ OM := db(SAS)[read-module-name(L, ON)]
+      /\ AO := reanalyse(qualify-sorts(body(L, OM), QI), bs(SAS)) .
+  eq analyse L component {'`(_as_`)[ON, QN] : 'QualifiedBObjName} in SAS
+   = fail ('undeclared 'behavioural 'object: emph(read-module-name(L, ON)),
+      (at L term (ON), include context))
+     in SAS [owise] .
+
+  op expand_term`[_`] : COMP/OL AnalysisOutcome -> AnalysisAction{COMP/OL} .
+  eq expand L term [successful-analysis(MTL)] {T : X}
+   = return {T : X | expanding to MTL} .
+  eq expand L term [analysis-error(QIL, WA)] {T : X}
+   = fail (QIL, (at term (T), include context)) .
+
+  *** analyse compound objects  - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_compound`object : COMP/OL -> AnalysisAction{COMP/OL} .
+
+  ceq analyse L compound object {ON : 'BObjName} in SAS
+   = (check OM :: CompModule{COMP/OL}
+      and-then expand L term [AO] {ON : 'BObjName}
+      or-else
+      fail ('syntax 'error: emph(QI) 'is 'not 'a 'compound 'object,
+       (at L term (ON), include context)))
+     and-then
+     (check (eds(SAS) implies hsort(L, OM) == hidden-sorts(bs(SAS)))
+      or-else
+       fail ('syntax 'error: 'states-sort 'mismatch,
+        (at L term (ON), include context)))
+     in SAS
+   if QI := read-module-name(L, ON)
+      /\ OM := db(SAS)[QI]
+      /\ AO := reanalyse(body(L, OM), bs(SAS)) .
+  eq analyse L compound object {ON : 'BObjName} in SAS
+   = fail ('undeclared 'behavioural 'object: emph(read-module-name(L, ON)),
+      (at L term (ON), include context))
+     in SAS [owise] .
+
+  *** compile term expansion  - - - - - - - - - - - - - - - - - - - - - - - - --
+  op compile_term`expansion : COMP/OL -> AnalysisAction{COMP/OL} .
+  eq compile L term expansion {C : 'Composition} in SAS
+   = return {C : 'Composition | term-expansion(L, C, SAS)} in SAS .
+
+  op term-expansion : COMP/OL ATerm AnalysisState{COMP/OL} -> ATermExpansion .
+  ceq term-expansion(L, C, SAS) = expanding to (TL1, TL2)
+   if expanding to TL1 := term-expansion(L, C)
+      /\ SB := extend(spec-body(bs(SAS)), TL1)
+      /\ ESB := eval(read-composition(L, C), hsort(SAS), db(SAS))
+      /\ ESAS := bs(SAS) >>= successful-analysis(TL1)
+      /\ successful-analysis(TL2) := reanalyse(ESB, ESAS) .
+  eq term-expansion(L, C, SAS) = expanding to empty [owise] .
+
+  op term-expansion : COMP/OL ATerm -> ATermExpansion .
+  eq term-expansion(L, 'composing_.[ONL]) = term-expansion(L, ONL) .
+  eq term-expansion(L, 'syncing_.[ONL]) = term-expansion(L, ONL) .
+  ceq term-expansion(L, 'indexing_on_by_.[ON, MN, S]) = expanding to (TL1, TL2)
+   if expanding to TL1 := term-expansion(L, ON)
+      /\ expanding to TL2 := term-expansion(L, MN) .
+  eq term-expansion(L, {T : X | expanding to TL}) = expanding to TL .
+  ceq term-expansion(L, {'_and_[ONL1, ONL2] : 'BObjNameList})
+   = expanding to (TL1, TL2)
+   if expanding to TL1 := term-expansion(L, ONL1)
+      /\ expanding to TL2 := term-expansion(L, ONL2) .
+  eq term-expansion(L, T) = expanding to empty [owise] .
+
+  *** analyse indexing module  - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_indexing`module : COMP/OL -> AnalysisAction{COMP/OL} .
+
+  ceq analyse L indexing module {$[MN] : 'ModuleName} in SAS
+   = expand L term [AO] {MN : 'ModuleName} in SAS
+   if DM := db(SAS)[read-module-name(L, MN)]
+      /\ AO := reanalyse(COMP/HA, show(body(COMP/DL, DM)), bs(SAS)) .
+
+  ceq analyse L indexing module {$[MN] : 'ModuleName} in SAS
+   = expand L term [AO] {MN : 'ModuleName} in SAS
+   if QI := read-module-name(L, MN)
+      /\ OM := db(SAS)[QI]
+      /\ AO := reanalyse(qualify-sorts(body(L, OM), QI), bs(SAS)) .
+
+  eq analyse L indexing module {$[MN] : 'ModuleName} in SAS
+   = fail ('undeclared 'indexing 'module: emph(read-module-name(L, MN)),
+      (at L term (MN), include context))
+     in SAS [owise] .
+
+  *** analyse declarations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_declarations : COMP/OL -> AnalysisAction{COMP/OL} .
+
+  eq analyse L declarations {'__[DL1, DL2] : 'DeclList}
+   = try { '__ [
+        analyse L declarations (DL1),
+        analyse L declarations (DL2)
+      ] : 'DeclList } .
+
+  ceq analyse L declarations {I[$MN] : 'DeclList}
+   = try {I [ analyse L import ($MN) ] : 'DeclList}
+     or-else
+     fail with L trace (I[$MN])
+   if I in ('protecting_. ; 'extending_. ; 'including_.) .
+
+  eq analyse L declarations {'_.[$D] : 'DeclList}
+   = try {'_. [ analyse L declarations ($D) ] : 'DeclList}
+     or-else
+     fail with L trace ('_.[$D]) .
+
+  ceq analyse L declarations {$[D] : 'Declaration} in SAS
+   = just (parse COMP/HA input QIL in bs(SAS)) on QIL
+   if QIL := read-declaration(L, {D : 'Declaration}) .
+
+  *** analyse imports  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_import : COMP/OL -> AnalysisAction{COMP/OL} .
+
+  ceq analyse L import {$[MN] : 'ModuleName} in SAS
+   = expand L term [AO] {MN : 'ModuleName} in SAS
+   if DM := db(SAS)[read-module-name(L, MN)]
+      /\ AO := reanalyse(COMP/HA, show(body(COMP/DL, DM)), bs(SAS)) .
+
+  eq analyse L import {$[MN] : 'ModuleName} in SAS
+   = fail ('undeclared 'data 'module: emph(read-module-name(L, MN)),
+      (at L term (MN), include context))
+     in SAS [owise] .
+endfm
+
+********************************************************************************
+
+fmod COMP/OL/PRINTING is
+  protecting PRINTING { COMP/OL } .
+  protecting COMP/OL/SHOW .
+
+  var L : COMP/OL .
+  var OM : Module{COMP/OL} .
+
+  *** print  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : COMP/OL Module{COMP/OL} -> QidList .
+  eq print(L, OM) = print L term (show-module(L, OM)) .
+endfm
+
+********************************************************************************

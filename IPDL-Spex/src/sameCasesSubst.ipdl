@@ -1,0 +1,60 @@
+lang IPDL
+
+import BASEGMWN .
+
+parameter N : nat .
+parameter K : nat .
+
+channel context delta =
+
+input Share[ bound N + 2 bound K] : bool ;
+output test : bool
+.
+
+protocol P = 
+newfamily OTChc-0[bound N + 2 bound N + 2 bound K] 
+ indices: m, n, k bounds: bound N + 2 bound N + 2 bound K : bool in
+newfamily RcvdBit[bound N + 2 bound N + 2 bound K] indices: n, m, k
+  bounds: bound N + 2 bound N + 2 bound K : bool in 
+(test ::= return True)
+|| 
+(
+ family OTChc-0[bound N + 2 bound N + 2 bound K] 
+ indices: m, n, k bounds: bound N + 2 bound N + 2 bound K ::=
+ (when (m < n) --> 
+   nf(x : bool <- read Share[n, wire0(k)], return x)
+ )  ;; 
+ (when (n <= m) --> 
+   nf(oc : bool <- read OTChc-0[m, n, k], return oc)
+ )
+)    
+|| 
+(
+ family RcvdBit[bound N + 2 bound N + 2 bound K] indices: n, m, k
+  bounds: bound N + 2 bound N + 2 bound K ::=
+  (when (m < n) -->
+    nf(c0 : bool <- read OTChc-0[m, n, k] , if c0 then return True else return False )
+  )
+  ;;
+  (when (n <= m) --> nf(z : bool <- read RcvdBit[n, m, k], return z)
+  )
+)  
+.
+
+start with P over delta then
+on branch m < n of family RcvdBit[bound N + 2 bound N + 2 bound K](
+  subst fam OTChc-0[bound N + 2 bound N + 2 bound K] 
+  into fam RcvdBit[bound N + 2 bound N + 2 bound K]
+)
+
+current-protocol
+
+eof 
+then
+rename variables m to x, n to y, k to z of fam OTChc-0[bound N + 2 bound N + 2 bound K] then
+on branch m < n of family RcvdBit[bound N + 2 bound N + 2 bound K](
+  subst fam OTChc-0[bound N + 2 bound N + 2 bound K] 
+  into fam RcvdBit[bound N + 2 bound N + 2 bound K]
+)
+
+current-protocol

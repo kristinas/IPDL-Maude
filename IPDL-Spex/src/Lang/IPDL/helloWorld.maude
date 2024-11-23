@@ -1,0 +1,216 @@
+***( IPDL
+
+  Copyright : (C) 2022-23, Kristina Sojakova, Mihai Codescu
+  License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+Hello world-like example,
+see Sec. 2.7 of doc/tech_report_maude.pdf
+
+)
+
+load ./strategies
+
+mod HELLO-WORLD is
+ protecting APPROX-EQUALITY .
+ 
+ ops  xorF flipF : -> SigElem .
+ eq xorF = 'xor : (bool * bool) ~> bool .
+ 
+ eq flipF = 'flip : unit ~>> bool .
+ 
+ op sig : -> Signature .
+ eq sig = xorF flipF .
+ 
+ op delta : -> ChannelContext .
+ eq delta = 
+    (chn 'In :: bool) 
+    (chn ('LeakCtxt ^^ 'Alice .. 'adv) :: bool)
+ .   
+
+ op N : -> Nat .        
+
+ op ideal : -> Protocol .
+ eq ideal = 
+    new 'Ctxt : bool in
+    (
+    ('LeakCtxt ^^ 'id .. 'adv ::= 
+      nf(('c : bool <- read 'Ctxt),
+          return 'c)
+    )  
+    ||
+    ('Ctxt ::= 
+       nf( 'm : bool <- read 'In,
+           samp ('flip < () >))
+    )
+    )
+ .
+
+ op sim : -> Protocol .
+ eq sim = 
+    ('LeakCtxt ^^ 'Alice .. 'adv ::= 
+       nf('c : bool <- read ('LeakCtxt ^^ 'id .. 'adv),
+          return 'c)
+    )
+ .
+ 
+ op idealPlusSim : -> Protocol .
+ eq idealPlusSim = 
+    new 'LeakCtxt ^^ 'id .. 'adv : bool in
+    (
+    ideal || sim
+    )
+ .
+ 
+  op real : -> Protocol .
+  eq real = 
+    new 'Key : bool in
+    new 'Ctxt : bool in
+    (
+     ('Key ::= nf(emptyBRList, samp ('flip < () >)) ) 
+     || 
+     ('Ctxt ::= 
+       nf( ('m : bool <- read 'In)
+            'k : bool <- read 'Key,
+            return (ap 'xor pair('m, 'k))
+               )
+     )
+     ||
+     ('LeakCtxt ^^ 'Alice .. 'adv ::= 
+       nf( 'c : bool <- read 'Ctxt ,
+           return 'c)  
+     )
+    ) 
+         
+  .
+  
+endm 
+ 
+smod EXECUTE is
+  protecting STRATS .
+  protecting HELLO-WORLD .
+ 
+ var x y : Qid . 
+ var Sigma : Signature .
+ var Delta : ChannelContext .
+ var Gamma : TypeContext .
+ var I O : Set{CNameBound} .
+ var A : Set{BoolTerm} .
+ var cn f : ChannelName .
+ var pConf : ProtocolConfig .
+ var P : Protocol .
+ var T : IPDLType .
+  
+  crl [flipInvariantXorFixed] :
+    rConfig(Sigma, Delta, Gamma (x : T),
+            y : typeName 'bool <- samp ('flip < () >) ; 
+            return (ap 'xor pair(x, y)), I, A, T
+            )
+     => 
+     rConfig(Sigma, Delta, Gamma (x : T),
+             samp ('flip < () >), I, A, T)           
+   if Sigma == sig  /\ T == bool         
+  .  
+  
+  strat applyAssumption : ChannelName @ ProtocolConfig .
+  sd applyAssumption(cn) := 
+   match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyAssumption(cn)}
+    : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-REACT[o:ChannelName <- cn]
+                { cong-pre-nf{flipInvariantXorFixed} ; 
+                  try (pre2Nf)}   
+  .
+
+  crl [flipInvariantXorFixedNew]:
+    rConfig(Sigma:Signature,
+            Delta:ChannelContext,
+            Gamma:TypeContext (x : typeName 'bool),
+            y : typeName 'bool <- samp ('flip < () >) ; return (ap 'xor pair(x, y)),
+            Ins:Set{CNameBound},
+            A:Set{BoolTerm},
+            T:IPDLType)
+     =>
+     rConfig(Sigma:Signature,
+            Delta:ChannelContext,
+            Gamma:TypeContext (x : typeName 'bool),
+            samp ('flip < () >),
+            Ins:Set{CNameBound},
+            A:Set{BoolTerm},
+            T:IPDLType)
+     if T:IPDLType == bool .
+
+    strat applyflipInvariantXorFixed : ChannelName @ ProtocolConfig .
+    sd applyflipInvariantXorFixed(cn) :=
+       applyflipInvariantXorFixedNF(cn) or-else
+       applyflipInvariantXorFixedPre(cn)
+    .
+
+    strat applyflipInvariantXorFixedNF : ChannelName @ ProtocolConfig .
+    sd applyflipInvariantXorFixedNF(cn) :=
+       match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyflipInvariantXorFixedNF(cn)}
+    : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf
+       using CONG-REACT[o:ChannelName <- cn]
+                { cong-nf{flipInvariantXorFixedNew}
+                }
+  .
+
+  strat applyflipInvariantXorFixedPre : ChannelName @ ProtocolConfig .
+    sd applyflipInvariantXorFixedPre(cn) :=
+       match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyflipInvariantXorFixedPre(cn)}
+    : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf
+       using CONG-REACT[o:ChannelName <- cn]
+                { cong-pre-nf{flipInvariantXorFixedNew};
+                  try (pre2Nf)
+                }
+  . 
+   
+ endsm
+ 
+srew [1] 
+ pConfig(sig, 
+         delta, 
+         real, 
+         chn 'In, 
+         getOutputs(real), 
+         empty)
+using 
+       sugar-newNF
+     ; foldNF('Key, 'Ctxt)
+     ; foldNF('Ctxt, 'LeakCtxt ^^ 'Alice .. 'adv)         
+     ; applyAssumption('LeakCtxt ^^ 'Alice .. 'adv)  ***(
+     ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using
+       SYM[P1:Protocol <- idealPlusSim, 
+           Delta1:ChannelContext <- Delta, 
+           O1:Set{CNameBound} <- O]{
+       sugar-newNF
+     ; moveNewToFront  
+     ; foldNF('LeakCtxt ^^ 'id .. 'adv, 'LeakCtxt ^^ 'Alice .. 'adv) 
+     ; foldNF('Ctxt, 'LeakCtxt ^^ 'Alice .. 'adv)  
+     }    
+     ) 
+     
+.  
+ 
+***( Here we record the proof from idealPlusSim.
+It has been plugged in the SYM proof from real, so we don't need 
+it anymore and we can comment it out.
+
+srew [1] 
+pConfig(sig,
+        delta, 
+         idealPlusSim, 
+         chn 'In, 
+         getOutputs(idealPlusSim), 
+         empty)
+using 
+       sugar-newNF
+     ; moveNewToFront  
+     ; foldNF('LeakCtxt ^^ 'id .. 'adv, 'LeakCtxt ^^ 'Alice .. 'adv) 
+     ; foldNF('Ctxt, 'LeakCtxt ^^ 'Alice .. 'adv)    
+.
+)

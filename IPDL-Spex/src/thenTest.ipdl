@@ -1,0 +1,30 @@
+lang IPDL 
+
+channel context delta = 
+ output c : bool ;
+ output d : bool ;
+ output e : unit ;
+ input i1 : bool ;
+ input i2 : bool
+.
+
+protocol P = 
+ (c ::= read i1)
+ ||
+ (d ::= read i2)
+ ||
+ (e ::= x1 : bool <- read c ; x2 : bool <- read d ; return ())
+. 
+
+start with P over delta
+
+strict(
+ subst chn c into chn e
+)
+then-approx
+strict(
+ subst chn d into chn e
+)
+
+current-protocol
+quit

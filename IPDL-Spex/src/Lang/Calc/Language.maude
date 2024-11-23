@@ -1,0 +1,268 @@
+***( SpeX/Lang/Calc
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2022 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../Language.maude
+sload ./Data.maude
+
+********************************************************************************
+
+fmod CALC/LANGUAGE is
+  protecting CALC/LID .
+  protecting GRAMMAR .
+
+  op grammar : Calc -> Grammar .
+  eq grammar(Calc)
+   = grammar 'Calc/Syntax is
+       'Decl
+         ::= "_:=_" : 'Id 'Exp [prec(35)]
+       'Id
+         ::= token "id"
+       'Exp
+         ::= just 'Num
+          |  "[_]" : 'Id
+          |  "_+_" : 'Exp 'Exp [assoc prec(33)]
+          |  "_-_" : 'Exp 'Exp [prec(33)]
+          |  "_*_" : 'Exp 'Exp [assoc prec(31)]
+          |  "_/_" : 'Exp 'Exp [division-attributes]
+       'Num
+         ::= <number>
+       'Cmd
+         ::= lit "list ids"
+          |  "print_" : 'Id
+          |  "eval_" : 'Id
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Calc from LANGUAGE to CALC/LANGUAGE is
+  sort Lid to Calc .
+  op Lid to Calc .
+  op grammar to grammar .
+endv
+
+********************************************************************************
+
+fmod CALC/READ is
+  protecting CALC/LANGUAGE .
+  protecting CALC/DECL .
+  protecting CALC/CMD .
+  protecting ATERM/READ .
+
+  var  L : Calc .
+  vars N E E1 E2 : ATerm .
+
+  *** read declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-decl : Calc ATerm ~> Decl{Calc} .
+  eq read-decl(L, {'_:=_[N, E] : 'Decl})
+   = read-qid(N) := read-exp(L, E) .
+
+  *** read expression  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-exp : Calc ATerm ~> Exp{Calc} .
+
+  ceq read-exp(L, E)
+   = num(L, read-num(E)) if E :: <number> .
+
+  eq read-exp(L, {'`[_`][N] : 'Exp})
+   = val(L, read-qid(N)) .
+
+  eq read-exp(L, {'_+_[E1, E2] : 'Exp})
+   = read-exp(L, E1) + read-exp(L, E2) .
+
+  eq read-exp(L, {'_-_[E1, E2] : 'Exp})
+   = read-exp(L, E1) - read-exp(L, E2) .
+
+  eq read-exp(L, {'_*_[E1, E2] : 'Exp})
+   = read-exp(L, E1) * read-exp(L, E2) .
+
+  eq read-exp(L, {'_/_[E1, E2] : 'Exp})
+   = read-exp(L, E1) / read-exp(L, E2) .
+
+  *** read cmd  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-cmd : Calc ATerm ~> Cmd{Calc} .
+
+  eq read-cmd(L, {'list`ids.Cmd : 'Cmd})
+   = Cmd[L]{list ids} .
+
+  eq read-cmd(L, {'print_[N] : 'Cmd})
+   = Cmd[L]{print read-qid(N)} .
+
+  eq read-cmd(L, {'eval_[N] : 'Cmd})
+   = Cmd[L]{eval read-qid(N)} .
+endfm
+
+********************************************************************************
+
+fmod CALC/SHOW is
+  protecting CALC/EXP .
+  protecting NUM/SHOW .
+  protecting QID/SHOW .
+  protecting TERM/OPS .
+
+  var  L : Calc .
+  var  V : Rat .
+  var  N : Qid .
+  vars E1 E2 : Exp{Calc} .
+
+  *** show expression  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-exp : Exp{Calc} -> Term .
+
+  eq show-exp(num(L, V))
+   = show-num(V) .
+
+  eq show-exp(val(L, N))
+   = '`[_`][mk-bubble('id, show-qid(N))] .
+
+  eq show-exp(E1 + E2)
+   = '_+_[show-exp(E1), show-exp(E2)] .
+
+  eq show-exp(E1 - E2)
+   = '_-_[show-exp(E1), show-exp(E2)] .
+
+  eq show-exp(E1 * E2)
+   = '_*_[show-exp(E1), show-exp(E2)] .
+
+  eq show-exp(E1 / E2)
+   = '_/_[show-exp(E1), show-exp(E2)] .
+endfm
+
+********************************************************************************
+
+fmod CALC/ANALYSIS-STATE is
+  protecting CALC/READ .
+
+  sort AnalysisState{Calc} .
+  op AnalysisState[_]{_} : Calc QidSet -> AnalysisState{Calc} .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Calc/AnalysisState from ANALYSIS-STATE to CALC/ANALYSIS-STATE is
+  sort State to AnalysisState{Calc} .
+  op S:State >>= T:ATerm to term S:AnalysisState{Calc} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod CALC/PARSING is
+  including SYNTACTIC-ANALYSIS { Calc, Calc/AnalysisState } .
+
+  var  L : Calc .
+  var  SAS : AnalysisState{Calc} .
+  var  X : QidList .
+  vars $N N $E E E1 E2 : ATerm .
+  var  C : Constant .
+  vars $ OP : Qid .
+  var  QIS : QidSet .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse L input (X) in SAS
+   = parse L declaration (X) in SAS
+     or-else parse L command (X) in SAS .
+
+  op parse_declaration_in_ : Calc QidList AnalysisState{Calc}
+    ~> ParsingOutcome .
+  eq parse L declaration (X) in SAS
+   = scan L input (X : 'Decl)
+     then analyse L declaration in SAS .
+
+  op parse_command_in_ : Calc QidList AnalysisState{Calc}
+    ~> ParsingOutcome .
+  eq parse L command (X) in SAS
+   = scan L input (X : 'Cmd)
+     then analyse L command in SAS .
+
+  *** analyse declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_declaration : Calc -> AnalysisAction{Calc} .
+  eq analyse L declaration {'_:=_[$N, $E] : 'Decl}
+   = try { '_:=_ [
+        solve L id ($N),
+        analyse L expression ($E)
+      ] : 'Decl } .
+
+  *** solve id  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op solve_id : Calc -> AnalysisAction{Calc} .
+  eq solve L id {$[N] : 'Id}
+   = check (read-qid(N) is ordinary) and-then return {N : 'Id}
+     or-else
+     fail ('syntax 'error:
+      spaced-emph(print L term $[N]) 'is 'not 'a 'valid 'id,
+      (at L term $[N], include context)) .
+
+  *** check that id is declared  - - - - - - - - - - - - - - - - - - - - - - - -
+  op check`that_id`is`declared : Calc -> AnalysisAction{Calc} .
+  eq check that L id is declared {N : 'Id} in AnalysisState[L]{QIS}
+   = check (read-qid(N) in QIS) and-then return {N : 'Id}
+     or-else
+     fail ('syntax 'error: 'undeclared 'id spaced-emph(print L term 'id[N]),
+      (at L term 'id[N], include context))
+     in AnalysisState[L]{QIS} .
+
+  *** analyse expression  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_expression : Calc -> AnalysisAction{Calc} .
+
+  ceq analyse L expression E
+   = return (E) if E :: <number> .
+
+  eq analyse L expression {'`[_`][$N] : 'Exp}
+   = try { '`[_`] [
+        solve L id ($N) then check that L id is declared
+      ] : 'Exp } .
+
+  ceq analyse L expression {OP[E1, E2] : 'Exp}
+   = try { OP [
+        analyse L expression (E1),
+        analyse L expression (E2)
+      ] : 'Exp }
+   if OP in symbols(grammar(L), 'Exp 'Exp) .
+
+  eq analyse L expression E
+   = fail ('syntax 'error: 'cannot 'parse 'this 'expression,
+      (at L term E, include context)) [owise] .
+
+  *** analyse command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_command : Calc -> AnalysisAction{Calc} .
+
+  eq analyse L command {C : 'Cmd}
+   = return {C : 'Cmd} .
+
+  eq analyse L command {'print_[$N] : 'Cmd}
+   = try { 'print_ [
+        solve L id ($N) then check that L id is declared
+      ] : 'Cmd } .
+
+  eq analyse L command {'eval_[$N] : 'Cmd}
+   = try { 'eval_ [
+        solve L id ($N) then check that L id is declared
+      ] : 'Cmd } .
+endfm
+
+********************************************************************************
+
+fmod CALC/PRINTING is
+  protecting PRINTING { Calc } .
+  protecting CALC/SHOW .
+
+  var E : Exp{Calc} .
+
+  *** print expression  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print : Exp{Calc} -> QidList .
+  eq print(E) = print Calc term show-exp(E) .
+endfm
+
+********************************************************************************
+
+fmod CALC/PARSING-&-PRINTING is
+  protecting CALC/PARSING .
+  protecting CALC/PRINTING .
+endfm
+
+********************************************************************************

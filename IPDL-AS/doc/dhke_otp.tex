@@ -1,0 +1,149 @@
+\renewcommand{\key}{\mathsf{key}}
+\renewcommand{\msg}{\mathsf{msg}}
+\renewcommand{\unif}{\mathsf{unif}}
+\renewcommand{\gen}{\mathsf{g}}
+\newcommand{\mul}{\mathsf{mul}}
+\newcommand{\inv}{\mathsf{inv}}
+\renewcommand{\exp}{\mathsf{exp}}
+\renewcommand{\id}{\mathsf{id}}
+\renewcommand{\adv}{\mathsf{adv}}
+\renewcommand{\net}{\mathsf{net}}
+\renewcommand{\Alice}{\mathsf{Alice}}
+\renewcommand{\Bob}{\mathsf{Bob}}
+\newcommand{\dhke}{\mathsf{DHKE}}
+\renewcommand{\In}{\mathsf{In}}
+\renewcommand{\Out}{\mathsf{Out}}
+\renewcommand{\Key}{\mathsf{Key}}
+\renewcommand{\Send}{\mathsf{Send}}
+\renewcommand{\Recv}{\mathsf{Recv}}
+\renewcommand{\LeakMsgRcvd}{\mathsf{LeakMsgRcvd}}
+\renewcommand{\OkMsg}{\mathsf{OkMsg}}
+\renewcommand{\OkKey}{\mathsf{OkKey}}
+\renewcommand{\LeakCtxt}{\mathsf{LeakCtxt}}
+\renewcommand{\OkCtxt}{\mathsf{OkCtxt}}
+\renewcommand{\PublicKey}{\mathsf{PublicKey}}
+\renewcommand{\LeakPublicKey}{\mathsf{LeakPublicKey}}
+\renewcommand{\OkPublicKey}{\mathsf{OkPublicKey}}
+
+We now use the Diffie-Hellman Key Exchange protocol from Section \ref{sec:dhke} to turn an authenticated channel into a one-time pad that delivers a single secret message from Alice to Bob.
+
+Formally, we assume a type $\key$ of secret keys (elements of $\{0,\ldots,p-1\}$, where $p$ is a prime); a type $\msg$ of messages, also serving as public keys (elements of a cyclic group $G = \{g^0,\ldots,g^{p-1}\}$); a uniform distribution $\unif_\key : \one \twoheadrightarrow \key$ on keys; a uniform distribution $\unif_\msg : \one \twoheadrightarrow \msg$ on messages; the generator $\gen : \one \rightarrow \msg$ of $G$; the group multiplication function $\mul : \msg \times \msg \rightarrow \msg$, where we write $m * k$ in place of $\mul \ (m,k)$; the group inverse function $\inv : \msg \rightarrow \msg$, where we write $k^{-1}$ in place of $\inv \ k$; and the exponentiation function $\exp : \msg \times \key \rightarrow \msg$ that raises an element of $G$ to the power of $k \in \{0,\ldots,p-1\}$. We will write $m^k$ in place of $\exp \ (m,k)$.
+
+We will structure our proof modularly: in the first step, we establish that the Diffie-Hellman Key Exchange can be replaced with an idealization. In the second step, we prove that the resulting One-Time Pad protocol itself reduces to an idealization.
+
+\subsection{The Assumptions}
+In addition to the assumptions from Section \ref{sec:dhke}, we will need the fact that inverses cancel on the right:
+\begin{itemize}
+\item $m : \msg, k : \msg \vdash (m * k) * k^{-1} = m : \msg$
+\end{itemize}
+Additionally, we need to know that that the distribution $\unif_\msg$ on messages is invariant under the operation of multiplication with a fixed message (a consequence of $\unif_\msg$ being uniform):
+\begin{itemize}
+\item $m : \msg \vdash \big(k \leftarrow \unif_\msg; \ \ret{m * k}\big) = \unif_\msg : \msg$
+\end{itemize}
+
+\subsection{The Ideal Functionality}
+The ideal functionality reads the input message, leaks a confirmation to the adversary to signal that the message has been received, and, upon the approval from the adversary, outputs the message:
+\begin{itemize}
+\item $\LeakMsgRcvd^\id_\adv \coloneqq m \leftarrow \In; \ \ret{\checkmark}$
+\item $\Out \coloneqq \_ \leftarrow \OkMsg^\adv_\id; \ \read{\In}$
+\end{itemize}
+
+\subsection{The Real Protocol}
+The real-world protocol consists of Alice, Bob, and three authenticated channels: two for carrying out the Diffie-Hellman Key Exchange, as described in Section \ref{sec:dhke}, and one for communicating the secret message from Alice to Bob. The complete code for Alice is the composition of Alice's key exchange part with the single-reaction protocol
+\begin{itemize}
+\item $\Send \coloneqq m \leftarrow \In; \ k_A \leftarrow \Key(\Alice); \ \ret{m * k_A}$
+\end{itemize}
+In the above, Alice encrypts the input message by multiplying it with the shared key produced by the key exchange, and sends the resulting ciphertext to Bob via the third authenticated channel. The complete code for Bob is the composition of Bob's key exchange part with the single-reaction protocol
+\begin{itemize}
+\item $\Out \coloneqq c \leftarrow \Recv; \ k_B \leftarrow \Key(\Bob); \ \ret{c * k_B^{-1}}$
+\end{itemize}
+In the above, Bob decrypts the ciphertext received from Alice by multiplying it with the inverse of the shared key, and outputs the result. For communicating the ciphertext from Alice to Bob through the adversary, we have the third authenticated channel:
+\begin{itemize}
+\item $\LeakCtxt^\net_\adv \coloneqq \read{\Send}$
+\item $\Recv \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \read{\Send}$
+\end{itemize}
+The real protocol is a composition of the two parties and the three authenticated channels, followed by the hiding of the internal communication. 
+
+\subsection{The Simulator}
+The inputs to the simulator are channels $\OkPublicKey(\Alice)^\adv_\net$, $\OkPublicKey(\Bob)^\adv_\net$, $\OkCtxt^\adv_\net$, $\LeakMsgRcvd^\id_\adv$, whereas the outputs are channels $\LeakPublicKey(\Alice)^\adv_\net$, $\LeakPublicKey(\Bob)^\adv_\net$, $\LeakCtxt^\net_\adv$, $\OkMsg^\adv_\id$. We define the simulator as the composition of the key exchange simulator and the protocol
+\begin{itemize}
+\item $\LeakCtxt^\net_\adv \coloneqq \_ \leftarrow \LeakMsgRcvd^\id_\adv; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \samp{\unif_\msg}$
+\item $\OkMsg^\adv_\id \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \ \ret{\checkmark}$
+\end{itemize}
+followed by the hiding of the channels $\OkKey(\Alice)^\adv_\id$ and $\OkKey(\Bob)^\adv_\id$.
+
+\subsection{Real \texorpdfstring{$\approx$}{Approximates} Ideal + Simulator: One-Time Pad}
+Plugging the simulator into the ideal functionality and substituting away the internal channels $\LeakMsgRcvd^\id_\adv$ and $\OkMsg^\adv_\id$ that originally served as a line of communication for the adversary yields the composition of the key exchange simulator with the protocol
+\begin{itemize}
+\item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \samp{\unif_\msg}$
+\item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \  \read{\In}$
+\end{itemize}
+followed by the hiding of the channels $\OkKey(\Alice)^\adv_\id$ and $\OkKey(\Bob)^\adv_\id$.
+
+Next we move on to simplifying the real protocol. The real protocol can be refactored as the composition of the key exchange part and the protocol
+\begin{itemize}
+\item $\Send \coloneqq m \leftarrow \In; \ k_A \leftarrow \Key(\Alice); \ \ret{m * k_A}$
+\item $\LeakCtxt^\net_\adv \coloneqq \read{\Send}$
+\item $\Recv \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \read{\Send}$
+\item $\Out \coloneqq c \leftarrow \Recv; \ k_B \leftarrow \Key(\Bob); \ \ret{c * k_B^{-1}}$
+\end{itemize}
+\noindent where the channels $\Send$ and $\Recv$ are internal, followed by the hiding of the channels $\Key(\Alice)$ and $\Key(\Bob)$.
+
+The channels $\Send$ and $\Recv$ can be substituted away, turning our protocol into the composition of the key exchange part and the protocol
+\begin{itemize}
+\item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ k_A \leftarrow \Key(\Alice); \ \ret{m * k_A}$
+\item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ m \leftarrow \In; \ k_A \leftarrow \Key(\Alice); \ k_B \leftarrow \Key(\Bob); \ \ret{(m * k_A) * k_B^{-1}}$
+\end{itemize}
+followed by the hiding of the channels $\Key(\Alice)$ and $\Key(\Bob)$.
+
+We can approximately rewrite the key exchange part as the composition of the key exchange idealization and the key exchange simulator, followed by the hiding of the channels $\OkKey(\Alice)^\adv_\id$ and $\OkKey(\Bob)^\adv_\id$. Thus, we can express the real protocol as the composition of the key exchange idealization, the key exchange simulator, and the protocol
+\begin{itemize}
+\item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ k_A \leftarrow \Key(\Alice); \ \ret{m * k_A}$
+\item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ m \leftarrow \In; \ k_A \leftarrow \Key(\Alice); \ k_B \leftarrow \Key(\Bob); \ \ret{(m * k_A) * k_B^{-1}}$
+\end{itemize}
+all followed by the hiding of the channels $\OkKey(\Alice)^\adv_\id$, $\OkKey(\Bob)^\adv_\id$, and $\Key(\Alice)$, $\Key(\Bob)$.
+
+Composing the above protocol snippet with the key exchange idealization, and substituting away the internal channels $\Key(\Alice)$ and $\Key(\Bob)$ that originally served as a line of communication between the key exchange part and the one-time pad yields the protocol
+\begin{itemize}
+\item $\SharedKey \coloneqq \samp{\unif_\msg}$
+\item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ k \leftarrow \SharedKey; \ \ret{m * k}$
+\item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \ k \leftarrow \SharedKey; \ \ret{(m * k) * k^{-1}}$
+\end{itemize}
+where the channel $\SharedKey$ is internal. Canceling out $k$ with its inverse in the channel $\Out$ yields
+\begin{itemize}
+\item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \ k \leftarrow \SharedKey; \ \ret{m}$
+\end{itemize}
+Dropping the gratuitous dependency on the channel $\SharedKey$ yields
+\begin{itemize}
+\item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \ \ret{m}$
+\end{itemize}
+which simplifies to
+\begin{itemize}
+\item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \ \read{\In}$
+\end{itemize}
+
+Summarizing, the cleaned-up version of the real protocol is the composition of the the key exchange simulator and the protocol
+\begin{itemize}
+\item $\SharedKey \coloneqq \samp{\unif_\msg}$
+\item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ k \leftarrow \SharedKey; \ \ret{m * k}$
+\item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \ \read{\In}$
+\end{itemize}
+where the channel $\SharedKey$ is internal, followed by the hiding of the channels $\OkKey(\Alice)^\adv_\id$ and $\OkKey(\Bob)^\adv_\id$.
+
+Since the channel $\SharedKey$ is now only used in the channel $\LeakCtxt^\net_\adv$, we can fold it in:
+\begin{itemize}
+\item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ k \leftarrow \unif_\msg; \ \ret{m * k}$
+\item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \ \read{\In}$
+\end{itemize}
+
+By assumption, the distribution $\unif_\msg$ on messages is invariant under the operation of multiplication with a fixed message, so we can simplify the channel $\LeakCtxt^\net_\adv$ as follows:
+\begin{itemize}
+\item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \samp{\unif_\msg}$
+\end{itemize}
+
+Thus, the final version of the real protocol is the composition of the key exchange simulator and the protocol
+\begin{itemize}
+\item $\LeakCtxt^\net_\adv \coloneqq m \leftarrow \In; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \samp{\unif_\msg}$
+\item $\Out \coloneqq \_ \leftarrow \OkCtxt^\adv_\net; \ \_ \leftarrow \OkKey(\Alice)^\adv_\id; \ \_ \leftarrow \OkKey(\Bob)^\adv_\id; \ \read{\In}$
+\end{itemize}
+followed by the hiding of the channels $\OkKey(\Alice)^\adv_\id$ and $\OkKey(\Bob)^\adv_\id$. But this is precisely the simplified composition of the ideal functionality and the simulator from the beginning of this section.

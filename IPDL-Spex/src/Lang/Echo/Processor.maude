@@ -1,0 +1,64 @@
+***( SpeX/Lang/Echo
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../Processor.maude
+sload ./Language.maude
+
+********************************************************************************
+
+view Echo/Data from DATA to ECHO/LINES is
+  sort Data to Lines{Echo} .
+  op nil to term Lines[Echo]{nil} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view Echo/Command from COMMAND to ECHO/READ is
+  sort Command to Cmd{Echo} .
+  op command-annotations to term 'Command .
+  op read-command(T:ATerm) to term read-cmd(Echo, T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod ECHO/PROCESSOR is
+  including  BASIC-SPEX-PROCESSOR { Echo, Echo/Data, Echo/Command } .
+  protecting ECHO/PARSING .
+
+  var L : Echo .
+  var I : Oid .
+  var QIL : QidList .
+  var T : ATerm .
+  var DB : SpeX/DB .
+  var Atts : AttributeSet .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Echo:parse] :
+    < $[L] : PROC | running, Atts >
+    parse($[L], I, QIL, DB)
+  => < $[L] : PROC | running, Atts >
+    parsed(I, $[L], parse L input (QIL) in [*]) .
+
+  rl [Echo:process] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], emph(read-qids(T)), add(DB[L], read-qids(T))) .
+
+  *** executing Echo commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  rl [Echo:list] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{echo}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L], emph(tokens(DB[L]))) .
+endm
+
+********************************************************************************

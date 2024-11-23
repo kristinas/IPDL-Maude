@@ -1,0 +1,23 @@
+***( SpeX/Lang/Reason
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Processor.maude
+sload ./BL/PrfList.PL.maude
+sload ./BL/PrfTree.PL.maude
+
+********************************************************************************
+
+mod REASON/PROCESSORS is
+  including REASON/PROCESSOR { PrfList{PL}, Reason//PrfList.PL } .
+  including REASON/PROCESSOR { PrfTree{PL}, Reason//PrfTree.PL } .
+endm
+
+********************************************************************************

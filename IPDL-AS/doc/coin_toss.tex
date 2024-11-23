@@ -1,0 +1,548 @@
+\renewcommand{\flip}{\mathsf{flip}}
+\renewcommand{\id}{\mathsf{id}}
+\renewcommand{\adv}{\mathsf{adv}}
+\newcommand{\party}{\mathsf{party}}
+\newcommand{\comm}{\mathsf{comm}}
+\renewcommand{\Flip}{\mathsf{Flip}}
+\newcommand{\Commit}{\mathsf{Commit}}
+\newcommand{\Committed}{\mathsf{Committed}}
+\newcommand{\Open}{\mathsf{Open}}
+\newcommand{\Opened}{\mathsf{Opened}}
+\newcommand{\SumCommit}{\mathsf{SumCommit}}
+\newcommand{\AllCommitted}{\mathsf{AllCommitted}}
+\newcommand{\AllOpen}{\mathsf{AllOpen}}
+\newcommand{\SumOpened}{\mathsf{SumOpened}}
+\renewcommand{\Out}{\mathsf{Out}}
+\newcommand{\LastCommit}{\mathsf{LastCommit}}
+\renewcommand{\LeakFlip}{\mathsf{LeakFlip}}
+\newcommand{\Ok}{\mathsf{Ok}}
+\newcommand{\AdvCommit}{\mathsf{AdvCommit}}
+\newcommand{\LeakCommitted}{\mathsf{LeakCommitted}}
+\newcommand{\AdvOpen}{\mathsf{AdvOpen}}
+\newcommand{\LeakOpened}{\mathsf{LeakOpened}}
+
+In this section we implement a protocol where $N+2$ parties labeled $0,\ldots,N+1$ reach a Boolean consensus. We prove the protocol secure against a malicious attacker in the case when party $N$ is corrupt, party $N+1$ is honest, and any other party is arbitrarily honest or corrupt. Formally, we assume a coin-flip distribution $\flip : \one \twoheadrightarrow \Bool$ and a Boolean sum function $\oplus : \Bool \times \Bool \rightarrow \Bool$, where we write $x \oplus y$ in place of $\oplus \ (x,y)$.
+
+\subsection{The Assumptions}
+At the expression level, we assume that the operation of Boolean sum with a fixed bit is self-inverse:
+\begin{itemize}
+\item $x : \Bool, y : \Bool \vdash (x \oplus y) \oplus y = x : \Bool$.
+\end{itemize}
+At the distribution level, we assume that the distribution $\flip$ on bits is invariant under the operation of Boolean sum with a fixed bit (as is indeed the case when $\flip$ is uniform):
+\begin{itemize}
+\item $x : \Bool \vdash \big(y \leftarrow \flip; \ \ret{x \oplus y}\big) = \flip : \Bool$
+\end{itemize}
+
+\subsection{The Ideal Protocol}
+The ideal functionality generates a random Boolean, leaks it to the adversary on behalf of every corrupt party, and, upon the approval from the adversary, outputs it on behalf of every honest party:
+\begin{itemize}
+\item $\Flip \coloneqq \samp{\flip}$
+\item $\begin{cases*} \LeakFlip(i)^\id_\adv \coloneqq \read{\Flip} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \\ \LeakFlip(i)^\id_\adv \coloneqq \read{\LeakFlip(i)^\id_\adv} & \hspace{10pt} \text{if $i \leq N+1$ honest} \end{cases*}$
+ \item $\begin{cases*} \Out(i) \coloneqq \_ \leftarrow \Ok^\adv_\id; \ \read{\Flip} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+The output of every corrupted party diverges, since in the malicious setting the external outputs of corrupted parties provide no useful information.
+
+\subsection{The Real Protocol}
+We assume that each party has an associated \emph{commitment functionality} that broadcasts information, and that all broadcast communication is visible to the adversary. At the start of the protocol, each honest party $i$ commits to a randomly generated Boolean and sends it to its commitment functionality:
+\begin{itemize}
+\item {\color{blue} $\Commit(i) \coloneqq \samp{\flip}$}
+\end{itemize}
+In the malicious setting, we assume that the adversary supplies inputs to each corrupted party in lieu of the party's own internal computation. Thus, each corrupted party $i$ commits to the Boolean of the adversary's choice:
+\begin{itemize}
+\item {\color{blue} $\Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}}$}
+\end{itemize}
+To uniformly cover all cases, we assume channels $\AdvCommit^\adv_{\party(i)}$ as inputs to the real protocol, for all $i \leq N+1$ even if $i$ is honest; in this case the corresponding input simply goes unused.
+
+Upon receiving the commit from the party, each commitment functionality broadcasts the fact that a commit happened -- but not its value -- to everybody, including the adversary:
+\begin{itemize}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$}
+\end{itemize}
+Each honest party $i$ inductively keeps track of all parties that have already committed:
+\begin{itemize}
+\item {\color{magenta} $\begin{cases*} \AllCommitted(i,0) \coloneqq \ret{\checkmark} \\ \AllCommitted(i,j+1) \coloneqq \_ \leftarrow \AllCommitted(i,j); \ \_ \leftarrow \Committed(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\end{itemize}
+After all parties have committed, each honest party lets the commitment functionality open its commit for everybody else to see:
+\begin{itemize}
+\item {\color{teal} $\Open(i) \coloneqq \_ \leftarrow \AllCommitted(i,N+2); \ \ret{\checkmark}$}
+\end{itemize}
+A corrupted party $i$ opens its commit when the adversary says so:
+\begin{itemize}
+\item {\color{teal} $\Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}}$}
+\end{itemize}
+We again assume channels $\AdvOpen^\adv_{\party(i)}$ as inputs to the real protocol for all $i \leq N+1$.
+
+Upon receiving the party's decision to open the commit, each commitment functionality broadcasts the value of the commit to everybody, including the adversary:
+\begin{itemize}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$}
+\end{itemize}
+Each honest party $i$ inductively sums up the commits of all parties once they have been opened:
+\begin{itemize}
+\item {\color{red} $\begin{cases*} \SumOpened(i,0) \coloneqq \ret{\false} \\ \SumOpened(i,j+1) \coloneqq x_j \leftarrow \SumOpened(i,j); \ o_j \leftarrow \Opened(j); \ \ret{x_j \oplus o_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\end{itemize}
+Finally, each honest party $i$ outputs the consensus - the Boolean sum of all commits:
+\begin{itemize}
+\item $\Out(i) \coloneqq \read{\SumOpened(i,N+2)}$
+\end{itemize}
+The output of each corrupted party $i$ diverges:
+\begin{itemize}
+\item $\Out(i) \coloneqq \read{\Out(i)}$
+\end{itemize}
+Thus, we have the following code for each honest party $i$:
+\begin{itemize}
+\item {\color{blue} $\Commit(i) \coloneqq \samp{\flip}$}
+\item {\color{magenta} $\begin{cases*} \AllCommitted(i,0) \coloneqq \ret{\checkmark} \\ \AllCommitted(i,j+1) \coloneqq \_ \leftarrow \AllCommitted(i,j); \ \_ \leftarrow \Committed(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{teal} $\Open(i) \coloneqq \_ \leftarrow \AllCommitted(i,N+2); \ \ret{\checkmark}$}
+\item {\color{red} $\begin{cases*} \SumOpened(i,0) \coloneqq \ret{\false} \\ \SumOpened(i,j+1) \coloneqq x_j \leftarrow \SumOpened(i,j); \ o_j \leftarrow \Opened(j); \ \ret{x_j \oplus o_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item $\Out(i) \coloneqq \read{\SumOpened(i,N+2)}$
+\end{itemize}
+The code for a corrupted party $i$ has the following form:
+\begin{itemize}
+\item {\color{blue} $\Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}}$}
+\item {\color{teal} $\Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}}$}
+\item $\Out(i) \coloneqq \read{\Out(i)}$
+\end{itemize}
+Finally, the code for the commitment functionality for party $i$ is below:
+\begin{itemize}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$}
+\end{itemize}
+Composing all of the above together and hiding the internal communication yields the real protocol.
+
+\subsection{Real = Ideal + Simulator}
+In the real protocol, the composition of all commitment functionalities has the following form:
+
+\begin{itemize}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N+1$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N+1$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\end{itemize}
+
+\noindent Currently, each honest party $i$ keeps its own track of who committed. This is of course unnecessary, as each party has the same information, so we can add new internal channels $\AllCommitted(-)$ that inductively keep a global track of commitment:
+
+\begin{itemize}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N+1$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{magenta} $\begin{cases*} \AllCommitted(0) \coloneqq \ret{\checkmark} \\ \AllCommitted(j+1) \coloneqq \_ \leftarrow \AllCommitted(j); \ \_ \leftarrow \Committed(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N+1$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\end{itemize}
+
+\noindent In the presence of the above, we can inductively rewrite the code of each honest party $i$ to the following:
+
+\begin{itemize}
+\item {\color{blue} $\Commit(i) \coloneqq \samp{\flip}$}
+\item {\color{magenta} $\AllCommitted(i,j) \coloneqq \read{\AllCommitted(j)}$ for $j \leq N+2$}
+\item {\color{teal} $\Open(i) \coloneqq \_ \leftarrow \AllCommitted(i,N+2); \ \ret{\checkmark}$}
+\item {\color{red} $\begin{cases*} \SumOpened(i,0) \coloneqq \ret{\false} \\ \SumOpened(i,j+1) \coloneqq x_j \leftarrow \SumOpened(i,j); \ o_j \leftarrow \Opened(j); \ \ret{x_j \oplus o_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item $\Out(i) \coloneqq \read{\SumOpened(i,N+2)}$
+\end{itemize}
+
+\noindent After substituting the channel $\AllCommitted(i,N+2)$ into $\Open(i)$, the internal channels $\AllCommitted(i,-)$ become unused and we can eliminate them entirely:
+
+\begin{itemize}
+\item {\color{blue} $\Commit(i) \coloneqq \samp{\flip}$}
+\item {\color{teal} $\Open(i) \coloneqq \_ \leftarrow \AllCommitted(N+2); \ \ret{\checkmark}$}
+\item {\color{red} $\begin{cases*} \SumOpened(i,0) \coloneqq \ret{\false} \\ \SumOpened(i,j+1) \coloneqq x_j \leftarrow \SumOpened(i,j); \ o_j \leftarrow \Opened(j); \ \ret{x_j \oplus o_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item $\Out(i) \coloneqq \read{\SumOpened(i,N+2)}$
+\end{itemize}
+
+\noindent By the same token, we can add new internal channels $\SumOpened(-)$ to the composition of functionalities that inductively keep a global track of the sum of all commits once they have been opened:
+
+\begin{itemize}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N+1$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{magenta} $\begin{cases*} \AllCommitted(0) \coloneqq \ret{\checkmark} \\ \AllCommitted(j+1) \coloneqq \_ \leftarrow \AllCommitted(j); \ \_ \leftarrow \Committed(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N+1$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item {\color{red} $\begin{cases*} \SumOpened(0) \coloneqq \ret{\false} \\ \SumOpened(j+1) \coloneqq x_j \leftarrow \SumOpened(j); \ o_j \leftarrow \Opened(j); \ \ret{x_j \oplus o_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\end{itemize}
+
+\noindent In the presence of the above, we can inductively rewrite the code of each honest party $i$ to the following:
+
+\begin{itemize}
+\item {\color{blue} $\Commit(i) \coloneqq \samp{\flip}$}
+\item {\color{teal} $\Open(i) \coloneqq \_ \leftarrow \AllCommitted(N+2); \ \ret{\checkmark}$}
+\item {\color{red} $\SumOpened(i,j) \coloneqq \read{\SumOpened(j)}$ for $j \leq N+2$}
+\item $\Out(i) \coloneqq \read{\SumOpened(i,N+2)}$
+\end{itemize}
+
+\noindent After substituting the channel $\SumOpened(i,N+2)$ into $\Out(i)$, the internal channels $\SumOpened(i,-)$ become unused and we can eliminate them entirely:
+
+\begin{itemize}
+\item {\color{blue} $\Commit(i) \coloneqq \samp{\flip}$}
+\item {\color{teal} $\Open(i) \coloneqq \_ \leftarrow \AllCommitted(N+2); \ \ret{\checkmark}$}
+\item $\Out(i) \coloneqq \read{\SumOpened(N+2)}$
+\end{itemize}
+
+\noindent The combined code for the real protocol after the aforementioned changes is thus as follows:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N+1$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{magenta} $\begin{cases*} \AllCommitted(0) \coloneqq \ret{\checkmark} \\ \AllCommitted(j+1) \coloneqq \_ \leftarrow \AllCommitted(j); \ \_ \leftarrow \Committed(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq \_ \leftarrow \AllCommitted(N+2); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N+1$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item {\color{red} $\begin{cases*} \SumOpened(0) \coloneqq \ret{\false} \\ \SumOpened(j+1) \coloneqq x_j \leftarrow \SumOpened(j); \ o_j \leftarrow \Opened(j); \ \ret{x_j \oplus o_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item $\begin{cases*} \Out(i) \coloneqq \read{\SumOpened(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent Instead of summing up the commits once they have been opened, we can sum them up at the beginning using new internal channels $\SumCommit(-)$:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ \ret{x_j \oplus c_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N+1$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{magenta} $\begin{cases*} \AllCommitted(0) \coloneqq \ret{\checkmark} \\ \AllCommitted(j+1) \coloneqq \_ \leftarrow \AllCommitted(j); \ \_ \leftarrow \Committed(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq \_ \leftarrow \AllCommitted(N+2); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N+1$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item {\color{red} $\begin{cases*} \SumOpened(0) \coloneqq \ret{\false} \\ \SumOpened(j+1) \coloneqq x_j \leftarrow \SumOpened(j); \ o_j \leftarrow \Opened(j); \ \ret{x_j \oplus o_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item $\begin{cases*} \Out(i) \coloneqq \read{\SumOpened(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent We can keep a summary of the decisions to open the commits using new internal channels $\AllOpen(-)$:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ \ret{x_j \oplus c_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N+1$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{magenta} $\begin{cases*} \AllCommitted(0) \coloneqq \ret{\checkmark} \\ \AllCommitted(j+1) \coloneqq \_ \leftarrow \AllCommitted(j); \ \_ \leftarrow \Committed(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq \_ \leftarrow \AllCommitted(N+2); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N+1$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item {\color{red} $\begin{cases*} \SumOpened(0) \coloneqq \ret{\false} \\ \SumOpened(j+1) \coloneqq x_j \leftarrow \SumOpened(j); \ o_j \leftarrow \Opened(j); \ \ret{x_j \oplus o_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item $\begin{cases*} \Out(i) \coloneqq \read{\SumOpened(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent In the presence of these new channels, the channels $\SumOpened(-)$ can be simplified:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ \ret{x_j \oplus c_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N+1$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{magenta} $\begin{cases*} \AllCommitted(0) \coloneqq \ret{\checkmark} \\ \AllCommitted(j+1) \coloneqq \_ \leftarrow \AllCommitted(j); \ \_ \leftarrow \Committed(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq \_ \leftarrow \AllCommitted(N+2); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N+1$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item {\color{red} $\SumOpened(j) \coloneqq \_ \leftarrow \AllOpen(j); \ \read{\SumCommit(j)}$ for $j \leq N+2$}
+\item $\begin{cases*} \Out(i) \coloneqq \read{\SumOpened(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent By substituting the channel $\SumOpened(N+2)$ into $\Out(i)$ for $i \leq N+1$ honest, the internal channels $\SumOpened(-)$ become unused and we can eliminate them entirely:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ \ret{x_j \oplus c_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N+1$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{magenta} $\begin{cases*} \AllCommitted(0) \coloneqq \ret{\checkmark} \\ \AllCommitted(j+1) \coloneqq \_ \leftarrow \AllCommitted(j); \ \_ \leftarrow \Committed(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq \_ \leftarrow \AllCommitted(N+2); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N+1$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\begin{cases*} \Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ \read{\SumCommit(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent We now note that since the channel
+\begin{itemize}
+\item {\color{blue} $\Commit(N+1) \coloneqq \samp{\flip}$}
+\end{itemize}
+introduces no dependencies, the dependency on $\Commit(N+1)$ in the channel
+\begin{itemize}
+\item {\color{magenta} $\Committed(N+1) \coloneqq c_{N+1} \leftarrow \Commit(N+1); \ \ret{\checkmark}$}
+\end{itemize}
+can be dropped, yielding the following:
+\begin{itemize}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\end{itemize}
+In the presence of the above, we can rewrite the channel
+\begin{itemize}
+\item {\color{magenta} $\AllCommitted(N+2) \coloneqq \_ \leftarrow \AllCommitted(N+1); \ \_ \leftarrow \Committed(N+1); \ \ret{\checkmark}$}
+\end{itemize}
+equivalently as follows:
+\begin{itemize}
+\item {\color{magenta} $\AllCommitted(N+2) \coloneqq \read{\AllCommitted(N+1)}$}
+\end{itemize}
+Summarizing, we now have the following protocol:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ \ret{x_j \oplus c_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N$}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{magenta} $\begin{cases*} \AllCommitted(0) \coloneqq \ret{\checkmark} \\ \AllCommitted(j+1) \coloneqq \_ \leftarrow \AllCommitted(j); \ \_ \leftarrow \Committed(j); \ \ret{\checkmark} \text{ for $j \leq N$} \end{cases*}$}
+\item {\color{magenta} $\AllCommitted(N+2) \coloneqq \read{\AllCommitted(N+1)}$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq \_ \leftarrow \AllCommitted(N+2); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N+1$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\begin{cases*} \Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ \read{\SumCommit(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent By substituting the channel $\AllCommitted(N+2)$ into $\Open(i)$ for $i \leq N+1$ honest, this internal channel becomes unused and we can eliminate it entirely:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ \ret{x_j \oplus c_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N$}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{magenta} $\begin{cases*} \AllCommitted(0) \coloneqq \ret{\checkmark} \\ \AllCommitted(j+1) \coloneqq \_ \leftarrow \AllCommitted(j); \ \_ \leftarrow \Committed(j); \ \ret{\checkmark} \text{ for $j \leq N$} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq \_ \leftarrow \AllCommitted(N+1); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N+1$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\begin{cases*} \Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ \read{\SumCommit(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent The remaining channels $\AllCommitted(-)$ can be simplified:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+$ corrupt} \end{cases*}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ \ret{x_j \oplus c_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N$}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{magenta} $\AllCommitted(j) \coloneqq x_j \leftarrow \SumCommit(j); \ \ret{\checkmark}$ for $j \leq N+1$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq \_ \leftarrow \AllCommitted(N+1); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N+1$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\begin{cases*} \Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ \read{\SumCommit(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent By substituting the channel $\AllCommitted(N+1)$ into $\Open(i)$ for $i \leq N+1$ honest, the internal channels $\AllCommitted(-)$ become unused and we can eliminate them entirely:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ \ret{x_j \oplus c_j} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N$}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N+1$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\begin{cases*} \Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ \read{\SumCommit(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent This is the final version of the real protocol. In the real protocol, the consensus is the Boolean sum of all parties' commits. The simulator, however, gets the value of the consensus from the ideal functionality. To preserve the invariant that the consensus is the sum of all commits, we adjust the last party's commit: it is no longer a random Boolean, but rather the sum of all other commits plus the consensus. The simulator gives the $\mathsf{ok}$ message to the functionality once all the commits (except the last, which we explicitly construct) and all the requests to open have been made. This suggests the following code for the simulator, where we note that in the channels $\SumCommit(N+2)$ and $\Opened(N+1)$ we use the channel $\LastCommit$ in lieu of $\Commit(N+1)$.
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N$ corrupt} \end{cases*}$}
+\item {\color{blue} $\LastCommit \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ f \leftarrow \LeakFlip(N)^\id_\adv; \ \ret{x_{N+1} \oplus f}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ \ret{x_j \oplus c_j} \text{ for $j \leq N$} \end{cases*}$}
+\item {\color{blue} $\SumCommit(N+2) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ c_{N+1} \leftarrow \LastCommit; \ \ret{x_{N+1} \oplus c_{N+1}}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_j \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N$}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N$}
+\item {\color{red} $\Opened(N+1) \coloneqq \_ \leftarrow \Open(N+1); \ \read{\LastCommit}$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\Ok^\adv_\id \coloneqq \_ \leftarrow \AllOpen(N+2); \ x_{N+1} \leftarrow \SumCommit(N+1); \ \ret{\checkmark}$
+\end{itemize}
+
+\noindent Plugging the simulator into the ideal protocol and substituting away the channels $\LeakFlip(N)^\id_\adv$ and $\Ok^\adv_\id$ that have now become internal yields the following:
+
+\begin{itemize}
+\item $\Flip \coloneqq \samp{\flip}$
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N$ corrupt} \end{cases*}$}
+\item {\color{blue} $\LastCommit \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ f \leftarrow \Flip; \ \ret{x_{N+1} \oplus f}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ \ret{x_j \oplus c_j} \text{ for $j \leq N$} \end{cases*}$}
+\item {\color{blue} $\SumCommit(N+2) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ c_{N+1} \leftarrow \LastCommit; \ \ret{x_{N+1} \oplus c_{N+1}}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N$}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N$}
+\item {\color{red} $\Opened(N+1) \coloneqq \_ \leftarrow \Open(N+1); \ \read{\LastCommit}$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\begin{cases*} \Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ x_{N+1} \leftarrow \SumCommit(N+1); \ \read{\Flip} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent We now note that for any honest party $i \leq N+1$ we can express the channel
+\begin{itemize}
+\item $\Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ x_{N+1} \leftarrow \SumCommit(N+1); \ \read{\Flip}$
+\end{itemize}
+equivalently as follows:
+\begin{itemize}
+\item $\Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ \read{\SumCommit(N+2)}$
+\end{itemize}
+To show this, we start by substituting the channel
+\begin{itemize}
+\item {\color{blue} $\SumCommit(N+2) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ c_{N+1} \leftarrow \LastCommit; \ \ret{x_{N+1} \oplus c_{N+1}}$}
+\end{itemize}
+into the channel
+\begin{itemize}
+\item $\Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ \read{\SumCommit(N+2)}$
+\end{itemize}
+which yields the following:
+\begin{itemize}
+\item $\Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ x_{N+1} \leftarrow \SumCommit(N+1); \ c_{N+1} \leftarrow \LastCommit; \ \ret{x_{N+1} \oplus c_{N+1}}$
+\end{itemize}
+We subsequently substitute the channel
+\begin{itemize}
+\item {\color{blue} $\LastCommit \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ f \leftarrow \Flip; \ \ret{x_{N+1} \oplus f}$}
+\end{itemize}
+into the above, yielding
+\begin{itemize}
+\item $\Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ x_{N+1} \leftarrow \SumCommit(N+1); \ f \leftarrow \Flip; \ \ret{x_{N+1} \oplus (x_{N+1} \oplus f)}$
+\end{itemize}
+By assumption, we can cancel out the Boolean sum:
+\begin{itemize}
+\item $\Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ x_{N+1} \leftarrow \SumCommit(N+1); \ f \leftarrow \Flip; \ \ret{f}$
+\end{itemize}
+and this is equivalent to
+\begin{itemize}
+\item $\Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ x_{N+1} \leftarrow \SumCommit(N+1); \ \read{\Flip}$
+\end{itemize}
+as desired. Thus, we have the following protocol:
+
+\begin{itemize}
+\item $\Flip \coloneqq \samp{\flip}$
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N$ corrupt} \end{cases*}$}
+\item {\color{blue} $\LastCommit \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ f \leftarrow \Flip; \ x_{N+1} \oplus f$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ x_j \oplus c_j \text{ for $j \leq N$} \end{cases*}$}
+\item {\color{blue} $\SumCommit(N+2) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ c_{N+1} \leftarrow \LastCommit; \ x_{N+1} \oplus c_{N+1}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N$}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N$}
+\item {\color{red} $\Opened(N+1) \coloneqq \_ \leftarrow \Open(N+1); \ \read{\LastCommit}$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\begin{cases*} \Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ \read{\SumCommit(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent The channel $\Flip$ now only occurs in the channel $\LastCommit$, so we can fold it in:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N$ corrupt} \end{cases*}$}
+\item {\color{blue} $\LastCommit \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ f \leftarrow \flip; \ x_{N+1} \oplus f$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ x_j \oplus c_j \text{ for $j \leq N$} \end{cases*}$}
+\item {\color{blue} $\SumCommit(N+2) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ c_{N+1} \leftarrow \LastCommit; \ x_{N+1} \oplus c_{N+1}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N$}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N$}
+\item {\color{red} $\Opened(N+1) \coloneqq \_ \leftarrow \Open(N+1); \ \read{\LastCommit}$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\begin{cases*} \Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ \read{\SumCommit(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent By assumption, the distribution $\flip$ is invariant under taking a Boolean sum with a fixed bit, so we have
+
+\begin{itemize}
+\item $\LastCommit \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ \samp{\flip}$
+\end{itemize}
+
+\noindent We now unfold the sampling back into a new internal channel $\Commit(N+1)$:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N$ corrupt} \end{cases*}$}
+\item {\color{blue} $\Commit(N+1) \coloneqq \samp{\flip}$}
+\item {\color{blue} $\LastCommit \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ \read{\Commit(N+1)}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ x_j \oplus c_j \text{ for $j \leq N$} \end{cases*}$}
+\item {\color{blue} $\SumCommit(N+2) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ c_{N+1} \leftarrow \LastCommit; \ x_{N+1} \oplus c_{N+1}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N$}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N$}
+\item {\color{red} $\Opened(N+1) \coloneqq \_ \leftarrow \Open(N+1); \ \read{\LastCommit}$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\begin{cases*} \Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ \read{\SumCommit(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent The internal channel $\LastCommit$ can now be substituted away:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N$ corrupt} \end{cases*}$}
+\item {\color{blue} $\Commit(N+1) \coloneqq \samp{\flip}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ x_j \oplus c_j \text{ for $j \leq N$} \end{cases*}$}
+\item {\color{blue} $\SumCommit(N+2) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ c_{N+1} \leftarrow \Commit(N+1); \ x_{N+1} \oplus c_{N+1}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N$}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq x_{N+1}\leftarrow \SumCommit(N+1); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N$}
+\item {\color{red} $\Opened(N+1) \coloneqq \_ \leftarrow \Open(N+1); \ x_{N+1} \leftarrow \SumCommit(N+1); \ \read{\Commit(N+1)}$} 
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\begin{cases*} \Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ \read{\SumCommit(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent We now note that the channel
+\begin{itemize}
+\item {\color{red} $\Opened(N+1) \coloneqq \_ \leftarrow \Open(N+1); \ x_{N+1} \leftarrow \SumCommit(N+1); \ \read{\Commit(N+1)}$} 
+\end{itemize}
+can be equivalently expressed as follows:
+\begin{itemize}
+\item {\color{red} $\Opened(N+1) \coloneqq \_ \leftarrow \Open(N+1); \ \read{\Commit(N+1)}$}
+\end{itemize}
+This is easy to see by substituting the channel
+\begin{itemize}
+\item {\color{teal} $\Open(N+1) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ \ret{\checkmark}$}
+\end{itemize}
+into both formulations, yielding
+\begin{itemize}
+\item {\color{red} $\Opened(N+1) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ \read{\Commit(N+1)}$} 
+\end{itemize}
+in both cases. The two formulations are therefore equivalent. Our protocol now looks as follows:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N$ corrupt} \end{cases*}$}
+\item {\color{blue} $\Commit(N+1) \coloneqq \samp{\flip}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ x_j \oplus c_j \text{ for $j \leq N$} \end{cases*}$}
+\item {\color{blue} $\SumCommit(N+2) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ c_{N+1} \leftarrow \Commit(N+1); \ x_{N+1} \oplus c_{N+1}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_i \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N$}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N$}
+\item {\color{red} $\Opened(N+1) \coloneqq \_ \leftarrow \Open(N+1); \ \read{\Commit(N+1)}$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\begin{cases*} \Out(i) \coloneqq \_ \leftarrow \AllOpen(N+2); \ \read{\SumCommit(N+2)} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Out(i) \coloneqq \read{\Out(i)} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$
+\end{itemize}
+
+\noindent But this is precisely the final version of the real protocol.
+
+\subsection{The Simulator}
+We record here the simulator:
+
+\begin{itemize}
+\item {\color{blue} $\begin{cases*} \Commit(i) \coloneqq \samp{\flip} & \hspace{10pt} \text{if $i \leq N$ honest} \\ \Commit(i) \coloneqq \read{\AdvCommit^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N$ corrupt} \end{cases*}$}
+\item {\color{blue} $\LastCommit \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ f \leftarrow \LeakFlip(N)^\id_\adv; \ \ret{x_{N+1} \oplus f}$}
+\item {\color{blue} $\begin{cases*} \SumCommit(0) \coloneqq \ret{\false} \\ \SumCommit(j+1) \coloneqq x_j \leftarrow \SumCommit(j); \ c_j \leftarrow \Commit(j); \ \ret{x_j \oplus c_j} \text{ for $j \leq N$} \end{cases*}$}
+\item {\color{blue} $\SumCommit(N+2) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ c_{N+1} \leftarrow \LastCommit; \ \ret{x_{N+1} \oplus c_{N+1}}$}
+\item {\color{magenta} $\Committed(i) \coloneqq c_j \leftarrow \Commit(i); \ \ret{\checkmark}$ for $i \leq N$}
+\item {\color{magenta} $\Committed(N+1) \coloneqq \ret{\checkmark}$}
+\item {\color{magenta} $\LeakCommitted(i)^\comm_\adv \coloneqq \read{\Committed(i)}$ for $i \leq N+1$}
+\item {\color{teal} $\begin{cases*} \Open(i) \coloneqq x_{N+1} \leftarrow \SumCommit(N+1); \ \ret{\checkmark} & \hspace{10pt} \text{if $i \leq N+1$ honest} \\ \Open(i) \coloneqq \read{\AdvOpen^\adv_{\party(i)}} & \hspace{10pt} \text{if $i \leq N+1$ corrupt} \end{cases*}$}
+\item {\color{teal} $\begin{cases*} \AllOpen(0) \coloneqq \ret{\checkmark} \\ \AllOpen(j+1) \coloneqq \_ \leftarrow \AllOpen(j); \ \_ \leftarrow \Open(j); \ \ret{\checkmark} \text{ for $j \leq N+1$} \end{cases*}$}
+\item {\color{red} $\Opened(i) \coloneqq \_ \leftarrow \Open(i); \ \read{\Commit(i)}$ for $i \leq N$}
+\item {\color{red} $\Opened(N+1) \coloneqq \_ \leftarrow \Open(N+1); \ \read{\LastCommit}$}
+\item {\color{red} $\LeakOpened(i)^\comm_\adv \coloneqq \read{\Opened(i)}$ for $i \leq N+1$}
+\item $\Ok^\adv_\id \coloneqq \_ \leftarrow \AllOpen(N+2); \ x_{N+1} \leftarrow \SumCommit(N+1); \ \ret{\checkmark}$
+\end{itemize}

@@ -1,0 +1,32 @@
+***( SpeX/Lang/Th/BL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../../Base/DNI/Processor.maude
+
+********************************************************************************
+
+view Th/DNI from TH/SUBPROCESSOR to DNI/PROCESSOR { Th/Pid{DNI} } is
+  sort SpecBody to SpecBody{DNI} .
+  op (nil).SpecBody to term
+    SpecBody[DNI]{sorts none . none none noms none . none none} .
+
+  sort State to AnalysisState{DNI} .
+  op initial-state(SB:SpecBody) to term
+    AnalysisState[DNI]{SB:SpecBody{DNI} & none & none} .
+
+  op parse-declaration(QIL:QidList, S:State) to term
+    parse DNI input (QIL:QidList) in S:AnalysisState{DNI} .
+  op print-declaration(T:Term) to term
+    print DNI term (T:Term) .
+endv
+
+********************************************************************************

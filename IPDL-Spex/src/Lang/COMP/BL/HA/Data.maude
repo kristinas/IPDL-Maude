@@ -1,0 +1,276 @@
+***( SpeX/Lang/COMP/BL/HA
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../Base/Common/Sorts.maude
+sload ../../../Base/Common/Operations.maude
+sload ../../../Base/Common/Sentences.maude
+sload ../../../Base/Common/Renaming.maude
+
+********************************************************************************
+
+fmod COMP/HA/LID is
+  sort COMP/HA .
+  op COMP/HA : -> COMP/HA [ctor] .
+endfm
+
+********************************************************************************
+
+fmod COMP/HA/SPEC-BODY is
+  protecting COMP/HA/LID .
+  extending  SORT-SET-DECL/RENAMING .
+  extending  OP-DECL-SET/RENAMING .
+  extending  SEN-DECL-SET/RENAMING .
+  protecting ATTRIBUTE/OPS .
+
+  var  L : COMP/HA .
+  vars SB SB' : SpecBody{COMP/HA}.
+  vars S HS : Sort .
+  vars SS HSS : SortSet .
+  vars SSD HSSD : SortSetDecl .
+  vars QI QI' CN : Qid .
+  var  TP : Type .
+  var  TPL : TypeList .
+  var  AtS : AttrSet .
+  vars OD BOD : OpDecl .
+  vars ODS BODS : OpDeclSet .
+  var  ED : SenDecl .
+  var  EDS : SenDeclSet .
+  var  VI : ATerm .
+  var  VL : ATermList .
+  var  RS : RenamingSet .
+
+  *** SpecBody{COMP/HA}  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort SpecBody{COMP/HA} .
+  op SpecBody[_]{_____} : COMP/HA SortSetDecl SortSetDecl OpDeclSet OpDeclSet
+    SenDeclSet -> SpecBody{COMP/HA}
+    [ctor format (d d d d d n++i ni ni ni ni n--i d)] .
+
+  *** nil (empty COMP/HA specification body)  - - - - - - - - - - - - - - - - --
+  op nil : -> SpecBody{COMP/HA} .
+  eq nil = (SpecBody[COMP/HA]{sorts none . sorts none . none none none}) .
+
+  *** sorts  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op sorts : SpecBody{COMP/HA} -> SortSet .
+  eq sorts(SpecBody[L]{sorts SS . sorts HSS . ODS BODS EDS}) = SS ; HSS .
+
+  op visible-sorts : SpecBody{COMP/HA} -> SortSet .
+  eq visible-sorts(SpecBody[L]{sorts SS . HSSD ODS BODS EDS}) = SS .
+
+  op hidden-sorts : SpecBody{COMP/HA} -> SortSet .
+  eq hidden-sorts(SpecBody[L]{SSD sorts HSS . ODS BODS EDS}) = HSS .
+
+  *** add/del sort  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-visible-sort : Sort SpecBody{COMP/HA} -> SpecBody{COMP/HA} .
+  eq add-visible-sort(S, SpecBody[L]{sorts SS . HSSD ODS BODS EDS})
+   = SpecBody[L]{sorts (S ; SS) . HSSD ODS BODS EDS} .
+
+  op add-hidden-sort : Sort SpecBody{COMP/HA} -> SpecBody{COMP/HA} .
+  eq add-hidden-sort(HS, SpecBody[L]{SSD sorts HSS . ODS BODS EDS})
+   = SpecBody[L]{SSD sorts (HS ; HSS) . ODS BODS EDS} .
+
+  op del-hidden-sort : Sort SpecBody{COMP/HA} -> SpecBody{COMP/HA} .
+  eq del-hidden-sort(HS, SpecBody[L]{SSD sorts HSS . ODS BODS EDS})
+   = SpecBody[L]{SSD sorts (HSS \ HS) . ODS BODS EDS} .
+
+  *** ops  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op ops : SpecBody{COMP/HA} -> OpDeclSet .
+  eq ops(SpecBody[L]{SSD HSSD ODS BODS EDS}) = ODS BODS .
+
+  op data-ops : SpecBody{COMP/HA} -> OpDeclSet .
+  eq data-ops(SpecBody[L]{SSD HSSD ODS BODS EDS}) = ODS .
+
+  op bops : SpecBody{COMP/HA} -> OpDeclSet .
+  eq bops(SpecBody[L]{SSD HSSD ODS BODS EDS}) = BODS .
+
+  *** projections  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  op projection : OpDecl SpecBody{COMP/HA} -> Bool .
+  eq projection(OD, SpecBody[L]{sorts SS . sorts HSS . ODS BODS EDS})
+   = projection(L, OD, HSS, BODS) .
+
+  op projection : COMP/HA OpDecl SortSet OpDeclSet -> Bool .
+  eq projection(L, op QI : TPL -> TP [AtS] ., HSS, BODS)
+   = (op QI : TPL -> TP [AtS] . in BODS)
+     and-then (filter-in(TPL, HSS) :: Type)
+     and-then TP in HSS
+     and-then (not occurs(TP, TPL)) .
+
+  op projections : SpecBody{COMP/HA} Sort -> OpDeclSet .
+  eq projections(SpecBody[L]{SSD sorts HSS . ODS BODS EDS}, HS)
+   = projections(L, BODS, HS, HSS, BODS) .
+
+  op projections : COMP/HA OpDeclSet Sort SortSet OpDeclSet -> OpDeclSet .
+  eq projections(L, OD ODS, HS, HSS, BODS)
+   = if projection(L, OD, HSS, BODS) and occurs(HS, arity(OD))
+     then OD else none fi projections(L, ODS, HS, HSS, BODS) .
+  eq projections(L, none, HS, HSS, BODS) = none .
+
+  *** actions  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  --
+  op action : OpDecl SpecBody{COMP/HA} -> Bool .
+  eq action(OD, SpecBody[L]{sorts SS . sorts HSS . ODS BODS EDS})
+   = action(L, OD, HSS, BODS) .
+
+  op action : COMP/HA OpDecl SortSet OpDeclSet -> Bool .
+  eq action(L, op QI : TPL -> TP [AtS] ., HSS, BODS)
+   = (op QI : TPL -> TP [AtS] . in BODS)
+     and-then (filter-in(TPL, HSS) == TP) .
+
+  op actions : SpecBody{COMP/HA} Sort -> OpDeclSet .
+  eq actions(SpecBody[L]{SSD sorts HSS . ODS BODS EDS}, HS)
+   = actions(L, BODS, HS, HSS, BODS) .
+
+  op actions : COMP/HA OpDeclSet Sort SortSet OpDeclSet -> OpDeclSet .
+  eq actions(L, OD ODS, HS, HSS, BODS)
+   = if action(L, OD, HSS, BODS) and occurs(HS, arity(OD))
+     then OD else none fi actions(L, ODS, HS, HSS, BODS) .
+  eq actions(L, none, HS, HSS, BODS) = none .
+
+  *** observations  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - -
+  op observation : OpDecl SpecBody{COMP/HA} -> Bool .
+  eq observation(OD, SpecBody[L]{sorts SS . sorts HSS . ODS BODS EDS})
+   = observation(L, OD, HSS, BODS) .
+
+  op observation : COMP/HA OpDecl SortSet OpDeclSet -> Bool .
+  eq observation(L, op QI : TPL -> TP [AtS] ., HSS, BODS)
+   = (op QI : TPL -> TP [AtS] . in BODS)
+     and-then (filter-in(TPL, HSS) :: Type)
+     and-then (TP not-in HSS) .
+
+  op observations : SpecBody{COMP/HA} Sort -> OpDeclSet .
+  eq observations(SpecBody[L]{sorts SS . sorts HSS . ODS BODS EDS}, HS)
+   = observations(L, BODS, HS, HSS, BODS) .
+
+  op observations : COMP/HA OpDeclSet Sort SortSet OpDeclSet -> OpDeclSet .
+  eq observations(L, OD ODS, HS, HSS, BODS)
+   = if observation(L, OD, HSS, BODS) and occurs(HS, arity(OD))
+     then OD else none fi observations(L, ODS, HS, HSS, BODS) .
+  eq observations(L, none, HS, HSS, BODS) = none .
+
+  *** add op  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-op : OpDecl SpecBody{COMP/HA} -> SpecBody{COMP/HA} .
+  eq add-op(OD, SpecBody[L]{SSD HSSD ODS BODS EDS})
+   = SpecBody[L]{SSD HSSD (OD ODS) BODS EDS} .
+
+  op add-bop : OpDecl SpecBody{COMP/HA} -> SpecBody{COMP/HA} .
+  eq add-bop(BOD, SpecBody[L]{SSD HSSD ODS BODS EDS})
+   = SpecBody[L]{SSD HSSD ODS (BOD BODS) EDS} .
+
+  *** symbols* (with a given arity, but other sort)  - - - - - - - - - - - - - -
+  op symbols* : SpecBody{COMP/HA} TypeList Type -> QidSet .
+  eq symbols*(SpecBody[L]{SSD HSSD ODS BODS EDS}, TPL, TP)
+   = symbols*(ODS BODS, TPL, TP) .
+
+  *** constants (of a given sort)  - - - - - - - - - - - - - - - - - - - - - - -
+  op consts : SpecBody{COMP/HA} Sort -> QidSet .
+  eq consts(SpecBody[L]{SSD HSSD ODS BODS EDS}, S) = consts(ODS BODS, S) .
+
+  *** sens  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op sens : SpecBody{COMP/HA} -> SenDeclSet .
+  eq sens(SpecBody[L]{SSD HSSD ODS BODS EDS}) = EDS .
+
+  *** add sen  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op add-sen : SenDecl SpecBody{COMP/HA} -> SpecBody{COMP/HA} .
+  eq add-sen(ED, SpecBody[L]{SSD HSSD ODS BODS EDS})
+   = SpecBody[L]{SSD HSSD ODS BODS (ED EDS)} .
+
+  *** sum  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _+_ : SpecBody{COMP/HA} SpecBody{COMP/HA} -> SpecBody{COMP/HA} .
+  eq SB + SB'
+   = SpecBody[COMP/HA]{
+       (sorts visible-sorts(SB) ; visible-sorts(SB') .)
+       (sorts hidden-sorts(SB) ; hidden-sorts(SB') .)
+       (data-ops(SB) data-ops(SB'))
+       (bops(SB) bops(SB'))
+       (sens(SB) sens(SB'))
+     } .
+
+  *** signature  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op signature : SpecBody{COMP/HA} -> SpecBody{COMP/HA} .
+  eq signature(SpecBody[L]{SSD HSSD ODS BODS EDS})
+   = SpecBody[L]{SSD HSSD pure(ODS) pure(BODS) none} .
+
+  *** sort/op qualification  - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op qualify-sorts : SpecBody{COMP/HA} Qid -> SpecBody{COMP/HA} .
+  eq qualify-sorts(SB, QI)
+   = rename-sorts(SB, sort-qualification(COMP/HA, hidden-sorts(SB), QI)) .
+
+  op rename-sorts : SpecBody{COMP/HA} RenamingSet -> SpecBody{COMP/HA} .
+  eq rename-sorts(SpecBody[L]{SSD HSSD ODS BODS EDS}, RS)
+   = SpecBody[L]{rename-sorts(SSD, RS) rename-sorts(HSSD, RS)
+      rename-sorts(ODS, RS) rename-sorts(BODS, RS) rename-sorts(EDS, RS)} .
+
+  op sort-qualification : COMP/HA SortSet Qid -> RenamingSet .
+  eq sort-qualification(L, none, QI) = none .
+  eq sort-qualification(L, S ; SS, QI)
+   = sort S to qualify(L, S, QI), sort-qualification(L, SS, QI) .
+
+  op qualify-ops : COMP/HA OpDeclSet Qid -> OpDeclSet .
+  eq qualify-ops(L, op QI : TPL -> TP [AtS] . ODS, CN)
+   = (op qualify(L, QI, CN) : TPL -> TP [AtS] .) qualify-ops(L, ODS, CN) .
+  eq qualify-ops(L, none, CN) = none .
+
+  op qualify-ops : COMP/HA OpDeclSet Qid Sort -> OpDeclSet .
+  eq qualify-ops(L, op QI : TPL -> TP [AtS] . ODS, CN, S)
+   = if mixfix(QI)
+     then (op qualify(L, QI, CN, S) : TPL S -> TP [AtS] .)
+     else (op qualify(L, QI, CN, S) : S TPL -> TP [AtS] .) fi
+     qualify-ops(L, ODS, CN, S) .
+  eq qualify-ops(L, none, CN, S) = none .
+
+  op qualify : COMP/HA Qid Qid -> Qid .
+  eq qualify(L, QI, QI')
+   = if mixfix(QI)
+     then qid(string(QI) + " :: " + string(QI'))
+     else qid(string(QI') + "/" + string(QI)) fi .
+
+  op qualify : COMP/HA Qid Qid Sort -> Qid .
+  eq qualify(L, QI, QI', S)
+   = if mixfix(QI)
+     then qid(string(QI) + " :: " + string(QI') + "(_)")
+    else qid(string(QI') + "/" + string(QI)) fi .
+
+  op split-idx-vars : COMP/HA Qid NeATermList -> NeATermList .
+  ceq split-idx-vars(L, QI, (VL, VI))
+   = (VI, VL) if mixfix(QI) .
+  eq split-idx-vars(L, QI, VL) = VL [owise] .
+
+  op merge-idx-vars : COMP/HA Qid ATerm ATermList -> NeATermList .
+  eq merge-idx-vars(L, QI, VI, VL)
+   = if mixfix(QI) then (VL, VI) else (VI, VL) fi .
+endfm
+
+********************************************************************************
+
+fmod COMP/HA/CMD is
+  protecting COMP/HA/LID .
+  protecting ATERM .
+
+  sort Cmd{COMP/HA} .
+  op Cmd[_]{list`declarations} : COMP/HA -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{list`sorts} : COMP/HA -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{list`states} : COMP/HA -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{list`data`ops} : COMP/HA -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{list_prj} : COMP/HA Sort -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{list_act} : COMP/HA Sort -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{list_obs} : COMP/HA Sort -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{list`sens} : COMP/HA -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{let_} : COMP/HA ATerm -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{reduce_} : COMP/HA ATerm -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{solve_} : COMP/HA ATerm -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{check_} : COMP/HA ATerm -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{check_forall_} : COMP/HA ATerm ATerm -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{check_given_} : COMP/HA ATerm ATerm -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{check_forall_given_} : COMP/HA ATerm ATerm ATerm
+    -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{show`check`stats} : COMP/HA -> Cmd{COMP/HA} [ctor] .
+  op Cmd[_]{hide`check`stats} : COMP/HA -> Cmd{COMP/HA} [ctor] .
+endfm
+
+********************************************************************************

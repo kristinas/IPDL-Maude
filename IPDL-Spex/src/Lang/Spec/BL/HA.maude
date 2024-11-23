@@ -1,0 +1,27 @@
+***( SpeX/Lang/Spec/BL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../../Base/HA/Processor.maude
+
+********************************************************************************
+
+view Spec/HA from SPEC/SUBPROCESSOR to HA/PROCESSOR { Spec/Pid{HA} } is
+  sort SpecBody to SpecBody{HA} .
+  sort State to AnalysisState{HA} .
+
+  op parse-declaration(QIL:QidList, S:State) to term
+    parse HA input (QIL:QidList) in S:AnalysisState{HA} .
+  op print-declaration(T:Term) to term
+    print HA term (T:Term) .
+endv
+
+********************************************************************************

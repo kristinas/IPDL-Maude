@@ -1,0 +1,253 @@
+***( SpeX/Lang/Spec
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Language.maude
+
+********************************************************************************
+
+mod SPEC/PROCESSOR/BASE is
+  including  SPEX-PROCESSOR/BASE .
+  protecting SPEX/FORMATTING .
+
+  var MN : Qid .
+  var MNL : QidList .
+  var NMNL : NeQidList .
+  var V? : [AttrValue] .
+  var Atts : AttributeSet .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op omod-stack : -> AttrName [ctor] .
+  op omod-database : -> AttrName [ctor] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op omod-stack : AttributeSet -> QidList .
+  ceq omod-stack(Atts) = MNL
+   if AttrValue(MNL) := (Atts).get(omod-stack) .
+  eq omod-stack(Atts) = nil [owise] .
+
+  op last-opened-module : AttributeSet ~> Qid .
+  ceq last-opened-module(Atts) = head(NMNL)
+   if AttrValue(NMNL) := (Atts).get(omod-stack) .
+
+  op add-omod-name : Qid -> AttrModifier .
+  eq subject(add-omod-name(MN)) = omod-stack .
+  eq add-omod-name(MN) AttrValue(MNL)
+   = if occurs(MN, MNL)
+     then AttrValue(MN remove(MN, MNL))
+     else AttrValue(MN MNL) fi .
+  eq add-omod-name(MN) V? = AttrValue(MN) [owise] .
+
+  op pop-omod-name : -> AttrModifier .
+  eq subject(pop-omod-name) = omod-stack .
+  eq pop-omod-name AttrValue(NMNL) = AttrValue(tail(NMNL)) .
+  eq pop-omod-name AttrValue(MNL) = AttrValue(MNL) [owise] .
+
+  op opened-module : Qid AttributeSet -> Bool .
+  ceq opened-module(MN, Atts) = occurs(MN, MNL)
+   if AttrValue(MNL) := (Atts).get(omod-stack) .
+  eq opened-module(MN, Atts) = false [owise] .
+endm
+
+*** ----------------------------------------------------------------------------
+
+view Spec/Data { L :: LANGUAGE, BL :: SPEC/BASE-LANG }
+from DATA to SPEC/DATABASE { L, BL } is
+  sort Data to DB{Spec{L}} .
+  op nil to empty .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view Spec/Command { L :: LANGUAGE, BL :: SPEC/BASE-LANG }
+from COMMAND to SPEC/READ { L, BL } is
+  sort Command to Cmd{Spec{L}} .
+  op command-annotations to term 'Command .
+  op read-command(T:ATerm) to term read-cmd(Spec[Lid], T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod SPEC/PROCESSOR { L :: LANGUAGE, SP :: SPEC/SUBPROCESSOR } is
+  including  SPEX-PROCESSOR { Spec{L}, Spec/Data{L,Spec/Base-lang{SP}},
+                              Spec/Command{L,Spec/Base-lang{SP}} } .
+  protecting PROCESSOR/SELECTOR { Spec/Pid{L} } .
+  including  SPEC/PROCESSOR/BASE .
+  including  SPEC/PARSING-&-PRINTING { L, Spec/Base-lang{SP} } .
+
+  var  L : L$Lid .
+  vars I SP : Oid .
+  var  PT : OidList .
+  vars H MN : Qid .
+  var  MN? : [Qid] .
+  vars QIL MNL : QidList .
+  var  NQIL : NeQidList .
+  var  T : ATerm .
+  var  DB : SpeX/DB .
+  var  SAS : AnalysisState{Spec{L}} .
+  var  SDB : DB{Spec{L}} .
+  var  SM : Module{Spec{L}} .
+  var  SB : SP$SpecBody .
+  var  SB? : [SP$SpecBody] .
+  var  V? : [AttrValue] .
+  var  Atts : AttributeSet .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op odb : Spec{L} AttributeSet -> DB{Spec{L}} .
+  ceq odb(Spec[L], Atts) = SDB
+   if AttrValue(SDB) := (Atts).get(omod-database) .
+  eq odb(Spec[L], Atts) = empty [owise] .
+
+  op _.open-module(_,_) : AttributeSet Qid DB{Spec{L}} -> AttributeSet
+    [prec 15] .
+  eq (Atts).open-module(MN, SDB)
+   = Atts >>= add-odb-entry(SDB[MN]) >>= add-omod-name(MN) .
+
+  op _.close-module(_) : AttributeSet Spec{L} -> AttributeSet [prec 15] .
+  ceq (Atts).close-module(Spec[L])
+   = Atts >>= delete-odb-entry(Spec[L], MN) >>= pop-omod-name
+   if MN := last-opened-module(Atts) .
+  eq (Atts).close-module(Spec[L]) = Atts [owise] .
+
+  op add-odb-entry : Module{Spec{L}} -> AttrModifier .
+  eq subject(add-odb-entry(SM)) = omod-database .
+  eq add-odb-entry(SM) AttrValue(SDB)
+   = AttrValue(add(header(SM), SM, SDB)) .
+  eq add-odb-entry(SM) V?
+   = AttrValue(add(header(SM), SM, empty)) .
+
+  op insert-odb-entry : Module{Spec{L}} -> AttrModifier .
+  eq subject(insert-odb-entry(SM)) = omod-database .
+  eq insert-odb-entry(SM) AttrValue(SDB)
+   = AttrValue(insert(header(SM), SM, SDB)) .
+  eq insert-odb-entry(SM) V?
+   = AttrValue(insert(header(SM), SM, empty)) .
+
+  op delete-odb-entry : Spec{L} Qid -> AttrModifier .
+  eq subject(delete-odb-entry(Spec[L], MN)) = omod-database .
+  eq delete-odb-entry(Spec[L], MN) AttrValue(SDB)
+   = AttrValue(delete(MN, SDB)) .
+
+  op subprocs : Spec{L} AttributeSet -> OidList .
+  ceq subprocs(Spec[L], Atts) = $subprocs(Spec[L], MNL)
+   if AttrValue(MNL) := (Atts).get(omod-stack) .
+  eq subprocs(Spec[L], Atts) = nil [owise] .
+
+  op $subprocs : Spec{L} QidList -> OidList .
+  eq $subprocs(Spec[L], nil) = nil .
+  eq $subprocs(Spec[L], MN MNL) = $[Spec[L] / MN] $subprocs(Spec[L], MNL) .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Spec:start-up] :
+    < $[Spec[L]] : PROC | starting up, Atts >
+    start-up($[Spec[L]])
+   => < $[Spec[L]] : PROC | running, Atts > .
+
+  rl [Spec:get-prompt] :
+    < $[Spec[L]] : PROC | running, Atts >
+    get-prompt($[Spec[L]], I)
+   => < $[Spec[L]] : PROC | running, Atts >
+    if omod-stack(Atts) == nil
+    then got-prompt(I, [>])
+    else got-prompt(I, [last-opened-module(Atts) >]) fi .
+
+  crl [Spec:parse] :
+    < $[Spec[L]] : PROC | running, Atts >
+    parse($[Spec[L]], I, QIL, DB)
+   => < $[Spec[L]] : PROC | parsing I input, Atts >
+    if omod-stack(Atts) == nil
+    then relay($[Spec[L]], parse Spec[L] declaration (QIL) in SAS
+                   or-else parse Spec[L] command (QIL) in SAS)
+    else relay($[Spec[L]], parse Spec[L] command (QIL) in SAS
+                   or-else parse($[Spec[L] / MN?], $[Spec[L]], QIL, SB?)) fi
+   if MN? := last-opened-module(Atts) /\ SB? := body(DB[Spec[L]][MN?])
+      /\ SAS := AnalysisState[Spec[L]]{DB[Spec[L]] & omod-stack(Atts)} .
+
+  crl [Spec:process] :
+    < $[Spec[L]] : PROC | running, Atts >
+    process($[Spec[L]], I, T, DB)
+   => < $[Spec[L]] : PROC | running, Atts >
+    processed(I, $[Spec[L]],
+      if defined(DB[Spec[L]][H])
+      then Advisory: log('redefining 'module) H
+      else log('Loading 'module) H fi,
+      insert(H, SM, DB[Spec[L]]))
+   if SM := read-module(Spec[L], T, DB[Spec[L]]) /\ H := header(SM) .
+
+  rl [Spec:shut-down] :
+    < $[Spec[L]] : PROC | running, Atts >
+    shut-down($[Spec[L]])
+   => < $[Spec[L]] : PROC | shutting down, Atts >
+    shut-down(subprocs(Spec[L], Atts)) quit($[Spec[L]]) .
+
+  *** executing Spec commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  crl < $[Spec[L]] : PROC | executing I command, Atts >
+    do($[Spec[L]], Cmd[Spec[L]]{list modules}, DB)
+   => < $[Spec[L]] : PROC | running, Atts >
+    processed(I, $[Spec[L]], log('Listing 'modules) '\n
+      mk-page(if MNL == nil
+        then 'Empty 'module 'list
+        else intersperse('\n, MNL) fi))
+   if MNL := list(module-names(DB[Spec[L]])) .
+
+  rl < $[Spec[L]] : PROC | executing I command, Atts >
+    do($[Spec[L]], Cmd[Spec[L]]{show module MN}, DB)
+   => < $[Spec[L]] : PROC | running, Atts >
+    processed(I, $[Spec[L]], log('Showing 'module) MN '\n
+      mk-page(print(DB[Spec[L]][MN]))) .
+
+  crl < $[Spec[L]] : PROC | executing I command, Atts >
+    do($[Spec[L]], Cmd[Spec[L]]{list opened modules}, DB)
+   => < $[Spec[L]] : PROC | running, Atts >
+    processed(I, $[Spec[L]], log('Listing 'opened 'modules) '\n
+      mk-page(if MNL == nil
+        then 'Empty 'module 'list
+        else if MNL :: Qid
+        then MNL
+        else head(MNL) '\s '`( 'most 'recently 'opened '`) '\n
+             intersperse('\n, tail(MNL)) fi fi))
+    if MNL := omod-stack(Atts) .
+
+  rl < $[Spec[L]] : PROC | executing I command, Atts >
+    do($[Spec[L]], Cmd[Spec[L]]{open MN}, DB)
+   => < $[Spec[L]] : PROC | running, (Atts).open-module(MN, DB[Spec[L]]) >
+    processed(I, $[Spec[L]], log('Opening) MN)
+    start-processor($[Spec[L] / MN]) unless opened-module(MN, Atts) .
+
+  crl < $[Spec[L]] : PROC | executing I command, Atts >
+    do($[Spec[L]], Cmd[Spec[L]]{close}, DB)
+   => < $[Spec[L]] : PROC | running, (Atts).close-module(Spec[L]) >
+    shut-down($[Spec[L] / MN])
+    processed(I, $[Spec[L]], log('Closing) MN)
+   if MN := last-opened-module(Atts) .
+
+  *** forwarding process(ed) messages to/from Spec subprocessors  -  -  -  -  --
+  rl [Spec:process] :
+    < $[Spec[L]] : PROC | running, Atts >
+    process($[Spec[L]], $[Spec[L] / MN] PT, I, T, DB)
+   => < $[Spec[L]] : PROC | processing I input, Atts >
+    process($[Spec[L] / MN], PT, $[Spec[L]], T, body(odb(Spec[L], Atts)[MN])) .
+
+  rl [Spec:processed] :
+    < $[Spec[L]] : PROC | processing I input, Atts >
+    processed($[Spec[L]], $[Spec[L] / MN], QIL, SB)
+  => < $[Spec[L]] : PROC | running, Atts >>= insert-odb-entry(Module[Spec[L]]{
+        MN is nil empty SB given empty}) >
+    processed(I, $[Spec[L]], QIL) .
+
+  rl [Spec:processed] :
+    < $[Spec[L]] : PROC | processing I input, Atts >
+    processed($[Spec[L]], $[Spec[L] / MN], SB)
+  => < $[Spec[L]] : PROC | running, Atts >>= insert-odb-entry(Module[Spec[L]]{
+        MN is nil empty SB given empty}) >
+    processed(I, $[Spec[L]]) .
+endm
+
+********************************************************************************

@@ -1,0 +1,1178 @@
+***( SpeX/Lang/Base/FOL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../Language.maude
+sload ../Common/CSList.maude
+sload ./Data.maude
+
+********************************************************************************
+
+fmod FOL/LANGUAGE is
+  protecting FOL/SPEC-BODY .
+  protecting GRAMMAR/CS-LIST .
+
+  var L : FOL .
+  var S : Sort .
+  var SS : SortSet .
+  var QI : Qid .
+  var TPL : TypeList .
+  var ODS : OpDeclSet .
+  var PDS : PredDeclSet .
+  var EDS : SenDeclSet .
+  var AtS : AttrSet .
+
+  *** declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op decl-grammar : FOL -> Grammar .
+  eq decl-grammar(L)
+   = grammar 'FOL/Syntax is
+       'Declaration
+         *** sorts
+         ::= "sort_" : 'Sort
+             [format ('! 'so 'd)]
+          |  "sorts_" : 'NeSortList
+             [format ('! 'so 'd)]
+         *** operation symbols
+          |  "op_:_->_" : 'Symbol 'Arity 'Sort
+             [format ('! 'so 's! 'so 's! 'so 'd)]
+          |  "op_:_->_[_]" : 'Symbol 'Arity 'Sort 'NeAttrList
+             [format ('! 'so 's! 'so 's! 'so 's! 'o '! 'o)]
+          |  "op_:()->_" : 'Symbol 'Sort
+             [format ('! 'so 's! 's 'd 's 'so 'd)]
+          |  "op_:()->_[_]" : 'Symbol 'Sort 'NeAttrList
+             [format ('! 'so 's! 's 'd 's 'so 's! 'o '! 'o)]
+          |  "ops_:_->_" : 'NeSymbolList 'Arity 'Sort
+             [format ('! 'so 's! 'so 's! 'so 'd)]
+          |  "ops_:_->_[_]" : 'NeSymbolList 'Arity 'Sort 'NeAttrList
+             [format ('! 'so 's! 'so 's! 'so 's! 'o '! 'o)]
+          |  "ops_:()->_" : 'NeSymbolList 'Sort
+             [format ('! 'so 's! 's 'd 's 'so 'd)]
+          |  "ops_:()->_[_]" : 'NeSymbolList 'Sort 'NeAttrList
+             [format ('! 'so 's! 's 'd 's 's 's! 'o '! 'o)]
+         *** predicate symbols
+          |  "pred_:_" : 'Symbol 'Arity
+             [format ('! 'so 's! 'so 'd)]
+          |  "pred_:()" : 'Symbol
+             [format ('! 'so 's! 's 'd 'o)]
+          |  "preds_:_" : 'NeSymbolList 'Arity
+             [format ('! 'so 's! 'so 'd)]
+          |  "preds_:()" : 'NeSymbolList
+             [format ('! 'so 's! 's 'd 'o)]
+         *** sentences
+          |  "ax_" : 'Sentence
+             [format ('! 'so 'd)]
+          |  "ax_[_]" : 'Sentence 'NeAttrList
+             [format ('! 'so 's! 'o '! 'o)]
+       'Sort
+         ::= token "sort" [exclude ("," "(" ")")]
+       'NeSortList
+         ::= bubble "neSortList"
+       'Symbol
+         ::= token "symbol" [exclude ("," ":")]
+       'NeSymbolList
+         ::= bubble "neSymbolList" [exclude (":")]
+       'Arity
+         ::= bubble "arity" [exclude ("->" "(" ")" "[" "]")]
+       'Sentence
+         ::= bubble "sentence" [balanced-parentheses exclude ("label:")]
+       'NeAttrList
+         ::= bubble "neAttrList" [exclude ("[" "]")]
+     endgr .
+
+  *** comma-separated lists of sorts  - - - - - - - - - - - - - - - - - - - - --
+  op cs-sorts-grammar : FOL -> Grammar .
+  eq cs-sorts-grammar(L)
+   = cs-list-grammar('FOL/cs-sorts-syntax, 'NeSortList,
+      'Sort ::= token "sort" [exclude ("," "(" ")")]) .
+
+  *** comma-separated lists of symbols  - - - - - - - - - - - - - - - - - - - --
+  op cs-symbols-grammar : FOL -> Grammar .
+  eq cs-symbols-grammar(L)
+   = cs-list-grammar('FOL/cs-symbols-syntax, 'NeSymbolList,
+       'Symbol ::= token "symbol" [exclude ("," ":")]) .
+
+  *** operation attributes  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op op-attr-grammar : FOL -> Grammar .
+  eq op-attr-grammar(L)
+   = grammar 'FOL/op-attr-syntax is
+       'Attr ::= lit "assoc" [format ('! 'o)]
+              |  lit "comm" [format ('! 'o)]
+              |  "id:" : 'Term [format ('! 'o)]
+       'AttrList ::= just 'Attr | "__" : 'AttrList 'AttrList [assoc]
+       'Term ::= bubble "term" [balanced-parentheses]
+     endgr .
+
+  *** sentence attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op sen-attr-grammar : FOL -> Grammar .
+  eq sen-attr-grammar(L)
+   = grammar 'FOL/sen-attr-syntax is
+       'Attr  ::= "label:_" : 'Label [format ('! 'o 'd)]
+       'AttrList ::= just 'Attr | "__" : 'AttrList 'AttrList [assoc]
+       'Label ::= token "label"
+     endgr .
+
+  *** sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op grammar : SpecBody{FOL} -> Grammar .
+  eq grammar(SpecBody[L]{sorts SS . ODS PDS EDS})
+   = grammar 'FOL/Sentence/Syntax is
+       atomic-sentences(L, SS, ODS, PDS)
+       Boolean-connectives(L)
+       quantifiers(L, SS)
+     endgr .
+
+  op $grammar : SpecBody{FOL} -> Grammar .
+  eq $grammar(SpecBody[L]{sorts SS . ODS PDS EDS})
+   = grammar 'FOL/Sentence/$Syntax is
+       'Sentence`{$`}
+         ::= bubble "sentence" [balanced-parentheses exclude ("label:")]
+       atomic-sentences(L, SS, ODS, PDS)
+       Boolean-connectives(L)
+       $quantifiers(L, SS)
+     endgr .
+
+  *** atomic sentences  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  --
+  op atomic-sentences : FOL SortSet OpDeclSet PredDeclSet -> GramDeclSet .
+  eq atomic-sentences(L, SS, ODS, PDS)
+   = 'Sentence`{FOL`} ::= just 'AtomicSentence`{FOL`}
+     pr-rules(ODS) preds(L, eqs(L, SS) PDS) .
+
+  op preds : FOL PredDeclSet -> GramDeclSet .
+  eq preds(L, none)
+   = 'AtomicSentence`{FOL`} ::= lit "true" | lit "false" .
+  eq preds(L, pred QI : TPL [AtS] . PDS)
+   = 'AtomicSentence`{FOL`} ::= string(QI) : TPL
+     preds(L, PDS) .
+
+  op eqs : FOL SortSet -> PredDeclSet .
+  eq eqs(L, none) = none .
+  eq eqs(L, S ; SS)
+   = (pred '_=_ : S S [format ('d 's! 'so 'd) prec (51)] .)
+     eqs(L, SS) .
+
+  *** Boolean connectives  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  --
+  op Boolean-connectives : FOL -> GramDeclSet .
+  eq Boolean-connectives(L)
+   = 'Sentence`{FOL`}
+       ::= "not_" : 'Sentence`{FOL`}
+           [format ('! 'so 'd) prec (71)]
+        |  "_and_" : 'Sentence`{FOL`} 'Sentence`{FOL`}
+           [assoc format ('d 's! 'so 'd) prec (75)]
+        |  "_xor_" : 'Sentence`{FOL`} 'Sentence`{FOL`}
+           [assoc format ('d 's! 'so 'd) prec (77)]
+        |  "_or_" : 'Sentence`{FOL`} 'Sentence`{FOL`}
+           [assoc format ('d 's! 'so 'd) prec (79)]
+        |  "_implies_" : 'Sentence`{FOL`} 'Sentence`{FOL`}
+           [gather ('e 'E) format ('d 's! 'so 'd) prec (81)]
+        |  "_iff_" : 'Sentence`{FOL`} 'Sentence`{FOL`}
+           [assoc format ('d 's! 'so 'd) prec (83)] .
+
+  *** quantifiers  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  op quantifiers : FOL SortSet -> GramDeclSet .
+  eq quantifiers(L, SS)
+   = 'Sentence`{FOL`}
+       ::= "forall__" : 'VarDecl`{FOL`} 'Sentence`{FOL`}
+           [format ('! 'so 's 'd) prec (87)]
+        |  "exists__" : 'VarDecl`{FOL`} 'Sentence`{FOL`}
+           [format ('! 'so 's 'd) prec (87)]
+     qvar-decl(L, SS) .
+
+  op $quantifiers : FOL SortSet -> GramDeclSet .
+  eq $quantifiers(L, SS)
+   = 'Sentence`{FOL`}
+       ::= "forall__" : 'VarDecl`{FOL`} 'Sentence`{$`}
+           [format ('! 'so 's 'd) prec (87)]
+        |  "exists__" : 'VarDecl`{FOL`} 'Sentence`{$`}
+           [format ('! 'so 's 'd) prec (87)]
+     qvar-decl(L, SS) .
+
+  op qvar-decl : FOL SortSet -> GramDeclSet .
+  eq qvar-decl(L, none)
+   = 'VarDecl`{FOL`}
+       ::= lit "{}" [format ('! 'd 'o)]
+        | "{_" : 'VarList`{FOL`} [format ('! 'o 'd) prec (25)] .
+  eq qvar-decl(L, S ; SS)
+   = 'VarList`{FOL`}
+       ::= "_}" : S [format ('d '! 'o) prec (21)]
+        |  "_,_" : S 'VarList`{FOL`} [prec (23)]
+     qvar-decl(L, SS) .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view FOL from LANGUAGE to FOL/LANGUAGE is
+  sort Lid to FOL .
+  op Lid to FOL .
+  op grammar to decl-grammar .
+endv
+
+********************************************************************************
+
+fmod FOL/READ is
+  protecting FOL/LANGUAGE .
+  protecting ATERM/READ .
+
+  var  L : FOL .
+  var  SB : SpecBody{FOL} .
+  var  TP : Type .
+  var  TPL : TypeList .
+  var  BC Q QI : Qid .
+  vars EVD AS : Constant .
+  vars S O P : AConstant .
+  var  V : AVariable .
+  vars SL1 SL2 OL1 OL2 PL1 PL2 A : ATerm .
+  vars E E1 E2 VD VL AtL AtL1 AtL2 T : ATerm .
+  var  TL : ATermList .
+  var  AtS : AttrSet .
+
+  *** add declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op add-declaration : ATerm SpecBody{FOL} -> SpecBody{FOL} .
+  eq add-declaration(T, SB) = SB >>= T .
+
+  op _>>=_ : SpecBody{FOL} ATerm -> SpecBody{FOL} .
+
+  eq SB >>= {'sort_[S] : 'Declaration}
+   = add-sort(read-sort(FOL, S), SB) .
+  eq SB >>= {'sorts_[S] : 'Declaration}
+   = SB >>= {'sort_[S] : 'Declaration} .
+  eq SB >>= {'sorts_[{'_`,_[SL1, SL2] : 'NeSortList}] : 'Declaration}
+   = SB >>= {'sorts_[SL1] : 'Declaration} >>= {'sorts_[SL2] : 'Declaration} .
+
+  eq SB >>= {'op_:_->_[O, A, S] : 'Declaration}
+   = add-decl(read-op(FOL, 'op_:_->_[O, A, S]), SB) .
+  eq SB >>= {'op_:_->_`[_`][O, A, S, AtL] : 'Declaration}
+   = add-decl(read-op(FOL, 'op_:_->_`[_`][O, A, S, AtL]), SB) .
+  eq SB >>= {'op_:`(`)->_[O, S] : 'Declaration}
+   = add-decl(read-op(FOL, 'op_:`(`)->_[O, S]), SB) .
+  eq SB >>= {'op_:`(`)->_`[_`][O, S, AtL] : 'Declaration}
+   = add-decl(read-op(FOL, 'op_:`(`)->_`[_`][O, S, AtL]), SB) .
+
+  eq SB >>= {'ops_:_->_[O, A, S] : 'Declaration}
+   = SB >>= {'op_:_->_[O, A, S] : 'Declaration} .
+  eq SB >>= {'ops_:_->_[{'_`,_[OL1, OL2] : 'NeSymbolList}, A, S] : 'Declaration}
+   = SB >>= {'ops_:_->_[OL1, A, S] : 'Declaration}
+        >>= {'ops_:_->_[OL2, A, S] : 'Declaration} .
+
+  eq SB >>= {'ops_:_->_`[_`][O, A, S, AtL] : 'Declaration}
+   = SB >>= {'op_:_->_`[_`][O, A, S, AtL] : 'Declaration} .
+  eq SB >>= {'ops_:_->_`[_`][
+        {'_`,_[OL1, OL2] : 'NeSymbolList}, A, S, AtL] : 'Declaration}
+   = SB >>= {'ops_:_->_`[_`][OL1, A, S, AtL] : 'Declaration}
+        >>= {'ops_:_->_`[_`][OL2, A, S, AtL] : 'Declaration} .
+
+  eq SB >>= {'ops_:`(`)->_[O, S] : 'Declaration}
+   = SB >>= {'op_:`(`)->_[O, S] : 'Declaration} .
+  eq SB >>= {'ops_:`(`)->_[{'_`,_[OL1, OL2] : 'NeSymbolList}, S] : 'Declaration}
+   = SB >>= {'ops_:`(`)->_[OL1, S] : 'Declaration}
+        >>= {'ops_:`(`)->_[OL2, S] : 'Declaration} .
+
+  eq SB >>= {'ops_:`(`)->_`[_`][O, S, AtL] : 'Declaration}
+   = SB >>= {'op_:`(`)->_`[_`][O, S, AtL] : 'Declaration} .
+  eq SB >>= {'ops_:`(`)->_`[_`][
+        {'_`,_[OL1, OL2] : 'NeSymbolList}, S, AtL] : 'Declaration}
+   = SB >>= {'ops_:`(`)->_`[_`][OL1, S, AtL] : 'Declaration}
+        >>= {'ops_:`(`)->_`[_`][OL2, S, AtL] : 'Declaration} .
+
+  eq SB >>= {'pred_:_[P, A] : 'Declaration}
+   = add-decl(read-pred(FOL, 'pred_:_[P, A]), SB) .
+  eq SB >>= {'pred_:`(`)[P] : 'Declaration}
+   = add-decl(read-pred(FOL, 'pred_:`(`)[P]), SB) .
+
+  eq SB >>= {'preds_:_[P, A] : 'Declaration}
+   = SB >>= {'pred_:_[P, A] : 'Declaration} .
+  eq SB >>= {'preds_:_[{'_`,_[PL1, PL2] : 'NeSymbolList}, A] : 'Declaration}
+   = SB >>= {'preds_:_[PL1, A] : 'Declaration}
+        >>= {'preds_:_[PL2, A] : 'Declaration} .
+
+  eq SB >>= {'preds_:`(`)[P] : 'Declaration}
+   = SB >>= {'pred_:`(`)[P] : 'Declaration} .
+  eq SB >>= {'preds_:`(`)[{'_`,_[PL1, PL2] : 'NeSymbolList}] : 'Declaration}
+   = SB >>= {'preds_:`(`)[PL1] : 'Declaration}
+        >>= {'preds_:`(`)[PL2] : 'Declaration} .
+
+  eq SB >>= {'ax_[E] : 'Declaration}
+   = add-sen(read-sentence(FOL, E, none), SB) .
+  eq SB >>= {'ax_`[_`][E, AtL] : 'Declaration}
+   = add-sen(read-sentence(FOL, E, read-attributes(FOL, AtL)), SB) .
+
+  eq SB >>= T = SB [owise] .
+
+  op add-declarations : ATermList SpecBody{FOL} -> SpecBody{FOL} .
+  eq add-declarations(empty, SB) = SB .
+  eq add-declarations((T, TL), SB)
+   = add-declarations(TL, add-declaration(T, SB)) .
+
+  *** read-sort  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-sort : FOL ATerm ~> Sort .
+  eq read-sort(L, S) = read-qid(S) .
+
+  *** read-op  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-op : FOL ATerm ~> OpDecl .
+  eq read-op(L, 'op_:_->_[O, A, S])
+   = (op read-symbol(L, O) : read-arity(L, A) -> read-sort(L, S) [none] .) .
+  eq read-op(L, 'op_:_->_`[_`][O, A, S, AtL])
+   = (op read-symbol(L, O) : read-arity(L, A) -> read-sort(L, S)
+      [read-attributes(L, AtL)] .) .
+  eq read-op(L, 'op_:`(`)->_[O, S])
+   = (op read-symbol(L, O) : nil -> read-sort(L, S) [none] .) .
+  eq read-op(L, 'op_:`(`)->_`[_`][O, S, AtL])
+   = (op read-symbol(L, O) : nil -> read-sort(L, S)
+      [read-attributes(L, AtL)] .) .
+
+  op read-symbol : FOL ATerm ~> Qid .
+  eq read-symbol(L, O) = read-qid(O) .
+
+  op read-arity : FOL ATerm ~> TypeList .
+  eq read-arity(L, A) = read-qids(A) .
+
+  op read-cs-symbols : FOL ATerm ~> QidSet .
+  eq read-cs-symbols(L, {'_`,_[OL1, OL2] : 'NeSymbolList})
+   = read-cs-symbols(L, OL1) ; read-cs-symbols(L, OL2) .
+  eq read-cs-symbols(L, {O : 'Symbol})
+   = read-symbol(L, O) .
+
+  *** read-pred  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-pred : FOL ATerm ~> PredDecl .
+  eq read-pred(L, 'pred_:_[P, A])
+   = (pred read-symbol(L, P) : read-arity(L, A) [none] .) .
+  eq read-pred(L, 'pred_:`(`)[P])
+   = (pred read-symbol(L, P) : nil [none] .) .
+
+  *** read-sentence  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-sentence : FOL ATerm AttrSet -> SenDecl .
+  eq read-sentence(L, E, AtS) = (sen E [AtS] .) .
+
+  *** read-variables  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort ReadVarOptions{FOL} .
+  op all`vars : -> ReadVarOptions{FOL} [ctor] .
+  op protecting`constants : -> ReadVarOptions{FOL} [ctor] .
+
+  var RVO : ReadVarOptions{FOL} .
+
+  op read-vars : SpecBody{FOL} ATerm ReadVarOptions{FOL} -> VariableSet .
+  eq read-vars(SB, {EVD : 'VarDecl`{FOL`}}, RVO) = none .
+  eq read-vars(SB, {'`{_[VL] : 'VarDecl`{FOL`}}, RVO) = read-vars(SB, VL, RVO) .
+  eq read-vars(SB, {'_`,_[V, VL] : 'VarList`{FOL`}}, RVO)
+   = read-var(SB, V, RVO) ; read-vars(SB, VL, RVO) .
+  eq read-vars(SB, {'_`}[V] : 'VarList`{FOL`}}, RVO) = read-var(SB, V, RVO) .
+  eq read-vars(SB, T, RVO) = none [owise] .
+
+  op read-var : SpecBody{FOL} AVariable ReadVarOptions{FOL} -> VariableSet .
+  eq read-var(SB, V, RVO)
+   = if (RVO == protecting constants) and-then (name(V) in consts(SB, type(V)))
+     then none
+     else plain-term(V) fi .
+
+  *** read-attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-attributes : FOL ATerm -> AttrSet .
+  eq read-attributes(L, {'__[AtL1, AtL2] : 'AttrList})
+   = read-attributes(L, AtL1) read-attributes(L, AtL2) .
+  eq read-attributes(L, {'assoc.Attr : 'Attr}) = assoc .
+  eq read-attributes(L, {'comm.Attr : 'Attr}) = comm .
+  eq read-attributes(L, {'id:[T] : 'Attr}) = id(plain-term(T)) .
+  eq read-attributes(L, {'label:_[T] : 'Attr}) = label(read-qid(T)) .
+  eq read-attributes(L, T) = none [owise] .
+endfm
+
+********************************************************************************
+
+fmod FOL/SHOW is
+  protecting PRINTING { FOL } .
+  protecting FOL/READ .
+
+  var  L : FOL .
+  var  G : Grammar .
+  var  SB : SpecBody{FOL} .
+  var  S : Sort .
+  var  SS : SortSet .
+  var  SSD : SortSetDecl .
+  var  NSL : NeQidList .
+  vars O P BC Q QI : Qid .
+  var  QIL : QidList .
+  var  A : NeTypeList .
+  var  At : Attr .
+  var  AtS : AttrSet .
+  var  AtL : AttrList .
+  var  OD : OpDecl .
+  var  ODS : OpDeclSet .
+  var  ODL : OpDeclList .
+  var  PD : PredDecl .
+  var  PDS : PredDeclSet .
+  var  PDL : PredDeclList .
+  vars E E1 E2 VD : ATerm .
+  var  T : Term .
+  var  NTL : NeTermList .
+  var  VS : VariableSet .
+  var  ED : SenDecl .
+  var  EDS : SenDeclSet .
+  var  EDL : SenDeclList .
+
+  *** show body  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show : SpecBody{FOL} -> TermList .
+  eq show(SB) = show-fragment(SB, SB) .
+
+  op show-fragment : SpecBody{FOL} SpecBody{FOL} -> TermList .
+  eq show-fragment(SpecBody[L]{SSD ODS PDS EDS}, SB)
+   = show-sorts(L, list(SSD)),
+     show-ops(L, SB, topo-sort(ODS)),
+     show-preds(L, list(PDS)),
+     show-sens(L, SB, list(EDS)) .
+
+  *** show sorts  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-sorts : FOL QidList -> TermList .
+  eq show-sorts(L, nil) = empty .
+  eq show-sorts(L, S) = 'sort_[show-sort(L, S)] .
+  eq show-sorts(L, S NSL) = 'sorts_[cs-bubble('neSortList, show-qids(S NSL))] .
+
+  op show-sort : FOL Qid -> Term .
+  eq show-sort(L, S) = mk-bubble('sort, show-qid(S)) .
+
+  *** show ops  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-ops : FOL SpecBody{FOL} OpDeclList -> TermList .
+  eq show-ops(L, SB, nil) = empty .
+  eq show-ops(L, SB, {op O : A -> S [AtS] .} ODL)
+   = if AtS == none
+     then 'op_:_->_[ show-symbol(L, O), show-arity(L, A), show-sort(L, S) ]
+     else 'op_:_->_`[_`] [
+        show-symbol(L, O), show-arity(L, A), show-sort(L, S),
+        show-op-attributes(L, SB, AtS) ] fi,
+     show-ops(L, SB, ODL) .
+  eq show-ops(L, SB, {op O : nil -> S [AtS] .} ODL)
+   = 'op_:`(`)->_[ show-symbol(L, O), show-sort(L, S) ], show-ops(L, SB, ODL) .
+
+  op show-symbol : FOL Qid -> Term .
+  eq show-symbol(L, O) = mk-bubble('symbol, show-qid(O)) .
+
+  op show-arity : FOL NeTypeList -> TermList .
+  eq show-arity(L, nil) = empty .
+  eq show-arity(L, A) = mk-bubble('arity, show-qids(A)) .
+
+  op show-op-attributes : FOL SpecBody{FOL} AttrSet -> TermList .
+  eq show-op-attributes(L, SB, AtS)
+   = show-attributes(L, op-attr-grammar(L), (show-assoc-attr(L, AtS),
+        show-comm-attr(L, AtS), show-id-attr(SB, AtS))) .
+
+  *** show preds  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-preds : FOL PredDeclList -> TermList .
+  eq show-preds(L, nil) = empty .
+  eq show-preds(L, {pred P : A [AtS] .} PDL)
+   = 'pred_:_[ show-symbol(L, P), show-arity(L, A) ], show-preds(L, PDL) .
+  eq show-preds(L, {pred P : nil [AtS] .} PDL)
+   = 'pred_:`(`)[ show-symbol(L, P) ], show-preds(L, PDL) .
+
+  *** show sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-sens : FOL SpecBody{FOL} SenDeclList -> TermList .
+  eq show-sens(L, SB, nil) = empty .
+  eq show-sens(L, SB, {sen E [none] .} EDL)
+   = 'ax_ [ show-sentence(SB, none, E) ], show-sens(L, SB, EDL) .
+  eq show-sens(L, SB, {sen E [AtS] .} EDL)
+   = 'ax_`[_`] [ show-sentence(SB, none, E), show-sen-attributes(L, AtS) ],
+     show-sens(L, SB, EDL) [owise] .
+
+  op show-sentence : SpecBody{FOL} VariableSet ATerm -> Term .
+  ceq show-sentence(SB, VS, E) = mk-bubble('sentence, show-qids(QIL))
+   if QIL := print term $show-sentence(SB, VS, E) given ($grammar(SB) & VS) .
+
+  op $show-sentence : SpecBody{FOL} VariableSet ATerm -> Term .
+  ceq $show-sentence(SB, VS, E) = plain-term(E)
+   if E :: 'AtomicSentence`{FOL`} .
+  eq $show-sentence(SB, VS, {'not_[E] : 'Sentence`{FOL`}})
+   = 'not_[$show-sentence(SB, VS, E)] .
+  ceq $show-sentence(SB, VS, {BC[E1, E2] : 'Sentence`{FOL`}})
+   = BC[$show-sentence(SB, VS, E1), $show-sentence(SB, VS, E2)]
+   if BC in symbols(grammar(SB), 'Sentence`{FOL`} 'Sentence`{FOL`}) .
+  ceq $show-sentence(SB, VS, {Q[VD, E] : 'Sentence`{FOL`}})
+   = Q[plain-term(VD),
+      show-sentence(SB, VS ; read-vars(SB, VD, protecting constants), E)]
+   if Q in symbols(grammar(SB), 'VarDecl`{FOL`} 'Sentence`{FOL`}) .
+
+  op show-sen-attributes : FOL AttrSet -> TermList .
+  eq show-sen-attributes(L, AtS)
+   = show-attributes(L, sen-attr-grammar(L), show-label-attr(L, list(AtS))) .
+
+  *** show attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-attributes : FOL Grammar NeTermList -> Term .
+  eq show-attributes(L, G, NTL)
+   = mk-bubble('neAttrList, show-qids(print term pack('__, NTL) given G)) .
+
+  op show-assoc-attr : FOL AttrSet -> TermList .
+  eq show-assoc-attr(L, assoc AtS) = 'assoc.Attr .
+  eq show-assoc-attr(L, AtS) = empty [owise] .
+
+  op show-comm-attr : FOL AttrSet -> TermList .
+  eq show-comm-attr(L, comm AtS) = 'comm.Attr .
+  eq show-comm-attr(L, AtS) = empty [owise] .
+
+  op show-id-attr : SpecBody{FOL} AttrSet -> TermList .
+  ceq show-id-attr(SB, id(T) AtS)
+   = 'id:[mk-bubble('term, show-qids(print term T given grammar(SB)))]
+   if AtS is id-free .
+  eq show-id-attr(SB, AtS) = empty [owise] .
+
+  op show-label-attr : FOL AttrList -> TermList .
+  eq show-label-attr(L, nil) = empty .
+  eq show-label-attr(L, {label(QI)} AtL)
+   = 'label:_[mk-bubble('label, show-qid(QI))], show-label-attr(L, AtL) .
+  eq show-label-attr(L, {At} AtL) = show-label-attr(L, AtL) [owise] .
+endfm
+
+********************************************************************************
+
+fmod FOL/ANALYSIS-STATE is
+  protecting FOL/READ .
+
+  var L : FOL .
+  var SB : SpecBody{FOL} .
+  var VS : VariableSet .
+  var AtS : AttrSet .
+  var TP : Type .
+  var TPL : TypeList .
+  var T : ATerm .
+  var RVO : ReadVarOptions{FOL} .
+
+  *** analysis state  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort AnalysisState{FOL} .
+  op AnalysisState[_]{_&_&_} : FOL SpecBody{FOL} VariableSet AttrSet
+    -> AnalysisState{FOL} [ctor] .
+
+  *** initial-state (of a specification body)  - - - - - - - - - - - - - - - - -
+  op initial-state : SpecBody{FOL} -> AnalysisState{FOL} .
+  eq initial-state(SB) = AnalysisState[FOL]{SB & none & none} .
+
+  *** projections  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op spec-body : AnalysisState{FOL} -> SpecBody{FOL} .
+  eq spec-body(AnalysisState[L]{SB & VS & AtS}) = SB .
+
+  op vars : AnalysisState{FOL} -> VariableSet .
+  eq vars(AnalysisState[L]{SB & VS & AtS}) = VS .
+
+  op attrs : AnalysisState{FOL} -> AttrSet .
+  eq attrs(AnalysisState[L]{SB & VS & AtS}) = AtS .
+
+  *** state updates  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _>>=_ : AnalysisState{FOL} ATerm -> AnalysisState{FOL} .
+
+  ceq AnalysisState[L]{SB & VS & AtS} >>= T
+   = AnalysisState[L]{SB & VS ; read-vars(SB, T, protecting constants) & AtS}
+   if T :: 'VarDecl`{FOL`} .
+
+  ceq AnalysisState[L]{SB & VS & AtS} >>= T
+   = AnalysisState[L]{SB & VS & AtS read-attributes(FOL, T)}
+   if T :: ('Attr ; 'AttrList) .
+
+  eq AnalysisState[L]{SB & VS & AtS} >>= T
+   = AnalysisState[L]{SB >>= T & VS & AtS} [owise] .
+
+  *** auxiliary operations on the underlying spec-body of a state  - - - - - - -
+  op sorts : AnalysisState{FOL} -> SortSet .
+  eq sorts(AnalysisState[L]{SB & VS & AtS}) = sorts(SB) .
+
+  op ops : AnalysisState{FOL} -> OpDeclSet .
+  eq ops(AnalysisState[L]{SB & VS & AtS}) = ops(SB) .
+
+  op preds : AnalysisState{FOL} -> PredDeclSet .
+  eq preds(AnalysisState[L]{SB & VS & AtS}) = preds(SB) .
+
+  op symbols* : AnalysisState{FOL} TypeList Type -> QidSet .
+  eq symbols*(AnalysisState[L]{SB & VS & AtS}, TPL, TP)
+   = symbols*(SB, TPL, TP) .
+
+  op grammar : AnalysisState{FOL} -> Grammar .
+  eq grammar(AnalysisState[L]{SB & VS & AtS}) = grammar(SB) .
+
+  op $grammar : AnalysisState{FOL} -> Grammar .
+  eq $grammar(AnalysisState[L]{SB & VS & AtS}) = $grammar(SB) .
+
+  op read-vars : AnalysisState{FOL} ATerm ReadVarOptions{FOL} -> VariableSet .
+  eq read-vars(AnalysisState[L]{SB & VS & AtS}, T, RVO)
+   = read-vars(SB, T, RVO) .
+
+  op read-var : AnalysisState{FOL} ATerm ReadVarOptions{FOL} -> VariableSet .
+  eq read-var(AnalysisState[L]{SB & VS & AtS}, T, RVO) = read-var(SB, T, RVO) .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view FOL/AnalysisState from ANALYSIS-STATE to FOL/ANALYSIS-STATE is
+  sort State to AnalysisState{FOL} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod FOL/PARSING is
+  including  SYNTACTIC-ANALYSIS { FOL, FOL/AnalysisState } .
+  protecting LANG-NAME { FOL } .
+  protecting FOL/SHOW .
+
+  var  L : FOL .
+  vars SB SB' Sig Sig' : SpecBody{FOL} .
+  var  SAS : AnalysisState{FOL} .
+  var  QIL : QidList .
+  var  QIS : QidSet .
+  vars S O P : AConstant .
+  vars $S $SL SL SL1 SL2 : ATerm .
+  vars $O $OL OL OL1 OL2 $A A : ATerm .
+  vars $P $PL PL PL1 PL2 : ATerm .
+  vars VD VL V $E E E1 E2 : ATerm .
+  vars $AtL AtL AtL1 AtL2 : ATerm .
+  vars $T T : ATerm .
+  var  TL : ATermList .
+  vars $ BC Q QI : Qid .
+  vars EVD CA : Constant .
+  var  VS : VariableSet .
+  var  TPL : TypeList .
+  var  TP : Type .
+  vars #O #P #A : Nat .
+  var  At : Attr .
+  var  AO : AnalysisOutcome .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse L input (QIL) in SAS
+   = scan L input (QIL : 'Declaration)
+     then analyse L declaration in SAS
+     or-else, if inconclusive, parsing-error ('unexpected 'parsing 'error:
+        'cannot 'parse 'this name(L) 'declaration) .
+
+  *** analyse declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_declaration : FOL -> AnalysisAction{FOL} .
+
+  eq analyse L declaration {'sort_[$S] : 'Declaration}
+   = try {'sort_ [ solve L sort ($S) ] : 'Declaration} .
+
+  eq analyse L declaration {'sorts_[$SL] : 'Declaration}
+   = try {'sorts_ [ solve L sorts ($SL) ] : 'Declaration} .
+
+  eq analyse L declaration {'op_:_->_[$O, $A, $S] : 'Declaration}
+   = try { 'op_:_->_ [
+        solve L op-symbol ($O),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'op_:_->_`[_`][$O, $A, $S, $AtL] : 'Declaration}
+   = try { 'op_:_->_`[_`] [
+        solve L op-symbol ($O),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared,
+        solve L op-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'op_:`(`)->_[$O, $S] : 'Declaration}
+   = try { 'op_:`(`)->_ [
+        solve L op-symbol ($O),
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'op_:`(`)->_`[_`][$O, $S, $AtL] : 'Declaration}
+   = try { 'op_:`(`)->_`[_`] [
+        solve L op-symbol ($O),
+        solve L sort ($S) then check that L sort is declared,
+        solve L op-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'ops_:_->_[$OL, $A, $S] : 'Declaration}
+   = try { 'ops_:_->_ [
+        solve L op-symbols ($OL),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'ops_:_->_`[_`][$OL, $A, $S, $AtL] : 'Declaration}
+   = try { 'ops_:_->_`[_`] [
+        solve L op-symbols ($OL),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared,
+        solve L op-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'ops_:`(`)->_[$OL, $S] : 'Declaration}
+   = try { 'ops_:`(`)->_ [
+        solve L op-symbols ($OL),
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'ops_:`(`)->_`[_`][$OL, $S, $AtL] : 'Declaration}
+   = try { 'ops_:`(`)->_`[_`] [
+        solve L op-symbols ($OL),
+        solve L sort ($S) then check that L sort is declared,
+        solve L op-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'pred_:_[$P, $A] : 'Declaration}
+   = try { 'pred_:_ [
+        solve L pred-symbol ($P),
+        solve L arity ($A) then check that all sorts in L arity are declared
+      ] : 'Declaration }
+     then check validity constraints for L pred .
+
+  eq analyse L declaration {'pred_:`(`)[$P] : 'Declaration}
+   = try {'pred_:`(`) [ solve L pred-symbol ($P) ] : 'Declaration}
+     then check validity constraints for L pred .
+
+  eq analyse L declaration {'preds_:_[$PL, $A] : 'Declaration}
+   = try { 'preds_:_ [
+        solve L pred-symbols ($PL),
+        solve L arity ($A) then check that all sorts in L arity are declared
+      ] : 'Declaration }
+     then check validity constraints for L preds .
+
+  eq analyse L declaration {'preds_:`(`)[$PL] : 'Declaration}
+   = try {'preds_:`(`) [ solve L pred-symbols ($PL) ] : 'Declaration}
+     then check validity constraints for L preds .
+
+  eq analyse L declaration {'ax_[$E] : 'Declaration}
+   = try { 'ax_ [
+        analyse L sentence ($E) then check that all L variables are bound
+      ] : 'Declaration } .
+
+  eq analyse L declaration {'ax_`[_`][$E, $AtL] : 'Declaration}
+   = try { 'ax_`[_`] [
+        analyse L sentence ($E) then check that all L variables are bound,
+        solve L sen-attributes ($AtL)
+      ] : 'Declaration } .
+
+  *** analyse individual sorts  - - - - - - - - - - - - - - - - - - - - - - - -
+  op solve_sort : FOL -> AnalysisAction{FOL} .
+  ceq solve L sort {$[S] : 'Sort}
+   = check (QI :: Sort and QI is ordinary) and-then return {S : 'Sort}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[S]))
+      'is 'not 'a 'valid 'sort, (at L term (S), include context))
+   if QI := read-qid(S) .
+
+  *** analyse comma-separated lists of sorts  - - - - - - - - - - - - - - - - -
+  op solve_sorts : FOL -> AnalysisAction{FOL} .
+  eq solve L sorts {$[SL] : 'NeSortList}
+   = decode input (read-qids(SL) : 'NeSortList) given cs-sorts-grammar(L)
+     then solve L sorts .
+  eq solve L sorts {'_`,_[SL1, SL2] : 'NeSortList}
+   = try {'_`,_ [ solve L sorts (SL1), solve L sorts (SL2) ] : 'NeSortList} .
+  eq solve L sorts {$[S] : 'Sort}
+   = solve L sort {$[S] : 'Sort} .
+
+  *** analyse individual operations  - - - - - - - - - - - - - - - - - - - - - -
+  op solve_op-symbol : FOL -> AnalysisAction{FOL} .
+  eq solve L op-symbol {$[O] : 'Symbol}
+   = check (read-qid(O) is ordinary) and-then return {O : 'Symbol}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[O]))
+      'is 'not 'a 'valid 'operation 'symbol,
+      (at L term (O), include context)) .
+
+  op solve_arity : FOL -> AnalysisAction{FOL} .
+  ceq solve L arity {$[A] : 'Arity}
+   = check (QIL :: NeTypeList) and-then return {A : 'Arity}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[A]))
+      'is 'not 'a 'valid 'arity,
+      (at L term (A), include context))
+   if QIL := read-qids(A) .
+
+  op check`that`all`sorts`in_arity`are`declared : FOL -> AnalysisAction{FOL} .
+  eq check that all sorts in L arity are declared {A : 'Arity}
+   = try {check that all sorts in L sort-seq are declared (A) : 'Arity} .
+
+  op check`that`all`sorts`in_sort-seq`are`declared :
+      FOL -> AnalysisAction{FOL} .
+  eq check that all sorts in L sort-seq are declared {'__[TL] : 'NeQidList}
+   = try { '__ [
+        check that all sorts in L sort-seq are declared (TL)
+      ] : 'NeQidList} .
+  eq check that all sorts in L sort-seq are declared (empty)
+   = return (empty) .
+  eq check that all sorts in L sort-seq are declared ((S, TL))
+   = check that L sort is declared (S)
+     and-then check that all sorts in L sort-seq are declared (TL) .
+
+  op check`that_sort`is`declared : FOL -> AnalysisAction{FOL} .
+  eq check that L sort is declared (S) in SAS
+   = check (read-sort(L, S) in sorts(SAS)) and-then return (S)
+     or-else
+     fail ('undeclared 'sort emph(read-sort(L, S)),
+      (at L term (S), include context))
+     in SAS .
+
+  op solve_op-attributes : FOL -> AnalysisAction{FOL} .
+  eq solve L op-attributes {$[AtL] : 'NeAttrList} in SAS
+   = decode input (read-qids(AtL) : 'AttrList) given op-attr-grammar(L) .
+
+  op check`validity`constraints`for_op : FOL -> AnalysisAction{FOL} .
+  eq check validity constraints for L op
+       {'op_:_->_[O, A, S] : 'Declaration}
+   = try { 'op_:_->_ [
+        check validity constraints for L op
+          [read-arity(L, A) -> read-sort(L, S)] (O),
+        return (A), return (S)
+      ] : 'Declaration } .
+  ceq check validity constraints for L op
+       {'op_:_->_`[_`][O, A, S, AtL] : 'Declaration}
+   = try { 'op_:_->_`[_`] [
+        check validity constraints for L op [TPL -> TP] (O),
+        return (A), return (S),
+        analyse L op-attributes [QI : TPL -> TP] (AtL)
+        ] : 'Declaration }
+   if QI := read-symbol(L, O)
+      /\ TPL := read-arity(L, A) /\ TP := read-sort(L, S) .
+  eq check validity constraints for L op
+       {'op_:`(`)->_[O, S] : 'Declaration}
+   = try { 'op_:`(`)->_ [
+        check validity constraints for L op [nil -> read-sort(L, S)] (O),
+        return (S)
+      ] : 'Declaration } .
+  ceq check validity constraints for L op
+       {'op_:`(`)->_`[_`][O, S, AtL] : 'Declaration}
+   = try { 'op_:`(`)->_`[_`] [
+        check validity constraints for L op [nil -> TP] (O),
+        return (S),
+        analyse L op-attributes [QI : nil -> TP] (AtL)
+      ] : 'Declaration }
+   if QI := read-symbol(L, O) /\ TP := read-sort(L, S) .
+
+  op check`validity`constraints`for_op`[_->_`] :
+      FOL [TypeList] [Type] -> AnalysisAction{FOL} .
+  eq check validity constraints for L op [nil -> TP]
+   = check underscores of L op [nil] .
+  eq check validity constraints for L op [TPL -> TP]
+   = check underscores of L op [TPL] ;
+     check overloading of L symbol [TPL -> TP] [owise] .
+
+  op check`underscores`of_op`[_`] : FOL [TypeList] -> AnalysisAction{FOL} .
+  ceq check underscores of L op [TPL] (O)
+   = check (#O == 0 or #O == #A) and-then return (O)
+     or-else
+     fail ('number 'of 'underscores '\s '`( qid(#O) '`)
+      'does 'not 'match 'number 'of 'arguments '\s '`( qid(#A) '`)
+      'for 'operation emph(read-symbol(L, O)),
+      (at L term (O), include context))
+   if #O := #underscores(read-symbol(L, O)) /\ #A := size(TPL) .
+
+  op check`overloading`of_symbol`[_->_`] :
+      FOL [TypeList] [Type] -> AnalysisAction{FOL} .
+  eq check overloading of L symbol [TPL -> TP] (O) in SAS
+   = check (read-symbol(L, O) not-in symbols*(SAS, TPL, TP)) and-then return (O)
+     or-else
+     fail ('cannot 'overload 'symbol emph(read-symbol(L, O))
+      'with 'arity emph(TPL), (at L term (O), include context))
+     in SAS .
+
+  op analyse_op-attributes`[_:_->_`] :
+      FOL [QidSet] [TypeList] [Type] -> AnalysisAction{FOL} .
+  eq analyse L op-attributes [QIS : TPL -> TP] {'__[AtL1, AtL2] : 'AttrList}
+   = try { '__ [
+        analyse L op-attributes [QIS : TPL -> TP] (AtL1),
+        analyse L op-attributes [QIS : TPL -> TP] (AtL2)
+      ] : 'AttrList } .
+  eq analyse L op-attributes [QIS : TPL -> TP] {CA : 'Attr} in SAS
+   = (check (read-attributes(FOL, {CA : 'Attr}) is equational
+        implies TPL == TP TP)
+      or-else
+      fail (emph(print term CA given op-attr-grammar(L))
+        'attribute 'can 'be 'declared 'only 'for 'binary 'operation
+        'symbols 'whose 'domain 'sorts 'and 'range 'sort 'are 'the 'same,
+        (at term CA given op-attr-grammar(L), include context)))
+     and-then return {CA : 'Attr} in SAS .
+  eq analyse L op-attributes [QIS : TPL -> TP] {'id:[$T] : 'Attr} in SAS
+   = (check (TPL == TP TP)
+      or-else
+      fail (emph('id) 'attribute
+        'can 'be 'declared 'only 'for 'binary 'operation 'symbols
+        'whose 'domain 'sorts 'and 'range 'sort 'are 'the 'same,
+        (at term 'id:[$T] given op-attr-grammar(L), include context)))
+     and-then
+     (check (attrs(SAS) is id-free)
+      or-else
+      fail ('multiple 'identity 'declarations,
+        (at term 'id:[$T] given op-attr-grammar(L), include context)))
+     and-then
+     try {'id: [ solve L term [TP] ($T) ] : 'Attr} in SAS .
+
+  op solve_term`[_`] : FOL [Type] -> AnalysisAction{FOL} .
+  eq solve L term [TP] {$[T] : 'Term} in SAS
+   = decode input (read-qids(T) : TP) given (grammar(SAS) & vars(SAS)) .
+
+  *** analyse comma-separated lists of operation symbols  - - - - - - - - - - --
+  op solve_op-symbols : FOL -> AnalysisAction{FOL} .
+  eq solve L op-symbols {$[OL] : 'NeSymbolList}
+   = decode input (read-qids(OL) : 'NeSymbolList) given cs-symbols-grammar(L)
+     then solve L op-symbols .
+  eq solve L op-symbols {'_`,_[OL1, OL2] : 'NeSymbolList}
+   = try { '_`,_ [
+        solve L op-symbols (OL1),
+        solve L op-symbols (OL2)
+      ] : 'NeSymbolList } .
+  eq solve L op-symbols {$[O] : 'Symbol}
+   = solve L op-symbol {$[O] : 'Symbol} .
+
+  op check`validity`constraints`for_ops : FOL -> AnalysisAction{FOL} .
+  eq check validity constraints for L ops
+      {'ops_:_->_[OL, A, S] : 'Declaration}
+   = try { 'ops_:_->_ [
+        check validity constraints for L ops
+          [read-arity(L, A) -> read-sort(L, S)] (OL),
+        return (A), return (S)
+      ] : 'Declaration } .
+  ceq check validity constraints for L ops
+      {'ops_:_->_`[_`][OL, A, S, AtL] : 'Declaration}
+   = try { 'ops_:_->_`[_`] [
+        check validity constraints for L ops [TPL -> TP] (OL),
+        return (A), return (S),
+        analyse L op-attributes [QIS : TPL -> TP] (AtL)
+      ] : 'Declaration }
+   if QIS := read-cs-symbols(L, OL)
+      /\ TPL := read-arity(L, A) /\ TP := read-sort(L, S) .
+  eq check validity constraints for L ops
+      {'ops_:`(`)->_[OL, S] : 'Declaration}
+   = try { 'ops_:`(`)->_ [
+        check validity constraints for L ops [nil -> read-sort(L, S)] (OL),
+        return (S)
+      ] : 'Declaration } .
+  ceq check validity constraints for L ops
+      {'ops_:`(`)->_`[_`][OL, S, AtL] : 'Declaration}
+   = try { 'ops_:`(`)->_`[_`] [
+        check validity constraints for L ops [nil -> TP] (OL),
+        return (S),
+        analyse L op-attributes [QIS : nil -> TP] (AtL)
+      ] : 'Declaration }
+   if QIS := read-cs-symbols(L, OL) /\ TP := read-sort(L, S) .
+
+  op check`validity`constraints`for_ops`[_->_`] :
+      FOL [TypeList] [Type] -> AnalysisAction{FOL} .
+  eq check validity constraints for L ops [TPL -> TP]
+      {'_`,_[OL1, OL2] : 'NeSymbolList}
+   = try { '_`,_ [
+        check validity constraints for L ops [TPL -> TP] (OL1),
+        check validity constraints for L ops [TPL -> TP] (OL2)
+      ] : 'NeSymbolList } .
+  eq check validity constraints for L ops [TPL -> TP] {O : 'Symbol}
+   = check validity constraints for L op [TPL -> TP] {O : 'Symbol} .
+
+  *** analyse individual predicates  - - - - - - - - - - - - - - - - - - - - - -
+  op solve_pred-symbol : FOL -> AnalysisAction{FOL} .
+  ceq solve L pred-symbol {$[P] : 'Symbol}
+   = check (QI is ordinary and QI not-in ('true ; 'false ; '_=_))
+     and-then return {P : 'Symbol}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[P]))
+      'is 'not 'a 'valid 'predicate 'symbol,
+      (at L term (P), include context))
+   if QI := read-qid(P) .
+
+  op check`validity`constraints`for_pred : FOL -> AnalysisAction{FOL} .
+  eq check validity constraints for L pred
+      {'pred_:_[P, A] : 'Declaration}
+   = try { 'pred_:_ [
+        check validity constraints for L pred [read-arity(L, A)] (P),
+        return (A)
+      ] : 'Declaration } .
+  eq check validity constraints for L pred
+      {'pred_:`(`)[P] : 'Declaration}
+   = try { 'pred_:`(`) [
+        check validity constraints for L pred [nil] (P)
+      ] : 'Declaration } .
+
+  op check`validity`constraints`for_pred`[_`] :
+      FOL [TypeList] -> AnalysisAction{FOL} .
+  eq check validity constraints for L pred [nil]
+   = check underscores of L pred [nil] .
+
+  eq check validity constraints for L pred [TPL]
+   = check underscores of L pred [TPL] ;
+     check overloading of L symbol [TPL -> 'AtomicSentence`{FOL`}] [owise] .
+
+  op check`underscores`of_pred`[_`] : FOL [TypeList] -> AnalysisAction{FOL} .
+  ceq check underscores of L pred [TPL] (P)
+   = check (#P == 0 or #P == #A) and-then return (P)
+     or-else
+     fail ('number 'of 'underscores '\s '`( qid(#P) '`)
+      'does 'not 'match 'number 'of 'arguments '\s '`( qid(#A) '`)
+      'for 'predicate emph(read-symbol(L, P)),
+      (at L term (P), include context))
+   if #P := #underscores(read-symbol(L, P)) /\ #A := size(TPL) .
+
+  *** analyse comma-separated lists of predicate symbols  - - - - - - - - - - --
+  op solve_pred-symbols : FOL -> AnalysisAction{FOL} .
+  eq solve L pred-symbols {$[OL] : 'NeSymbolList}
+   = decode input (read-qids(OL) : 'NeSymbolList) given cs-symbols-grammar(L)
+     then solve L pred-symbols .
+  eq solve L pred-symbols {'_`,_[PL1, PL2] : 'NeSymbolList}
+   = try { '_`,_ [
+        solve L pred-symbols (PL1),
+        solve L pred-symbols (PL2)
+      ] : 'NeSymbolList } .
+  eq solve L pred-symbols {$[P] : 'Symbol}
+   = solve L pred-symbol {$[P] : 'Symbol} .
+
+  op check`validity`constraints`for_preds : FOL -> AnalysisAction{FOL} .
+  eq check validity constraints for L preds
+      {'preds_:_[PL, A] : 'Declaration}
+   = try { 'preds_:_ [
+        check validity constraints for L preds [read-arity(L, A)] (PL),
+        return (A)
+      ] : 'Declaration } .
+  eq check validity constraints for L preds
+      {'preds_:`(`)[PL] : 'Declaration}
+   = try { 'preds_:`(`) [
+        check validity constraints for L preds [nil] (PL)
+      ] : 'Declaration } .
+
+  op check`validity`constraints`for_preds`[_`] :
+      FOL [TypeList] -> AnalysisAction{FOL} .
+  eq check validity constraints for L preds [TPL]
+      {'_`,_[PL1, PL2] : 'NeSymbolList}
+   = try { '_`,_ [
+        check validity constraints for L preds [TPL] (PL1),
+        check validity constraints for L preds [TPL] (PL2)
+      ] : 'NeSymbolList } .
+  eq check validity constraints for L preds [TPL] {P : 'Symbol}
+   = check validity constraints for L pred [TPL] {P : 'Symbol} .
+
+  *** analyse sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_sentence : FOL -> AnalysisAction{FOL} .
+  eq analyse L sentence {$[E] : 'Sentence}
+   = analyse L sentence {$[E] : 'Sentence`{$`}} .
+  eq analyse L sentence {$[E] : 'Sentence`{$`}} in SAS
+   = decode input (read-qids(E) : 'Sentence`{FOL`})
+       given ($grammar(SAS) & vars(SAS))
+     then solve L sentence in SAS .
+
+  op solve_sentence : FOL -> AnalysisAction{FOL} .
+  ceq solve L sentence (E) = return (E)
+   if E :: 'AtomicSentence`{FOL`} .
+  eq solve L sentence {'not_[E] : 'Sentence`{FOL`}}
+   = try {'not_ [ solve L sentence (E) ] : 'Sentence`{FOL`}} .
+  ceq solve L sentence {BC[E1, E2] : 'Sentence`{FOL`}} in SAS
+   = try { BC [
+        solve L sentence (E1),
+        solve L sentence (E2)
+      ] : 'Sentence`{FOL`}} in SAS
+   if BC in symbols(grammar(SAS), 'Sentence`{FOL`} 'Sentence`{FOL`}) .
+  ceq solve L sentence {Q[VD, $E] : 'Sentence`{FOL`}} in SAS
+   = try { Q [
+        check L variables [Q] (VD),
+        analyse L sentence ($E)
+      ] : 'Sentence`{FOL`}} in SAS
+   if Q in symbols(grammar(SAS), 'VarDecl`{FOL`} 'Sentence`{FOL`}) .
+
+  op check_variable`[_`] : FOL [Qid] -> AnalysisAction{FOL} .
+  eq check L variable [Q] (V) in SAS
+   = (check (V :: AVariable)
+      or-else
+      fail (emph(print term V given $grammar(SAS)) 'is 'not 'a 'variable,
+        (at term V given $grammar(SAS), include context)))
+     and-then
+     return (V) in SAS .
+
+  op check_variables`[_`] : FOL [Qid] -> AnalysisAction{FOL} .
+  eq check L variables [Q] {EVD : 'VarDecl`{FOL`}}
+   = return {EVD : 'VarDecl`{FOL`}} .
+  eq check L variables [Q] {'`{_[VL] : 'VarDecl`{FOL`}}
+   = try {'`{_ [ check L variables [Q] (VL) ] : 'VarDecl`{FOL`}} .
+  eq check L variables [Q] {'_`,_[V, VL] : 'VarList`{FOL`}}
+   = try { '_`,_ [
+        check L variable [Q] (V),
+        check L variables [Q] (VL)
+      ] : 'VarList`{FOL`}} .
+  eq check L variables [Q] {'_`}[V] : 'VarList`{FOL`}}
+   = try {'_`} [ check L variable [Q] (V) ] : 'VarList`{FOL`}} .
+
+  op solve_sen-attributes : FOL -> AnalysisAction{FOL} .
+  eq solve L sen-attributes {$[AtL] : 'NeAttrList}
+   = decode input (read-qids(AtL) : 'AttrList) given sen-attr-grammar(L)
+     then solve L sen-attributes .
+  eq solve L sen-attributes {'__[AtL1, AtL2] : 'AttrList}
+   = try { '__ [
+        solve L sen-attributes (AtL1),
+        solve L sen-attributes (AtL2)
+      ] : 'AttrList} .
+  eq solve L sen-attributes {'label:_[$T] : 'Attr}
+   = try {'label:_ [ solve L label ($T) ] : 'Attr} .
+
+  op solve_label : FOL -> AnalysisAction{FOL} .
+  eq solve L label {$[T] : 'Label}
+   = check (read-qid(T) :: Qid) and-then return {T : 'Label}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[T])) 'is 'not 'a 'valid
+      'label, (at L term (T), include context)) .
+
+  op check`that`all_variables`are`bound : FOL -> AnalysisAction{FOL} .
+  eq check that all L variables are bound
+   = check that all free L variables belong to [none] .
+
+  op check`that`all`free_variables`belong`to`[_`] :
+      FOL [VariableSet] -> AnalysisAction{FOL} .
+  ceq check that all free L variables belong to [VS] (E) in SAS
+   = check (vars(E) subset VS) and-then return (E)
+     or-else
+     fail ('unbound 'variables: emph(cs-list(vars(E) \ VS)),
+      (at term E given grammar(SAS), include context))
+     in SAS
+   if E :: 'AtomicSentence`{FOL`} .
+  eq check that all free L variables belong to [VS]
+      {'not_[E] : 'Sentence`{FOL`}}
+   = try { 'not_ [
+        check that all free L variables belong to [VS] (E)
+      ] : 'Sentence`{FOL`}} .
+  ceq check that all free L variables belong to [VS]
+      {BC[E1, E2] : 'Sentence`{FOL`}} in SAS
+   = try { BC [
+        check that all free L variables belong to [VS] (E1),
+        check that all free L variables belong to [VS] (E2)
+      ] : 'Sentence`{FOL`} }
+     in SAS
+   if BC in symbols(grammar(SAS), 'Sentence`{FOL`} 'Sentence`{FOL`}) .
+  ceq check that all free L variables belong to [VS]
+      {Q[VD, E] : 'Sentence`{FOL`}} in SAS
+   = try { Q [
+        return (VD),
+        check that all free L variables
+          belong to [VS ; read-vars(SAS, VD, all vars)] (E)
+      ] : 'Sentence`{FOL`} }
+     in SAS
+   if Q in symbols(grammar(SAS), 'VarDecl`{FOL`} 'Sentence`{FOL`}) .
+
+  *** reanalyse  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op reanalyse : SpecBody{FOL} AnalysisState{FOL} -> AnalysisOutcome .
+  ceq reanalyse(SB, SAS)
+   = if AO :: SuccessfulAnalysis
+     then reanalyse(FOL, show-fragment(SB, SB' + SB), SAS)
+     else AO fi
+   if SB' := spec-body(SAS)
+      /\ Sig := signature(SB)
+      /\ Sig' := signature(SB')
+      /\ AO := reanalyse(FOL, show-fragment(Sig, Sig' + Sig), SAS) .
+endfm
+
+********************************************************************************
+
+fmod FOL/PRINTING is
+  protecting FOL/SHOW .
+
+  var SB : SpecBody{FOL} .
+
+  *** print  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : SpecBody{FOL} -> QidList .
+  eq print(SB) = intercalate('\n, print FOL terms show(SB)) .
+endfm
+
+********************************************************************************
+
+fmod FOL/PARSING-&-PRINTING is
+  protecting FOL/PARSING .
+  protecting FOL/PRINTING .
+endfm
+
+********************************************************************************

@@ -1,0 +1,1198 @@
+sload ./strategies.maude
+sload ../../BaseGMWN.maude
+
+smod EXECUTE is
+ pr STRATS .
+ including BASEGMWN .
+
+endsm
+
+set trace off .
+
+srew [1] pConfig(typesOf ('bool ;
+    'nat ; 'unit)
+('** : typeName 'bool * typeName 'bool ~> typeName 'bool)
+('neg : typeName 'bool ~> typeName 'bool)
+('xor : typeName 'bool * typeName 'bool ~> typeName 'bool)
+'flip : typeName 'unit ~>> typeName 'bool, (fam ('CtrbPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm
+    'K]) :: typeName 'bool)
+(fam ('CtrbSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('In[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InRcvdPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'unit)
+(fam ('InShare$-SumPartyAdv[bound (natAsTerm 1 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InShare$PartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('OTChc-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChcRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTChcRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsg-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsgRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTOutOtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('Out[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutShareSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('RcvdBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('RcvdInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('RcvdOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('SendBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('SendInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('SendOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+fam ('SharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool, newNF({('Ctrb[bound (natAsTerm 2 + qidAsTerm 'N) bound (
+    natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) (qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k) : typeName 'bool} {('CtrbSum[bound (natAsTerm 2 +
+    qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) (qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k) : typeName 'bool} {('InShare[bound (
+    natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) (qidAsTerm 'n qidAsTerm 'm qidAsTerm 'i) : typeName 'bool} {(
+    'InShare$[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) (qidAsTerm 'm qidAsTerm 'n qidAsTerm 'i) :
+    typeName 'bool} {('InShare$-Sum[bound (natAsTerm 1 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) (qidAsTerm 'm qidAsTerm
+    'n qidAsTerm 'i) : typeName 'bool} {('OTChc-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) (qidAsTerm
+    'm qidAsTerm 'n qidAsTerm 'k) : typeName 'bool} {('OTChc-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm
+    'K]) (qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k) : typeName 'bool} {('OTMsg-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N)
+    bound qidAsTerm 'K]) (qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k) : typeName 'bool} {('OTMsg-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 +
+    qidAsTerm 'N) bound qidAsTerm 'K]) (qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k) : typeName 'bool} {('OTMsg-2[bound (natAsTerm 2 + qidAsTerm 'N) bound (
+    natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) (qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k) : typeName 'bool} {('OTMsg-3[bound (natAsTerm 2 +
+    qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) (qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k) : typeName 'bool} {('OTOut[bound (
+    natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) (qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k) : typeName 'bool} {(
+    'OutShare[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) (qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k) :
+    typeName 'bool} {('OutShareSum[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) (qidAsTerm 'n qidAsTerm
+    'm qidAsTerm 'k) : typeName 'bool} {('RcvdBit[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) (qidAsTerm
+    'n qidAsTerm 'm qidAsTerm 'k) : typeName 'bool} {('SendBit[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm
+    'K]) (qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k) : typeName 'bool} {('SendOutShare[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm
+    'N) bound qidAsTerm 'K]) (qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k) : typeName 'bool} {('Share[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm
+    'K]) (qidAsTerm 'n qidAsTerm 'k) : typeName 'bool}, family 'Circuit[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isInputGate qidAsTerm 'k) -->
+(family 'Ctrb[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('Ctrb[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'b)
+
+||
+family 'CtrbPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('CtrbPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'b)
+
+||
+family 'CtrbSum[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('CtrbSum[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'b)
+
+||
+family 'CtrbSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('CtrbSumPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'b)
+
+||
+family 'OTChc-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'bool <- read ('OTChc-0[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChc-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'bool <- read ('OTChc-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChc-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'bool <- read ('OTChc-1[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChc-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'bool <- read ('OTChc-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChcRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'unit <- read ('OTChcRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChcRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'unit <- read ('OTChcRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTMsg-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-2[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-3[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-3[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'unit <- read ('OTMsgRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'unit <- read ('OTMsgRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'unit <- read ('OTMsgRcvd-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'unit <- read ('OTMsgRcvd-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTOut[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('o : typeName 'bool <- read ('OTOut[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'o)
+
+||
+family 'OTOutOtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('out : typeName 'bool <- read ('OTOutOtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'out)
+
+||
+family 'RcvdBit[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('rb : typeName 'bool <- read ('RcvdBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'rb)
+
+||
+family 'RcvdBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('rb : typeName 'bool <- read ('RcvdBitPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'rb)
+
+||
+family 'SendBit[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('sb : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'sb)
+
+||
+family 'SendBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('sb : typeName 'bool <- read ('SendBitPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'sb)
+
+||
+family 'Share[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('in : typeName 'bool <- read ('InShare[qidAsTerm 'n (fun 'wire0 qidAsTerm 'k) (fun 'wire1 qidAsTerm 'k)]), return 'in)
+
+||
+family 'SharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('Share[qidAsTerm 'n qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('SharePartyAdv[qidAsTerm 'n qidAsTerm 'k]), return 's)
+))
+;;
+(when (apply 'isNotGate qidAsTerm 'k) -->
+(family 'Ctrb[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('Ctrb[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'b)
+
+||
+family 'CtrbPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('CtrbPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'b)
+
+||
+family 'CtrbSum[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('CtrbSum[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'b)
+
+||
+family 'CtrbSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('CtrbSumPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'b)
+
+||
+family 'OTChc-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'bool <- read ('OTChc-0[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChc-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'bool <- read ('OTChc-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChc-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'bool <- read ('OTChc-1[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChc-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'bool <- read ('OTChc-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChcRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'unit <- read ('OTChcRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChcRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'unit <- read ('OTChcRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTMsg-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-2[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-3[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-3[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'unit <- read ('OTMsgRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'unit <- read ('OTMsgRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'unit <- read ('OTMsgRcvd-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'unit <- read ('OTMsgRcvd-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTOut[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('o : typeName 'bool <- read ('OTOut[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'o)
+
+||
+family 'OTOutOtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('out : typeName 'bool <- read ('OTOutOtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'out)
+
+||
+family 'RcvdBit[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('rb : typeName 'bool <- read ('RcvdBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'rb)
+
+||
+family 'RcvdBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('rb : typeName 'bool <- read ('RcvdBitPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'rb)
+
+||
+family 'SendBit[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('sb : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'sb)
+
+||
+family 'SendBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('sb : typeName 'bool <- read ('SendBitPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'sb)
+
+||
+family 'Share[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (qidAsTerm 'n =T= natAsTerm 1 + qidAsTerm 'N) -->
+nf('x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0 qidAsTerm 'k)]), return (ap 'neg 'x)))
+;;
+when neg (qidAsTerm 'n =T= natAsTerm 1 + qidAsTerm 'N) -->
+nf('s : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0 qidAsTerm 'k)]), return 's)
+
+||
+family 'SharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('Share[qidAsTerm 'n qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('SharePartyAdv[qidAsTerm 'n qidAsTerm 'k]), return 's)
+))
+;;
+(when (apply 'isXorGate qidAsTerm 'k) -->
+(family 'Ctrb[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('Ctrb[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'b)
+
+||
+family 'CtrbPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('CtrbPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'b)
+
+||
+family 'CtrbSum[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('CtrbSum[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'b)
+
+||
+family 'CtrbSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('CtrbSumPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'b)
+
+||
+family 'OTChc-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'bool <- read ('OTChc-0[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChc-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'bool <- read ('OTChc-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChc-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'bool <- read ('OTChc-1[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChc-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'bool <- read ('OTChc-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChcRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'unit <- read ('OTChcRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChcRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('oc : typeName 'unit <- read ('OTChcRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTMsg-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-2[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-3[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-3[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'bool <- read ('OTMsg-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'unit <- read ('OTMsgRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'unit <- read ('OTMsgRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'unit <- read ('OTMsgRcvd-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('om : typeName 'unit <- read ('OTMsgRcvd-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTOut[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('o : typeName 'bool <- read ('OTOut[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'o)
+
+||
+family 'OTOutOtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('out : typeName 'bool <- read ('OTOutOtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'out)
+
+||
+family 'RcvdBit[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('rb : typeName 'bool <- read ('RcvdBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'rb)
+
+||
+family 'RcvdBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('rb : typeName 'bool <- read ('RcvdBitPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'rb)
+
+||
+family 'SendBit[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('sb : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'sb)
+
+||
+family 'SendBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('sb : typeName 'bool <- read ('SendBitPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'sb)
+
+||
+family 'Share[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0 qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm
+    'k)]), return (ap 'xor pair('x, 'y)))
+
+||
+family 'SharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('Share[qidAsTerm 'n qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('SharePartyAdv[qidAsTerm 'n qidAsTerm 'k]), return 's)
+))
+;;
+when (apply 'isAndGate qidAsTerm 'k) -->
+(family 'Ctrb[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('s : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's))
+;;
+(when (qidAsTerm 'm =T= qidAsTerm 'n) -->
+nf('x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0 qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm
+    'k)]), return (ap '** pair('x, 'y))))
+;;
+when (qidAsTerm 'm <T qidAsTerm 'n) -->
+nf('r : typeName 'bool <- read ('RcvdBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'r)
+
+||
+family 'CtrbPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('Ctrb[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('CtrbPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's)
+
+||
+family 'CtrbSum[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('Ctrb[qidAsTerm 'n natAsTerm 0 qidAsTerm 'k]), return 'b))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('Ctrb[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 's : typeName 'bool <- read ('CtrbSum[qidAsTerm 'n (qidAsTerm 'm -
+    natAsTerm 1) qidAsTerm 'k]), return (ap 'xor pair('s, 'b)))
+
+||
+family 'CtrbSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('CtrbSum[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('CtrbSumPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's)
+
+||
+family 'OTChc-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (qidAsTerm 'm <T qidAsTerm 'n) -->
+nf('x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0 qidAsTerm 'k)]), return 'x))
+;;
+when (qidAsTerm 'n <=T qidAsTerm 'm) -->
+nf('oc : typeName 'bool <- read ('OTChc-0[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChc-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when ((apply 'isSemiHonest qidAsTerm 'm) conj qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('x : typeName 'bool <- read ('Share[qidAsTerm 'm (fun 'wire0 qidAsTerm 'k)]), return 'x))
+;;
+when ((apply 'isHonest qidAsTerm 'm) disj qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('oc : typeName 'bool <- read ('OTChc-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChc-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (qidAsTerm 'm <T qidAsTerm 'n) -->
+nf('x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return 'x))
+;;
+when (qidAsTerm 'n <=T qidAsTerm 'm) -->
+nf('oc : typeName 'bool <- read ('OTChc-1[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChc-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when ((apply 'isSemiHonest qidAsTerm 'm) conj qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('x : typeName 'bool <- read ('Share[qidAsTerm 'm (fun 'wire1 qidAsTerm 'k)]), return 'x))
+;;
+when ((apply 'isHonest qidAsTerm 'm) disj qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('oc : typeName 'bool <- read ('OTChc-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChcRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when ((apply 'isHonest qidAsTerm 'm) conj qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('x : typeName 'bool <- read ('Share[qidAsTerm 'm (fun 'wire0 qidAsTerm 'k)]), return ()))
+;;
+when ((apply 'isSemiHonest qidAsTerm 'm) disj qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('oc : typeName 'unit <- read ('OTChcRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTChcRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when ((apply 'isHonest qidAsTerm 'm) conj qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('x : typeName 'bool <- read ('Share[qidAsTerm 'm (fun 'wire1 qidAsTerm 'k)]), return ()))
+;;
+when ((apply 'isSemiHonest qidAsTerm 'm) disj qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('oc : typeName 'unit <- read ('OTChcRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'oc)
+
+||
+family 'OTMsg-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0
+    qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return 'b))
+;;
+when (qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('om : typeName 'bool <- read ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when ((apply 'isSemiHonest qidAsTerm 'n) conj qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0
+    qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return 'b))
+;;
+when ((apply 'isHonest qidAsTerm 'n) disj qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('om : typeName 'bool <- read ('OTMsg-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0
+    qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return (ap 'xor pair('x, 'b))))
+;;
+when (qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('om : typeName 'bool <- read ('OTMsg-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when ((apply 'isSemiHonest qidAsTerm 'n) conj qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0
+    qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return (ap 'xor pair('x, 'b))))
+;;
+when ((apply 'isHonest qidAsTerm 'n) disj qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('om : typeName 'bool <- read ('OTMsg-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-2[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0
+    qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return (ap 'xor pair('y, 'b))))
+;;
+when (qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('om : typeName 'bool <- read ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when ((apply 'isSemiHonest qidAsTerm 'n) conj qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0
+    qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return (ap 'xor pair('y, 'b))))
+;;
+when ((apply 'isHonest qidAsTerm 'n) disj qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('om : typeName 'bool <- read ('OTMsg-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-3[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0
+    qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return (ap 'xor pair(ap 'xor pair('x, 'y), 'b))))
+;;
+when (qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('om : typeName 'bool <- read ('OTMsg-3[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsg-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when ((apply 'isSemiHonest qidAsTerm 'n) conj qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0
+    qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return (ap 'xor pair(ap 'xor pair('x, 'y), 'b))))
+;;
+when ((apply 'isHonest qidAsTerm 'n) disj qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('om : typeName 'bool <- read ('OTMsg-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when ((apply 'isHonest qidAsTerm 'n) conj qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0
+    qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return ()))
+;;
+when ((apply 'isSemiHonest qidAsTerm 'n) disj qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('om : typeName 'unit <- read ('OTMsgRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when ((apply 'isHonest qidAsTerm 'n) conj qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0
+    qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return ()))
+;;
+when ((apply 'isSemiHonest qidAsTerm 'n) disj qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('om : typeName 'unit <- read ('OTMsgRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when ((apply 'isHonest qidAsTerm 'n) conj qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0
+    qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return ()))
+;;
+when ((apply 'isSemiHonest qidAsTerm 'n) disj qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('om : typeName 'unit <- read ('OTMsgRcvd-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTMsgRcvd-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when ((apply 'isHonest qidAsTerm 'n) conj qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0
+    qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return ()))
+;;
+when ((apply 'isSemiHonest qidAsTerm 'n) disj qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('om : typeName 'unit <- read ('OTMsgRcvd-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'om)
+
+||
+family 'OTOut[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('c0 : typeName 'bool <- read ('OTChc-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'c1 : typeName 'bool <- read ('OTChc-1[qidAsTerm 'n qidAsTerm 'm
+    qidAsTerm 'k]) 'm0 : typeName 'bool <- read ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'm1 : typeName 'bool <- read ('OTMsg-1[qidAsTerm 'n
+    qidAsTerm 'm qidAsTerm 'k]) 'm2 : typeName 'bool <- read ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) 'm3 : typeName 'bool <- read ('OTMsg-3[
+    qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), if 'c0 then if 'c1 then return 'm3 else return 'm2 else if 'c1 then return 'm1 else return 'm0)
+
+||
+family 'OTOutOtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'm) -->
+nf('out : typeName 'bool <- read ('RcvdBit[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]), return 'out))
+;;
+when (apply 'isHonest qidAsTerm 'm) -->
+nf('out : typeName 'bool <- read ('OTOutOtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'out)
+
+||
+family 'RcvdBit[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('b : typeName 'bool <- read ('SendBit[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]) 'xm : typeName 'bool <- read ('Share[qidAsTerm 'm (fun 'wire0
+    qidAsTerm 'k)]) 'xn : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0 qidAsTerm 'k)]) 'ym : typeName 'bool <- read ('Share[qidAsTerm 'm (
+    fun 'wire1 qidAsTerm 'k)]) 'yn : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm 'k)]), return (ap 'xor pair(ap 'xor pair(ap '**
+    pair('xm, 'yn), ap '** pair('xn, 'ym)), 'b)))
+
+||
+family 'RcvdBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('RcvdBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('RcvdBitPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's)
+
+||
+family 'SendBit[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (qidAsTerm 'n <T qidAsTerm 'm) -->
+nf('x : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire0 qidAsTerm 'k)]) 'y : typeName 'bool <- read ('Share[qidAsTerm 'n (fun 'wire1 qidAsTerm
+    'k)]), samp ('flip < () >)))
+;;
+when (qidAsTerm 'm <=T qidAsTerm 'n) -->
+nf('sb : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 'sb)
+
+||
+family 'SendBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('SendBit[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('SendBitPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's)
+
+||
+family 'Share[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('bs : typeName 'bool <- read ('CtrbSum[qidAsTerm 'n (natAsTerm 1 + qidAsTerm 'N) qidAsTerm 'k]), return 'bs)
+
+||
+family 'SharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('Share[qidAsTerm 'n qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('SharePartyAdv[qidAsTerm 'n qidAsTerm 'k]), return 's)
+)
+
+||
+family 'InPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I] qidAsTerm 'n qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('in : typeName 'bool <- read ('In[qidAsTerm 'n qidAsTerm 'i]), return 'in))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('in : typeName 'bool <- read ('InPartyAdv[qidAsTerm 'n qidAsTerm 'i]), return 'in)
+
+||
+family 'InRcvdPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I] qidAsTerm 'n qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I
+::=
+(when (apply 'isHonest qidAsTerm 'n) -->
+nf('x : typeName 'bool <- read ('In[qidAsTerm 'n qidAsTerm 'i]), return ()))
+;;
+when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('in : typeName 'unit <- read ('InRcvdPartyAdv[qidAsTerm 'n qidAsTerm 'i]), return 'in)
+
+||
+family 'InShare[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I
+::=
+nf('in : typeName 'bool <- read ('InShare$[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'i]), return 'in)
+
+||
+family 'InShare$[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I] qidAsTerm 'm qidAsTerm 'n qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I
+::=
+(when (qidAsTerm 'm =T= natAsTerm 1 + qidAsTerm 'N) -->
+nf('s : typeName 'bool <- read ('InShare$-Sum[qidAsTerm 'N qidAsTerm 'n qidAsTerm 'i]) 'x : typeName 'bool <- read ('In[qidAsTerm 'n qidAsTerm 'i]),
+    return (ap 'xor pair('x, 's))))
+;;
+otherwise -->
+nf('x : typeName 'bool <- read ('In[qidAsTerm 'n qidAsTerm 'i]), samp ('flip < () >))
+
+||
+family 'InShare$-Sum[bound (natAsTerm 1 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I] qidAsTerm 'm qidAsTerm 'n qidAsTerm 'i
+bound (natAsTerm 1 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'm) -->
+nf('in : typeName 'bool <- read ('InShare$[natAsTerm 0 qidAsTerm 'n qidAsTerm 'i]), return 'in))
+;;
+otherwise -->
+nf('s : typeName 'bool <- read ('InShare$-Sum[(qidAsTerm 'm - natAsTerm 1) qidAsTerm 'n qidAsTerm 'i]) 'x : typeName 'bool <- read ('InShare$[qidAsTerm
+    'm qidAsTerm 'n qidAsTerm 'i]), return (ap 'xor pair('s, 'x)))
+
+||
+family 'InShare$-SumPartyAdv[bound (natAsTerm 1 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I] qidAsTerm 'm qidAsTerm 'n
+    qidAsTerm 'i
+bound (natAsTerm 1 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('InShare$-Sum[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'i]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('InShare$-SumPartyAdv[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'i]), return 's)
+
+||
+family 'InShare$PartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I] qidAsTerm 'm qidAsTerm 'n qidAsTerm
+    'i
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('in : typeName 'bool <- read ('InShare$[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'i]), return 'in))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('in : typeName 'bool <- read ('InShare$PartyAdv[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'i]), return 'in)
+
+||
+family 'InSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('InShare[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'i]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('InSharePartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'i]), return 's)
+
+||
+family 'Out[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('s : typeName 'bool <- read ('OutShareSum[qidAsTerm 'n (natAsTerm 1 + qidAsTerm 'N) qidAsTerm 'k]), return 's)
+
+||
+family 'OutPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('Out[qidAsTerm 'n qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('OutPartyAdv[qidAsTerm 'n qidAsTerm 'k]), return 's)
+
+||
+family 'OutShare[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+nf('s : typeName 'bool <- read ('SendOutShare[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's)
+
+||
+family 'OutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm
+    'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('OutShare[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('OutSharePartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's)
+
+||
+family 'OutShareSum[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'm) -->
+nf('s : typeName 'bool <- read ('OutShare[qidAsTerm 'n natAsTerm 0 qidAsTerm 'k]), return 's))
+;;
+otherwise -->
+nf('s : typeName 'bool <- read ('OutShareSum[qidAsTerm 'n (qidAsTerm 'm - natAsTerm 1) qidAsTerm 'k]) 'x : typeName 'bool <- read ('OutShare[qidAsTerm
+    'n qidAsTerm 'm qidAsTerm 'k]), return (ap 'xor pair('s, 'x)))
+
+||
+family 'OutShareSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm
+    qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('OutShareSum[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('OutShareSumPartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's)
+
+||
+family 'RcvdInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I] qidAsTerm 'n qidAsTerm 'm
+    qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('in : typeName 'bool <- read ('InShare$[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'i]), return 'in))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('RcvdInSharePartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'i]), return 's)
+
+||
+family 'RcvdOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'n qidAsTerm 'm
+    qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('SendOutShare[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('RcvdOutSharePartyAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]), return 's)
+
+||
+family 'SendInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I] qidAsTerm 'm qidAsTerm 'n
+    qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('in : typeName 'bool <- read ('InShare$[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'i]), return 'in))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('SendInSharePartyAdv[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'i]), return 's)
+
+||
+family 'SendOutShare[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isOutputWire qidAsTerm 'k) -->
+nf('s : typeName 'bool <- read ('Share[qidAsTerm 'n qidAsTerm 'k]), return 's))
+;;
+when neg (apply 'isOutputWire qidAsTerm 'k) -->
+nf('s : typeName 'bool <- read ('SendOutShare[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]), return 's)
+
+||
+family 'SendOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K] qidAsTerm 'm qidAsTerm 'n
+    qidAsTerm 'k
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K
+::=
+(when (apply 'isSemiHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('SendOutShare[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]), return 's))
+;;
+when (apply 'isHonest qidAsTerm 'n) -->
+nf('s : typeName 'bool <- read ('SendOutSharePartyAdv[qidAsTerm 'm qidAsTerm 'n qidAsTerm 'k]), return 's)
+), fam ('In[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]), (fam ('CtrbPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 +
+    qidAsTerm 'N) bound qidAsTerm 'K]), fam ('CtrbSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm
+    'K]), fam ('InPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]), fam ('InRcvdPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N)
+    dependentBound 'I]), fam ('InShare$-SumPartyAdv[bound (natAsTerm 1 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]), fam (
+    'InShare$PartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]), fam ('InSharePartyAdv[bound (natAsTerm
+    2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]), fam ('OTChc-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2
+    + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('OTChc-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm
+    'K]), fam ('OTChcRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('OTChcRcvd-1OtAdv[
+    bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('OTMsg-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N)
+    bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('OTMsg-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N)
+    bound qidAsTerm 'K]), fam ('OTMsg-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam (
+    'OTMsg-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('OTMsgRcvd-0OtAdv[bound (natAsTerm 2
+    + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('OTMsgRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm
+    2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('OTMsgRcvd-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound
+    qidAsTerm 'K]), fam ('OTMsgRcvd-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam (
+    'OTOutOtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('Out[bound (natAsTerm 2 + qidAsTerm
+    'N) bound qidAsTerm 'K]), fam ('OutPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('OutSharePartyAdv[bound (natAsTerm 2 +
+    qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('OutShareSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (
+    natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('RcvdBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound
+    qidAsTerm 'K]), fam ('RcvdInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]), fam (
+    'RcvdOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('SendBitPartyAdv[bound (
+    natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]), fam ('SendInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N)
+    bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]), fam ('SendOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 +
+    qidAsTerm 'N) bound qidAsTerm 'K]), fam ('SharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K])), (neg (apply 'isAndGate natAsTerm
+    0), neg (apply 'isNotGate natAsTerm 0), neg (apply 'isXorGate natAsTerm 0), apply 'isHonest natAsTerm 1 + qidAsTerm 'N))
+     using 
+     applyNewCombine( 
+      fam ('Circuit[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K])
+     ) .

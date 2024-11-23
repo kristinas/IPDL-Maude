@@ -1,0 +1,599 @@
+load IPDL.maude
+erew < IPDL : INT | parsing repl(1) input, prompt : AttrValue(["IPDL" "> " / "" "> "]), repls : AttrValue(repl(1) repl(
+    0)), selected language : AttrValue(lang((IPDL).IPDL)), processors : AttrValue($[(IPDL).IPDL]), database : AttrValue(lang((
+    IPDL).IPDL) : record(buildEnv pConfig(typesOf ('bool ; 'ctxt ; 'key ; 'msg ; 'nat ; 'unit)
+('xor : typeName 'bool * typeName 'bool ~> typeName 'bool)
+('enc : typeName 'msg * typeName 'key ~>> typeName 'ctxt)
+('flip : typeName 'unit ~>> typeName 'bool)
+'mu_key : typeName 'unit ~>> typeName 'key, (fam ('AdvCommitAdvParty[bound (natAsTerm 2 + qidAsTerm 'N)]) :: typeName 'bool)
+(fam ('AdvOpenAdvParty[bound (natAsTerm 2 + qidAsTerm 'N)]) :: typeName 'unit)
+(fam ('LeakCommittedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)]) :: typeName 'unit)
+(fam ('LeakOpenedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)]) :: typeName 'bool)
+fam ('Out[bound (natAsTerm 2 + qidAsTerm 'N)]) :: typeName 'bool, emptyProtocol, (fam ('AdvCommitAdvParty[bound (natAsTerm 2 + qidAsTerm
+    'N)]), fam ('AdvOpenAdvParty[bound (natAsTerm 2 + qidAsTerm 'N)])), (fam ('LeakCommittedCommAdv[bound (natAsTerm 2 + qidAsTerm
+    'N)]), fam ('LeakOpenedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)]), fam ('Out[bound (natAsTerm 2 + qidAsTerm 'N)])), (apply
+    'corrupt qidAsTerm 'N, apply 'honest natAsTerm 1 + qidAsTerm 'N)) ('idealPlusSim |-> (new 'OkAdvId : typeName 'unit
+in
+ newfamily 'LeakFlipIdAdv[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+ bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'bool
+ in
+ (new 'Flip : typeName 'bool
+ in
+  'Flip ::= samp ('flip < () >)
+  
+  ||
+  family 'LeakFlipIdAdv[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+(when (apply 'honest qidAsTerm 'i) -->
+'l : typeName 'bool <- read ('LeakFlipIdAdv[qidAsTerm 'i]) ; return 'l)
+;;
+  when (apply 'corrupt qidAsTerm 'i) -->
+'f : typeName 'bool <- read 'Flip ; return 'f
+  
+  ||
+  family 'Out[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+(when (apply 'honest qidAsTerm 'i) -->
+'ok : typeName 'unit <- read 'OkAdvId ; 'f : typeName 'bool <- read 'Flip ; return 'f)
+;;
+  when (apply 'corrupt qidAsTerm 'i) -->
+'out : typeName 'bool <- read ('Out[qidAsTerm 'i]) ; return 'out
+  )
+  ||
+  (newfamily 'AllOpen[bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'j
+  bound (natAsTerm 3 + qidAsTerm 'N) : typeName 'unit
+  in
+  newfamily 'Commit[bound (natAsTerm 1 + qidAsTerm 'N)] qidAsTerm 'i
+  bound (natAsTerm 1 + qidAsTerm 'N) : typeName 'bool
+  in
+  newfamily 'Committed[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+  bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'unit
+  in
+  new 'LastCommit : typeName 'bool
+  in
+   newfamily 'Open[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+   bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'unit
+   in
+   newfamily 'Opened[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+   bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'bool
+   in
+   newfamily 'SumCommit[bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'j
+   bound (natAsTerm 3 + qidAsTerm 'N) : typeName 'bool
+   in
+   'LastCommit ::= 'x : typeName 'bool <- read ('SumCommit[natAsTerm 1 + qidAsTerm 'N]) ; 'f : typeName 'bool <- read ('LeakFlipIdAdv[
+    qidAsTerm 'N]) ; return (ap 'xor pair('x, 'f))
+   
+   ||
+   'OkAdvId ::= 'ao : typeName 'unit <- read ('AllOpen[natAsTerm 2 + qidAsTerm 'N]) ; 'sc : typeName 'bool <- read ('SumCommit[natAsTerm
+    1 + qidAsTerm 'N]) ; return ()
+   
+   ||
+   family 'AllOpen[bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'j
+bound (natAsTerm 3 + qidAsTerm 'N)
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'j) -->
+return ())
+;;
+   when neg (natAsTerm 0 =T= qidAsTerm 'j) -->
+'x : typeName 'unit <- read ('AllOpen[qidAsTerm 'j - natAsTerm 1]) ; 'y : typeName 'unit <- read ('Open[qidAsTerm 'j - natAsTerm 1]) ;
+    return ()
+   
+   ||
+   family 'Commit[bound (natAsTerm 1 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 1 + qidAsTerm 'N)
+::=
+(when (apply 'honest qidAsTerm 'i) -->
+samp ('flip < () >))
+;;
+   when (apply 'corrupt qidAsTerm 'i) -->
+'advCommit : typeName 'bool <- read ('AdvCommitAdvParty[qidAsTerm 'i]) ; return 'advCommit
+   
+   ||
+   family 'Committed[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+(when (qidAsTerm 'i =T= natAsTerm 1 + qidAsTerm 'N) -->
+return ())
+;;
+   otherwise -->
+'x : typeName 'bool <- read ('Commit[qidAsTerm 'i]) ; return ()
+   
+   ||
+   family 'LeakCommittedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'committed : typeName 'unit <- read ('Committed[qidAsTerm 'i]) ; return 'committed
+   
+   ||
+   family 'LeakOpenedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'opened : typeName 'bool <- read ('Opened[qidAsTerm 'i]) ; return 'opened
+   
+   ||
+   family 'Open[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+(when (apply 'honest qidAsTerm 'i) -->
+'sc : typeName 'bool <- read ('SumCommit[natAsTerm 1 + qidAsTerm 'N]) ; return ())
+;;
+   when (apply 'corrupt qidAsTerm 'i) -->
+'advOpen : typeName 'unit <- read ('AdvOpenAdvParty[qidAsTerm 'i]) ; return 'advOpen
+   
+   ||
+   family 'Opened[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+(when (qidAsTerm 'i =T= natAsTerm 1 + qidAsTerm 'N) -->
+'x : typeName 'unit <- read ('Open[natAsTerm 1 + qidAsTerm 'N]) ; 'commit : typeName 'bool <- read 'LastCommit ; return 'commit)
+;;
+   when neg (qidAsTerm 'i =T= natAsTerm 1 + qidAsTerm 'N) -->
+'x : typeName 'unit <- read ('Open[qidAsTerm 'i]) ; 'commit : typeName 'bool <- read ('Commit[qidAsTerm 'i]) ; return 'commit
+   
+   ||
+   family 'SumCommit[bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'j
+bound (natAsTerm 3 + qidAsTerm 'N)
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'j) -->
+return False)
+;;
+   (when (qidAsTerm 'j =T= natAsTerm 2 + qidAsTerm 'N) -->
+'x : typeName 'bool <- read ('SumCommit[natAsTerm 1 + qidAsTerm 'N]) ; 'f : typeName 'bool <- read 'LastCommit ; return (ap 'xor pair(
+    'x, 'f)))
+;;
+   otherwise -->
+'x : typeName 'bool <- read ('SumCommit[qidAsTerm 'j - natAsTerm 1]) ; 'c : typeName 'bool <- read ('Commit[qidAsTerm 'j - natAsTerm 1])
+    ; return (ap 'xor pair('x, 'c))
+   )), 'real |-> (newfamily 'Commit[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+   bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'bool
+   in
+   newfamily 'Committed[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+   bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'unit
+   in
+   newfamily 'Open[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+   bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'unit
+   in
+   newfamily 'Opened[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+   bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'bool
+   in
+   family 'Committed[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'x : typeName 'bool <- read ('Commit[qidAsTerm 'i]) ; return ()
+   
+   ||
+   family 'LeakCommittedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'committed : typeName 'unit <- read ('Committed[qidAsTerm 'i]) ; return 'committed
+   
+   ||
+   family 'LeakOpenedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'opened : typeName 'bool <- read ('Opened[qidAsTerm 'i]) ; return 'opened
+   
+   ||
+   family 'Opened[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'commit : typeName 'bool <- read ('Commit[qidAsTerm 'i]) ; 'x : typeName 'unit <- read ('Open[qidAsTerm 'i]) ; return 'commit
+   
+   ||
+   family 'Party[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+(when (apply 'honest qidAsTerm 'i) -->
+(newfamily 'AllCommitted[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'i qidAsTerm 'j
+   bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N) : typeName 'unit
+   in
+   newfamily 'SumOpened[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'i qidAsTerm 'j
+   bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N) : typeName 'bool
+   in
+   family 'AllCommitted[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'i qidAsTerm 'j
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N)
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'j) -->
+return ())
+;;
+   when neg (natAsTerm 0 =T= qidAsTerm 'j) -->
+'x : typeName 'unit <- read ('AllCommitted[qidAsTerm 'i (qidAsTerm 'j - natAsTerm 1)]) ; 'y : typeName 'unit <- read ('Committed[
+    qidAsTerm 'j - natAsTerm 1]) ; return ()
+   
+   ||
+   family 'Commit[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+samp ('flip < () >)
+   
+   ||
+   family 'Open[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'x : typeName 'unit <- read ('AllCommitted[qidAsTerm 'i (natAsTerm 2 + qidAsTerm 'N)]) ; return ()
+   
+   ||
+   family 'Out[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'sumOpened : typeName 'bool <- read ('SumOpened[qidAsTerm 'i (natAsTerm 2 + qidAsTerm 'N)]) ; return 'sumOpened
+   
+   ||
+   family 'SumOpened[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'i qidAsTerm 'j
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N)
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'j) -->
+return False)
+;;
+   when neg (natAsTerm 0 =T= qidAsTerm 'j) -->
+'x : typeName 'bool <- read ('SumOpened[qidAsTerm 'i (qidAsTerm 'j - natAsTerm 1)]) ; 'y : typeName 'bool <- read ('Opened[qidAsTerm 'j
+    - natAsTerm 1]) ; return (ap 'xor pair('x, 'y))
+   ))
+;;
+   when (apply 'corrupt qidAsTerm 'i) -->
+(family 'Commit[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'advCommit : typeName 'bool <- read ('AdvCommitAdvParty[qidAsTerm 'i]) ; return 'advCommit
+   
+   ||
+   family 'Open[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'advOpen : typeName 'unit <- read ('AdvOpenAdvParty[qidAsTerm 'i]) ; return 'advOpen
+   
+   ||
+   family 'Out[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'out : typeName 'bool <- read ('Out[qidAsTerm 'i]) ; return 'out
+   )
+   )) smod 'TEST is
+     protecting 'STRATS .
+     sorts none .
+     none
+     none
+     none
+     eq 'ap__[''xor.Sort, 'pair['x:Qid, 'ap__[''xor.Sort, 'pair['x:Qid, 'y:Qid]]]] = 'y:Qid [none] .
+     crl 'rConfig['Sigma:Signature, 'Delta:ChannelContext, '__['Gamma:TypeContext, '_:_['x:Qid, 'typeName_[''bool.Sort]]], '_:_<-_;_[
+    'y:Qid, 'typeName_[''bool.Sort], 'samp_['_<_>[''flip.Sort, '`(`).IPDLExpression]], 'return_['ap__[''xor.Sort, 'pair['x:Qid,
+    'y:Qid]]]], 'Ins:Set`{CNameBound`}, 'A:Set`{BoolTerm`}, 'T:IPDLType] => 'rConfig['Sigma:Signature, 'Delta:ChannelContext, '__[
+    'Gamma:TypeContext, '_:_['x:Qid, 'typeName_[''bool.Sort]]], 'samp_['_<_>[''flip.Sort, '`(`).IPDLExpression]],
+    'Ins:Set`{CNameBound`}, 'A:Set`{BoolTerm`}, 'T:IPDLType] if '_==_['T:IPDLType, 'bool.IPDLType] = 'true.Bool [label(
+    'flipInvariantXorFixed)] .
+     strat 'applyflipInvariantXorFixed : 'ChannelName @ 'ProtocolConfig [none] .
+     strat 'applyflipInvariantXorFixedNF : 'ChannelName @ 'ProtocolConfig [none] .
+     strat 'applyflipInvariantXorFixedPre : 'ChannelName @ 'ProtocolConfig [none] .
+     sd 'applyflipInvariantXorFixed[['cn:ChannelName]] := 'applyflipInvariantXorFixedNF[['cn:ChannelName]] or-else
+    'applyflipInvariantXorFixedPre[['cn:ChannelName]] [none] .
+     sd 'applyflipInvariantXorFixedNF[['cn:ChannelName]] := match 'pConf:ProtocolConfig s.t. ('startsWithNew_['pConf:ProtocolConfig] =
+    'true.Bool) ? 'CONG-NEW-NF[none]{'applyflipInvariantXorFixedNF[['cn:ChannelName]]} : matchrew 'pConf:ProtocolConfig s.t. 'pConfig[
+    'Sigma:Signature, 'Delta:ChannelContext, 'P:Protocol, 'Ins:Set`{CNameBound`}, 'Outs:Set`{CNameBound`}, 'A:Set`{BoolTerm`}] :=
+    'pConf:ProtocolConfig by 'pConf:ProtocolConfig using ('CONG-COMP-RIGHT[
+       'P1:Protocol <- 'keepOne__['P:Protocol, 'chn_['cn:ChannelName]] ; 
+       'Q:Protocol <- 'removeOne__['P:Protocol, 'chn_['cn:ChannelName]]]{'CONG-REACT[
+       'o:ChannelName <- 'cn:ChannelName]{'cong-nf[none]{'flipInvariantXorFixed[none]{empty}}}} or-else 'CONG-REACT[
+       'o:ChannelName <- 'cn:ChannelName]{'cong-nf[none]{'flipInvariantXorFixed[none]{empty}}}) [none] .
+     sd 'applyflipInvariantXorFixedPre[['cn:ChannelName]] := match 'pConf:ProtocolConfig s.t. ('startsWithNew_['pConf:ProtocolConfig] =
+    'true.Bool) ? 'CONG-NEW-NF[none]{'applyflipInvariantXorFixedPre[['cn:ChannelName]]} : matchrew 'pConf:ProtocolConfig s.t. 'pConfig[
+    'Sigma:Signature, 'Delta:ChannelContext, 'P:Protocol, 'Ins:Set`{CNameBound`}, 'Outs:Set`{CNameBound`}, 'A:Set`{BoolTerm`}] :=
+    'pConf:ProtocolConfig by 'pConf:ProtocolConfig using ('CONG-COMP-RIGHT[
+       'P1:Protocol <- 'keepOne__['P:Protocol, 'chn_['cn:ChannelName]] ; 
+       'Q:Protocol <- 'removeOne__['P:Protocol, 'chn_['cn:ChannelName]]]{'CONG-REACT[
+       'o:ChannelName <- 'cn:ChannelName]{'cong-pre-nf[none]{'flipInvariantXorFixed[none]{empty}}} ; try('pre2Nf[none]{empty})} or-else
+    'CONG-REACT[
+       'o:ChannelName <- 'cn:ChannelName]{'cong-pre-nf[none]{'flipInvariantXorFixed[none]{empty}}} ; try('pre2Nf[none]{empty})) [none] .
+endsm ('flipInvariantXorFixed ; 'xorIdemRight) empty 'N : typeName 'nat)) >
+< $[IPDL] : PROC | running, none >
+parsed(IPDL, $[(IPDL).IPDL], parse IPDL input ('start 'with 'idealPlusSim
+    'then 'case 'distinction 'on 'family 'Out '`[ 'bound 'N '+ '2 '`] '`( 'case: '`( 'subst 'chn 'OkAdvId 'into 'fam 'Out '`[ 'bound '`(
+    'N '+ '2 '`) '`] '`) 'case: '`( 'idle '`) '`) 'then 'absorb 'chn 'OkAdvId 'then 'subst 'fam 'LeakFlipIdAdv '`[ 'bound 'N '+ '2 '`]
+    'into 'chn 'LastCommit 'then 'absorb 'fam 'LeakFlipIdAdv '`[ 'bound 'N '+ '2 '`] 'then 'case 'distinction 'on 'family 'Out '`[
+    'bound 'N '+ '2 '`] '`( 'case: '`( 'sym 'from 'change 'fam 'Out '`[ 'bound '`( 'N '+ '2 '`) '`] 'with 'ao ': 'unit '<- 'read
+    'AllOpen '`[ 'N '+ '2 '`] '; 'sc ': 'bool '<- 'read 'SumCommit '`[ 'N '+ '2 '`] '; 'return 'sc 'in 'currentProtocol '`( 'subst 'fam
+    'SumCommit '`[ 'bound '`( 'N '+ '3 '`) '`] 'into 'fam 'Out '`[ 'bound '`( 'N '+ '2 '`) '`] 'then 'subst 'chn 'LastCommit 'into 'fam
+    'Out '`[ 'bound '`( 'N '+ '2 '`) '`] 'then 'rename 'x 'to 'sc 'in 'fam 'Out '`[ 'bound '`( 'N '+ '2 '`) '`] '`) '`) 'case: '`( 'idle
+    '`) '`) 'then 'fold 'chn 'Flip 'into 'chn 'LastCommit 'then 'use 'assumption 'flipInvariantXorFixed 'on 'LastCommit 'then 'sym 'from
+    'extend '`( 'change 'chn 'LastCommit 'with 'x ': 'bool '<- 'read 'SumCommit '`[ 'N '+ '1 '`] '; 'commit ': 'bool '<- 'read 'Commit
+    '`[ 'N '+ '1 '`] '; 'return 'commit 'in 'currentProtocol '`) 'with 'internal 'channel 'Commit '`[ 'N '+ '1 '`] 'typed: 'bool
+    'assigned: 'samp 'flip '`( '`( '`) '`) '`( 'fold 'chn 'Commit '`[ 'N '+ '1 '`] 'into 'chn 'LastCommit '`) 'then 'case 'distinction
+    'on 'family 'Opened '`[ 'bound 'N '+ '2 '`] '`( 'case: '`( 'rename 'x 'to 'o 'in 'fam 'Opened '`[ 'bound 'N '+ '2 '`] 'then 'subst
+    'chn 'LastCommit 'into 'fam 'Opened '`[ 'bound 'N '+ '2 '`] '`) 'case: '`( 'idle '`) '`) 'then 'case 'distinction 'on 'family
+    'SumCommit '`[ 'bound 'N '+ '3 '`] '`( 'case: '`( 'idle '`) 'case: '`( 'subst 'chn 'LastCommit 'into 'fam 'SumCommit '`[ 'bound 'N
+    '+ '3 '`] 'then 'rename 'commit 'to 'c 'in 'fam 'SumCommit '`[ 'bound 'N '+ '3 '`] '`) 'case: '`( 'idle '`) '`) 'then 'absorb 'chn
+    'LastCommit 'then 'case 'distinction 'on 'family 'Opened '`[ 'bound 'N '+ '2 '`] '`( 'case: '`( 'subst 'fam 'Open '`[ 'bound '`( 'N
+    '+ '2 '`) '`] 'into 'fam 'Opened '`[ 'bound '`( 'N '+ '2 '`) '`] 'then 'sym 'from 'change 'fam 'Opened '`[ 'bound '`( 'N '+ '2 '`)
+    '`] 'with 'commit ': 'bool '<- 'read 'Commit '`[ 'N '+ '1 '`] '; 'o ': 'unit '<- 'read 'Open '`[ 'N '+ '1 '`] '; 'return 'commit 'in
+    'currentProtocol '`( 'subst 'fam 'Open '`[ 'bound '`( 'N '+ '2 '`) '`] 'into 'fam 'Opened '`[ 'bound '`( 'N '+ '2 '`) '`] '`) '`)
+    'case: '`( 'idle '`) '`) 'then 'case 'distinction 'on 'family 'Opened '`[ 'bound 'N '+ '2 '`] '`( 'case: '`( 'rename 'o 'to 'x 'in
+    'fam 'Opened '`[ 'bound 'N '+ '2 '`] '`) 'case: '`( 'idle '`) '`) 'then 'merge 'case 'j '= 'N '+ '2 'with 'otherwise 'for 'fam
+    'SumCommit '`[ 'bound 'N '+ '3 '`] 'then 'merge 'cases 'for 'fam 'Opened '`[ 'bound 'N '+ '2 '`] 'then 'case 'distinction 'on
+    'family 'SumCommit '`[ 'bound 'N '+ '3 '`] '`( 'case: '`( 'idle '`) 'case: '`( 'rename 'c 'to 'cj '`, 'x 'to 'xj 'in 'fam 'SumCommit
+    '`[ 'bound 'N '+ '3 '`] '`) '`)) in (lang((IPDL).IPDL) : record(buildEnv pConfig(typesOf ('bool ; 'ctxt ; 'key ; 'msg ; 'nat ; 'unit)
+('xor : typeName 'bool * typeName 'bool ~> typeName 'bool)
+('enc : typeName 'msg * typeName 'key ~>> typeName 'ctxt)
+('flip : typeName 'unit ~>> typeName 'bool)
+'mu_key : typeName 'unit ~>> typeName 'key, (fam ('AdvCommitAdvParty[bound (natAsTerm 2 + qidAsTerm 'N)]) :: typeName 'bool)
+(fam ('AdvOpenAdvParty[bound (natAsTerm 2 + qidAsTerm 'N)]) :: typeName 'unit)
+(fam ('LeakCommittedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)]) :: typeName 'unit)
+(fam ('LeakOpenedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)]) :: typeName 'bool)
+fam ('Out[bound (natAsTerm 2 + qidAsTerm 'N)]) :: typeName 'bool, emptyProtocol, (fam ('AdvCommitAdvParty[bound (natAsTerm 2 + qidAsTerm
+    'N)]), fam ('AdvOpenAdvParty[bound (natAsTerm 2 + qidAsTerm 'N)])), (fam ('LeakCommittedCommAdv[bound (natAsTerm 2 + qidAsTerm
+    'N)]), fam ('LeakOpenedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)]), fam ('Out[bound (natAsTerm 2 + qidAsTerm 'N)])), (apply
+    'corrupt qidAsTerm 'N, apply 'honest natAsTerm 1 + qidAsTerm 'N)) ('idealPlusSim |-> (new 'OkAdvId : typeName 'unit
+   in
+    newfamily 'LeakFlipIdAdv[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+    bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'bool
+    in
+    (new 'Flip : typeName 'bool
+    in
+     'Flip ::= samp ('flip < () >)
+     
+     ||
+     family 'LeakFlipIdAdv[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+(when (apply 'honest qidAsTerm 'i) -->
+'l : typeName 'bool <- read ('LeakFlipIdAdv[qidAsTerm 'i]) ; return 'l)
+;;
+     when (apply 'corrupt qidAsTerm 'i) -->
+'f : typeName 'bool <- read 'Flip ; return 'f
+     
+     ||
+     family 'Out[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+(when (apply 'honest qidAsTerm 'i) -->
+'ok : typeName 'unit <- read 'OkAdvId ; 'f : typeName 'bool <- read 'Flip ; return 'f)
+;;
+     when (apply 'corrupt qidAsTerm 'i) -->
+'out : typeName 'bool <- read ('Out[qidAsTerm 'i]) ; return 'out
+     )
+     ||
+     (newfamily 'AllOpen[bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'j
+     bound (natAsTerm 3 + qidAsTerm 'N) : typeName 'unit
+     in
+     newfamily 'Commit[bound (natAsTerm 1 + qidAsTerm 'N)] qidAsTerm 'i
+     bound (natAsTerm 1 + qidAsTerm 'N) : typeName 'bool
+     in
+     newfamily 'Committed[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+     bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'unit
+     in
+     new 'LastCommit : typeName 'bool
+     in
+      newfamily 'Open[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+      bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'unit
+      in
+      newfamily 'Opened[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+      bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'bool
+      in
+      newfamily 'SumCommit[bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'j
+      bound (natAsTerm 3 + qidAsTerm 'N) : typeName 'bool
+      in
+      'LastCommit ::= 'x : typeName 'bool <- read ('SumCommit[natAsTerm 1 + qidAsTerm 'N]) ; 'f : typeName 'bool <- read (
+    'LeakFlipIdAdv[qidAsTerm 'N]) ; return (ap 'xor pair('x, 'f))
+      
+      ||
+      'OkAdvId ::= 'ao : typeName 'unit <- read ('AllOpen[natAsTerm 2 + qidAsTerm 'N]) ; 'sc : typeName 'bool <- read ('SumCommit[
+    natAsTerm 1 + qidAsTerm 'N]) ; return ()
+      
+      ||
+      family 'AllOpen[bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'j
+bound (natAsTerm 3 + qidAsTerm 'N)
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'j) -->
+return ())
+;;
+      when neg (natAsTerm 0 =T= qidAsTerm 'j) -->
+'x : typeName 'unit <- read ('AllOpen[qidAsTerm 'j - natAsTerm 1]) ; 'y : typeName 'unit <- read ('Open[qidAsTerm 'j - natAsTerm 1]) ;
+    return ()
+      
+      ||
+      family 'Commit[bound (natAsTerm 1 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 1 + qidAsTerm 'N)
+::=
+(when (apply 'honest qidAsTerm 'i) -->
+samp ('flip < () >))
+;;
+      when (apply 'corrupt qidAsTerm 'i) -->
+'advCommit : typeName 'bool <- read ('AdvCommitAdvParty[qidAsTerm 'i]) ; return 'advCommit
+      
+      ||
+      family 'Committed[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+(when (qidAsTerm 'i =T= natAsTerm 1 + qidAsTerm 'N) -->
+return ())
+;;
+      otherwise -->
+'x : typeName 'bool <- read ('Commit[qidAsTerm 'i]) ; return ()
+      
+      ||
+      family 'LeakCommittedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'committed : typeName 'unit <- read ('Committed[qidAsTerm 'i]) ; return 'committed
+      
+      ||
+      family 'LeakOpenedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'opened : typeName 'bool <- read ('Opened[qidAsTerm 'i]) ; return 'opened
+      
+      ||
+      family 'Open[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+(when (apply 'honest qidAsTerm 'i) -->
+'sc : typeName 'bool <- read ('SumCommit[natAsTerm 1 + qidAsTerm 'N]) ; return ())
+;;
+      when (apply 'corrupt qidAsTerm 'i) -->
+'advOpen : typeName 'unit <- read ('AdvOpenAdvParty[qidAsTerm 'i]) ; return 'advOpen
+      
+      ||
+      family 'Opened[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+(when (qidAsTerm 'i =T= natAsTerm 1 + qidAsTerm 'N) -->
+'x : typeName 'unit <- read ('Open[natAsTerm 1 + qidAsTerm 'N]) ; 'commit : typeName 'bool <- read 'LastCommit ; return 'commit)
+;;
+      when neg (qidAsTerm 'i =T= natAsTerm 1 + qidAsTerm 'N) -->
+'x : typeName 'unit <- read ('Open[qidAsTerm 'i]) ; 'commit : typeName 'bool <- read ('Commit[qidAsTerm 'i]) ; return 'commit
+      
+      ||
+      family 'SumCommit[bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'j
+bound (natAsTerm 3 + qidAsTerm 'N)
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'j) -->
+return False)
+;;
+      (when (qidAsTerm 'j =T= natAsTerm 2 + qidAsTerm 'N) -->
+'x : typeName 'bool <- read ('SumCommit[natAsTerm 1 + qidAsTerm 'N]) ; 'f : typeName 'bool <- read 'LastCommit ; return (ap 'xor pair(
+    'x, 'f)))
+;;
+      otherwise -->
+'x : typeName 'bool <- read ('SumCommit[qidAsTerm 'j - natAsTerm 1]) ; 'c : typeName 'bool <- read ('Commit[qidAsTerm 'j - natAsTerm 1])
+    ; return (ap 'xor pair('x, 'c))
+      )), 'real |-> (newfamily 'Commit[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+      bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'bool
+      in
+      newfamily 'Committed[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+      bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'unit
+      in
+      newfamily 'Open[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+      bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'unit
+      in
+      newfamily 'Opened[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+      bound (natAsTerm 2 + qidAsTerm 'N) : typeName 'bool
+      in
+      family 'Committed[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'x : typeName 'bool <- read ('Commit[qidAsTerm 'i]) ; return ()
+      
+      ||
+      family 'LeakCommittedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'committed : typeName 'unit <- read ('Committed[qidAsTerm 'i]) ; return 'committed
+      
+      ||
+      family 'LeakOpenedCommAdv[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'opened : typeName 'bool <- read ('Opened[qidAsTerm 'i]) ; return 'opened
+      
+      ||
+      family 'Opened[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'commit : typeName 'bool <- read ('Commit[qidAsTerm 'i]) ; 'x : typeName 'unit <- read ('Open[qidAsTerm 'i]) ; return 'commit
+      
+      ||
+      family 'Party[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+(when (apply 'honest qidAsTerm 'i) -->
+(newfamily 'AllCommitted[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'i qidAsTerm 'j
+      bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N) : typeName 'unit
+      in
+      newfamily 'SumOpened[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'i qidAsTerm 'j
+      bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N) : typeName 'bool
+      in
+      family 'AllCommitted[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'i qidAsTerm 'j
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N)
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'j) -->
+return ())
+;;
+      when neg (natAsTerm 0 =T= qidAsTerm 'j) -->
+'x : typeName 'unit <- read ('AllCommitted[qidAsTerm 'i (qidAsTerm 'j - natAsTerm 1)]) ; 'y : typeName 'unit <- read ('Committed[
+    qidAsTerm 'j - natAsTerm 1]) ; return ()
+      
+      ||
+      family 'Commit[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+samp ('flip < () >)
+      
+      ||
+      family 'Open[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'x : typeName 'unit <- read ('AllCommitted[qidAsTerm 'i (natAsTerm 2 + qidAsTerm 'N)]) ; return ()
+      
+      ||
+      family 'Out[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'sumOpened : typeName 'bool <- read ('SumOpened[qidAsTerm 'i (natAsTerm 2 + qidAsTerm 'N)]) ; return 'sumOpened
+      
+      ||
+      family 'SumOpened[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N)] qidAsTerm 'i qidAsTerm 'j
+bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 3 + qidAsTerm 'N)
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'j) -->
+return False)
+;;
+      when neg (natAsTerm 0 =T= qidAsTerm 'j) -->
+'x : typeName 'bool <- read ('SumOpened[qidAsTerm 'i (qidAsTerm 'j - natAsTerm 1)]) ; 'y : typeName 'bool <- read ('Opened[qidAsTerm 'j
+    - natAsTerm 1]) ; return (ap 'xor pair('x, 'y))
+      ))
+;;
+      when (apply 'corrupt qidAsTerm 'i) -->
+(family 'Commit[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'advCommit : typeName 'bool <- read ('AdvCommitAdvParty[qidAsTerm 'i]) ; return 'advCommit
+      
+      ||
+      family 'Open[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'advOpen : typeName 'unit <- read ('AdvOpenAdvParty[qidAsTerm 'i]) ; return 'advOpen
+      
+      ||
+      family 'Out[bound (natAsTerm 2 + qidAsTerm 'N)] qidAsTerm 'i
+bound (natAsTerm 2 + qidAsTerm 'N)
+::=
+'out : typeName 'bool <- read ('Out[qidAsTerm 'i]) ; return 'out
+      )
+      )) smod 'TEST is
+        protecting 'STRATS .
+        sorts none .
+        none
+        none
+        none
+        eq 'ap__[''xor.Sort, 'pair['x:Qid, 'ap__[''xor.Sort, 'pair['x:Qid, 'y:Qid]]]] = 'y:Qid [none] .
+        crl 'rConfig['Sigma:Signature, 'Delta:ChannelContext, '__['Gamma:TypeContext, '_:_['x:Qid, 'typeName_[''bool.Sort]]], '_:_<-_;_[
+    'y:Qid, 'typeName_[''bool.Sort], 'samp_['_<_>[''flip.Sort, '`(`).IPDLExpression]], 'return_['ap__[''xor.Sort, 'pair['x:Qid,
+    'y:Qid]]]], 'Ins:Set`{CNameBound`}, 'A:Set`{BoolTerm`}, 'T:IPDLType] => 'rConfig['Sigma:Signature, 'Delta:ChannelContext, '__[
+    'Gamma:TypeContext, '_:_['x:Qid, 'typeName_[''bool.Sort]]], 'samp_['_<_>[''flip.Sort, '`(`).IPDLExpression]],
+    'Ins:Set`{CNameBound`}, 'A:Set`{BoolTerm`}, 'T:IPDLType] if '_==_['T:IPDLType, 'bool.IPDLType] = 'true.Bool [label(
+    'flipInvariantXorFixed)] .
+        strat 'applyflipInvariantXorFixed : 'ChannelName @ 'ProtocolConfig [none] .
+        strat 'applyflipInvariantXorFixedNF : 'ChannelName @ 'ProtocolConfig [none] .
+        strat 'applyflipInvariantXorFixedPre : 'ChannelName @ 'ProtocolConfig [none] .
+        sd 'applyflipInvariantXorFixed[['cn:ChannelName]] := 'applyflipInvariantXorFixedNF[['cn:ChannelName]] or-else
+    'applyflipInvariantXorFixedPre[['cn:ChannelName]] [none] .
+        sd 'applyflipInvariantXorFixedNF[['cn:ChannelName]] := match 'pConf:ProtocolConfig s.t. ('startsWithNew_['pConf:ProtocolConfig]
+    = 'true.Bool) ? 'CONG-NEW-NF[none]{'applyflipInvariantXorFixedNF[['cn:ChannelName]]} : matchrew 'pConf:ProtocolConfig s.t. 'pConfig[
+    'Sigma:Signature, 'Delta:ChannelContext, 'P:Protocol, 'Ins:Set`{CNameBound`}, 'Outs:Set`{CNameBound`}, 'A:Set`{BoolTerm`}] :=
+    'pConf:ProtocolConfig by 'pConf:ProtocolConfig using ('CONG-COMP-RIGHT[
+          'P1:Protocol <- 'keepOne__['P:Protocol, 'chn_['cn:ChannelName]] ; 
+          'Q:Protocol <- 'removeOne__['P:Protocol, 'chn_['cn:ChannelName]]]{'CONG-REACT[
+          'o:ChannelName <- 'cn:ChannelName]{'cong-nf[none]{'flipInvariantXorFixed[none]{empty}}}} or-else 'CONG-REACT[
+          'o:ChannelName <- 'cn:ChannelName]{'cong-nf[none]{'flipInvariantXorFixed[none]{empty}}}) [none] .
+        sd 'applyflipInvariantXorFixedPre[['cn:ChannelName]] := match 'pConf:ProtocolConfig s.t. ('startsWithNew_['pConf:ProtocolConfig]
+    = 'true.Bool) ? 'CONG-NEW-NF[none]{'applyflipInvariantXorFixedPre[['cn:ChannelName]]} : matchrew 'pConf:ProtocolConfig s.t.
+    'pConfig['Sigma:Signature, 'Delta:ChannelContext, 'P:Protocol, 'Ins:Set`{CNameBound`}, 'Outs:Set`{CNameBound`}, 'A:Set`{BoolTerm`}]
+    := 'pConf:ProtocolConfig by 'pConf:ProtocolConfig using ('CONG-COMP-RIGHT[
+          'P1:Protocol <- 'keepOne__['P:Protocol, 'chn_['cn:ChannelName]] ; 
+          'Q:Protocol <- 'removeOne__['P:Protocol, 'chn_['cn:ChannelName]]]{'CONG-REACT[
+          'o:ChannelName <- 'cn:ChannelName]{'cong-pre-nf[none]{'flipInvariantXorFixed[none]{empty}}} ; try('pre2Nf[none]{empty})}
+    or-else 'CONG-REACT[
+          'o:ChannelName <- 'cn:ChannelName]{'cong-pre-nf[none]{'flipInvariantXorFixed[none]{empty}}} ; try('pre2Nf[none]{empty})) [
+    none] .
+      endsm ('flipInvariantXorFixed ; 'xorIdemRight) empty 'N : typeName 'nat))[IPDL]) .

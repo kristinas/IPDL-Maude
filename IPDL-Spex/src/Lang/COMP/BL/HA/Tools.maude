@@ -1,0 +1,466 @@
+***( SpeX/Lang/COMP/BL/HA
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Language.maude
+
+********************************************************************************
+
+fmod COMP/HA/REDUCE is
+  protecting COMP/HA/LANGUAGE .
+
+  var  L : COMP/HA .
+  var  SB : SpecBody{COMP/HA} .
+  vars H QI : Qid .
+  var  QIL : QidList .
+  var  IL : ImportList .
+  var  S : Sort .
+  var  SS : SortSet .
+  var  SSDS : SubsortDeclSet .
+  var  ODS : OpDeclSet .
+  var  MAS : MembAxSet .
+  var  EQS : EquationSet .
+  var  EDS  : SenDeclSet .
+  var  AtS : AttrSet .
+  vars E E1 E2 LHS RHS C T : ATerm .
+  var  RP : ResultPair .
+
+  *** fmod  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op fmod : Qid SpecBody{COMP/HA} -> FModule .
+  ceq fmod(H, SB)
+   = (fmod H is IL
+        sorts SS ; 'Truth`{HA`} . SSDS
+        ODS Bool-ops(COMP/HA, udef-sorts(COMP/HA, SS))
+        MAS EQS Bool-eqs(COMP/HA, udef-sorts(COMP/HA, SS), none) clauses(SB)
+      endfm)
+   if (fmod QI is
+         IL sorts SS . SSDS ODS MAS EQS
+       endfm) := fmod(sentence-grammar(SB)) .
+
+  *** Boolean encoding  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op Bool-ops : COMP/HA SortSet -> OpDeclSet .
+  eq Bool-ops(L, none)
+   = (op 'true : nil -> 'Truth`{HA`} [ctor] .
+      op 'false : nil -> 'Truth`{HA`} [ctor] .
+      op 'not_ : 'Truth`{HA`} -> 'Truth`{HA`} [prec (71)] .
+      op '_and_ : 'Truth`{HA`} 'Truth`{HA`} -> 'Truth`{HA`}
+         [assoc comm prec (75)] .
+      op '_or_ : 'Truth`{HA`} 'Truth`{HA`} -> 'Truth`{HA`}
+         [assoc comm prec (79)] .
+      op '_if_ : 'Truth`{HA`} 'Truth`{HA`} -> 'Truth`{HA`}
+         [gather ('E 'e) prec (81)] .) .
+  eq Bool-ops(L, S ; SS)
+   = (op '_=?=_ : S S -> 'Truth`{HA`} [format ('d 's! 'so 'd) prec (51)] .
+      op '_~?~_ : S S -> 'Truth`{HA`} [format ('d 's! 'so 'd) prec (51)] .)
+     Bool-ops(L, SS) .
+
+  op Bool-eqs : COMP/HA SortSet AttrSet -> EquationSet .
+  eq Bool-eqs(L, none, AtS)
+   = (eq 'not_['true.Truth`{HA`}]
+       = 'false.Truth`{HA`} [AtS] .
+      eq 'not_['false.Truth`{HA`}]
+       = 'true.Truth`{HA`} [AtS] .
+      eq '_and_['true.Truth`{HA`}, 'X:Truth`{HA`}]
+       = 'X:Truth`{HA`} [AtS] .
+      eq '_and_['false.Truth`{HA`}, 'X:Truth`{HA`}]
+       = 'false.Truth`{HA`} [AtS] .
+      eq '_or_['true.Truth`{HA`}, 'X:Truth`{HA`}]
+       = 'true.Truth`{HA`} [AtS] .
+      eq '_or_['false.Truth`{HA`}, 'X:Truth`{HA`}]
+       = 'X:Truth`{HA`} [AtS] .
+      eq '_if_['X:Truth`{HA`}, 'true.Truth`{HA`}]
+       = 'X:Truth`{HA`} [AtS] .
+      eq '_if_['X:Truth`{HA`}, 'false.Truth`{HA`}]
+       = 'true.Truth`{HA`} [AtS] .
+      eq '_if_['true.Truth`{HA`}, 'X:Truth`{HA`}]
+       = 'true.Truth`{HA`} [AtS] .
+      eq '_if_['false.Truth`{HA`}, 'X:Truth`{HA`}]
+       = 'not_['X:Truth`{HA`}] [AtS] .) .
+  eq Bool-eqs(L, S ; SS, AtS)
+   = (eq '_=?=_[var('X, S), var('X, S)] = 'true.Truth`{HA`} [AtS] .
+      eq '_~?~_[var('X, S), var('X, S)] = 'true.Truth`{HA`} [AtS] .)
+     Bool-eqs(L, SS, AtS) .
+
+  op udef-sorts : COMP/HA SortSet -> SortSet .
+  eq udef-sorts(L, SS)
+   = SS \ ('Equation`{HA`} ; 'BehaviouralEquation`{HA`} ;
+           'AtomicSentence`{HA`} ; 'Sentence`{HA`}) .
+
+  op Boolean-encoding : COMP/HA ATerm ~> Term .
+  eq Boolean-encoding(L, {'_=_[LHS, RHS] : 'Equation`{HA`}})
+   = '_=?=_[plain-term(LHS), plain-term(RHS)] .
+  eq Boolean-encoding(L, {'_~_[LHS, RHS] : 'BehaviouralEquation`{HA`}})
+   = '_~?~_[plain-term(LHS), plain-term(RHS)] .
+  eq Boolean-encoding(L, {'not_[E] : 'Sentence`{HA`}})
+   = 'not_[Boolean-encoding(L, E)] .
+  eq Boolean-encoding(L, {'_and_[E1, E2] : 'Sentence`{HA`}})
+   = '_and_[Boolean-encoding(L, E1), Boolean-encoding(L, E2)] .
+  eq Boolean-encoding(L, {'_or_[E1, E2] : 'Sentence`{HA`}})
+   = '_or_[Boolean-encoding(L, E1), Boolean-encoding(L, E2)] .
+  eq Boolean-encoding(L, {'_if_[E1, E2] : 'Sentence`{HA`}})
+   = '_if_[Boolean-encoding(L, E1), Boolean-encoding(L, E2)] .
+
+  *** clauses  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op clauses : SpecBody{COMP/HA} -> EquationSet .
+  eq clauses(SB) = clauses(COMP/HA, sens(SB)) .
+
+  op clauses : COMP/HA SenDeclSet -> EquationSet .
+  eq clauses(L, (none).SenDeclSet) = none .
+  eq clauses(L, sen E [AtS] . EDS) = clause(L, E) clauses(L, EDS) .
+
+  op clause : COMP/HA ATerm -> EquationSet .
+  eq clause(L, {'_=_[LHS, RHS] : 'Equation`{HA`}})
+   = (eq plain-term(LHS) = plain-term(RHS) [none] .) .
+  eq clause(L, {'_if_[
+            {'_=_[LHS, RHS] : 'Equation`{HA`}},
+            C] : 'Sentence`{HA`}})
+   = (ceq plain-term(LHS) = plain-term(RHS)
+      if Boolean-encoding(L, C) = 'true.Truth`{HA`} [none] .) .
+  eq clause(L, {'not_[{'_=_[LHS, RHS] : 'Equation`{HA`}}] : 'Sentence`{HA`}})
+   = (eq '_=?=_[plain-term(LHS), plain-term(RHS)]
+       = 'false.Truth`{HA`} [none] .
+      eq '_=?=_[plain-term(RHS), plain-term(LHS)]
+       = 'false.Truth`{HA`} [none] .) .
+  eq clause(L, {'_if_[
+            {'not_[{'_=_[LHS, RHS] : 'Equation`{HA`}}] : 'Sentence`{HA`}},
+            C] : 'Sentence`{HA`}})
+   = (ceq '_=?=_[plain-term(LHS), plain-term(RHS)] = 'false.Truth`{HA`}
+       if Boolean-encoding(L, C) = 'true.Truth`{HA`} [none] .
+      ceq '_=?=_[plain-term(RHS), plain-term(LHS)] = 'false.Truth`{HA`}
+       if Boolean-encoding(L, C) = 'true.Truth`{HA`} [none] .) .
+  eq clause(L, E) = none [owise] .
+
+  *** reduce  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op reduce : ATerm Qid SpecBody{COMP/HA} -> ResultPair .
+  eq reduce(T, H, SB) = metaReduce(fmod(H, SB), plain-term(T)) .
+
+  *** printf  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op printf : ATerm Qid SpecBody{COMP/HA} -> QidList .
+  eq printf(T, H, SB) = printf(plain-term(T), H, SB) .
+
+  op printf : Term Qid SpecBody{COMP/HA} -> QidList .
+  eq printf(T:Term, H, SB)
+   = metaPrettyPrint(fmod(H, SB), none, T:Term, mixfix format number rat) .
+
+  op printf : ResultPair QidList Qid SpecBody{COMP/HA} -> QidList .
+  eq printf(RP, QIL, H, SB)
+   = metaPrettyPrint(fmod(H, SB), none, getTerm(RP), mixfix format number rat)
+     QIL mksord(getType(RP)) .
+endfm
+
+********************************************************************************
+
+fmod COMP/HA/SOLVE is
+  protecting COMP/HA/REDUCE .
+  protecting BOUND/OPS .
+  protecting ATERM/OPS .
+  protecting ATERM/VARS .
+  protecting ATERM/SUBSTITUTION-LIST .
+  protecting QID-LIST/FORMATTING .
+
+  var  L : COMP/HA .
+  var  SB : SpecBody{COMP/HA} .
+  var  FM : FModule .
+  vars K N : Nat .
+  var  B : Bound .
+  vars H QI : Qid .
+  var  QIL : QidList .
+  var  IL : ImportList .
+  var  SS : SortSet .
+  var  SSDS : SubsortDeclSet .
+  var  ODS : OpDeclSet .
+  var  MAS : MembAxSet .
+  var  EQS : EquationSet .
+  var  EDS  : SenDeclSet .
+  var  AtS : AttrSet .
+  var  V : AVariable .
+  vars E LHS RHS T : ATerm .
+  var  UP : UnificationProblem .
+  var  UR : UnificationPair? .
+  var  AS : ASubstitution .
+  var  AL : AAssignmentList .
+  var  NASL : NeASubstList .
+
+  *** variant-fmod  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op variant-fmod : Qid SpecBody{COMP/HA} -> FModule .
+  ceq variant-fmod(H, SB)
+   = (fmod H is IL
+        sorts SS ; 'Truth`{HA`} . SSDS
+        ODS Bool-ops(COMP/HA, udef-sorts(COMP/HA, SS))
+        MAS EQS
+        Bool-eqs(COMP/HA, udef-sorts(COMP/HA, SS), variant) variant-eqs(SB)
+      endfm)
+   if (fmod QI is
+         IL sorts SS . SSDS ODS MAS EQS
+       endfm) := fmod(sentence-grammar(SB)) .
+
+  *** variant-eqs  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op variant-eqs : SpecBody{COMP/HA} -> EquationSet .
+  eq variant-eqs(SB) = variant-eqs(COMP/HA, sens(SB)) .
+
+  op variant-eqs : COMP/HA SenDeclSet -> EquationSet .
+  eq variant-eqs(L, (none).SenDeclSet) = none .
+  eq variant-eqs(L, sen E [AtS] . EDS) = variant-eq(L, E) variant-eqs(L, EDS) .
+
+  op variant-eq : COMP/HA ATerm -> EquationSet .
+  eq variant-eq(L, {'_=_[LHS, RHS] : 'Equation`{HA`}})
+   = (eq plain-term(LHS) = plain-term(RHS) [variant] .) .
+  eq variant-eq(L, E) = none [owise] .
+
+  *** solve  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op solve : ATerm Bound Qid SpecBody{COMP/HA} -> ASubstList .
+  ceq solve(E, B, H, SB)
+   = solve(COMP/HA, UP, 0, B, FM)
+   if UP := Boolean-encoding(COMP/HA, E) =? 'true.Truth`{HA`}
+      /\ FM := variant-fmod(H, SB) .
+
+  op solve : COMP/HA UnificationProblem Nat Bound FModule -> ASubstList .
+  ceq solve(L, UP, K, B, FM)
+   = if UR :: UnificationPair and-then K < B
+     then annotate(getSubstitution(UR), FM) solve(L, UP, s K, B, FM)
+     else nil fi
+   if UR := metaVariantUnify(FM, UP, empty, '@, filter delay, K) .
+
+  *** printf  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op printf : ASubstList Qid SpecBody{COMP/HA} -> QidList .
+  eq printf((nil).ASubstList, H, SB)
+   = 'Could 'not 'find 'any 'solution. .
+  ceq printf(NASL, H, SB)
+   = 'Found if N < 2 then 'one 'solution: else qid(N) 'solutions. fi
+     '\n '\n
+     $printf(NASL, H, SB, 1)
+   if N := size(NASL) .
+
+  op $printf : ASubstitution Qid SpecBody{COMP/HA} Nat -> QidList .
+  eq $printf(AS, H, SB, N)
+   = 'Solution (qid(N) ++ ':) '\n $printf(list(AS), H, SB) .
+
+  op $printf : AAssignmentList Qid SpecBody{COMP/HA} -> QidList .
+  eq $printf((nil).AAssignmentList, H, SB) = nil .
+  ceq $printf({subst(V, T)} AL, H, SB)
+   = printf(eq(COMP/HA, V = T), H, SB)
+     if QIL == nil then nil else '\n QIL fi
+   if QIL := $printf(AL, H, SB) .
+
+  op $printf : ASubstList Qid SpecBody{COMP/HA} Nat -> QidList .
+  eq $printf((nil).ASubstList, H, SB, N) = nil .
+  eq $printf(AS NASL, H, SB, N)
+   = $printf(AS, H, SB, N)
+     '\n '\n
+     $printf(NASL, H, SB, s N) .
+endfm
+
+********************************************************************************
+
+fmod COMP/HA/CHECK is
+  protecting COMP/HA/SOLVE .
+  protecting SCANNING/COMPAT .
+  protecting SCANNING { COMP/HA } .
+  protecting NAT-LIST/OPS .
+
+  var  L : COMP/HA .
+  var  SB : SpecBody{COMP/HA} .
+  var  CR : CheckResult{COMP/HA} .
+  vars CR? CR'? : [CheckResult{COMP/HA}] .
+  var  CS : CheckStat{COMP/HA} .
+  vars SM SM' : StatMod{COMP/HA} .
+  var  SCS : Bool .
+  vars N SN BN : Nat .
+  vars NL SNL BNL SNL' BNL' : NatList .
+  var  FM : FModule .
+  vars H O : Qid .
+  vars QIL LHQIL RHQIL : QidList .
+  var  A : TypeList .
+  vars P PO : String .
+  vars HS S : Sort .
+  var  HSS : SortSet .
+  var  AtS : AttrSet .
+  var  V : AVariable .
+  vars E LHS RHS : ATerm .
+  var  VL : ATermList .
+  var  NEL : NeATermList .
+  var  ODS : OpDeclSet .
+  vars PDL ODL : OpDeclList .
+  vars BE RE : Term .
+  vars TL : TermList .
+  var  NTL : NeTermList .
+  var  AS : ASubstitution .
+  vars ASL ASL' : ASubstList .
+  var  NASL : NeASubstList .
+
+  *** CheckResult{COMP/HA}  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort CheckResult{COMP/HA} .
+  op proved : COMP/HA CheckStat{COMP/HA} -> CheckResult{COMP/HA}
+    [ctor] .
+  op disproved : COMP/HA TermList CheckStat{COMP/HA} -> CheckResult{COMP/HA}
+    [ctor] .
+  op open : COMP/HA TermList CheckStat{COMP/HA} -> CheckResult{COMP/HA}
+    [ctor] .
+
+  op _and-then_ : CheckResult{COMP/HA} CheckResult{COMP/HA}
+      -> CheckResult{COMP/HA} [strat (1 0 2 0) gather (e E)] .
+  eq proved(L, CS) and-then CR'? = CR'? [stat add(CS)] .
+  eq CR? and-then CR'? = CR? [owise] .
+
+  op _or-else`add-trace(_) : CheckResult{COMP/HA} Term -> CheckResult{COMP/HA}
+    [strat (1 0 2 0) gather (e E)] .
+  eq proved(L, CS) or-else add-trace(BE) = proved(L, CS) .
+  eq disproved(L, TL, CS) or-else add-trace(BE) = disproved(L, (BE, TL), CS) .
+  eq open(L, TL, CS) or-else add-trace(BE) = open(L, (BE, TL), CS) .
+
+  *** statistics  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort CheckStat{COMP/HA} .
+  op stat : COMP/HA NeNatList NeNatList -> CheckStat{COMP/HA} [ctor] .
+
+  sort StatMod{COMP/HA} .
+  op add-level : COMP/HA -> StatMod{COMP/HA} [ctor] .
+  op add : CheckStat{COMP/HA} -> StatMod{COMP/HA} [ctor] .
+  op add-seqn : COMP/HA NatList -> StatMod{COMP/HA} [ctor] .
+  op add-beqn : COMP/HA NatList -> StatMod{COMP/HA} [ctor] .
+  op __ : StatMod{COMP/HA} StatMod{COMP/HA} -> StatMod{COMP/HA} [ctor assoc] .
+
+  op _>>=_ : CheckStat{COMP/HA} StatMod{COMP/HA} -> CheckStat{COMP/HA} .
+  eq stat(L, SNL, BNL) >>= add-level(L)
+   = stat(L, 0 SNL, 0 BNL) .
+  eq stat(L, SNL, BNL) >>= add(stat(L, SNL', BNL'))
+   = stat(L, SNL [+] SNL', BNL [+] BNL') .
+  eq CS >>= add-seqn(L, NL) = CS >>= add(stat(L, NL, nil)) .
+  eq CS >>= add-beqn(L, NL) = CS >>= add(stat(L, nil, NL)) .
+  eq CS >>= SM SM' = (CS >>= SM) >>= SM' .
+
+  op _[stat_] : CheckResult{COMP/HA} StatMod{COMP/HA} -> CheckResult{COMP/HA} .
+  eq proved(L, CS) [stat SM] = proved(L, CS >>= SM) .
+  eq disproved(L, TL, CS) [stat SM] = disproved(L, TL, CS >>= SM) .
+  eq open(L, TL, CS) [stat SM] = open(L, TL, CS >>= SM) .
+
+  *** check  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op check : ATermList ASubstList Qid SpecBody{COMP/HA}
+    -> CheckResult{COMP/HA} .
+  eq check(empty, ASL, H, SB) = proved(COMP/HA, stat(COMP/HA, 0, 0)) .
+  eq check((E, NEL), ASL, H, SB)
+   = check(E, ASL, H, SB) and-then check(NEL, ASL, H, SB) .
+  eq check(E, AS NASL, H, SB)
+   = check(E, AS, H, SB) and-then check(E, NASL, H, SB) .
+  eq check({'_~_[LHS, RHS] : 'BehaviouralEquation`{HA`}}, ASL, H, SB)
+   = check({'_~_[LHS, RHS] : 'BehaviouralEquation`{HA`} | ""}, ASL, H, SB) .
+  ceq check({'_~_[LHS, RHS] : 'BehaviouralEquation`{HA`} | P}, ASL, H, SB)
+   = if successful?(COMP/HA, RE)
+     then proved(COMP/HA, stat(COMP/HA, 0, 1))
+     else if PDL :: NeOpDeclList
+     then check(eqs(COMP/HA, LHS, RHS, HS, PDL, HSS, P), ASL, H, SB)
+          [stat add-level(COMP/HA) add-beqn(COMP/HA, 1)]
+     else if ODL :: NeOpDeclList
+     then check(eqs(COMP/HA, LHS, RHS, HS, ODL, HSS, P), ASL, H, SB)
+          [stat add-beqn(COMP/HA, 1)]
+     else open(COMP/HA, empty, stat(COMP/HA, 0, 1)) fi fi fi
+     or-else add-trace(Boolean-encoding(COMP/HA, apply1(ASL, E)))
+   if E := {'_~_[LHS, RHS] : 'BehaviouralEquation`{HA`}}
+      /\ BE := Boolean-encoding(COMP/HA, apply1(ASL, E))
+      /\ RE := getTerm(metaReduce(fmod(H, SB), BE))
+      /\ HS := annotation(LHS)
+      /\ HSS := hidden-sorts(SB)
+      /\ PDL := list(projections(SB, HS))
+      /\ ODL := list(observations(SB, HS)) .
+  eq check({'_=_[LHS, RHS] : 'Equation`{HA`}}, ASL, H, SB)
+   = check({'_=_[LHS, RHS] : 'Equation`{HA`} | ""}, ASL, H, SB) .
+  ceq check({'_=_[LHS, RHS] : 'Equation`{HA`} | P}, ASL, H, SB)
+   = if successful?(COMP/HA, RE)
+     then proved(COMP/HA, stat(COMP/HA, 1, 0))
+     else if failed?(COMP/HA, RE, H, SB)
+     then disproved(COMP/HA, RE, stat(COMP/HA, 1, 0))
+     else open(COMP/HA, RE, stat(COMP/HA, 1, 0)) fi fi
+   if E := {'_=_[LHS, RHS] : 'Equation`{HA`}}
+      /\ BE := Boolean-encoding(COMP/HA, apply1(ASL, E))
+      /\ RE := getTerm(metaReduce(fmod(H, SB), BE)) .
+  eq check(E, ASL, H, SB)
+   = open(COMP/HA,
+      Boolean-encoding(COMP/HA, apply1(ASL, drop-args(E))),
+      stat(COMP/HA, 0, 0)) [owise] .
+
+  op check : ATerm ASubstList ASubstList Qid SpecBody{COMP/HA}
+    -> CheckResult{COMP/HA} .
+  eq check(E, ASL, ASL', H, SB) = check(apply(ASL, E), ASL', H, SB) .
+
+  op successful? : COMP/HA Term -> Bool .
+  eq successful?(L, 'true.Truth`{HA`}) = true .
+  eq successful?(L, BE) = false [owise] .
+
+  op failed? : COMP/HA Term Qid SpecBody{COMP/HA} -> Bool .
+  eq failed?(L, 'false.Truth`{HA`}, H, SB) = true .
+  ceq failed?(L, '_=?=_[LHS:Term, RHS:Term], H, SB)
+    = vars((LHS, RHS)) == none and-then LHS =/= RHS
+   if FM := fmod(L, H, ctors(ops(SB)))
+      /\ LHQIL := list term LHS:Term given sentence-grammar(SB)
+      /\ successful-parsing(LHS) := scan input (LHQIL : anyType)
+                                    given (FM & none)
+      /\ RHQIL := list term RHS:Term given sentence-grammar(SB)
+      /\ successful-parsing(RHS) := scan input (RHQIL : anyType)
+                                    given (FM & none) .
+  eq failed?(L, BE, H, SB) = false [owise] .
+
+  op eqs : COMP/HA ATerm ATerm Sort OpDeclList SortSet String -> ATermList .
+  ceq eqs(L, LHS, RHS, HS, {op O : A -> S [AtS] .} ODL, HSS, P)
+   = { if S in HSS then '_~_ else '_=_ fi [
+        {O[apply(subst(V, LHS), VL)] : S},
+        {O[apply(subst(V, RHS), VL)] : S}
+      ] : if S in HSS then 'BehaviouralEquation`{HA`} else 'Equation`{HA`} fi
+      | PO },
+     eqs(L, LHS, RHS, HS, ODL, HSS, P)
+   if PO := if P == "" then "" else P + "." fi + (string(O) ["_" / "?"])
+      /\ VL := fresh-vars(A, vars(LHS) ; vars(RHS), "<" + PO + ">-")
+      /\ V := filter-terms(VL : HS) .
+  eq eqs(L, LHS, RHS, HS, ODL, HSS, P) = empty [owise] .
+
+  op fmod : COMP/HA Qid OpDeclSet -> FModule .
+  eq fmod(L, H, ODS)
+   = (fmod H is nil sorts sorts(ODS) . none ODS none none endfm) .
+
+  *** printf  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op printf : CheckResult{COMP/HA} Qid SpecBody{COMP/HA}
+    Bool -> QidList .
+  eq printf(proved(L, CS), H, SB, SCS)
+   = 'Proved! 'The 'property 'holds. print-stat(CS, SCS) .
+  eq printf(disproved(L, TL, CS), H, SB, SCS)
+   = 'Disproved! 'None 'of 'the 'following 'properties 'hold: '\n '\n
+     printf(TL, '\n, H, SB) print-stat(CS, SCS) .
+  eq printf(open(L, TL, CS), H, SB, SCS)
+   = 'Open! 'Could 'not 'establish 'the 'following 'properties: '\n '\n
+     printf(TL, '\n, H, SB) print-stat(CS, SCS) .
+
+  op printf : CheckResult{COMP/HA} ASubstList Qid SpecBody{COMP/HA}
+    Bool -> QidList .
+  eq printf(CR, ASL, H, SB, SCS)
+   = if ASL == nil
+     then 'The 'property 'vacuously 'holds.
+     else printf(CR, H, SB, SCS) fi .
+
+  op printf : TermList QidList Qid SpecBody{COMP/HA} -> QidList .
+  eq printf(empty, QIL, H, SB) = nil .
+  eq printf(BE, QIL, H, SB) = printf(BE, H, SB) .
+  eq printf((BE, NTL), QIL, H, SB)
+   = printf(BE, H, SB) QIL printf(NTL, QIL, H, SB) .
+
+  *** print-stat  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print-stat : CheckStat{COMP/HA} Bool -> QidList .
+  eq print-stat(CS, true)
+   = '\n '\n 'Equations 'examined 'for 'each 'bobj 'hierarchy 'level '\n
+     intercalate('\n, print-stat(CS, 0)) .
+  eq print-stat(CS, SCS) = nil [owise].
+
+  op print-stat : CheckStat{COMP/HA} Nat -> QidList2 .
+  eq print-stat(stat(L, SN SNL, BN BNL), N)
+   = :['level (qid(N) ++ ':) qid(BN) 'behavioural 'and qid(SN) 'strict]
+     print-stat(stat(L, SNL, BNL), s N) .
+  eq print-stat(stat(L, nil, BN BNL), N) = print-stat(stat(L, 0, BN BNL), N) .
+  eq print-stat(stat(L, SN SNL, nil), N) = print-stat(stat(L, SN SNL, 0), N) .
+  eq print-stat(stat(L, nil, nil), N) = nil .
+endfm
+
+********************************************************************************

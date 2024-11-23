@@ -1,0 +1,32 @@
+***( SpeX/Lang/Th/BL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../../Base/MSA/Processor.maude
+
+********************************************************************************
+
+view Th/MSA from TH/SUBPROCESSOR to MSA/PROCESSOR { Th/Pid{MSA} } is
+  sort SpecBody to SpecBody{MSA} .
+  op (nil).SpecBody to term
+    SpecBody[MSA]{sorts none . none none} .
+
+  sort State to AnalysisState{MSA} .
+  op initial-state(SB:SpecBody) to term
+    AnalysisState[MSA]{SB:SpecBody{MSA} & none & none} .
+
+  op parse-declaration(QIL:QidList, S:State) to term
+    parse MSA input (QIL:QidList) in S:AnalysisState{MSA} .
+  op print-declaration(T:Term) to term
+    print MSA term (T:Term) .
+endv
+
+********************************************************************************

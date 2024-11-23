@@ -1,0 +1,412 @@
+***( IPDL
+
+  Copyright : (C) 2022-23, Kristina Sojakova, Mihai Codescu
+  License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+Authenticated-To-Secure Channel: CPA Security.
+See Sec. 1 in doc/case-studies.pdf
+
+)
+
+load ../src/strategies
+
+mod SECURE is
+ protecting APPROX-EQUALITY .
+
+ op msg  : -> Type .
+ op key  : -> Type .
+ op ctxt : -> Type .
+ 
+ op zerosF : -> SigElem .
+ eq zerosF = 'zeros : unit ~> msg .
+ 
+ op decF : -> SigElem .
+ eq decF = 'dec : (ctxt * key) ~> msg .
+ 
+ op encF : -> SigElem .
+ eq encF = 'enc : (msg * key) ~>> ctxt .
+
+ op muKeySym : -> SigElem .
+ eq muKeySym = 'mu_key : unit ~>> key .
+ 
+ op secSig : -> Signature .
+ eq secSig = muKeySym encF decF zerosF .
+ 
+ op n : -> Nat .
+ 
+ op genA : -> Set{BoolTerm} .
+ eq genA = 0 <T n .
+ 
+ op idealPlusSim : -> Protocol .
+ eq idealPlusSim = 
+    new 'Key : key in
+    newfamily (('LeakMsgRcvd ^^ 'id .. 'adv)[bound n]) 'i (bound n) : unit in
+    newfamily (('OkMsg ^^ 'adv .. 'id)[bound n]) 'i (bound n) : ctxt in     
+    (
+    ('Key ::= nf(emptyBRList, samp ('mu_key < () >), nil) )
+    ||
+    (family (('LeakCtxt ^^ 'net .. 'adv)[bound n]) 'i (bound n) ::= 
+                nf(
+                 ('x : unit <- read (('LeakMsgRcvd ^^ 'id .. 'adv)['i]))
+                 ('k : key <- read 'Key ),
+                 samp ('enc < pair(ap 'zeros (), 'k) >),
+                 'x 'k
+                ) 
+    )  
+    ||
+    (family (('OkMsg ^^ 'adv .. 'id)[bound n]) 'i (bound n) ::= 
+                       nf('okCtxt : ctxt <- read (('OkCtxt ^^ 'adv .. 'net)['i]),
+                          return 'okCtxt , 
+                          'okCtxt )
+    )   
+    ||
+    (family (('LeakMsgRcvd ^^ 'id .. 'adv)[bound n]) 'i (bound n) ::= 
+          nf(
+            'in : msg <- read ('In['i]) ,
+            return (),
+            'in)
+    )
+    ||
+    (family ('Out[bound n]) 'i (bound n) ::= 
+          nf(
+            ('okMsg : ctxt <- read (('OkMsg ^^ 'adv .. 'id)['i]))
+            ('in : msg <- read ('In['i])),
+            return 'in,
+            'okMsg 'in
+            )
+    ) 
+    ) . *** end of new, leave here
+    
+ op real : -> Protocol .
+ eq real = 
+    new 'Key : key in
+    newfamily ('Recv[bound n]) 'i (bound n) : ctxt in
+    newfamily ('Send[bound n]) 'i (bound n) : ctxt in
+    ( 
+    ('Key ::= nf(emptyBRList, samp ('mu_key < () >), nil))
+    || 
+    (family ('Send[bound n]) 'i (bound n) ::= 
+          nf(
+            ('in : msg <- read ('In ['i]) )
+            ('k : key <- read 'Key) ,
+            samp ('enc < pair('in, 'k) >),
+            'in 'k 
+            )
+    )    
+    ||
+    (family (('LeakCtxt ^^ 'net .. 'adv)[bound n]) 'i (bound n) ::= 
+      nf('send : ctxt <- read ('Send['i]), return 'send, 'send)
+    )
+    || 
+    (family ('Recv[bound n]) 'i (bound n) ::= 
+            nf(
+            ('okCtxt : ctxt <- read (('OkCtxt ^^ 'adv .. 'net) [ 'i ]) )
+            ('send : ctxt <- read ('Send [ 'i ])), 
+                return 'send,
+                'okCtxt 'send
+            )
+    ) 
+    ||
+    (family ('Out[bound n]) 'i (bound n) ::=
+            nf(
+            ('c : ctxt <- read ('Recv ['i]) )
+            ('k : key <- read 'Key ),
+            return (ap 'dec pair('c, 'k)),
+            'c 'k
+            )
+            
+    ) 
+    ) . *** end of new, leave here
+  
+  op addEncDec : -> Protocol .
+   eq addEncDec = 
+   newNF(< 'Key : key > 
+         {('Send[bound n]) 'i : ctxt} 
+         {('Enc[bound n]) 'i  : ctxt} 
+         {('Dec[bound n]) 'i  : msg},
+    (family ('Dec[bound n]) 'i (bound n) ::= 
+                      nf(('k : key <- read 'Key) 
+                         'send : ctxt <- read ('Send ['i]), 
+                         return (ap 'dec pair('send, 'k)), 
+                         'send 'k )) 
+    || 
+    (family ('Enc[bound n]) 'i (bound n) ::= 
+                     nf(('in : msg <- read ('In['i])) 
+                         'k : key <- read 'Key, 
+                         samp ('enc < pair('in, 'k) >), 
+                         'in 'k)
+    )
+    ||  
+    ('Key ::= nf(emptyBRList, samp ('mu_key < () >), nil)) 
+    || 
+    (family (('LeakCtxt ^^ 'net .. 'adv)[bound n]) 'i (bound n) ::= 
+       nf('send : ctxt <- read ('Send['i]), return 'send, 'send)
+    ) 
+    || 
+    (family ('Out[bound n]) 'i (bound n) ::= 
+      nf(('d : msg <- read ('Dec['i]))
+         ('okCtxt : ctxt <- read (('OkCtxt ^^ 'adv .. 'net)['i])) , 
+          return 'd, 
+          'okCtxt 'd)
+    ) 
+    || 
+    (family ('Send[bound n]) 'i (bound n) ::= 
+       nf('e : ctxt <- read ('Enc['i]), return 'e, 'e)
+    ), 
+      (fam ('Dec[bound n])) (fam ('Enc[bound n])) (chn 'Key) (fam ('Send[bound n])) 
+   ) .
+      
+endm
+
+smod EXECUTE is
+ pr STRATS .
+ pr SECURE .
+ 
+ var Sigma : Signature .
+ var Delta Delta' : ChannelContext .
+ var Gamma : TypeContext .
+ vars i1 i2 X Y Z In cn1 cn2 cn3 cn4 keyN inN encN decN : ChannelName .  
+ vars m x y z k c Enc Dec Key i inQ : Qid .
+ var I O : Set{CNameBound} .
+ var li : List{NatTerm} .
+ var A : Set{BoolTerm} .
+ var n1 n2 n3 n4 : Nat .
+  
+  crl [enc-dec-correctness] :
+  pConfig(Sigma, Delta, 
+           (keyN ::= nf(emptyBRList, samp ('mu_key < () >), nil)
+           ) 
+           || 
+           (encN ::= nf((m : msg <- read inN)
+                       (k : key <- read keyN),
+                    samp ('enc < pair(m, k) >),
+                    m k
+                    )
+           )
+           ||
+           (decN ::= nf ((c : ctxt <- read encN)
+                    (k : key <- read keyN) ,
+                    return (ap 'dec pair(c, k)),
+                    c k
+                    )
+           )  
+          , I, O, A)
+  => 
+  pConfig(Sigma, Delta, 
+          (keyN ::= nf(emptyBRList, samp ('mu_key < () >), nil)
+           ) 
+           || 
+           (encN ::= nf((m : msg <- read inN)
+                       (k : key <- read keyN),
+                    samp ('enc < pair(m, k) >),
+                    m k 
+                    )
+           )
+           ||
+           (decN ::= nf (i : msg <- read inN ,
+                    return i,
+                    i
+                    )
+           )  
+                     , I, O, A) 
+  if isElemB(inN, I, A)  [nonexec]. 
+  
+ var in key enc dec : ChannelName . 
+ var pConf : ProtocolConfig .
+ var P : Protocol .
+  
+ strat applyEDC : ChannelName ChannelName ChannelName @ ProtocolConfig .  
+ sd applyEDC( key, enc, dec) := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyEDC(key, enc, dec)} 
+     : 
+          matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+          using CONG-COMP-RIGHT
+                [Q:Protocol <- removeThree P (chn key) (chn enc) (chn dec),
+                 P1:Protocol <- keepThree P (chn key) (chn enc) (chn dec)]
+          {
+          enc-dec-correctness[*** inN:ChannelName <- 'In[0], 
+                             keyN:ChannelName <- key,
+                             encN:ChannelName <- enc,
+                             decN:ChannelName <- dec,
+                             i:Qid <- 'in]
+          } .
+          
+  strat applyIndStep @ ProtocolConfig .
+  sd applyIndStep := 
+     match pConf s.t. startsWithNew pConf
+     ? CONG-NEW-NF{applyIndStep} 
+     : INDUCTION-when-one-comb[R3:Reaction <- nf('in : msg <- read ('In['i]), 
+                                                 return 'in, 'in), 
+                               R4:Reaction <- nf(('in : msg <- read ('In['i])) 
+                                                  'k : key <- read 'Key, 
+                                                  samp ('enc < pair('in, 'k) >), 
+                                                  'in 'k ),
+                               idx:Qid <- 'k                   
+                              ]{
+         applyEDC( 'Key, 'Enc[0], 'Dec[0]),
+         applyEDC( 'Key, 'Enc['k ++ 1], 'Dec['k ++ 1]) 
+       }
+  .         
+       
+  var q w l : Nat . 
+    
+  crl [ind-cpa] :
+    aConfig(Sigma, Delta (fam (inQ[bound q]) :: msg) (fam (encN[bound q]) :: ctxt),
+          newNF( < keyN : key >, 
+          (keyN ::= nf(emptyBRList, samp ('mu_key < () >), nil)
+           ) 
+          || 
+          (family (encN[bound q]) 'i (bound q) ::= nf(
+                   (m : msg <- read (inQ['i]))
+                   (k : key <- read keyN),
+                   samp ('enc < pair(m, k) >),
+                   m k 
+                   )
+          ),
+          chn keyN )
+          , I, O, A, width w, length l) 
+          =>
+    aConfig(Sigma, Delta (fam (inQ[bound q]) :: msg) (fam (encN[bound q]) :: ctxt),
+          newNF( < keyN : key >,  
+          (keyN ::= nf(emptyBRList, samp ('mu_key < () >), nil)
+           )
+          || 
+          (family (encN[bound q]) 'i (bound q) ::= nf(
+                   (m : msg <- read (inQ['i]))
+                   (k : key <- read keyN),
+                   samp ('enc < pair(ap 'zeros (), k) >),
+                   m k                    )
+          ),
+          chn keyN )         
+          , I, O, A, width (w + 1), length (l + | I \ (fam (inQ[bound q]))| )
+          ) 
+   if ( (fam (inQ[bound q])) in I ) 
+      /\ 
+      O == (fam (encN[bound q]))        
+  .
+  
+  var aConf : ApproxEqConfig .
+
+ strat applyCPA : ChannelName ChannelName @ ApproxEqConfig .  
+ sd applyCPA(key, enc) := 
+    match aConf s.t. aConfStartsWithNew aConf
+    ? CONG-NEW-NF-APPROX{applyCPA(key, enc)} 
+    : matchrew aConf s.t. aConfig(Sigma, Delta, P, I, O, A, width w, length l) := aConf by aConf 
+          using
+      CONG-COMP-APPROX{
+         ind-cpa[ keyN:ChannelName <- key,
+                  encN:ChannelName <- enc
+                ]
+      } 
+    .
+
+ op p : -> Protocol .
+ eq p = 
+  newNF( 
+         {('Dec[bound n]) 'i : msg} 
+         {('Enc[bound n]) 'i : ctxt}, 
+         
+         newNF(< 'Key : key >,
+         ('Key ::= nf(emptyBRList, samp ('mu_key < () >), nil)) || 
+         (family ('Enc[bound n]) 'i (bound n) ::= 
+           nf(('in : msg <- read ('In['i])) 
+               'k : key <- read 'Key, 
+               samp ('enc < pair('in, 'k) >), 
+               'in 'k)
+         ),
+         chn 'Key)
+         ||
+         (family ('Dec[bound n]) 'i (bound n) ::= 
+           nf('in : msg <- read ('In['i]), return 'in, 'in )
+         ) 
+         || 
+         (family ('LeakCtxt ^^ 'net .. 'adv[bound n]) 'i (bound n) ::= 
+            nf('e : ctxt <- read ('Enc['i]), return 'e, 'e )
+         ) 
+         ||
+         ( 
+         family ('Out[bound n]) 'i (bound n) ::= 
+           nf(('d : msg <- read ('Dec['i])) 
+               'okCtxt : ctxt <- read (('OkCtxt ^^ 'adv .. 'net)['i]), 
+               return 'd, 'okCtxt 'd)
+         ),
+          (fam ('Dec[bound n])) (fam ('Enc[bound n])))  
+ .
+
+  
+endsm
+
+srew [1]
+ aConfig(secSig, 
+         (fam ('In[bound n]) :: msg) 
+         (fam ('Out[bound n]) :: msg) 
+         (fam ('OkCtxt ^^ 'adv .. 'net[bound n]) :: ctxt)
+         ( fam('LeakCtxt ^^ 'net .. 'adv[bound n]) :: ctxt),
+         real,
+         insert(fam ('In[bound n]), fam ('OkCtxt ^^ 'adv .. 'net[bound n])), 
+         insert(fam ('Out[bound n]), fam('LeakCtxt ^^ 'net .. 'adv[bound n])),
+         genA,
+         width 0,
+         length 0)
+using
+   TRANS{ 
+     STRICT{
+        sugar-newNF 
+      ; substNFFamiliesOne(fam ('Recv[bound n]), fam ('Out[bound n]), 
+          nf(
+            ('okCtxt : ctxt <- read (('OkCtxt ^^ 'adv .. 'net) [ 'i ]) )
+            ('send : ctxt <- read ('Send [ 'i ])), 
+                return 'send,
+                'okCtxt 'send 
+            )
+        ) 
+      ; absorbFamily(fam ('Recv[bound n]))  
+      ; SYM[P1:Protocol <- addEncDec]{
+            foldNFFamily(fam ('Enc[bound n]), fam ('Send[bound n]))
+          ; foldNFFamily(fam ('Dec[bound n]), fam ('Out[bound n]))
+        } 
+      ; substNFFamiliesOne(fam ('Send[bound n]), fam('LeakCtxt ^^ 'net .. 'adv[bound n]), 
+          nf('e : ctxt <- read ('Enc['i]), return 'e, 'e )
+        )    
+      ; substNFFamiliesOne(fam ('Send[bound n]), fam ('Dec[bound n]), 
+          nf('e : ctxt <- read ('Enc['i]), return 'e, 'e )
+        ) 
+      ; absorbFamily(fam ('Send[bound n])) 
+      ; applyGroupFamilies('Dec, 'Enc)  
+      *** here we must do the induction proof 
+      ; applyIndStep
+      ; applyUngroupFamilies('Dec, 'Enc)
+      ; SYM[P1:Protocol <- p]{
+              moveProtocolUnderNewNF
+            ; lift-inner-new-nf
+      }
+      }
+    ,
+    TRANS{applyCPA('Key, 'Enc),
+  STRICT{ moveProtocolUnderNewNF
+        ; lift-inner-new-nf
+        ; foldNFFamily(fam ('Enc[bound n]), fam('LeakCtxt ^^ 'net .. 'adv[bound n])) 
+        ; foldNFFamily(fam ('Dec[bound n]), fam ('Out[bound n]))  
+        ; SYM[P1:Protocol <- idealPlusSim]{
+            sugar-newNF 
+      ; substNFFamiliesOne(fam ('OkMsg ^^ 'adv .. 'id[bound n]), fam ('Out[bound n]), 
+                       nf('okCtxt : ctxt <- read (('OkCtxt ^^ 'adv .. 'net)['i]), 
+                          return 'okCtxt , 
+                          'okCtxt )
+        )
+      ; substNFFamiliesOne(
+          fam ('LeakMsgRcvd ^^ 'id .. 'adv[bound n]), 
+          fam ('LeakCtxt ^^ 'net .. 'adv[bound n]) ,  
+         nf('in : msg <- read ('In['i]), return (), 'in)
+        )  
+      ; absorbFamily(fam ('LeakMsgRcvd ^^ 'id .. 'adv[bound n]))
+      ; absorbFamily(fam ('OkMsg ^^ 'adv .. 'id[bound n]))  
+          }
+        }
+  }
+    }  
+.     
+

@@ -1,0 +1,45 @@
+***( SpeX
+
+  This file is part of SpeX, a simple framework for working with
+  formal specifications based on SAP and REPL.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+********************************************************************************
+
+set show command off .
+*** set show stats off .
+set show advisories off .
+*** set profile on .
+popd
+load SpeX.maude
+
+*** set trace on .
+*** set trace builtin off .
+*** set trace select on .
+*** trace select parse-IPDL-input . 
+
+*** set trace on .
+*** set trace select on .
+*** trace select IPDL:list .
+
+  *** set trace on .
+  *** set trace select on .
+  *** trace select IPDL:parse .
+
+*** set trace on .
+*** set trace body off .
+*** set trace builtin off .
+*** *** set trace condition off .
+*** set trace eq off .
+*** set trace rewrite off .
+*** set trace substitution off .
+
+erew in SPEX/INTERPRETER : start SpeX .
+***show profile .
+quit

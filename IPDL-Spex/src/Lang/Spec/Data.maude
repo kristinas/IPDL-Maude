@@ -1,0 +1,156 @@
+***( SpeX/Lang/Spec
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Base.maude
+sload ../../Database.maude
+
+********************************************************************************
+
+fmod SPEC/MODULE { L :: LANGUAGE, BL :: SPEC/BASE-LANG } is
+  protecting SPEC/LID { L } .
+  protecting ATERM/EXPANSION .
+
+  *** Module{Spec{L}}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort Module{Spec{L}} .
+  op Module[_]{_is___given_} : Spec{L} Qid ImportList ATermList BL$SpecBody
+    DB{Spec{L}} -> Module{Spec{L}}
+    [ctor format (d d d d d s s n++i ni ni n--i n++i n--i d)] .
+  op undefined : -> [Module{Spec{L}}] [ctor] .
+
+  *** DB{Spec{L}}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sorts DB-Entry{Spec{L}} DB{Spec{L}} .
+  subsort DB-Entry{Spec{L}} < DB{Spec{L}} .
+  op _:_ : Qid Module{Spec{L}} -> DB-Entry{Spec{L}} [ctor] .
+  op empty : -> DB{Spec{L}} [ctor] .
+  op _,_ : DB{Spec{L}} DB{Spec{L}} -> DB{Spec{L}}
+    [ctor assoc comm id: empty prec 121 format (d r os d)] .
+
+  *** - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  var  L : L$Lid .
+  vars SM SM' : Module{Spec{L}} .
+  var  SM? : [Module{Spec{L}}] .
+  vars H H' MN : Qid .
+  var  I : Import .
+  vars IL IL' : ImportList .
+  var  T : ATerm .
+  vars TL MTL : ATermList .
+  vars SB SB' : BL$SpecBody .
+  vars DB IDB : DB{Spec{L}} .
+
+  *** header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op header : Module{Spec{L}} -> Qid .
+  eq header(Module[Spec[L]]{H is IL TL SB given IDB}) = H .
+
+  op set-header : Qid Module{Spec{L}} -> Module{Spec{L}} .
+  eq set-header(H, Module[Spec[L]]{H' is IL TL SB given IDB})
+   = Module[Spec[L]]{H is IL TL SB given IDB} .
+
+  *** imports  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op import-list : Module{Spec{L}} -> ImportList .
+  eq import-list(Module[Spec[L]]{H is IL TL SB given IDB}) = IL .
+
+  op add-import : Import ATermExpansion Module{Spec{L}}
+    DB{Spec{L}} -> Module{Spec{L}} .
+  eq add-import(including MN ., expanding to MTL,
+      Module[Spec[L]]{H is IL TL SB given IDB}, DB)
+   = Module[Spec[L]]{H is (IL including MN .) TL add-declarations(MTL, SB)
+      given add-import(MN, DB, IDB)} .
+  eq add-import(I, expanding to MTL,
+      Module[Spec[L]]{H is IL TL SB given IDB}, DB)
+   = Module[Spec[L]]{H is IL TL SB given IDB} [owise] .
+
+  *** declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op declarations : Module{Spec{L}} -> ATermList .
+  eq declarations(Module[Spec[L]]{H is IL TL SB given IDB}) = TL .
+
+  op add-declaration : ATerm Module{Spec{L}} -> Module{Spec{L}} .
+  eq add-declaration(T, Module[Spec[L]]{H is IL TL SB given IDB})
+   = Module[Spec[L]]{H is IL (TL, T) SB given IDB} .
+
+  *** body  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op body : Module{Spec{L}} -> BL$SpecBody .
+  eq body(Module[Spec[L]]{H is IL TL SB given IDB}) = SB .
+
+  op update-body : BL$SpecBody Module{Spec{L}} -> Module{Spec{L}} .
+  eq update-body(SB, Module[Spec[L]]{H is IL TL SB' given IDB})
+   = Module[Spec[L]]{H is IL TL SB given IDB} .
+
+  *** imported-modules  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op imported-modules : Module{Spec{L}} -> DB{Spec{L}} .
+  eq imported-modules(Module[Spec[L]]{H is IL TL SB given IDB}) = IDB .
+
+  op add-import : Qid DB{Spec{L}} DB{Spec{L}} -> DB{Spec{L}} .
+  eq add-import(MN, (MN : SM, DB), IDB) = insert(MN, SM, IDB) .
+  eq add-import(MN, DB, IDB) = IDB [owise] .
+
+  op insert : Qid Module{Spec{L}} DB{Spec{L}} -> DB{Spec{L}} .
+  eq insert(MN, SM, (MN : SM', DB))
+   = if defined(DB[MN]) then insert(MN, SM, DB) else MN : SM, DB fi .
+  eq insert(MN, SM, DB) = MN : SM, DB [owise] .
+
+  op defined : [Module{Spec{L}}] -> Bool .
+  eq defined(SM) = true .
+  eq defined(SM?) = false [owise] .
+
+  op _[_] : DB{Spec{L}} Qid -> Module{Spec{L}} [prec 23] .
+  eq (MN : SM, DB)[MN] = if defined(DB[MN]) then undefined else SM fi .
+  eq DB[MN] = undefined [owise] .
+
+  *** empty-module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op empty-module : Spec{L} Qid -> Module{Spec{L}} .
+  eq empty-module(Spec[L], H)
+   = Module[Spec[L]]{H is nil empty nil given empty} .
+
+  op empty-module : Spec{L} -> Module{Spec{L}} .
+  eq empty-module(Spec[L]) = empty-module(Spec[L], ') .
+endfm
+
+********************************************************************************
+
+fmod SPEC/DATABASE { L :: LANGUAGE, BL :: SPEC/BASE-LANG } is
+  protecting SPEC/MODULE { L, BL } .
+  protecting QID-SET/OPS .
+
+  var  MN : Qid .
+  vars SM SM' : Module{Spec{L}} .
+  var  DB : DB{Spec{L}} .
+
+  *** module-names  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op module-names : DB{Spec{L}} -> QidSet .
+  eq module-names(empty) = none .
+  eq module-names((MN : SM, DB)) = MN ; module-names(DB) .
+
+  *** add  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op add : Qid Module{Spec{L}} DB{Spec{L}} -> DB{Spec{L}} .
+  eq add(MN, SM, (MN : SM', DB)) = MN : SM', DB .
+  eq add(MN, SM, DB) = MN : SM, DB [owise] .
+
+  *** delete  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op delete : Qid DB{Spec{L}} -> DB{Spec{L}} .
+  eq delete(MN, (MN : SM, DB)) = delete(MN, DB) .
+  eq delete(MN, DB) = DB [owise] .
+endfm
+
+********************************************************************************
+
+fmod SPEC/CMD { L :: LANGUAGE } is
+  protecting SPEC/LID { L } .
+
+  sorts Cmd{Spec{L}} .
+  op Cmd[_]{list`modules} : Spec{L} -> Cmd{Spec{L}} [ctor] .
+  op Cmd[_]{show`module_} : Spec{L} Qid -> Cmd{Spec{L}} [ctor] .
+
+  op Cmd[_]{list`opened`modules} : Spec{L} -> Cmd{Spec{L}} [ctor] .
+  op Cmd[_]{open_} : Spec{L} Qid -> Cmd{Spec{L}} [ctor] .
+  op Cmd[_]{close} : Spec{L} -> Cmd{Spec{L}} [ctor] .
+endfm
+
+********************************************************************************

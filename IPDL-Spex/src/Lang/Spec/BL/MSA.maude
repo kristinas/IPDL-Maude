@@ -1,0 +1,27 @@
+***( SpeX/Lang/Spec/BL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../../Base/MSA/Processor.maude
+
+********************************************************************************
+
+view Spec/MSA from SPEC/SUBPROCESSOR to MSA/PROCESSOR { Spec/Pid{MSA} } is
+  sort SpecBody to SpecBody{MSA} .
+  sort State to AnalysisState{MSA} .
+
+  op parse-declaration(QIL:QidList, S:State) to term
+    parse MSA input (QIL:QidList) in S:AnalysisState{MSA} .
+  op print-declaration(T:Term) to term
+    print MSA term (T:Term) .
+endv
+
+********************************************************************************

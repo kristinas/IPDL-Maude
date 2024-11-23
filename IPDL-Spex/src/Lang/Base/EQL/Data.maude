@@ -1,0 +1,100 @@
+***( SpeX/Lang/Base/EQL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Common/Sorts.maude
+sload ../Common/Operations.maude
+sload ../Common/Sentences.maude
+
+********************************************************************************
+
+fmod EQL/LID is
+  sort EQL .
+  op EQL : -> EQL [ctor] .
+endfm
+
+********************************************************************************
+
+fmod EQL/SPEC-BODY is
+  protecting EQL/LID .
+  extending  SORT-SET-DECL .
+  extending  OP-DECL-SET .
+  extending  SEN-DECL-SET .
+  protecting ATTRIBUTE/OPS .
+
+  var  L : EQL .
+  vars SB SB' : SpecBody{EQL} .
+  var  S : Sort .
+  var  SS : SortSet .
+  var  SSD : SortSetDecl .
+  var  TP : Type .
+  var  TPL : TypeList .
+  var  OD : OpDecl .
+  var  ODS : OpDeclSet .
+  var  ED : SenDecl .
+  var  EDS : SenDeclSet .
+
+  *** SpecBody{EQL}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort SpecBody{EQL} .
+  op SpecBody[_]{___} : EQL SortSetDecl OpDeclSet SenDeclSet -> SpecBody{EQL}
+    [ctor format (d d d d d n++i ni ni n--i d)] .
+
+  *** nil (empty EQL specification body)  - - - - - - - - - - - - - - - - - - --
+  op nil : -> SpecBody{EQL} .
+  eq nil = (SpecBody[EQL]{sorts none . none none}) .
+
+  *** sorts  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op sorts : SpecBody{EQL} -> SortSet .
+  eq sorts(SpecBody[L]{sorts SS . ODS EDS}) = SS .
+
+  *** add-sort  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-sort : Sort SpecBody{EQL} -> SpecBody{EQL} .
+  eq add-sort(S, SpecBody[L]{sorts SS . ODS EDS})
+   = SpecBody[L]{sorts (S ; SS) . ODS EDS} .
+
+  *** ops  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op ops : SpecBody{EQL} -> OpDeclSet .
+  eq ops(SpecBody[L]{SSD ODS EDS}) = ODS .
+
+  *** add-op  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-decl : OpDecl SpecBody{EQL} -> SpecBody{EQL} .
+  eq add-decl(OD, SpecBody[L]{SSD ODS EDS}) = SpecBody[L]{SSD (OD ODS) EDS} .
+
+  *** symbols* (with a given arity, but other sort)  - - - - - - - - - - - - - -
+  op symbols* : SpecBody{EQL} TypeList Type -> QidSet .
+  eq symbols*(SpecBody[L]{SSD ODS EDS}, TPL, TP) = symbols*(ODS, TPL, TP) .
+
+  *** constants (of a given sort)  - - - - - - - - - - - - - - - - - - - - - - -
+  op consts : SpecBody{EQL} Sort -> QidSet .
+  eq consts(SpecBody[L]{SSD ODS EDS}, S) = consts(ODS, S) .
+
+  *** eqs  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op eqs : SpecBody{EQL} -> SenDeclSet .
+  eq eqs(SpecBody[L]{SSD ODS EDS}) = EDS .
+
+  *** add-eq  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-eq : SenDecl SpecBody{EQL} -> SpecBody{EQL} .
+  eq add-eq(ED, SpecBody[L]{SSD ODS EDS}) = SpecBody[L]{SSD ODS (ED EDS)} .
+
+  *** sum  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _+_ : SpecBody{EQL} SpecBody{EQL} -> SpecBody{EQL} .
+  eq SB + SB'
+   = SpecBody[EQL]{
+       sorts sorts(SB) ; sorts(SB') .
+       (ops(SB) ops(SB'))
+       (eqs(SB) eqs(SB'))
+     } .
+
+  *** signature  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op signature : SpecBody{EQL} -> SpecBody{EQL} .
+  eq signature(SpecBody[L]{SSD ODS EDS}) = SpecBody[L]{SSD pure(ODS) none} .
+endfm
+
+********************************************************************************

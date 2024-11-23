@@ -1,0 +1,11 @@
+lang IPDL
+
+parameter N : nat .
+
+input i1 : bool .
+input i2 : bool .
+input i3 : bool .
+
+output C : unit .
+
+protocol P = C ::= x : bool <- read i1 ; y : bool <- read i2 ; z : bool <- read i3 ; return () .

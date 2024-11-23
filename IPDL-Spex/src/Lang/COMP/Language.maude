@@ -1,0 +1,226 @@
+***( SpeX/Lang/COMP
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Data/Language.maude
+sload ./BObj/Language.maude
+
+********************************************************************************
+
+fmod COMP/LANGUAGE is
+  protecting COMP/LID .
+  protecting GRAMMAR .
+
+  op cmd-grammar : COMP -> Grammar .
+  eq cmd-grammar(COMP)
+   = grammar 'COMP/Cmd/Syntax is
+       'Command
+         ::= lit "list modules" [format('b 's 'o)]
+          |  lit "list data modules" [format('b 's 's 'o)]
+          |  lit "list bobj modules" [format('b 's 's 'o)]
+          |  "show module _" : 'ModuleName [format('b 's 'o 'd)]
+          |  lit "list opened modules" [format('b 's 's 'o)]
+          |  "open _" : 'ModuleName [format('b 'so 'd)]
+          |  lit "close" [format('b 'o)]
+          |  "*_" : 'Message [format('b 'so 'd)]
+       'ModuleName
+         ::= token "module-name"
+       'Message
+         ::= bubble "message" [balanced-parentheses]
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view COMP from LANGUAGE to COMP/LANGUAGE is
+  sort Lid to COMP .
+  op Lid to term COMP .
+  op grammar to cmd-grammar .
+endv
+
+********************************************************************************
+
+fmod COMP/READ is
+  protecting COMP/LANGUAGE .
+  protecting COMP/DL/READ .
+  protecting COMP/OL/READ .
+  protecting COMP/CMD .
+  protecting ATERM/READ .
+
+  var  L : COMP .
+  var  DM : Module{COMP/DL} .
+  var  OM : Module{COMP/OL} .
+  vars MN M : ATerm .
+  var  DB : DB{COMP} .
+
+  *** read module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-module : COMP ATerm DB{COMP} -> Module{COMP} .
+  eq read-module(L, {M : 'DataModule}, DB)
+   = read-module(COMP/DL, {M : 'DataModule}, DB) .
+  eq read-module(L, {M : 'BObjModule}, DB)
+   = read-module(COMP/OL, {M : 'BObjModule}, DB) .
+
+  *** module header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op header : Module{COMP} -> Qid .
+  eq header(DM) = header(COMP/DL, DM) .
+  eq header(OM) = header(COMP/OL, OM) .
+
+  *** read module name  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-module-name : COMP ATerm ~> Qid .
+  eq read-module-name(L, MN) = read-qid(MN) .
+
+  *** read command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-cmd : COMP ATerm ~> Cmd{COMP} .
+  eq read-cmd(L, {'list`modules.Command : 'Command})
+   = Cmd[L]{list modules} .
+  eq read-cmd(L, {'list`data`modules.Command : 'Command})
+   = Cmd[L]{list data modules} .
+  eq read-cmd(L, {'list`bobj`modules.Command : 'Command})
+   = Cmd[L]{list bobj modules} .
+  eq read-cmd(L, {'show`module_[MN] : 'Command})
+   = Cmd[L]{show module read-module-name(L, MN)} .
+  eq read-cmd(L, {'list`opened`modules.Command : 'Command})
+   = Cmd[L]{list opened modules} .
+  eq read-cmd(L, {'open_[MN] : 'Command})
+   = Cmd[L]{open read-module-name(L, MN)} .
+  eq read-cmd(L, {'close.Command : 'Command})
+   = Cmd[L]{close} .
+  eq read-cmd(L, {'*_[M] : 'Command})
+   = Cmd[L]{print unwrap(read-qids(M), '`(, '`))} .
+endfm
+
+********************************************************************************
+
+fmod COMP/ANALYSIS-STATE is
+  protecting COMP/READ .
+
+  var L : COMP .
+  var DB : DB{COMP} .
+  var MNL : QidList .
+  var T : ATerm .
+
+  *** COMP analysis state  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort AnalysisState{COMP} .
+  op AnalysisState[_]{_&_} : COMP DB{COMP} QidList -> AnalysisState{COMP}
+    [ctor] .
+
+  *** state updates  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _>>=_ : AnalysisState{COMP} ATerm -> AnalysisState{COMP} .
+  eq AnalysisState[L]{DB & MNL} >>= T = AnalysisState[L]{DB & MNL} .
+
+  *** db  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op db : AnalysisState{COMP} -> DB{COMP} .
+  eq db(AnalysisState[L]{DB & MNL}) = DB .
+
+  *** opened modules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op opened-modules : AnalysisState{COMP} -> QidList .
+  eq opened-modules(AnalysisState[L]{DB & MNL}) = MNL .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view COMP/AnalysisState from ANALYSIS-STATE to COMP/ANALYSIS-STATE is
+  sort State to AnalysisState{COMP} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod COMP/PARSING is
+  including  SYNTACTIC-ANALYSIS { COMP, COMP/AnalysisState } .
+  protecting LANG-NAME { COMP } .
+  including  COMP/DL/PARSING .
+  including  COMP/OL/PARSING .
+
+  var  L : COMP .
+  var  QIL : QidList .
+  var  SAS : AnalysisState{COMP} .
+  var  C : Constant .
+  vars $MN MN $M M : ATerm .
+  var  $ : Qid .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse L input (QIL) in SAS
+   = parse L declaration (QIL) in SAS
+     or-else parse L command (QIL) in SAS .
+
+  op parse_declaration_in_ : COMP QidList AnalysisState{COMP}
+    -> ParsingOutcome .
+  eq parse L declaration (QIL) in SAS
+   = parse COMP/DL declaration (QIL) in AnalysisState[COMP/DL]{db(SAS)}
+     or-else parse COMP/OL declaration (QIL) in AnalysisState[COMP/OL]{db(SAS)}
+     or-else, if inconclusive, parsing-error ('unexpected 'parsing 'error:
+        'cannot 'parse 'this name(L) 'module) .
+
+  op parse_command_in_ : COMP QidList AnalysisState{COMP}
+    ~> ParsingOutcome .
+  eq parse L command (QIL) in SAS
+   = scan L input (QIL : 'Command)
+     then analyse L command in SAS .
+
+  *** analyse command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_command : COMP -> AnalysisAction{COMP} .
+
+  eq analyse L command {C : 'Command} in SAS
+   = check (C == 'close.Command implies opened-modules(SAS) =/= nil)
+     and-then return {C : 'Command}
+     or-else fail ('no 'opened 'modules) in SAS .
+
+  eq analyse L command {'show`module_[$MN] : 'Command}
+   = try { 'show`module_ [
+        analyse L module-name ($MN)
+      ] : 'Command } .
+
+  eq analyse L command {'open_[$MN] : 'Command}
+   = try { 'open_ [
+        analyse L module-name ($MN)
+      ] : 'Command } .
+
+  eq analyse L command {'*_[$M] : 'Command}
+   = try { '*_[solve L message ($M)] : 'Command } .
+
+  *** analyse module-name  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_module-name : COMP -> AnalysisAction{COMP} .
+  eq analyse L module-name {$[MN] : 'ModuleName} in SAS
+   = check (read-module-name(L, MN) in module-names(db(SAS)))
+     and-then return {MN : 'ModuleName}
+     or-else fail ('no 'such 'module: emph(read-module-name(L, MN)))
+     in SAS .
+
+  *** solve message  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op solve_message : COMP -> AnalysisAction{COMP} .
+  eq solve L message {$[M] : 'Message}
+   = return {M : 'Message} .
+endfm
+
+********************************************************************************
+
+fmod COMP/PRINTING is
+  protecting COMP/DL/PRINTING .
+  protecting COMP/OL/PRINTING .
+
+  var CM : Module{COMP} .
+  var DM : Module{COMP/DL} .
+  var OM : Module{COMP/OL} .
+
+  *** print  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : Module{COMP} -> QidList .
+  eq print(DM) = print(COMP/DL, DM) .
+  eq print(OM) = print(COMP/OL, OM) .
+  eq print(CM) = nil [owise] .
+endfm
+
+********************************************************************************
+
+fmod COMP/PARSING-&-PRINTING is
+  protecting COMP/PARSING .
+  protecting COMP/PRINTING .
+endfm
+
+********************************************************************************

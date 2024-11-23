@@ -1,0 +1,134 @@
+***( SpeX/Lang/Reason/Prf/Tree
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Base.maude
+sload ../../../../CommonLibs/Tree.maude
+
+********************************************************************************
+
+fmod PRF/TREE/BASE { L :: LANGUAGE, BL :: PRF/TREE/BASE-LANG } is
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view PrfTree/Jdg { L :: LANGUAGE, BL :: PRF/TREE/BASE-LANG }
+from TRIV to PRF/TREE/BASE { L, BL } is
+  sort Elt to BL$Judgment .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view PrfTree/Rule { L :: LANGUAGE, BL :: PRF/TREE/BASE-LANG }
+from TRIV to PRF/TREE/BASE {L, BL} is
+  sort Elt to BL$ProofRule .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod PRF/TREE/JDG { L :: LANGUAGE, BL :: PRF/TREE/BASE-LANG } is
+  protecting TREE { PrfTree/Jdg{L,BL}, PrfTree/Rule{L,BL} } *
+    (sort NeTree{PrfTree/Jdg{L,BL},PrfTree/Rule{L,BL}}
+       to NeProofTree{L},
+     sort Tree{PrfTree/Jdg{L,BL},PrfTree/Rule{L,BL}}
+       to ProofTree{L},
+     sort Edge{PrfTree/Jdg{L,BL},PrfTree/Rule{L,BL}}
+       to ProofEdge{L},
+     sort NeEdgeList{PrfTree/Jdg{L,BL},PrfTree/Rule{L,BL}}
+       to NeProofEdgeList{L},
+     sort EdgeList{PrfTree/Jdg{L,BL},PrfTree/Rule{L,BL}}
+       to ProofEdgeList{L},
+     sort NeTreeList{PrfTree/Jdg{L,BL},PrfTree/Rule{L,BL}}
+       to NeProofTreeList{L},
+     sort TreeList{PrfTree/Jdg{L,BL},PrfTree/Rule{L,BL}}
+       to ProofTreeList{L}) .
+endfm
+
+********************************************************************************
+
+fmod PRF/TREE/DATA { L :: LANGUAGE, BL :: PRF/TREE/BASE-LANG } is
+  protecting PRF/TREE/LID { L } .
+  protecting PRF/TREE/JDG { L, BL } .
+
+  var  J : BL$Judgment .
+  var  JL : BL$JudgmentList .
+  var  JL? : [BL$JudgmentList] .
+  vars PR OR : BL$ProofRule .
+  var  PT : ProofTree{L} .
+  var  EL : ProofEdgeList{L} .
+  vars NEL NEL1 NEL2 : NeProofEdgeList{L} .
+  var  TL : ProofTreeList{L} .
+  vars NTL NTL1 NTL2 : NeProofTreeList{L} .
+
+  *** proof-tree updates  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _>>=_ : ProofTree{L} BL$ProofRule -> ProofTree{L} .
+  eq (empty).ProofTree{L} >>= PR = empty .
+  ceq J[empty] >>= PR
+   = if JL? :: BL$JudgmentList then J[PR : tree-list(JL?)] else J[empty] fi
+   if JL? := J >>= PR .
+  eq J[NEL] >>= PR = J[NEL >>= PR] .
+
+  op _>>=_ : ProofEdgeList{L} BL$ProofRule -> ProofEdgeList{L} .
+  eq (empty).ProofEdgeList{L} >>= PR = empty .
+  eq (OR : TL) >>= PR = OR : (TL >>= PR) .
+  ceq (NEL1, NEL2) >>= PR
+   = if NEL1 == NEL then NEL, (NEL2 >>= PR) else NEL, NEL2 fi
+   if NEL := NEL1 >>= PR .
+
+  op _>>=_ : ProofTreeList{L} BL$ProofRule -> ProofTreeList{L} .
+  eq (nil).ProofTreeList{L} >>= PR = nil .
+  ceq (NTL1 NTL2) >>= PR
+   = if NTL1 == NTL then NTL (NTL2 >>= PR) else NTL NTL2 fi
+   if NTL := NTL1 >>= PR .
+
+  *** proof-tree conversions  - - - - - - - - - - - - - - - - - - - - - - - - --
+  op tree-list : BL$JudgmentList -> ProofTreeList{L} .
+  eq tree-list(nil) = nil .
+  eq tree-list(J JL) = J[empty] tree-list(JL) .
+
+  *** open goals  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op open-goals : ProofTree{L} -> BL$JudgmentList .
+  eq open-goals((empty).ProofTree{L}) = nil .
+  eq open-goals(J[empty]) = J .
+  eq open-goals(J[NEL]) = open-goals(NEL) .
+
+  op open-goals : ProofEdgeList{L} -> BL$JudgmentList .
+  eq open-goals((empty).ProofEdgeList{L}) = nil .
+  eq open-goals((OR : TL)) = open-goals(TL) .
+  eq open-goals((NEL1, NEL2)) = open-goals(NEL1) open-goals(NEL2) .
+
+  op open-goals : ProofTreeList{L} -> BL$JudgmentList .
+  eq open-goals((nil).ProofTreeList{L}) = nil .
+  eq open-goals(NTL1 NTL2) = open-goals(NTL1) open-goals(NTL2) .
+
+  op first-open-goal : ProofTree{L} ~> BL$Judgment .
+  ceq first-open-goal(PT) = J
+   if J JL := open-goals(PT) .
+
+  *** context  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op context : ProofTree{L} ~> BL$Cxt .
+  ceq context(PT) = context(J)
+   if J JL := open-goals(PT) .
+
+  *** qed  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op qed : ProofTree{L} -> Bool .
+  eq qed(PT) = open-goals(PT) == nil .
+endfm
+
+********************************************************************************
+
+fmod PRF/TREE/CMD { L :: LANGUAGE } is
+  protecting PRF/TREE/LID { L } .
+
+  sorts Cmd{PrfTree{L}} .
+  op Cmd[_]{show`open`goals} : PrfTree{L} -> Cmd{PrfTree{L}} [ctor] .
+endfm
+
+********************************************************************************

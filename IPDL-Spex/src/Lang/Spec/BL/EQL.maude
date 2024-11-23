@@ -1,0 +1,27 @@
+***( SpeX/Lang/Spec/BL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../../Base/EQL/Processor.maude
+
+********************************************************************************
+
+view Spec/EQL from SPEC/SUBPROCESSOR to EQL/PROCESSOR { Spec/Pid{EQL} } is
+  sort SpecBody to SpecBody{EQL} .
+  sort State to AnalysisState{EQL} .
+
+  op parse-declaration(QIL:QidList, S:State) to term
+    parse EQL input (QIL:QidList) in S:AnalysisState{EQL} .
+  op print-declaration(T:Term) to term
+    print EQL term (T:Term) .
+endv
+
+********************************************************************************

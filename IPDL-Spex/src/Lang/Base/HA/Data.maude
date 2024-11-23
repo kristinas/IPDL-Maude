@@ -1,0 +1,133 @@
+***( SpeX/Lang/Base/HA
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Common/Sorts.maude
+sload ../Common/Operations.maude
+sload ../Common/Sentences.maude
+
+********************************************************************************
+
+fmod HA/LID is
+  sort HA .
+  op HA : -> HA [ctor] .
+endfm
+
+********************************************************************************
+
+fmod HA/SPEC-BODY is
+  protecting HA/LID .
+  extending  SORT-SET-DECL .
+  extending  OP-DECL-SET .
+  extending  SEN-DECL-SET .
+  protecting ATTRIBUTE/OPS .
+
+  var  L : HA .
+  vars SB SB' : SpecBody{HA} .
+  vars S HS : Sort .
+  vars SS HSS : SortSet .
+  vars SSD HSSD : SortSetDecl .
+  var  QI : Qid .
+  var  TP : Type .
+  var  TPL : TypeList .
+  var  AtS : AttrSet .
+  vars OD BOD : OpDecl .
+  vars ODS BODS : OpDeclSet .
+  var  ED : SenDecl .
+  var  EDS : SenDeclSet .
+
+  *** SpecBody{HA}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort SpecBody{HA} .
+  op SpecBody[_]{_____} : HA SortSetDecl SortSetDecl OpDeclSet OpDeclSet
+    SenDeclSet -> SpecBody{HA}
+    [ctor format (d d d d d n++i ni ni ni ni n--i d)] .
+
+  *** nil (empty HA specification body)  - - - - - - - - - - - - - - - - - - - -
+  op nil : -> SpecBody{HA} .
+  eq nil = (SpecBody[HA]{sorts none . sorts none . none none none}) .
+
+  *** sorts  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op sorts : SpecBody{HA} -> SortSet .
+  eq sorts(SpecBody[L]{sorts SS . sorts HSS . ODS BODS EDS}) = SS ; HSS .
+
+  op visible-sorts : SpecBody{HA} -> SortSet .
+  eq visible-sorts(SpecBody[L]{sorts SS . HSSD ODS BODS EDS}) = SS .
+
+  op hidden-sorts : SpecBody{HA} -> SortSet .
+  eq hidden-sorts(SpecBody[L]{SSD sorts HSS . ODS BODS EDS}) = HSS .
+
+  *** add/del-sort  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-visible-sort : Sort SpecBody{HA} -> SpecBody{HA} .
+  eq add-visible-sort(S, SpecBody[L]{sorts SS . HSSD ODS BODS EDS})
+   = SpecBody[L]{sorts (S ; SS) . HSSD ODS BODS EDS} .
+
+  op add-hidden-sort : Sort SpecBody{HA} -> SpecBody{HA} .
+  eq add-hidden-sort(HS, SpecBody[L]{SSD sorts HSS . ODS BODS EDS})
+   = SpecBody[L]{SSD sorts (HS ; HSS) . ODS BODS EDS} .
+
+  op del-hidden-sort : Sort SpecBody{HA} -> SpecBody{HA} .
+  eq del-hidden-sort(HS, SpecBody[L]{SSD sorts HSS . ODS BODS EDS})
+   = SpecBody[L]{SSD sorts (HSS \ HS) . ODS BODS EDS} .
+
+  *** ops  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op ops : SpecBody{HA} -> OpDeclSet .
+  eq ops(SpecBody[L]{SSD HSSD ODS BODS EDS}) = ODS BODS .
+
+  op vops : SpecBody{HA} -> OpDeclSet .
+  eq vops(SpecBody[L]{SSD HSSD ODS BODS EDS}) = ODS .
+
+  op bops : SpecBody{HA} -> OpDeclSet .
+  eq bops(SpecBody[L]{SSD HSSD ODS BODS EDS}) = BODS .
+
+  *** add-op  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-op : OpDecl SpecBody{HA} -> SpecBody{HA} .
+  eq add-op(OD, SpecBody[L]{SSD HSSD ODS BODS EDS})
+   = SpecBody[L]{SSD HSSD (OD ODS) BODS EDS} .
+
+  op add-bop : OpDecl SpecBody{HA} -> SpecBody{HA} .
+  eq add-bop(BOD, SpecBody[L]{SSD HSSD ODS BODS EDS})
+   = SpecBody[L]{SSD HSSD ODS (BOD BODS) EDS} .
+
+  *** symbols* (with a given arity, but other sort)  - - - - - - - - - - - - - -
+  op symbols* : SpecBody{HA} TypeList Type -> QidSet .
+  eq symbols*(SpecBody[L]{SSD HSSD ODS BODS EDS}, TPL, TP)
+   = symbols*(ODS BODS, TPL, TP) .
+
+  *** constants (of a given sort)  - - - - - - - - - - - - - - - - - - - - - - -
+  op consts : SpecBody{HA} Sort -> QidSet .
+  eq consts(SpecBody[L]{SSD HSSD ODS BODS EDS}, S) = consts(ODS BODS, S) .
+
+  *** sens  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op sens : SpecBody{HA} -> SenDeclSet .
+  eq sens(SpecBody[L]{SSD HSSD ODS BODS EDS}) = EDS .
+
+  *** add-sen  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op add-sen : SenDecl SpecBody{HA} -> SpecBody{HA} .
+  eq add-sen(ED, SpecBody[L]{SSD HSSD ODS BODS EDS})
+   = SpecBody[L]{SSD HSSD ODS BODS (ED EDS)} .
+
+  *** sum  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _+_ : SpecBody{HA} SpecBody{HA} -> SpecBody{HA} .
+  eq SB + SB'
+   = SpecBody[HA]{
+       (sorts visible-sorts(SB) ; visible-sorts(SB') .)
+       (sorts hidden-sorts(SB) ; hidden-sorts(SB') .)
+       (vops(SB) vops(SB'))
+       (bops(SB) bops(SB'))
+       (sens(SB) sens(SB'))
+     } .
+
+  *** signature  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op signature : SpecBody{HA} -> SpecBody{HA} .
+  eq signature(SpecBody[L]{SSD HSSD ODS BODS EDS})
+   = SpecBody[L]{SSD HSSD pure(ODS) pure(BODS) none} .
+endfm
+
+********************************************************************************

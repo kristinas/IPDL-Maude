@@ -1,0 +1,97 @@
+***( SpeX/Lang/Th
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../Language.maude
+sload ../../Processor.maude
+
+********************************************************************************
+
+fmod TH/LID { L :: LANGUAGE } is
+  sort Th{L} .
+  op Th[_] : L$Lid -> Th{L} [ctor] .
+endfm
+
+********************************************************************************
+
+fmod TH/PID { L :: LANGUAGE } is
+  protecting TH/LID { L } .
+
+  *** Th/Pid{L}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort Th/Pid{L} .
+  op _/_ : Th{L} Qid -> Th/Pid{L} .
+
+  *** - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  var L : L$Lid .
+  var TN : Qid .
+
+  *** theory-name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op theory-name : Th/Pid{L} -> Qid .
+  eq theory-name(Th[L] / TN) = TN .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Th/Pid { L :: LANGUAGE } from PID to TH/PID { L } is
+  sort Pid to Th/Pid{L} .
+endv
+
+********************************************************************************
+
+fth TH/BASE-LANG is
+  protecting PARSING-OUTCOME .
+  including  ANALYSIS-STATE .
+
+  sort SpecBody .
+  op nil : -> SpecBody .
+  op add-declaration : ATerm SpecBody -> SpecBody .
+  op show : SpecBody -> TermList .
+
+  op initial-state : SpecBody -> State .
+
+  op parse-declaration : QidList State -> ParsingOutcome .
+  op print-declaration : Term -> QidList .
+endfth
+
+********************************************************************************
+
+th TH/SUBPROCESSOR is
+  including PROCESSOR/BASE .
+  including TH/BASE-LANG .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op parse : Oid Oid QidList SpecBody -> Msg .
+
+  op process : Oid OidList Oid ATerm SpecBody -> Msg .
+  op processed : Oid Oid QidList SpecBody -> Msg .
+  op processed : Oid Oid SpecBody -> Msg .
+endth
+
+*** ----------------------------------------------------------------------------
+
+mod TH/SUBPROCESSOR-as-TH/BASE-LANG { SP :: TH/SUBPROCESSOR } is
+endm
+
+*** ----------------------------------------------------------------------------
+
+view Th/Base-lang { SP :: TH/SUBPROCESSOR }
+from TH/BASE-LANG to TH/SUBPROCESSOR-as-TH/BASE-LANG { SP } is
+  sort State to SP$State .
+  sort SpecBody to SP$SpecBody .
+
+  op add-declaration(T:ATerm, SB:SpecBody) to term
+    add-declaration(T:ATerm, SB:SP$SpecBody) .
+  op parse-declaration(QIL:QidList, S:State) to term
+    parse-declaration(QIL:QidList, S:SP$State) .
+  op print-declaration(T:Term) to term
+    print-declaration(T:Term) .
+endv
+
+********************************************************************************

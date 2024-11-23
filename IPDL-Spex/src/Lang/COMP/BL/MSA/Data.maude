@@ -1,0 +1,115 @@
+***( SpeX/Lang/COMP/BL/MSA
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../Base/Common/Sorts.maude
+sload ../../../Base/Common/Operations.maude
+sload ../../../Base/Common/Sentences.maude
+
+********************************************************************************
+
+fmod COMP/MSA/LID is
+  sort COMP/MSA .
+  op COMP/MSA : -> COMP/MSA [ctor] .
+endfm
+
+********************************************************************************
+
+fmod COMP/MSA/SPEC-BODY is
+  protecting COMP/MSA/LID .
+  extending  SORT-SET-DECL .
+  extending  OP-DECL-SET .
+  extending  SEN-DECL-SET .
+  protecting ATTRIBUTE/OPS .
+
+  var  L : COMP/MSA .
+  vars SB SB' : SpecBody{COMP/MSA} .
+  var  S : Sort .
+  var  SS : SortSet .
+  var  SSD : SortSetDecl .
+  var  TP : Type .
+  var  TPL : TypeList .
+  var  OD : OpDecl .
+  var  ODS : OpDeclSet .
+  var  ED : SenDecl .
+  var  EDS : SenDeclSet .
+
+  *** SpecBody{COMP/MSA}  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort SpecBody{COMP/MSA} .
+  op SpecBody[_]{___} : COMP/MSA SortSetDecl OpDeclSet SenDeclSet
+    -> SpecBody{COMP/MSA} [ctor format (d d d d d n++i ni ni n--i d)] .
+
+  *** nil (empty MSA specification body)  - - - - - - - - - - - - - - - - - - --
+  op nil : -> SpecBody{COMP/MSA} .
+  eq nil = (SpecBody[COMP/MSA]{sorts none . none none}) .
+
+  *** sorts  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op sorts : SpecBody{COMP/MSA} -> SortSet .
+  eq sorts(SpecBody[L]{sorts SS . ODS EDS}) = SS .
+
+  *** add sort  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-sort : Sort SpecBody{COMP/MSA} -> SpecBody{COMP/MSA} .
+  eq add-sort(S, SpecBody[L]{sorts SS . ODS EDS})
+   = SpecBody[L]{sorts (S ; SS) . ODS EDS} .
+
+  *** ops  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op ops : SpecBody{COMP/MSA} -> OpDeclSet .
+  eq ops(SpecBody[L]{SSD ODS EDS}) = ODS .
+
+  *** add op  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-op : OpDecl SpecBody{COMP/MSA} -> SpecBody{COMP/MSA} .
+  eq add-op(OD, SpecBody[L]{SSD ODS EDS}) = SpecBody[L]{SSD (OD ODS) EDS} .
+
+  *** symbols* (with a given arity, but other sort)  - - - - - - - - - - - - - -
+  op symbols* : SpecBody{COMP/MSA} TypeList Type -> QidSet .
+  eq symbols*(SpecBody[L]{SSD ODS EDS}, TPL, TP) = symbols*(ODS, TPL, TP) .
+
+  *** constants (of a given sort)  - - - - - - - - - - - - - - - - - - - - - - -
+  op consts : SpecBody{COMP/MSA} Sort -> QidSet .
+  eq consts(SpecBody[L]{SSD ODS EDS}, S) = consts(ODS, S) .
+
+  *** sens  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op sens : SpecBody{COMP/MSA} -> SenDeclSet .
+  eq sens(SpecBody[L]{SSD ODS EDS}) = EDS .
+
+  *** add sen  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op add-sen : SenDecl SpecBody{COMP/MSA} -> SpecBody{COMP/MSA} .
+  eq add-sen(ED, SpecBody[L]{SSD ODS EDS}) = SpecBody[L]{SSD ODS (ED EDS)} .
+
+  *** sum  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _+_ : SpecBody{COMP/MSA} SpecBody{COMP/MSA} -> SpecBody{COMP/MSA} .
+  eq SB + SB'
+   = SpecBody[COMP/MSA]{
+       sorts sorts(SB) ; sorts(SB') .
+       (ops(SB) ops(SB'))
+       (sens(SB) sens(SB'))
+     } .
+
+  *** signature  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op signature : SpecBody{COMP/MSA} -> SpecBody{COMP/MSA} .
+  eq signature(SpecBody[L]{SSD ODS EDS}) = SpecBody[L]{SSD pure(ODS) none} .
+endfm
+
+********************************************************************************
+
+fmod COMP/MSA/CMD is
+  protecting COMP/MSA/LID .
+  protecting ATERM .
+
+  sort Cmd{COMP/MSA} .
+  op Cmd[_]{list`declarations} : COMP/MSA -> Cmd{COMP/MSA} [ctor] .
+  op Cmd[_]{list`sorts} : COMP/MSA -> Cmd{COMP/MSA} [ctor] .
+  op Cmd[_]{list`ops} : COMP/MSA -> Cmd{COMP/MSA} [ctor] .
+  op Cmd[_]{list`sens} : COMP/MSA -> Cmd{COMP/MSA} [ctor] .
+  op Cmd[_]{let_} : COMP/MSA ATerm -> Cmd{COMP/MSA} [ctor] .
+  op Cmd[_]{reduce_} : COMP/MSA ATerm -> Cmd{COMP/MSA} [ctor] .
+endfm
+
+********************************************************************************

@@ -1,0 +1,121 @@
+***( SpeX/Lang/Base/FOL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Common/Sorts.maude
+sload ../Common/Operations.maude
+sload ../Common/Predicates.maude
+sload ../Common/Sentences.maude
+
+********************************************************************************
+
+fmod FOL/LID is
+  sort FOL .
+  op FOL : -> FOL [ctor] .
+endfm
+
+********************************************************************************
+
+fmod FOL/SPEC-BODY is
+  protecting FOL/LID .
+  extending  SORT-SET-DECL .
+  extending  OP-DECL-SET .
+  extending  PRED-DECL-SET .
+  extending  SEN-DECL-SET .
+  protecting ATTRIBUTE/OPS .
+
+  var  L : FOL .
+  vars SB SB' : SpecBody{FOL} .
+  var  S : Sort .
+  var  SS : SortSet .
+  var  SSD : SortSetDecl .
+  var  TP : Type .
+  var  TPL : TypeList .
+  var  OD : OpDecl .
+  var  ODS : OpDeclSet .
+  var  PD : PredDecl .
+  var  PDS : PredDeclSet .
+  var  ED : SenDecl .
+  var  EDS : SenDeclSet .
+
+  *** SpecBody{FOL}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort SpecBody{FOL} .
+  op SpecBody[_]{____} : FOL SortSetDecl OpDeclSet PredDeclSet
+    SenDeclSet -> SpecBody{FOL}
+    [ctor format (d d d d d n++i ni ni ni n--i d)] .
+
+  *** nil (empty FOL specification body)  - - - - - - - - - - - - - - - - - - --
+  op nil : -> SpecBody{FOL} .
+  eq nil = (SpecBody[FOL]{sorts none . none none none}) .
+
+  *** sorts  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op sorts : SpecBody{FOL} -> SortSet .
+  eq sorts(SpecBody[L]{sorts SS . ODS PDS EDS}) = SS .
+
+  *** add-sort  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-sort : Sort SpecBody{FOL} -> SpecBody{FOL} .
+  eq add-sort(S, SpecBody[L]{sorts SS . ODS PDS EDS})
+   = SpecBody[L]{sorts (S ; SS) . ODS PDS EDS} .
+
+  *** ops  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op ops : SpecBody{FOL} -> OpDeclSet .
+  eq ops(SpecBody[L]{SSD ODS PDS EDS}) = ODS .
+
+  *** add-op  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-decl : OpDecl SpecBody{FOL} -> SpecBody{FOL} .
+  eq add-decl(OD, SpecBody[L]{SSD ODS PDS EDS})
+   = SpecBody[L]{SSD (OD ODS) PDS EDS} .
+
+  *** preds  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op preds : SpecBody{FOL} -> PredDeclSet .
+  eq preds(SpecBody[L]{SSD ODS PDS EDS}) = PDS .
+
+  *** add-pred  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-decl : PredDecl SpecBody{FOL} -> SpecBody{FOL} .
+  eq add-decl(PD, SpecBody[L]{SSD ODS PDS EDS})
+   = SpecBody[L]{SSD ODS (PD PDS) EDS} .
+
+  *** symbols* (with a given arity, but other sort)  - - - - - - - - - - - - - -
+  op symbols* : SpecBody{FOL} TypeList Type -> QidSet .
+  eq symbols*(SpecBody[L]{SSD ODS PDS EDS}, TPL, TP)
+   = symbols*(ODS, TPL, TP) ;
+     if TP == 'AtomicSentence`{FOL`} then none else symbols(PDS, TPL) fi .
+
+  *** constants (of a given sort)  - - - - - - - - - - - - - - - - - - - - - - -
+  op consts : SpecBody{FOL} Sort -> QidSet .
+  eq consts(SpecBody[L]{SSD ODS PDS EDS}, S)
+   = consts(ODS, S) .
+
+  *** sens  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op sens : SpecBody{FOL} -> SenDeclSet .
+  eq sens(SpecBody[L]{SSD ODS PDS EDS}) = EDS .
+
+  *** add-sen  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op add-sen : SenDecl SpecBody{FOL} -> SpecBody{FOL} .
+  eq add-sen(ED, SpecBody[L]{SSD ODS PDS EDS})
+   = SpecBody[L]{SSD ODS PDS (ED EDS)} .
+
+  *** sum  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _+_ : SpecBody{FOL} SpecBody{FOL} -> SpecBody{FOL} .
+  eq SB + SB'
+   = SpecBody[FOL]{
+       sorts sorts(SB) ; sorts(SB') .
+       (ops(SB) ops(SB'))
+       (preds(SB) preds(SB'))
+       (sens(SB) sens(SB'))
+     } .
+
+  *** signature  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op signature : SpecBody{FOL} -> SpecBody{FOL} .
+  eq signature(SpecBody[L]{SSD ODS PDS EDS})
+   = SpecBody[L]{SSD pure(ODS) pure(PDS) none} .
+endfm
+
+********************************************************************************

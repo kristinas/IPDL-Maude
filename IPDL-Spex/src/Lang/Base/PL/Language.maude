@@ -1,0 +1,481 @@
+***( SpeX/Lang/Base/PL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2020-2023 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../Language.maude
+sload ../Common/CSList.maude
+sload ./Data.maude
+
+********************************************************************************
+
+fmod PL/LANGUAGE is
+  protecting PL/SPEC-BODY .
+  protecting PL/CMD .
+  protecting GRAMMAR/CS-LIST .
+
+  var L : PL .
+  var QI : Qid .
+  var QIS : QidSet .
+  var EDS : SenDeclSet .
+
+  *** declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op decl-grammar : PL -> Grammar .
+  eq decl-grammar(L)
+   = grammar 'PL/Syntax is
+       'Declaration
+         *** propositional symbols
+         ::= "prop_" : 'Symbol
+             [format ('! 'so 'd)]
+          |  "props_" : 'NeSymbolList
+             [format ('! 'so 'd)]
+         *** sentences
+          |  "ax_" : 'Sentence
+             [format ('! 'so 'd)]
+          |  "ax_[_]" : 'Sentence 'NeAttrList
+             [format ('! 'so 's! 'o '! 'o)]
+       'Symbol
+         ::= token "symbol" [exclude (",")]
+       'NeSymbolList
+         ::= bubble "neSymbolList"
+       'Sentence
+         ::= bubble "sentence" [balanced-parentheses exclude ("label:")]
+       'NeAttrList
+         ::= bubble "neAttrList" [exclude ("[" "]")]
+     endgr .
+
+  *** comma-separated lists of propositional symbols  - - - - - - - - - - - - --
+  op cs-symbols-grammar : PL -> Grammar .
+  eq cs-symbols-grammar(L)
+   = cs-list-grammar('PL/cs-symbols-syntax, 'NeSymbolList,
+       'Symbol ::= token "symbol" [exclude (",")]) .
+
+  *** sentence attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op sen-attr-grammar : PL -> Grammar .
+  eq sen-attr-grammar(L)
+   = grammar 'PL/sen-attr-syntax is
+       'Attr  ::= "label:_" : 'Label [format ('! 'o 'd)]
+       'AttrList ::= just 'Attr | "__" : 'AttrList 'AttrList [assoc]
+       'Label ::= token "label"
+     endgr .
+
+  *** sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op grammar : SpecBody{PL} -> Grammar .
+  eq grammar(SpecBody[L]{props QIS . EDS})
+   = grammar 'PL/Sentence/Syntax is
+       atomic-sentences(L, QIS)
+       Boolean-connectives(L)
+     endgr .
+
+  op atomic-sentences : PL QidSet -> GramDeclSet .
+  eq atomic-sentences(L, none)
+   = 'Sentence`{PL`} ::= just 'AtomicSentence`{PL`} .
+  eq atomic-sentences(L, QI ; QIS)
+   = 'AtomicSentence`{PL`} ::= lit string(QI)
+     atomic-sentences(L, QIS) .
+
+  op Boolean-connectives : PL -> GramDeclSet .
+  eq Boolean-connectives(L)
+   = 'Sentence`{PL`}
+       ::= "not_" : 'Sentence`{PL`}
+           [format ('! 'so 'd) prec (71)]
+        |  "_and_" : 'Sentence`{PL`} 'Sentence`{PL`}
+           [assoc format ('d 's! 'so 'd) prec (75)]
+        |  "_xor_" : 'Sentence`{PL`} 'Sentence`{PL`}
+           [assoc format ('d 's! 'so 'd) prec (77)]
+        |  "_or_" : 'Sentence`{PL`} 'Sentence`{PL`}
+           [assoc format ('d 's! 'so 'd) prec (79)]
+        |  "_implies_" : 'Sentence`{PL`} 'Sentence`{PL`}
+           [gather ('e 'E) format ('d 's! 'so 'd) prec (81)]
+        |  "_iff_" : 'Sentence`{PL`} 'Sentence`{PL`}
+           [assoc format ('d 's! 'so 'd) prec (83)] .
+
+  *** commands  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op cmd-grammar : PL -> Grammar .
+  eq cmd-grammar(L)
+   = grammar 'PL/Cmd/Syntax is
+       'Command
+         ::= lit "list props" [format('b 's 'o)]
+          |  lit "list axioms" [format('b 's 'o)]
+          |  "check_" : 'Sentence [format('b 's 'd)]
+       'Sentence
+         ::= bubble "sentence" [balanced-parentheses exclude ("label:")]
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view PL from LANGUAGE to PL/LANGUAGE is
+  sort Lid to PL .
+  op Lid to PL .
+  op grammar to decl-grammar .
+endv
+
+********************************************************************************
+
+fmod PL/READ is
+  protecting PL/LANGUAGE .
+  protecting PL/SENTENCE-SET .
+  protecting ATERM/READ .
+
+  var  L : PL .
+  var  SB : SpecBody{PL} .
+  var  P : AConstant .
+  vars PL1 PL2 E E1 E2 AtL AtL1 AtL2 T : ATerm .
+  var  EDS : SenDeclSet .
+  var  TL : ATermList .
+  var  AtS : AttrSet .
+
+  *** add declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op add-declaration : ATerm SpecBody{PL} -> SpecBody{PL} .
+  eq add-declaration(T, SB) = SB >>= T .
+
+  op _>>=_ : SpecBody{PL} ATerm -> SpecBody{PL} .
+  eq SB >>= {'prop_[P] : 'Declaration}
+   = add-prop(read-symbol(PL, P), SB) .
+  eq SB >>= {'props_[P] : 'Declaration}
+   = SB >>= {'prop_[P] : 'Declaration} .
+  eq SB >>= {'props_[{'_`,_[PL1, PL2] : 'NeSymbolList}] : 'Declaration}
+   = SB >>= {'props_[PL1] : 'Declaration} >>= {'props_[PL2] : 'Declaration} .
+  eq SB >>= {'ax_[E] : 'Declaration}
+   = add-sen(read-sentence(PL, E, none), SB) .
+  eq SB >>= {'ax_`[_`][E, AtL] : 'Declaration}
+   = add-sen(read-sentence(PL, E, read-attributes(PL, AtL)), SB) .
+  eq SB >>= T = SB [owise] .
+
+  op add-declarations : ATermList SpecBody{PL} -> SpecBody{PL} .
+  eq add-declarations(empty, SB) = SB .
+  eq add-declarations((T, TL), SB)
+   = add-declarations(TL, add-declaration(T, SB)) .
+
+  *** read-symbol  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-symbol : PL AConstant -> Qid .
+  eq read-symbol(L, P) = read-qid(P) .
+
+  *** read-sentence  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-sentence : PL ATerm AttrSet -> SenDecl .
+  eq read-sentence(L, E, AtS) = (sen E [AtS] .) .
+
+  *** read-attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-attributes : PL ATerm -> AttrSet .
+  eq read-attributes(L, {'__[AtL1, AtL2] : 'AttrList})
+   = read-attributes(L, AtL1) read-attributes(L, AtL2) .
+  eq read-attributes(L, {'label:_[T] : 'Attr}) = label(read-qid(T)) .
+  eq read-attributes(L, T) = none [owise] .
+
+  *** sentence conversion  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op sen : PL SenDecl ~> Sentence{PL} .
+  eq sen(L, sen E [AtS] .) = sen(L, E) .
+
+  op sen : PL ATerm ~> Sentence{PL} .
+  eq sen(L, P)
+   = Atom[L]{name(P)} .
+  eq sen(L, {'not_[E] : 'Sentence`{PL`}})
+   = not sen(L, E) .
+  eq sen(L, {'_and_[E1, E2] : 'Sentence`{PL`}})
+   = sen(L, E1) and sen(L, E2) .
+  eq sen(L, {'_xor_[E1, E2] : 'Sentence`{PL`}})
+   = sen(L, E1) xor sen(L, E2) .
+  eq sen(L, {'_or_[E1, E2] : 'Sentence`{PL`}})
+   = sen(L, E1) or sen(L, E2) .
+  eq sen(L, {'_implies_[E1, E2] : 'Sentence`{PL`}})
+   = sen(L, E1) implies sen(L, E2) .
+  eq sen(L, {'_iff_[E1, E2] : 'Sentence`{PL`}})
+   = sen(L, E1) iff sen(L, E2) .
+
+  op sentences : PL SenDeclSet ~> SentenceSet{PL} .
+  eq sentences(L, none) = empty .
+  eq sentences(L, sen E [AtS] . EDS) = sen(L, E), sentences(L, EDS) .
+
+  *** read command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-cmd : PL ATerm ~> Cmd{PL} .
+  eq read-cmd(L, {'list`props.Command : 'Command})
+   = Cmd[L]{list props} .
+  eq read-cmd(L, {'list`axioms.Command : 'Command})
+   = Cmd[L]{list axioms} .
+  eq read-cmd(L, {'check_[E] : 'Command})
+   = Cmd[L]{check sen(L, read-sentence(L, E, none))} .
+endfm
+
+********************************************************************************
+
+fmod PL/SHOW is
+  protecting PRINTING { PL } .
+  protecting PL/SENTENCE .
+
+  var  L : PL .
+  var  SB : SpecBody{PL} .
+  vars e e1 e2 : Sentence{PL} .
+  vars QI P : Qid .
+  var  QIL : QidList .
+  var  NPL : NeQidList .
+  var  PSD : PropSetDecl .
+  vars E E1 E2 : ATerm .
+  var  At : Attr .
+  var  AtS : AttrSet .
+  var  AtL : AttrList .
+  var  EDL : SenDeclList .
+  var  EDS : SenDeclSet .
+
+  *** show body  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show : SpecBody{PL} -> TermList .
+  eq show(SB) = show-fragment(SB, SB) .
+
+  op show-fragment : SpecBody{PL} SpecBody{PL} -> TermList .
+  eq show-fragment(SpecBody[L]{PSD EDS}, SB)
+   = show-props(L, list(PSD)),
+     show-sens(L, SB, list(EDS)) .
+
+  *** show propositional symbols  - - - - - - - - - - - - - - - - - - - - - - --
+  op show-props : PL QidList -> TermList .
+  eq show-props(L, nil) = empty .
+  eq show-props(L, P) = 'prop_[mk-bubble('symbol, show-qid(P))] .
+  eq show-props(L, P NPL)
+   = 'props_[cs-bubble('neSymbolList, show-qids(P NPL))] .
+
+  *** show sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-sens : PL SpecBody{PL} SenDeclList -> TermList .
+  eq show-sens(L, SB, nil) = empty .
+  eq show-sens(L, SB, {sen E [none] .} EDL)
+   = 'ax_ [ show-sentence(SB, E) ], show-sens(L, SB, EDL) .
+  eq show-sens(L, SB, {sen E [AtS] .} EDL)
+   = 'ax_`[_`] [ show-sentence(SB, E), show-sen-attributes(L, AtS) ],
+     show-sens(L, SB, EDL) [owise] .
+
+  op show-sentence : SpecBody{PL} ATerm -> Term .
+  eq show-sentence(SB, E)
+   = mk-bubble('sentence, show-qids(print term E given grammar(SB))) .
+
+  *** show attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-sen-attributes : PL AttrSet -> TermList .
+  ceq show-sen-attributes(L, AtS) = mk-bubble('neAttrList, show-qids(QIL))
+   if QIL := print term pack('__, show-label-attr(L, list(AtS)))
+             given sen-attr-grammar(L) .
+
+  op show-label-attr : PL AttrList -> TermList .
+  eq show-label-attr(L, nil) = empty .
+  eq show-label-attr(L, {label(QI)} AtL)
+   = 'label:_[mk-bubble('label, show-qid(QI))], show-label-attr(L, AtL) .
+  eq show-label-attr(L, {At} AtL) = show-label-attr(L, AtL) [owise] .
+
+  *** sentence conversion  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op sen-decl : Sentence{PL} AttrSet -> SenDecl .
+  eq sen-decl(e, AtS) = (sen aterm(e) [AtS] .) .
+
+  op aterm : Sentence{PL} -> ATerm .
+  eq aterm(Atom[L]{P}) = aconst(P, 'AtomicSentence`{PL`}) .
+  eq aterm(not e) = not(PL, aterm(e)) .
+  eq aterm(e1 and e2) = and(PL, aterm(e1), aterm(e2)) .
+  eq aterm(e1 xor e2) = xor(PL, aterm(e1), aterm(e2)) .
+  eq aterm(e1 or e2) = or(PL, aterm(e1), aterm(e2)) .
+  eq aterm(e1 implies e2) = implies(PL, aterm(e1), aterm(e2)) .
+  eq aterm(e1 iff e2) = iff(PL, aterm(e1), aterm(e2)) .
+
+  op not : PL ATerm -> ATerm .
+  eq not(L, E) = {'not_[E] : 'Sentence`{PL`}} .
+
+  op and : PL ATerm ATerm -> ATerm .
+  eq and(L, E1, E2) = {'_and_[E1, E2] : 'Sentence`{PL`}} .
+
+  op xor : PL ATerm ATerm -> ATerm .
+  eq xor(L, E1, E2) = {'_xor_[E1, E2] : 'Sentence`{PL`}} .
+
+  op or : PL ATerm ATerm -> ATerm .
+  eq or(L, E1, E2) = {'_or_[E1, E2] : 'Sentence`{PL`}} .
+
+  op implies : PL ATerm ATerm -> ATerm .
+  eq implies(L, E1, E2) = {'_implies_[E1, E2] : 'Sentence`{PL`}} .
+
+  op iff : PL ATerm ATerm -> ATerm .
+  eq iff(L, E1, E2) = {'_iff_[E1, E2] : 'Sentence`{PL`}} .
+endfm
+
+********************************************************************************
+
+view PL/AnalysisState from ANALYSIS-STATE to PL/READ is
+  sort State to SpecBody{PL} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod PL/PARSING is
+  protecting SYNTACTIC-ANALYSIS { PL, PL/AnalysisState } .
+  protecting LANG-NAME { PL } .
+  protecting PL/SHOW .
+
+  var  L : PL .
+  vars SB SB' : SpecBody{PL} .
+  var  BC : Qid .
+  var  QIL : QidList .
+  var  C : Constant .
+  vars P : AConstant .
+  var  V : AVariable .
+  vars $P $PL PL PL1 PL2 : ATerm .
+  vars $T T $E E E1 E2 : ATerm .
+  vars $AtL AtL AtL1 AtL2 : ATerm .
+  var  $ : Qid .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse L input (QIL) in SB
+   = parse L declaration (QIL) in SB
+     or-else parse L command (QIL) in SB .
+
+  op parse_declaration_in_ : PL QidList SpecBody{PL} ~> ParsingOutcome .
+  eq parse L declaration (QIL) in SB
+   = scan L input (QIL : 'Declaration)
+     then analyse L declaration in SB
+     or-else, if inconclusive, parsing-error ('unexpected 'parsing 'error:
+      'cannot 'parse 'this name(L) 'declaration) .
+
+  op parse_command_in_ : PL QidList SpecBody{PL} ~> ParsingOutcome .
+  eq parse L command (QIL) in SB
+   = scan input (QIL : 'Command) given cmd-grammar(L)
+     then solve L command in SB .
+
+  *** analyse declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_declaration : PL -> AnalysisAction{PL} .
+
+  eq analyse L declaration {'prop_[$P] : 'Declaration}
+   = try {'prop_ [ solve L prop ($P) ] : 'Declaration} .
+
+  eq analyse L declaration {'props_[$PL] : 'Declaration}
+   = try {'props_ [ solve L props ($PL) ] : 'Declaration} .
+
+  eq analyse L declaration {'ax_[$E] : 'Declaration}
+   = try {'ax_ [ analyse L sentence ($E) ] : 'Declaration} .
+
+  eq analyse L declaration {'ax_`[_`][$E, $AtL] : 'Declaration}
+   = try { 'ax_`[_`] [
+        analyse L sentence ($E),
+        solve L sen-attributes ($AtL)
+      ] : 'Declaration } .
+
+  *** analyse individual propositional symbols  - - - - - - - - - - - - - - - --
+  op solve_prop : PL -> AnalysisAction{PL} .
+  eq solve L prop {$[P] : 'Symbol}
+   = check (read-qid(P) is ordinary) and-then return {P : 'Symbol}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term (P))
+      'is 'not 'a 'valid 'propositional 'symbol,
+      (at L term (P), include context)) .
+
+  *** analyse comma-separated lists of propositional symbols  - - - - - - - - --
+  op solve_props : PL -> AnalysisAction{PL} .
+  eq solve L props {$[PL] : 'NeSymbolList}
+   = decode input (read-qids(PL) : 'NeSymbolList) given cs-symbols-grammar(L)
+     then solve L props .
+  eq solve L props {'_`,_[PL1, PL2] : 'NeSymbolList}
+   = try {'_`,_ [ solve L props (PL1), solve L props (PL2) ] : 'NeSymbolList} .
+  eq solve L props {$[P] : 'Symbol}
+   = solve L prop {$[P] : 'Symbol} .
+
+  *** analyse sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_sentence : PL -> AnalysisAction{PL} .
+  eq analyse L sentence {$[E] : 'Sentence} in SB
+   = decode input (read-qids(E) : 'Sentence`{PL`}) given grammar(SB)
+     then solve L sentence in SB .
+
+  op solve_sentence : PL -> AnalysisAction{PL} .
+  eq solve L sentence (P) = return (P) .
+  eq solve L sentence (V) in SB
+   = fail ('unexpected 'token: emph(print term V given grammar(SB)),
+      (at name(V), include context)) in SB .
+  eq solve L sentence {'not_[E] : 'Sentence`{PL`}}
+   = try {'not_ [ solve L sentence (E) ] : 'Sentence`{PL`}} .
+  ceq solve L sentence {BC[E1, E2] : 'Sentence`{PL`}} in SB
+   = try { BC [
+        solve L sentence (E1),
+        solve L sentence (E2)
+      ] : 'Sentence`{PL`}} in SB
+   if BC in symbols(grammar(SB), 'Sentence`{PL`} 'Sentence`{PL`}) .
+
+  op solve_sen-attributes : PL -> AnalysisAction{PL} .
+  eq solve L sen-attributes {$[AtL] : 'NeAttrList}
+   = decode input (read-qids(AtL) : 'AttrList) given sen-attr-grammar(L)
+     then solve L sen-attributes .
+  eq solve L sen-attributes {'__[AtL1, AtL2] : 'AttrList}
+   = try { '__ [
+        solve L sen-attributes (AtL1),
+        solve L sen-attributes (AtL2)
+      ] : 'AttrList} .
+  eq solve L sen-attributes {'label:_[$T] : 'Attr}
+   = try {'label:_ [ solve L label ($T) ] : 'Attr} .
+
+  op solve_label : PL -> AnalysisAction{PL} .
+  eq solve L label {$[T] : 'Label}
+   = check (read-qid(T) :: Qid) and-then return {T : 'Label}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[T])) 'is 'not 'a 'valid
+      'label, (at L term (T), include context)) .
+
+  *** reanalyse  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op reanalyse : SpecBody{PL} SpecBody{PL} -> AnalysisOutcome .
+  eq reanalyse(SB, SB') = reanalyse(PL, show(SB), SB') .
+
+  *** solve command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op solve_command : PL -> AnalysisAction{PL} .
+  eq solve L command {C : 'Command}
+   = return {C : 'Command} .
+  eq solve L command {'check_[$E] : 'Command}
+   = try {'check_ [ analyse L sentence ($E) ] : 'Command} .
+endfm
+
+********************************************************************************
+
+fmod PL/PRINTING is
+  protecting PL/SHOW .
+  protecting PL/MODEL-BR-LIST .
+
+  var L : PL .
+  var SB : SpecBody{PL} .
+  var M : Model{PL} .
+  var NMS : NeModelSet{PL} .
+  var BML : BrModelList{PL} .
+  var QI : Qid .
+  var QIL : QidList .
+  var QIS : QidSet .
+  var NTL : NeTermList .
+
+  *** print  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : SpecBody{PL} -> QidList .
+  eq print(SB) = intercalate('\n, print PL terms show(SB)) .
+
+  *** print-props  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print-props : SpecBody{PL} -> QidList .
+  ceq print-props(SB) = print PL term NTL
+   if NTL := show-props(PL, list(props(SB))) .
+  eq print-props(SB) = 'No 'props [owise] .
+
+  *** print-sens  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print-sens : SpecBody{PL} -> QidList .
+  ceq print-sens(SB) = intercalate('\n, print PL terms NTL)
+   if NTL := show-sens(PL, SB, list(sens(SB))) .
+  eq print-sens(SB) = 'No 'axioms [owise] .
+
+  *** print counterexample  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print-first-counterexample : SpecBody{PL} NeModelSet{PL} -> QidList .
+  ceq print-first-counterexample(SB, NMS)
+   = intercalate('\n, print-counterexample(PL, list(props(SB)), QIS))
+   if {Model[PL]{QIS}} BML := list(NMS) .
+
+  op print-counterexample : PL QidList QidSet -> QidList2 .
+  eq print-counterexample(L, nil, QIS) = nil .
+  eq print-counterexample(L, QI QIL, QIS)
+   = if QI in QIS then :[QI '|-> 'true] else :[QI '|-> 'false] fi
+     print-counterexample(L, QIL, QIS) .
+endfm
+
+********************************************************************************
+
+fmod PL/PARSING-&-PRINTING is
+  protecting PL/PARSING .
+  protecting PL/PRINTING .
+endfm
+
+********************************************************************************

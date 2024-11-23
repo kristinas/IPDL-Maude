@@ -1,0 +1,492 @@
+***( SpeX/Lang/COMP/BObj
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../BL/HA/Language.maude
+sload ../Data.maude
+
+********************************************************************************
+
+fmod COMP/BOBJ/LID is
+  sort COMP/OL .
+  op COMP/OL : -> COMP/OL [ctor] .
+endfm
+
+********************************************************************************
+
+fmod COMP/OL/COMPOSITION is
+  protecting COMP/BOBJ/LID .
+  protecting COMP/HA/SPEC-BODY .
+
+  *** Name{COMP/OL}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort Name{COMP/OL} .
+  op Name[_]{_} : COMP/OL Qid -> Name{COMP/OL} [ctor] .
+
+  *** QualifiedName{COMP/OL}  - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort QualifiedName{COMP/OL} .
+  op _as_ : Name{COMP/OL} Name{COMP/OL} -> QualifiedName{COMP/OL} [ctor] .
+
+  *** NameList{COMP/OL}  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sorts NeNameList{COMP/OL} NameList{COMP/OL} .
+  subsort NeNameList{COMP/OL} < NameList{COMP/OL} .
+  subsorts Name{COMP/OL} QualifiedName{COMP/OL} < NeNameList{COMP/OL} .
+  op nil : -> NameList{COMP/OL} [ctor] .
+  op __ : NameList{COMP/OL} NameList{COMP/OL} -> NameList{COMP/OL}
+    [ctor assoc id: nil] .
+  op __ : NeNameList{COMP/OL} NameList{COMP/OL} -> NeNameList{COMP/OL}
+    [ctor ditto] .
+  op __ : NameList{COMP/OL} NeNameList{COMP/OL} -> NeNameList{COMP/OL}
+    [ctor ditto] .
+
+  *** Composition{COMP/OL}  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sorts BObjSync{COMP/OL} Composition{COMP/OL} .
+  subsort BObjSync{COMP/OL} < Composition{COMP/OL} .
+  op composing_. : NeNameList{COMP/OL} -> Composition{COMP/OL} [ctor] .
+  op syncing_. : NeNameList{COMP/OL} -> Composition{COMP/OL} [ctor] .
+  op syncing`object_. : Name{COMP/OL} -> BObjSync{COMP/OL} [ctor] .
+  op indexing_on_by_. : Name{COMP/OL} Qid Sort -> Composition{COMP/OL} [ctor] .
+
+  *** - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  vars ON QN : Name{COMP/OL} .
+  vars ONL ONL1 ONL2 : NameList{COMP/OL} .
+
+  *** occurs  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op occurs : Name{COMP/OL} NameList{COMP/OL} -> Bool .
+  eq occurs(ON, ONL1 ON ONL2) = true .
+  eq occurs(QN, ONL1 (ON as QN) ONL2) = true .
+  eq occurs(ON, ONL) = false [owise] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+fmod COMP/OL/MODULE is
+  protecting COMP/OL/COMPOSITION .
+  protecting COMP/HA/READ .
+  protecting ATERM/EXPANSION .
+  extending  COMP/DATABASE .
+
+  *** Module{COMP/Data}  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sorts BaseModule{COMP/OL} CompModule{COMP/OL} Module{COMP/OL} .
+  subsorts BaseModule{COMP/OL} CompModule{COMP/OL} < Module{COMP/OL} .
+  subsort Module{COMP/OL} < BObjModule{COMP} .
+  op Module[_]{_with`states_is___given_} : COMP/OL Qid Sort
+    ImportList ATermList SpecBody{COMP/HA} DB{COMP} -> BaseModule{COMP/OL}
+    [ctor format (d d d d d s s s s s n++i ni ni n--i n++i n--i d)] .
+  op Module[_]{_with`states_is____given_} : COMP/OL Qid Sort
+    Composition{COMP/OL}
+    ImportList ATermList SpecBody{COMP/HA} DB{COMP} -> CompModule{COMP/OL}
+    [ctor format (d d d d d s s s s s n++i ni ni ni n--i n++i n--i d)] .
+
+  *** - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  var  L : COMP/OL .
+  var  OM : Module{COMP/OL} .
+  vars H H? MN : Qid .
+  vars S S? : Sort .
+  var  I : Import .
+  var  IL : ImportList .
+  var  C : Composition{COMP/OL} .
+  var  T : ATerm .
+  vars TL MTL : ATermList .
+  var  SB : SpecBody{COMP/HA} .
+  vars DB IDB : DB{COMP} .
+
+  *** header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op header : COMP/OL Module{COMP/OL} -> Qid .
+  eq header(L, Module[L]{H with states S is IL TL SB given IDB}) = H .
+  eq header(L, Module[L]{H with states S is C IL TL SB given IDB}) = H .
+
+  op set-header : COMP/OL Qid Module{COMP/OL} -> Module{COMP/OL} .
+  eq set-header(L, H, Module[L]{H? with states S is IL TL SB given IDB})
+   = Module[L]{H with states S is IL TL SB given IDB} .
+  eq set-header(L, H, Module[L]{H? with states S is C IL TL SB given IDB})
+   = Module[L]{H with states S is C IL TL SB given IDB} .
+
+  *** hsort  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op hsort : COMP/OL Module{COMP/OL} -> Sort .
+  eq hsort(L, Module[L]{H with states S is IL TL SB given IDB}) = S .
+  eq hsort(L, Module[L]{H with states S is C IL TL SB given IDB}) = S .
+
+  op set-hsort : COMP/OL Sort Module{COMP/OL} -> Module{COMP/OL} .
+  eq set-hsort(L, S, Module[L]{H with states S? is IL TL SB given IDB})
+   = Module[L]{H with states S is
+      IL TL rename-sorts(SB, sort S? to S) given IDB} .
+
+  op implicit-states-sort : COMP/OL -> Sort .
+  eq implicit-states-sort(L) = 'State .
+
+  *** composition  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op composition : COMP/OL CompModule{COMP/OL} -> Composition{COMP/OL} .
+  eq composition(L, Module[L]{H with states S is C IL TL SB given IDB}) = C .
+
+  op set-composition : COMP/OL Composition{COMP/OL} ATermExpansion
+    BaseModule{COMP/OL} DB{COMP} -> CompModule{COMP/OL} .
+  eq set-composition(L, C, expanding to MTL,
+      Module[L]{H with states S is IL TL SB given IDB}, DB)
+   = if C :: BObjSync{COMP/OL}
+     then Module[L]{H with states S is
+        C IL TL read-body(COMP/HA, MTL) given IDB}
+     else Module[L]{H with states S is
+        C IL TL extend(SB, MTL) given IDB} fi .
+
+  *** imports  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op import-list : COMP/OL Module{COMP/OL} -> ImportList .
+  eq import-list(L, Module[L]{H with states S is IL TL SB given IDB}) = IL .
+  eq import-list(L, Module[L]{H with states S is C IL TL SB given IDB}) = IL .
+
+  op add-import : COMP/OL Import ATermExpansion Module{COMP/OL} DB{COMP}
+    -> Module{COMP/OL} .
+  ceq add-import(L, I, expanding to MTL,
+      Module[L]{H with states S is IL TL SB given IDB}, DB)
+   = Module[L]{H with states S is (IL I) TL extend(SB, MTL)
+      given copy-module(MN, DB, IDB)}
+   if MN := module-name(L, I) .
+  ceq add-import(L, I, expanding to MTL,
+      Module[L]{H with states S is C IL TL SB given IDB}, DB)
+   = Module[L]{H with states S is C (IL I) TL extend(SB, MTL)
+      given copy-module(MN, DB, IDB)}
+   if MN := module-name(L, I) .
+  eq add-import(L, I, expanding to MTL, OM, DB) = OM [owise] .
+
+  op module-name : COMP/OL Import ~> Qid .
+  eq module-name(L, protecting MN .) = MN .
+  eq module-name(L, extending MN .) = MN .
+  eq module-name(L, including MN .) = MN .
+
+  *** declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op declarations : COMP/OL Module{COMP/OL} -> ATermList .
+  eq declarations(L, Module[L]{H with states S is IL TL SB given IDB}) = TL .
+  eq declarations(L, Module[L]{H with states S is C IL TL SB given IDB}) = TL .
+
+  op add-declaration : COMP/OL ATerm Module{COMP/OL} -> Module{COMP/OL} .
+  eq add-declaration(L, T, Module[L]{H with states S is IL TL SB given IDB})
+   = Module[L]{H with states S is IL (TL, T) (SB >>= T) given IDB} .
+  eq add-declaration(L, T, Module[L]{H with states S is C IL TL SB given IDB})
+   = Module[L]{H with states S is C IL (TL, T) (SB >>= T) given IDB} .
+
+  *** body  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op body : COMP/OL Module{COMP/OL} -> SpecBody{COMP/HA} .
+  eq body(L, Module[L]{H with states S is IL TL SB given IDB}) = SB .
+  eq body(L, Module[L]{H with states S is C IL TL SB given IDB}) = SB .
+
+  *** empty module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op empty-module : COMP/OL Qid -> BaseModule{COMP/OL} .
+  eq empty-module(L, H)
+   = empty-module-with-states(L, H, implicit-states-sort(L)) .
+
+  op empty-module-with-states : COMP/OL Qid Sort -> BaseModule{COMP/OL} .
+  eq empty-module-with-states(L, H, S)
+   = Module[L]{H with states S is nil empty add-hidden-sort(S, nil)
+      given empty} .
+endfm
+
+********************************************************************************
+
+fmod COMP/OL/COMPOSITION/EVAL is
+  protecting COMP/OL/MODULE .
+  protecting ATERM/VARS .
+  protecting ATERM/SUBSTITUTION .
+
+  var  L : COMP/OL .
+  var  ON : Name{COMP/OL} .
+  vars NONL NONL1 NONL2 : NeNameList{COMP/OL} .
+  vars QI QI' PI MN QN CN BN : Qid .
+  vars S S' HS CS BS Idx : Sort .
+  vars BOD BOD1 BOD2 POD POD1 POD2 : OpDecl .
+  vars BODS PODS : OpDeclSet .
+  vars TP TP' : Type .
+  vars TPL TPL' : TypeList .
+  vars AtS AtS' : AttrSet .
+  vars LHS RHS RHS' : ATerm .
+  vars TL VL' VIL' VJL' : ATermList .
+  vars V' VI VJ : AVariable .
+  var  M? : Module{COMP} .
+  var  DM : DataModule{COMP} .
+  vars CM BM : BObjModule{COMP} .
+  var  SB : SpecBody{COMP/HA} .
+  var  DB : DB{COMP} .
+
+  *** eval  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op eval : Composition{COMP/OL} Sort DB{COMP} -> SpecBody{COMP/HA} .
+  ceq eval(composing NONL ., HS, DB)
+   = (SpecBody[COMP/HA]{
+        sorts none . sorts none . (none).OpDeclSet
+        (PODS
+         cmp-actions(COMP/OL, HS, NONL, DB)
+         cmp-observations(COMP/OL, HS, NONL, DB))
+        cmp-equations(COMP/OL, HS, NONL, PODS, DB)
+      })
+   if PODS := cmp-projections(COMP/OL, HS, NONL, DB) .
+  eq eval(syncing NONL ., HS, DB)
+   = eval(composing NONL ., HS, DB) .
+  eq eval(syncing object ON ., HS, DB)
+   = nil .
+  eq eval(indexing ON on MN by S ., HS, DB)
+   = (SpecBody[COMP/HA]{
+        sorts none . sorts none . (none).OpDeclSet
+        (idx-projections(COMP/OL, HS, ON, MN, S, DB)
+         idx-actions(COMP/OL, HS, ON, MN, S, DB)
+         idx-observations(COMP/OL, HS, ON, MN, S, DB))
+        idx-equations(COMP/OL, HS, ON, MN, S, DB)
+      }) .
+
+  *** projections  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op cmp-projections : COMP/OL Sort NameList{COMP/OL} DB{COMP} -> OpDeclSet .
+  eq cmp-projections(L, HS, nil, DB) = none .
+  eq cmp-projections(L, HS, Name[L]{MN}, DB)
+   = cmp-projection(L, HS, MN, hsort(L, DB[MN])) .
+  eq cmp-projections(L, HS, Name[L]{MN} as Name[L]{QN}, DB)
+   = cmp-projection(L, HS, QN, hsort(L, DB[MN])) .
+  eq cmp-projections(L, HS, NONL1 NONL2, DB)
+   = cmp-projections(L, HS, NONL1, DB) cmp-projections(L, HS, NONL2, DB) .
+
+  op cmp-projection : COMP/OL Sort Qid Sort -> OpDecl .
+  ceq cmp-projection(L, HS, CN, CS)
+   = qualify-ops(COMP/HA, op CS : HS -> S [none] ., CN)
+   if S := qualify(COMP/HA, CS, CN) .
+
+  op idx-projections : COMP/OL Sort Name{COMP/OL} Qid Sort
+    DB{COMP} -> OpDeclSet .
+  eq idx-projections(L, HS, Name[L]{CN}, MN, Idx, DB)
+   = idx-projections(L, HS, DB[CN], DB[MN], Idx) .
+
+  op idx-projections : COMP/OL Sort BObjModule{COMP} Module{COMP}
+    Sort -> OpDeclSet .
+  eq idx-projections(L, HS, CM, DM, Idx)
+   = idx-projection(L, HS, header(L, CM), hsort(L, CM), Idx) .
+  eq idx-projections(L, HS, CM, BM, Idx)
+   = idx-projection(L, HS, header(L, CM), hsort(L, CM), Idx)
+     cmp-projection(L, HS, header(L, BM), hsort(L, BM)) .
+
+  op idx-projection : COMP/OL Sort Qid Sort Sort -> OpDecl .
+  ceq idx-projection(L, HS, CN, CS, Idx)
+   = qualify-ops(COMP/HA, op CS : HS -> S [none] ., CN, Idx)
+   if S := qualify(COMP/HA, CS, CN) .
+
+  *** actions  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op cmp-actions : COMP/OL Sort NameList{COMP/OL} DB{COMP} -> OpDeclSet .
+  eq cmp-actions(L, HS, nil, DB) = none .
+  eq cmp-actions(L, HS, Name[L]{MN}, DB)
+   = cmp-actions(L, HS, MN, DB[MN]) .
+  eq cmp-actions(L, HS, Name[L]{MN} as Name[L]{QN}, DB)
+   = cmp-actions(L, HS, QN, DB[MN]) .
+  eq cmp-actions(L, HS, NONL1 NONL2, DB)
+   = cmp-actions(L, HS, NONL1, DB) cmp-actions(L, HS, NONL2, DB) .
+
+  op cmp-actions : COMP/OL Sort Qid BObjModule{COMP} -> OpDeclSet .
+  ceq cmp-actions(L, HS, CN, CM)
+   = cmp-bops(L, HS, CN, CS, actions(body(L, CM), CS))
+   if CS := hsort(L, CM) .
+
+  op cmp-bops : COMP/OL Sort Qid Sort OpDeclSet -> OpDeclSet .
+  eq cmp-bops(L, HS, CN, CS, BODS)
+   = rename-sorts(qualify-ops(COMP/HA, BODS, CN), sort CS to HS) .
+
+  op idx-actions : COMP/OL Sort Name{COMP/OL} Qid Sort DB{COMP} -> OpDeclSet .
+  eq idx-actions(L, HS, Name[L]{CN}, MN, Idx, DB)
+   = idx-actions(L, HS, DB[CN], DB[MN], Idx) .
+
+  op idx-actions : COMP/OL Sort BObjModule{COMP} Module{COMP}
+    Sort -> OpDeclSet .
+  ceq idx-actions(L, HS, CM, DM, Idx)
+   = idx-bops(L, HS, header(L, CM), CS, Idx, actions(body(L, CM), CS))
+   if CS := hsort(L, CM) .
+  ceq idx-actions(L, HS, CM, BM, Idx)
+   = idx-bops(L, HS, header(L, CM), CS, Idx, actions(body(L, CM), CS))
+     cmp-bops(L, HS, header(L, BM), S, actions(body(L, BM), S))
+   if CS := hsort(L, CM) /\ S := hsort(L, BM) .
+
+  op idx-bops : COMP/OL Sort Qid Sort Sort OpDeclSet -> OpDeclSet .
+  eq idx-bops(L, HS, CN, CS, Idx, BODS)
+   = rename-sorts(qualify-ops(COMP/HA, BODS, CN, Idx), sort CS to HS) .
+
+  *** observations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op cmp-observations : COMP/OL Sort NameList{COMP/OL} DB{COMP} -> OpDeclSet .
+  eq cmp-observations(L, HS, nil, DB) = none .
+  eq cmp-observations(L, HS, Name[L]{MN}, DB)
+   = cmp-observations(L, HS, MN, DB[MN]) .
+  eq cmp-observations(L, HS, Name[L]{MN} as Name[L]{QN}, DB)
+   = cmp-observations(L, HS, QN, DB[MN]) .
+  eq cmp-observations(L, HS, NONL1 NONL2, DB)
+   = cmp-observations(L, HS, NONL1, DB) cmp-observations(L, HS, NONL2, DB) .
+
+  op cmp-observations : COMP/OL Sort Qid BObjModule{COMP} -> OpDeclSet .
+  ceq cmp-observations(L, HS, CN, CM)
+   = cmp-bops(L, HS, CN, CS, observations(body(L, CM), CS))
+   if CS := hsort(L, CM) .
+
+  op idx-observations : COMP/OL Sort Name{COMP/OL} Qid Sort
+    DB{COMP} -> OpDeclSet .
+  eq idx-observations(L, HS, Name[L]{CN}, MN, Idx, DB)
+   = idx-observations(L, HS, DB[CN], DB[MN], Idx) .
+
+  op idx-observations : COMP/OL Sort BObjModule{COMP} Module{COMP}
+    Sort -> OpDeclSet .
+  ceq idx-observations(L, HS, CM, DM, Idx)
+   = idx-bops(L, HS, header(L, CM), CS, Idx, observations(body(L, CM), CS))
+    if CS := hsort(L, CM) .
+  ceq idx-observations(L, HS, CM, BM, Idx)
+   = idx-bops(L, HS, header(L, CM), CS, Idx, observations(body(L, CM), CS))
+     cmp-bops(L, HS, header(L, BM), S, observations(body(L, BM), S))
+    if CS := hsort(L, CM) /\ S := hsort(L, BM) .
+
+  *** equations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op cmp-equations : COMP/OL Sort NameList{COMP/OL} OpDeclSet
+    DB{COMP} -> SenDeclSet .
+  eq cmp-equations(L, HS, nil, PODS, DB) = none .
+  eq cmp-equations(L, HS, Name[L]{MN}, PODS, DB)
+   = cmp-equations(L, HS, MN, DB[MN], PODS) .
+  eq cmp-equations(L, HS, Name[L]{MN} as Name[L]{QN}, PODS, DB)
+   = cmp-equations(L, HS, QN, DB[MN], PODS) .
+  eq cmp-equations(L, HS, NONL1 NONL2, PODS, DB)
+   = cmp-equations(L, HS, NONL1, PODS, DB)
+     cmp-equations(L, HS, NONL2, PODS, DB) .
+
+  op cmp-equations : COMP/OL Sort Qid BObjModule{COMP} OpDeclSet -> SenDeclSet .
+  ceq cmp-equations(L, HS, CN, BM, PODS)
+   = cmp-act-equations(L, HS, CN, CS, actions(SB, CS), PODS)
+     cmp-obs-equations(L, HS, CN, CS, observations(SB, CS))
+   if SB := body(L, BM) /\ CS := hsort(L, BM) .
+
+  op cmp-act-equations : COMP/OL Sort Qid Sort OpDeclSet
+    OpDeclSet -> SenDeclSet .
+  eq cmp-act-equations(L, HS, CN, CS, BOD1 BOD2 BODS, PODS)
+   = cmp-act-equations(L, HS, CN, CS, BOD1, PODS)
+     cmp-act-equations(L, HS, CN, CS, BOD2 BODS, PODS) .
+  eq cmp-act-equations(L, HS, CN, CS, BOD, POD1 POD2 PODS)
+   = cmp-act-equations(L, HS, CN, CS, BOD, POD1)
+     cmp-act-equations(L, HS, CN, CS, BOD, POD2 PODS) .
+  ceq cmp-act-equations(L, HS, CN, CS, BOD, POD)
+   = (sen eq(COMP/HA, LHS = if S == S' then RHS' else RHS fi) [none] .)
+   if    (op QI : TPL -> TP [AtS] .) := BOD
+      /\ (op QI' : TPL' -> TP' [AtS'] .) := cmp-bops(L, HS, CN, CS, BOD)
+      /\ (op PI : HS -> S [none] .) := POD
+      /\ S' := qualify(COMP/HA, CS, CN)
+      /\ VL' := fresh-vars(TPL')
+      /\ V' := filter-terms(VL' : HS)
+      /\ LHS := {PI[{QI'[VL'] : TP'}] : S}
+      /\ RHS := {PI[V'] : S}
+      /\ RHS' := {QI[apply(subst(V', RHS), VL')] : S} .
+  eq cmp-act-equations(L, HS, CN, CS, BODS, PODS) = none [owise] .
+
+  op cmp-obs-equations : COMP/OL Sort Qid Sort OpDeclSet -> SenDeclSet .
+  eq cmp-obs-equations(L, HS, CN, CS, BOD1 BOD2 BODS)
+   = cmp-obs-equations(L, HS, CN, CS, BOD1)
+     cmp-obs-equations(L, HS, CN, CS, BOD2 BODS) .
+  ceq cmp-obs-equations(L, HS, CN, CS, BOD)
+   = (sen eq(COMP/HA, LHS = RHS) [none] .)
+   if    (op QI : TPL -> TP [AtS] .) := BOD
+      /\ (op QI' : TPL' -> TP' [AtS'] .) := cmp-bops(L, HS, CN, CS, BOD)
+      /\ (op PI : HS -> S [none] .) := cmp-projection(L, HS, CN, CS)
+      /\ VL' := fresh-vars(TPL')
+      /\ V' := filter-terms(VL' : HS)
+      /\ LHS := {QI'[VL'] : TP'}
+      /\ RHS := {QI[apply(subst(V', {PI[V'] : S}), VL')] : TP'} .
+  eq cmp-obs-equations(L, HS, CN, CS, BODS) = none [owise] .
+
+  op idx-equations : COMP/OL Sort Name{COMP/OL} Qid Sort
+    DB{COMP} -> SenDeclSet .
+  eq idx-equations(L, HS, Name[L]{CN}, MN, Idx, DB)
+   = idx-equations(L, HS, DB[CN], DB[MN], Idx) .
+
+  op idx-equations : COMP/OL Sort BObjModule{COMP} Module{COMP}
+    Sort -> SenDeclSet .
+  ceq idx-equations(L, HS, CM, DM, Idx)
+   = idx-act-equations(L, HS, CM, DM, Idx, actions(SB, CS))
+     idx-obs-equations(L, HS, CM, DM, Idx, observations(SB, CS))
+   if SB := body(L, CM) /\ CS := hsort(L, CM) .
+  ceq idx-equations(L, HS, CM, BM, Idx)
+   = idx-act-equations(L, HS, CM, BM, Idx, actions(body(L, CM), CS))
+     cmp-act-equations(L, HS, BN, BS, actions(body(L, BM), BS), POD)
+     idx-obs-equations(L, HS, CM, BM, Idx, observations(body(L, CM), CS))
+     cmp-obs-equations(L, HS, BN, BS, observations(body(L, BM), BS))
+   if CS := hsort(L, CM) /\ BN := header(L, BM) /\ BS := hsort(L, BM)
+      /\ POD := cmp-projection(L, HS, BN, BS) .
+
+  op idx-act-equations : COMP/OL Sort BObjModule{COMP} Module{COMP} Sort
+    OpDeclSet -> SenDeclSet .
+  eq idx-act-equations(L, HS, CM, M?, Idx, BOD1 BOD2 BODS)
+   = idx-act-equations(L, HS, CM, M?, Idx, BOD1)
+     idx-act-equations(L, HS, CM, M?, Idx, BOD2 BODS) .
+  eq idx-act-equations(L, HS, CM, DM, Idx, BOD)
+   = idx-act-equations-eq(L, HS, CM, DM, Idx, BOD)
+     idx-act-equations-nq(L, HS, CM, DM, Idx, BOD) .
+  eq idx-act-equations(L, HS, CM, BM, Idx, BOD)
+   = idx-act-equations-dn(L, HS, CM, BM, Idx, BOD) .
+  eq idx-act-equations(L, HS, CM, M?, Idx, BODS) = none [owise] .
+
+  op idx-act-equations-eq : COMP/OL Sort BObjModule{COMP} DataModule{COMP} Sort
+    OpDecl -> SenDeclSet .
+  ceq idx-act-equations-eq(L, HS, CM, DM, Idx, BOD)
+   = (sen eq(COMP/HA, LHS = RHS) [none] .)
+   if (op QI : TPL -> TP [AtS] .) := BOD
+      /\ CN := header(L, CM)
+      /\ CS := hsort(L, CM)
+      /\ (op QI' : TPL' -> TP' [AtS'] .) := idx-bops(L, HS, CN, CS, Idx, BOD)
+      /\ (op PI : Idx HS -> S [none] .) := idx-projection(L, HS, CN, CS, Idx)
+      /\ (VI, VL') := split-idx-vars(COMP/HA, QI, fresh-vars(TPL'))
+      /\ V' := filter-terms(VL' : HS)
+      /\ VIL' := merge-idx-vars(COMP/HA, QI, VI, VL')
+      /\ LHS := {PI[VI, {QI'[VIL'] : TP'}] : S}
+      /\ RHS := {QI[apply(subst(V', {PI[VI, V'] : S}), VL')] : S} .
+
+  op idx-act-equations-nq : COMP/OL Sort BObjModule{COMP} DataModule{COMP} Sort
+    OpDecl -> SenDeclSet .
+  ceq idx-act-equations-nq(L, HS, CM, DM, Idx, BOD)
+   = (sen cq(COMP/HA, LHS = RHS if not(COMP/HA, eq(COMP/HA, VI = VJ))) [none] .)
+   if (op QI : TPL -> TP [AtS] .) := BOD
+      /\ CN := header(L, CM)
+      /\ CS := hsort(L, CM)
+      /\ (op QI' : TPL' -> TP' [AtS'] .) := idx-bops(L, HS, CN, CS, Idx, BOD)
+      /\ (op PI : Idx HS -> S [none] .) := idx-projection(L, HS, CN, CS, Idx)
+      /\ (VI, VJL') := fresh-vars(Idx TPL')
+      /\ (VJ, VL') := split-idx-vars(COMP/HA, QI, VJL')
+      /\ V' := filter-terms(VL' : HS)
+      /\ VIL' := merge-idx-vars(COMP/HA, QI, VI, VL')
+      /\ LHS := {PI[VJ, {QI'[VIL'] : TP'}] : S}
+      /\ RHS := {PI[VJ, V'] : S} .
+
+  op idx-act-equations-dn : COMP/OL Sort BObjModule{COMP} BObjModule{COMP} Sort
+    OpDecl -> SenDeclSet .
+  ceq idx-act-equations-dn(L, HS, CM, BM, Idx, BOD)
+   = (sen eq(COMP/HA, LHS = RHS) [none] .)
+   if (op QI : TPL -> TP [AtS] .) := BOD
+      /\ CN := header(L, CM)
+      /\ CS := hsort(L, CM)
+      /\ BN := header(L, BM)
+      /\ BS := hsort(L, BM)
+      /\ (op QI' : TPL' -> TP' [AtS'] .) := idx-bops(L, HS, CN, CS, Idx, BOD)
+      /\ (op PI : HS -> S [none] .) := cmp-projection(L, HS, BN, BS)
+      /\ (VI, VL') := split-idx-vars(COMP/HA, QI, fresh-vars(TPL'))
+      /\ V' := filter-terms(VL' : HS)
+      /\ VIL' := merge-idx-vars(COMP/HA, QI, VI, VL')
+      /\ LHS := {PI[{QI'[VIL'] : TP'}] : S}
+      /\ RHS := {PI[V'] : S} .
+
+  op idx-obs-equations : COMP/OL Sort BObjModule{COMP} Module{COMP} Sort
+    OpDeclSet -> SenDeclSet .
+  eq idx-obs-equations(L, HS, CM, M?, Idx, BOD1 BOD2 BODS)
+   = idx-obs-equations(L, HS, CM, M?, Idx, BOD1)
+     idx-obs-equations(L, HS, CM, M?, Idx, BOD2 BODS) .
+  ceq idx-obs-equations(L, HS, CM, M?, Idx, BOD)
+   = (sen eq(COMP/HA, LHS = RHS) [none] .)
+   if (op QI : TPL -> TP [AtS] .) := BOD
+      /\ CN := header(L, CM)
+      /\ CS := hsort(L, CM)
+      /\ (op QI' : TPL' -> TP' [AtS'] .) := idx-bops(L, HS, CN, CS, Idx, BOD)
+      /\ (op PI : Idx HS -> S [none] .) := idx-projection(L, HS, CN, CS, Idx)
+      /\ (VI, VL') := split-idx-vars(COMP/HA, QI, fresh-vars(TPL'))
+      /\ V' := filter-terms(VL' : HS)
+      /\ VIL' := merge-idx-vars(COMP/HA, QI, VI, VL')
+      /\ LHS := {QI'[VIL'] : TP'}
+      /\ RHS := {QI[apply(subst(V', {PI[VI, V'] : S}), VL')] : TP'} .
+  eq idx-obs-equations(L, HS, CM, M?, Idx, BODS) = none [owise] .
+endfm
+
+********************************************************************************

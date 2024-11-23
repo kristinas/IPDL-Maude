@@ -1,0 +1,253 @@
+***( SpeX/Lang/Th
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Language.maude
+
+********************************************************************************
+
+mod TH/PROCESSOR/BASE is
+  including  SPEX-PROCESSOR/BASE .
+  protecting SPEX/FORMATTING .
+
+  var TN : Qid .
+  var TNL : QidList .
+  var NTNL : NeQidList .
+  var V? : [AttrValue] .
+  var Atts : AttributeSet .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op oth-stack : -> AttrName [ctor] .
+  op oth-database : -> AttrName [ctor] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op oth-stack : AttributeSet -> QidList .
+  ceq oth-stack(Atts) = TNL
+   if AttrValue(TNL) := (Atts).get(oth-stack) .
+  eq oth-stack(Atts) = nil [owise] .
+
+  op last-opened-theory : AttributeSet ~> Qid .
+  ceq last-opened-theory(Atts) = head(NTNL)
+   if AttrValue(NTNL) := (Atts).get(oth-stack) .
+
+  op add-oth-name : Qid -> AttrModifier .
+  eq subject(add-oth-name(TN)) = oth-stack .
+  eq add-oth-name(TN) AttrValue(TNL)
+   = if occurs(TN, TNL)
+     then AttrValue(TN remove(TN, TNL))
+     else AttrValue(TN TNL) fi .
+  eq add-oth-name(TN) V? = AttrValue(TN) [owise] .
+
+  op pop-oth-name : -> AttrModifier .
+  eq subject(pop-oth-name) = oth-stack .
+  eq pop-oth-name AttrValue(NTNL) = AttrValue(tail(NTNL)) .
+  eq pop-oth-name AttrValue(TNL) = AttrValue(TNL) [owise] .
+
+  op opened-theory : Qid AttributeSet -> Bool .
+  ceq opened-theory(TN, Atts) = occurs(TN, TNL)
+   if AttrValue(TNL) := (Atts).get(oth-stack) .
+  eq opened-theory(TN, Atts) = false [owise] .
+endm
+
+*** ----------------------------------------------------------------------------
+
+view Th/Data { L :: LANGUAGE, BL :: TH/BASE-LANG }
+from DATA to TH/DATABASE { L, BL } is
+  sort Data to DB{Th{L}} .
+  op nil to empty .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view Th/Command { L :: LANGUAGE, BL :: TH/BASE-LANG }
+from COMMAND to TH/READ { L, BL } is
+  sort Command to Cmd{Th{L}} .
+  op command-annotations to term 'Command .
+  op read-command(T:ATerm) to term read-cmd(Th[Lid], T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod TH/PROCESSOR { L :: LANGUAGE, SP :: TH/SUBPROCESSOR } is
+  including  SPEX-PROCESSOR { Th{L}, Th/Data{L,Th/Base-lang{SP}},
+                              Th/Command{L,Th/Base-lang{SP}} } .
+  protecting PROCESSOR/SELECTOR { Th/Pid{L} } .
+  including  TH/PROCESSOR/BASE .
+  including  TH/PARSING-&-PRINTING { L, Th/Base-lang{SP} } .
+
+  var  L : L$Lid .
+  vars I SP : Oid .
+  var  PT : OidList .
+  vars TN H : Qid .
+  var  TN? : [Qid] .
+  vars QIL TNL : QidList .
+  var  NQIL : NeQidList .
+  var  T : ATerm .
+  var  DB : SpeX/DB .
+  var  SAS : AnalysisState{Th{L}} .
+  var  ThDB : DB{Th{L}} .
+  var  Th : Theory{L} .
+  var  SB : SP$SpecBody .
+  var  SB? : [SP$SpecBody] .
+  var  V? : [AttrValue] .
+  var  Atts : AttributeSet .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op odb : Th{L} AttributeSet -> DB{Th{L}} .
+  ceq odb(Th[L], Atts) = ThDB
+   if AttrValue(ThDB) := (Atts).get(oth-database) .
+  eq odb(Th[L], Atts) = empty [owise] .
+
+  op _.open-theory(_,_) : AttributeSet Qid DB{Th{L}} -> AttributeSet [prec 15] .
+  eq (Atts).open-theory(TN, ThDB)
+   = Atts >>= add-odb-entry(ThDB[TN]) >>= add-oth-name(TN) .
+
+  op _.close-theory(_) : AttributeSet Th{L} -> AttributeSet [prec 15] .
+  ceq (Atts).close-theory(Th[L])
+   = Atts >>= delete-odb-entry(Th[L], TN) >>= pop-oth-name
+   if TN := last-opened-theory(Atts) .
+  eq (Atts).close-theory(Th[L]) = Atts [owise] .
+
+  op add-odb-entry : Theory{L} -> AttrModifier .
+  eq subject(add-odb-entry(Th)) = oth-database .
+  eq add-odb-entry(Th) AttrValue(ThDB)
+   = AttrValue(add(header(Th), Th, ThDB)) .
+  eq add-odb-entry(Th) V?
+   = AttrValue(add(header(Th), Th, empty)) .
+
+  op insert-odb-entry : Theory{L} -> AttrModifier .
+  eq subject(insert-odb-entry(Th)) = oth-database .
+  eq insert-odb-entry(Th) AttrValue(ThDB)
+   = AttrValue(insert(header(Th), Th, ThDB)) .
+  eq insert-odb-entry(Th) V?
+   = AttrValue(insert(header(Th), Th, empty)) .
+
+  op delete-odb-entry : Th{L} Qid -> AttrModifier .
+  eq subject(delete-odb-entry(Th[L], TN)) = oth-database .
+  eq delete-odb-entry(Th[L], TN) AttrValue(ThDB)
+   = AttrValue(delete(TN, ThDB)) .
+
+  op subprocs : Th{L} AttributeSet -> OidList .
+  ceq subprocs(Th[L], Atts) = $subprocs(Th[L], TNL)
+   if AttrValue(TNL) := (Atts).get(oth-stack) .
+  eq subprocs(Th[L], Atts) = nil [owise] .
+
+  op $subprocs : Th{L} QidList -> OidList .
+  eq $subprocs(Th[L], nil) = nil .
+  eq $subprocs(Th[L], TN TNL) = $[Th[L] / TN] $subprocs(Th[L], TNL) .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Th:start-up] :
+    < $[Th[L]] : PROC | starting up, Atts >
+    start-up($[Th[L]])
+   => < $[Th[L]] : PROC | running, Atts > .
+
+  rl [Th:get-prompt] :
+    < $[Th[L]] : PROC | running, Atts >
+    get-prompt($[Th[L]], I)
+   => < $[Th[L]] : PROC | running, Atts >
+    if oth-stack(Atts) == nil
+    then got-prompt(I, [>])
+    else got-prompt(I, [last-opened-theory(Atts) >]) fi .
+
+  crl [Th:parse] :
+    < $[Th[L]] : PROC | running, Atts >
+    parse($[Th[L]], I, QIL, DB)
+   => < $[Th[L]] : PROC | parsing I input, Atts >
+    if oth-stack(Atts) == nil
+    then relay($[Th[L]], parse Th[L] declaration (QIL) in SAS
+                 or-else parse Th[L] command (QIL) in SAS)
+    else relay($[Th[L]], parse Th[L] command (QIL) in SAS
+                 or-else parse($[Th[L] / TN?], $[Th[L]], QIL, SB?)) fi
+   if TN? := last-opened-theory(Atts) /\ SB? := body(DB[Th[L]][TN?])
+      /\ TNL := oth-stack(Atts)
+      /\ SAS := AnalysisState[Th[L]]{theory-names(DB[Th[L]]) & TNL } .
+
+  crl [Th:process] :
+    < $[Th[L]] : PROC | running, Atts >
+    process($[Th[L]], I, T, DB)
+   => < $[Th[L]] : PROC | running, Atts >
+    processed(I, $[Th[L]],
+      if defined(DB[Th[L]][H])
+      then Advisory: log('redefining 'theory) H
+      else log('Loading 'theory) H fi,
+      insert(H, Th, DB[Th[L]]))
+   if Th := read-theory(Th[L], T) /\ H := header(Th) .
+
+  rl [Th:shut-down] :
+    < $[Th[L]] : PROC | running, Atts >
+    shut-down($[Th[L]])
+   => < $[Th[L]] : PROC | shutting down, Atts >
+    shut-down(subprocs(Th[L], Atts)) quit($[Th[L]]) .
+
+  *** executing Th commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - -
+  crl < $[Th[L]] : PROC | executing I command, Atts >
+    do($[Th[L]], Cmd[Th[L]]{list theories}, DB)
+   => < $[Th[L]] : PROC | running, Atts >
+    processed(I, $[Th[L]], log('Listing 'theories) '\n
+      mk-page(if TNL == nil
+        then 'Empty 'theory 'list
+        else intersperse('\n, TNL) fi))
+   if TNL := list(theory-names(DB[Th[L]])) .
+
+  rl < $[Th[L]] : PROC | executing I command, Atts >
+    do($[Th[L]], Cmd[Th[L]]{show theory TN}, DB)
+   => < $[Th[L]] : PROC | running, Atts >
+    processed(I, $[Th[L]], log('Showing 'theory) TN '\n
+      mk-page(print(DB[Th[L]][TN]))) .
+
+  crl < $[Th[L]] : PROC | executing I command, Atts >
+    do($[Th[L]], Cmd[Th[L]]{list opened theories}, DB)
+   => < $[Th[L]] : PROC | running, Atts >
+    processed(I, $[Th[L]], log('Listing 'opened 'theories) '\n
+      mk-page(if TNL == nil
+        then 'Empty 'theory 'list
+        else if TNL :: Qid
+        then TNL
+        else head(TNL) '\s '`( 'most 'recently 'opened '`) '\n
+             intersperse('\n, tail(TNL)) fi fi))
+    if TNL := oth-stack(Atts) .
+
+  rl < $[Th[L]] : PROC | executing I command, Atts >
+    do($[Th[L]], Cmd[Th[L]]{open TN}, DB)
+   => < $[Th[L]] : PROC | running, (Atts).open-theory(TN, DB[Th[L]]) >
+    processed(I, $[Th[L]], log('Opening) TN)
+    start-processor($[Th[L] / TN]) unless opened-theory(TN, Atts) .
+
+  crl < $[Th[L]] : PROC | executing I command, Atts >
+    do($[Th[L]], Cmd[Th[L]]{close}, DB)
+   => < $[Th[L]] : PROC | running, (Atts).close-theory(Th[L]) >
+    shut-down($[Th[L] / TN])
+    processed(I, $[Th[L]], log('Closing) TN)
+   if TN := last-opened-theory(Atts) .
+
+  *** forwarding process(ed) messages to/from Th subprocessors  -  -  -  -  - --
+  rl [Th:process] :
+    < $[Th[L]] : PROC | running, Atts >
+    process($[Th[L]], $[Th[L] / TN] PT, I, T, DB)
+   => < $[Th[L]] : PROC | processing I input, Atts >
+    process($[Th[L] / TN], PT, $[Th[L]], T, body(odb(Th[L], Atts)[TN])) .
+
+  rl [Th:processed] :
+    < $[Th[L]] : PROC | processing I input, Atts >
+    processed($[Th[L]], $[Th[L] / TN], QIL, SB)
+   => < $[Th[L]] : PROC | running,
+                          Atts >>= insert-odb-entry(Theory[L]{TN is SB}) >
+    processed(I, $[Th[L]], QIL) .
+
+  rl [Th:processed] :
+    < $[Th[L]] : PROC | processing I input, Atts >
+    processed($[Th[L]], $[Th[L] / TN], SB)
+   => < $[Th[L]] : PROC | running,
+                          Atts >>= insert-odb-entry(Theory[L]{TN is SB}) >
+    processed(I, $[Th[L]]) .
+endm
+
+*******************************************************************************

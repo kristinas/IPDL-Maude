@@ -1,0 +1,32 @@
+***( SpeX/Lang/Spec/BL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../../Base/Triv/Processor.maude
+
+********************************************************************************
+
+view Spec/Triv from SPEC/SUBPROCESSOR to TRIV/PROCESSOR { Spec/Pid{Triv} } is
+  sort SpecBody to SpecBody{Triv} .
+  op (nil).SpecBody to term SpecBody[Triv]{nil} .
+
+  sort State to SingletonState{Triv} .
+  op initial-state(SB:SpecBody) to term [*] .
+  op reanalyse(SB:SpecBody, S:State) to term
+    reanalyse(Triv, show(SB:SpecBody{Triv}), S:SingletonState{Triv}) .
+
+  op parse-declaration(QIL:QidList, S:State) to term
+    parse Triv declaration (QIL:QidList) .
+  op print-declaration(T:Term) to term
+    print Triv term (T:Term) .
+endv
+
+********************************************************************************

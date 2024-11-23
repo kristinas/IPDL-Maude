@@ -1,0 +1,394 @@
+***( SpeX/Lang/Reason
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Data.maude
+
+********************************************************************************
+
+fmod REASON/LANGUAGE { L :: LANGUAGE } is
+  protecting REASON/LID { L } .
+
+  var RL : Reason{L} .
+
+  *** statements  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op stmnt-grammar : Reason{L} -> Grammar .
+  eq stmnt-grammar(RL)
+   = grammar 'Reason/Stmnt/Syntax is
+       'Statement
+         ::= "stmnt_is_endst" : 'StmntName 'StatementBody
+             [format('! 'so 's! 'on++i 'n--i! 'o)]
+       'StmntName
+         ::= token "statement-name"
+       'StatementBody
+         ::= bubble "statement"
+             [balanced-parentheses exclude("endst")]
+     endgr .
+
+  *** proofs  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op proof-grammar : Reason{L} -> Grammar .
+  eq proof-grammar(RL)
+   = grammar 'Reason/Proof/Syntax is
+       'Proof
+         ::= "proof_of_is ..." : 'ProofName 'StmntName
+             [format('! 'so 's! 'so 's! 'on! 'o)]
+          |  "proof_of_is_..." : 'ProofName 'StmntName 'ProofSteps
+             [format('! 'so 's! 'so 's! 'on++i 'n--i! 'o)]
+          |  "proof_of_is qed" : 'ProofName 'StmntName
+             [format('! 'so 's! 'so 's! 'on! 'o)]
+          |  "proof_of_is_qed" : 'ProofName 'StmntName 'ProofSteps
+             [format('! 'so 's! 'so 's! 'on++i 'n--i! 'o)]
+       'ProofName
+         ::= token "proof-name"
+       'StmntName
+         ::= token "statement-name"
+       'ProofSteps
+         ::= just 'ProofStep
+          |  "__" : 'ProofSteps 'ProofSteps
+             [assoc format('d 'ni 'd)]
+       'ProofStep
+         ::= bubble "proof-step"
+             [balanced-parentheses exclude(".")]
+     endgr .
+
+  *** commands  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op cmd-grammar : Reason{L} -> Grammar .
+  eq cmd-grammar(RL)
+   = grammar 'Reason/Cmd/Syntax is
+       'Command
+         ::= lit "list statements"
+             [format('! 's 'o)]
+          |  "show statement_" : 'StmntName
+             [format('! 's 'o 'd)]
+          |  lit "list proofs"
+             [format('! 's 'o)]
+          |  "show proof_" : 'ProofName
+             [format('! 's 'o 'd)]
+          |  lit "show ongoing proof"
+             [format('! 's 's 'o)]
+          |  "begin proof_of_" : 'ProofName 'StmntName
+             [format('! 's 'so 's! 'so 'd)]
+          |  "resume proof_" : 'ProofName
+             [format('! 's 'so 'd)]
+          |  lit "rollback"
+             [format('! 'o)]
+          |  lit "end proof"
+             [format('! 's 'o)]
+       'StmntName
+         ::= token "statement-name"
+       'ProofName
+         ::= token "proof-name"
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Reason { L :: LANGUAGE } from LANGUAGE to REASON/LANGUAGE { L } is
+  sort Lid to Reason{L} .
+  op Lid to term Reason[Lid] .
+  op grammar to stmnt-grammar .
+endv
+
+********************************************************************************
+
+fmod REASON/READ { L :: LANGUAGE, BL :: REASON/BASE-LANG } is
+  protecting REASON/DATABASE { L, BL } .
+  protecting REASON/CMD { L } .
+  protecting ATERM/READ .
+
+  var  RL : Reason{L} .
+  var  Lib : BL$Library .
+  vars SN SB PN : ATerm .
+
+  *** read statement  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-stmnt : Reason{L} ATerm BL$Library ~> Stmnt{Reason{L}} .
+  eq read-stmnt(RL, {'stmnt_is_endst[SN, SB] : 'Statement}, Lib)
+   = Stmnt[RL]{read-qid(SN) is read-statement(SB, Lib)} .
+
+  *** read command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-cmd : Reason{L} ATerm ~> Cmd{Reason{L}} .
+  eq read-cmd(RL, {'list`statements.Command : 'Command})
+   = Cmd[RL]{list statements} .
+  eq read-cmd(RL, {'show`statement_[SN] : 'Command})
+   = Cmd[RL]{show statement read-qid(SN)} .
+  eq read-cmd(RL, {'list`proofs.Command : 'Command})
+   = Cmd[RL]{list proofs} .
+  eq read-cmd(RL, {'show`proof_[PN] : 'Command})
+   = Cmd[RL]{show proof read-qid(PN)} .
+  eq read-cmd(RL, {'show`ongoing`proof.Command : 'Command})
+   = Cmd[RL]{show ongoing proof} .
+  eq read-cmd(RL, {'begin`proof_of_[PN, SN] : 'Command})
+   = Cmd[RL]{begin proof read-qid(PN) of read-qid(SN)} .
+  eq read-cmd(RL, {'resume`proof_[PN] : 'Command})
+   = Cmd[RL]{resume proof read-qid(PN)} .
+  eq read-cmd(RL, {'rollback.Command : 'Command})
+   = Cmd[RL]{rollback} .
+  eq read-cmd(RL, {'end`proof.Command : 'Command})
+   = Cmd[RL]{end proof} .
+endfm
+
+********************************************************************************
+
+fmod REASON/SHOW { L :: LANGUAGE, BL :: REASON/BASE-LANG } is
+  protecting REASON/DATABASE { L, BL } .
+
+  var  RL : Reason{L} .
+  var  St : Stmnt{Reason{L}} .
+  var  OSL : OSList{Reason{L}} .
+  var  NOSL : NeOSList{Reason{L}} .
+  vars SN PN : Qid .
+  var  SB : BL$StatementBody .
+  var  PS : BL$ProofStep .
+  var  PO : BL$ProofObject .
+  var  TL : TermList .
+
+  *** show statement  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show : Stmnt{Reason{L}} -> Term .
+  eq show(Stmnt[RL]{SN is SB})
+   = 'stmnt_is_endst[show-stmnt-name(RL, SN), show-stmnt-body(RL, SB)] .
+
+  *** show statement name  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-stmnt-name : Reason{L} Qid -> Term .
+  eq show-stmnt-name(RL, SN)
+   = mk-bubble('statement-name, show-qid(SN)) .
+
+  *** show statement body  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-stmnt-body : Reason{L} BL$StatementBody -> Term .
+  eq show-stmnt-body(RL, SB)
+   = mk-bubble('statement, show-qids(print-statement(SB))) .
+
+  *** show proof  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show : Proof{Reason{L}} -> Term .
+
+  ceq show(Proof[RL]{PN of St is nil yields PO})
+   = if qed(PO) then 'proof_of_is`qed[TL] else 'proof_of_is`...[TL] fi
+   if TL := (show-proof-name(RL, PN), show-stmnt-name(RL, name(St))) .
+
+  ceq show(Proof[RL]{PN of St is NOSL yields PO})
+   = if qed(PO) then 'proof_of_is_qed[TL] else 'proof_of_is_...[TL] fi
+   if TL := (show-proof-name(RL, PN), show-stmnt-name(RL, name(St)),
+             pack('__, show-proof-steps(NOSL))) .
+
+  *** show proof name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-proof-name : Reason{L} Qid -> Term .
+  eq show-proof-name(RL, PN) = mk-bubble('proof-name, show-qid(PN)) .
+
+  *** show proof steps  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-proof-steps : OSList{Reason{L}} -> TermList .
+  eq show-proof-steps(nil) = empty .
+  eq show-proof-steps(OSPair[RL]{PS ; PO} OSL)
+   = mk-bubble('proof-step, show-qids(print-proof-step(PS, PO))),
+     show-proof-steps(OSL) .
+endfm
+
+********************************************************************************
+
+fmod REASON/ANALYSIS-STATE { L :: LANGUAGE, BL :: REASON/BASE-LANG } is
+  protecting REASON/READ { L, BL } .
+
+  var RL : Reason{L} .
+  var SAS : AnalysisState{Reason{L}} .
+  var Lib : BL$Library .
+  var DB : DB{Reason{L}} .
+  var PDB : ProofDB{Reason{L}} .
+
+  *** syntactic-analysis states  - - - - - - - - - - - - - - - - - - - - - - - -
+  sort AnalysisState{Reason{L}} .
+  *** the most general kind of syntactic-analysis states
+  op AnalysisState[_]{_&_&_} : Reason{L} BL$Library DB{Reason{L}}
+    ProofDB{Reason{L}} -> AnalysisState{Reason{L}} [ctor] .
+  *** states used in parsing statements
+  op AnalysisState[_]{_} : Reason{L} BL$Library
+    -> AnalysisState{Reason{L}} [ctor] .
+  *** states used in parsing commands
+  op AnalysisState[_]{_&_} : Reason{L} DB{Reason{L}} ProofDB{Reason{L}}
+    -> AnalysisState{Reason{L}} [ctor] .
+
+  *** partial projections  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op library : AnalysisState{Reason{L}} ~> BL$Library .
+  eq library(AnalysisState[RL]{Lib & DB & PDB}) = Lib .
+  eq library(AnalysisState[RL]{Lib}) = Lib .
+
+  op db : AnalysisState{Reason{L}} ~> DB{Reason{L}} .
+  eq db(AnalysisState[RL]{Lib & DB & PDB}) = DB .
+  eq db(AnalysisState[RL]{DB & PDB}) = DB .
+
+  op opf : AnalysisState{Reason{L}} ~> ProofDB{Reason{L}} .
+  eq opf(AnalysisState[RL]{Lib & DB & PDB}) = PDB .
+  eq opf(AnalysisState[RL]{DB & PDB}) = PDB .
+
+  *** names  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op stmnt-names : AnalysisState{Reason{L}} -> QidSet .
+  ceq stmnt-names(SAS) = stmnt-names(DB)
+   if DB := db(SAS) .
+  eq stmnt-names(SAS) = none [owise] .
+
+  op proof-names : AnalysisState{Reason{L}} -> QidSet .
+  ceq proof-names(SAS) = proof-names(DB) ; proof-names(PDB)
+   if DB := db(SAS) /\ PDB := opf(SAS) .
+  eq proof-names(SAS) = none [owise] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Reason/AnalysisState { L :: LANGUAGE, BL :: REASON/BASE-LANG }
+from ANALYSIS-STATE to REASON/ANALYSIS-STATE { L, BL } is
+  sort State to AnalysisState{Reason{L}} .
+  op S:State >>= T:ATerm to term S:AnalysisState{Reason{L}} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod REASON/PARSING { L :: LANGUAGE, BL :: REASON/BASE-LANG } is
+  including  SYNTACTIC-ANALYSIS { Reason{L}, Reason/AnalysisState{L, BL} } .
+  protecting ATERM/READ .
+
+  var  RL : Reason{L} .
+  var  QIL : QidList .
+  var  SAS : AnalysisState{Reason{L}} .
+  vars $SN SN $SB SB $PN PN : ATerm .
+  var  C : Constant .
+  var  $ : Qid .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse RL input (QIL) in SAS
+   = parse RL statement (QIL) in SAS
+     or-else parse RL command (QIL) in SAS .
+
+  op parse_statement_in_ : Reason{L} QidList AnalysisState{Reason{L}}
+    -> ParsingOutcome .
+  eq parse RL statement (QIL) in SAS
+   = scan RL input (QIL : 'Statement)
+     then analyse RL statement in AnalysisState[RL]{library(SAS)} .
+
+  op parse_command_in_ : Reason{L} QidList AnalysisState{Reason{L}}
+    -> ParsingOutcome .
+  eq parse RL command (QIL) in SAS
+   = scan input (QIL : 'Command) given cmd-grammar(RL)
+     then analyse RL command in AnalysisState[RL]{db(SAS) & opf(SAS)} .
+
+  *** analyse statement  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_statement : Reason{L} -> AnalysisAction{Reason{L}} .
+  eq analyse RL statement {'stmnt_is_endst[$SN, $SB] : 'Statement}
+   = try {'stmnt_is_endst [
+        solve RL name ($SN),
+        analyse RL statement body ($SB)
+      ] : 'Statement} .
+
+  op analyse_statement`body : Reason{L} -> AnalysisAction{Reason{L}} .
+  ceq analyse RL statement body {$[SB] : 'StatementBody} in SAS
+   = just parse-statement(QIL, library(SAS)) on QIL
+   if QIL := read-qids(SB) .
+
+  *** solve name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op solve_name : Reason{L} -> AnalysisAction{Reason{L}} .
+
+  eq solve RL name {$[SN] : 'StmntName}
+   = check (read-qid(SN) is ordinary) and-then return {SN : 'StmntName}
+     or-else
+     fail ('syntax 'error: emph(print RL term ($[SN]))
+       'is 'not 'a 'valid 'statement 'name,
+       (at RL term ($[SN]), include context)) .
+
+  eq solve RL name {$[PN] : 'ProofName}
+   = check (read-qid(PN) is ordinary) and-then return {PN : 'ProofName}
+     or-else
+     fail ('syntax 'error: emph(print RL term ($[PN]))
+       'is 'not 'a 'valid 'proof 'name,
+       (at RL term ($[PN]), include context)) .
+
+  *** analyse name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_name : Reason{L} -> AnalysisAction{Reason{L}} .
+
+  eq analyse RL name {$[SN] : 'StmntName} in SAS
+   = check (read-qid(SN) in stmnt-names(SAS))
+     and-then return {SN : 'StmntName}
+     or-else fail ('no 'such 'statement: emph(read-qid(SN)),
+      (at RL term ($[SN]), include context)) in SAS .
+
+  eq analyse RL name {$[PN] : 'ProofName} in SAS
+   = check (read-qid(PN) in proof-names(SAS))
+     and-then return {PN : 'ProofName}
+     or-else fail ('no 'such 'proof: emph(read-qid(PN))) in SAS .
+
+  *** analyse command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_command : Reason{L} -> AnalysisAction{Reason{L}} .
+
+  eq analyse RL command {C : 'Command} in SAS
+   = check (C in ('show`ongoing`proof.Command ;
+                  'rollback.Command ;
+                  'end`proof.Command)
+            implies opf(SAS) =/= empty)
+     and-then return {C : 'Command}
+     or-else fail('no 'ongoing 'proofs) in SAS .
+
+  eq analyse RL command {'show`statement_[$SN] : 'Command}
+   = try { 'show`statement_ [
+        analyse RL name ($SN)
+      ] : 'Command } .
+
+  eq analyse RL command {'show`proof_[$PN] : 'Command}
+   = try { 'show`proof_ [
+        analyse RL name ($PN)
+      ] : 'Command } .
+
+  eq analyse RL command {'begin`proof_of_[$PN, $SN] : 'Command}
+   = try { 'begin`proof_of_ [
+        solve RL name ($PN),
+        analyse RL name ($SN)
+      ] : 'Command } .
+
+  eq analyse RL command {'resume`proof_[$PN] : 'Command}
+   = try { 'resume`proof_ [
+        analyse RL name ($PN)
+      ] : 'Command } .
+endfm
+
+********************************************************************************
+
+fmod REASON/PRINTING { L :: LANGUAGE, BL :: REASON/BASE-LANG } is
+  protecting PRINTING { Reason{L} } .
+  protecting REASON/SHOW { L, BL } .
+
+  var RL : Reason{L} .
+  var St : Stmnt{Reason{L}} .
+  var Pf : Proof{Reason{L}} .
+  var PN : Qid .
+  var OSL : OSList{Reason{L}} .
+  var PS : BL$ProofStep .
+  var PO : BL$ProofObject .
+
+  *** print statements  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print : Stmnt{Reason{L}} -> QidList .
+  eq print(St) = print Reason[Lid] term show(St) .
+
+  *** print proofs  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print : Proof{Reason{L}} -> QidList .
+  eq print(Pf) = print term show(Pf) given proof-grammar(Reason[Lid]) .
+
+  *** print proof steps  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print-proof-steps : Proof{Reason{L}} -> QidList .
+  eq print-proof-steps(Proof[RL]{PN of St is OSL yields PO})
+   = intercalate('\n, print-proof-steps(OSL)) .
+
+  op print-proof-steps : OSList{Reason{L}} -> QidList2 .
+  eq print-proof-steps(nil) = nil [owise] .
+  eq print-proof-steps(OSPair[RL]{PS ; PO} OSL)
+   = :[print-proof-step(PS, PO)] print-proof-steps(OSL) .
+endfm
+
+********************************************************************************
+
+fmod REASON/PARSING-&-PRINTING { L :: LANGUAGE, BL :: REASON/BASE-LANG } is
+  protecting REASON/PARSING { L, BL } .
+  protecting REASON/PRINTING { L, BL } .
+endfm
+
+********************************************************************************

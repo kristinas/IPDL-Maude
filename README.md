@@ -8,41 +8,17 @@ We lower this barrier to entry with IPDL, or Interactive Probabilistic Dependenc
 
 Install Maude following the instructions here:
 http://maude.cs.illinois.edu/w/index.php/Maude_download_and_installation
-add it to the file path and start it in the repository folder. 
+then add it to the file path and start it in the repository folder. 
 
 Alternatively, run `nix-shell -p maude`.
 
-The [src](https://github.com/kristinas/IPDL-Maude/tree/main/src "src") folder contains the implementation of the equality and typing judgements for reactions and protocols, in the file [syntax.maude](https://github.com/kristinas/IPDL-Maude/blob/main/src/syntax.maude "syntax.maude"). Actual proofs are written using the strategies introduced in [strategies.maude](https://github.com/kristinas/IPDL-Maude/blob/main/src/strategies.maude "strategies.maude").
+**IPDL**
 
-The [doc](https://github.com/kristinas/IPDL-Maude/tree/main/doc) folder contains a [technical report](https://github.com/kristinas/IPDL-Maude/blob/main/doc/POPL2023.pdf) describing the theory behind the tool,
-and updated version of the syntax together with a description of the [Maude implementation of IPDL](https://github.com/kristinas/IPDL-Maude/blob/main/doc/tech_report.pdf) and a detailed presentation of the [case studies](https://github.com/kristinas/IPDL-Maude/blob/main/doc/case_studies.pdf):
-- Symmetric-Key Encryption: CPA Security (Sec. 1) for approximate equality of protocols;
-- Symmetric-Key Encryption: CPA$-To-CPA Security (Sec. 2) for approximate equality of protocols;
-- Symmetric-Key Encryption: Authenticated-To-Secure Channel (Sec. 3) for approximate equality of protocols;
-- Authenticated-To-Secure Channel: Diffie-Hellman Key Exchange - DHKE (Sec. 4) for approximate equality of protocols;
-- Diffie-Hellman Key Exchange (DHKE) + One-Time Pad (OTP) (Sec. 5) for approximate equality 
-of protocols;
-- Public-Key Encryption: El Gamal (Sec. 6) for approximate equality 
-of protocols;
-- Oblivious Transfer: 1-Out-Of-2 Pre-Processing (Sec. 7) for exact equality of protocols;
-- Multi-Party Coin Toss (Sec. 8) for induction;
-- Two-Party GMW Protocol (Sec. 9) for induction;
-- Multi-Party GMW Protocol (Sec. 10) for induction.
-
-In the [lib](https://github.com/kristinas/IPDL-Maude/tree/main/lib "lib") folder  we have the formalizations of the case studies (if an item of the list above is missing here, its implementation is ongoing):
-- `helloWorld.maude` is a simple example, explained in Sec. 2.7 of the
-[Maude technical report](https://github.com/kristinas/IPDL-Maude/blob/main/doc/tech_report.pdf) ;
-- `cpaSecurity.maude` for CPA Security;
-- `pseudoRandom.maude` for CPA$-To-CPA Security;
-- `secure.maude` for Authenticated-To-Secure Channel;
-- `dhke.maude` for (DHKE) and (DHKE+OTP);
-- `preProcessing.maude` for 1-Out-Of-2 Pre-Processing;
-- `multipartyCoinToss.maude` for Multi-Party Coin Toss;
-- `gmw2.maude` for Two-Party GMW Protocol.
-
-To run the examples, call
-`Maude> load lib/FILENAME`
-in the main folder of the repository, where FILENAME is the name of one of the files in the lib folder.
+We are currently in the middle of reorganizing the repository due to switching 
+from a low-level Maude specific syntax to a user-friendly notation, and we are
+translating the case studies to the new syntax. The new implementation
+relies heavily on [SpeX](https://gitlab.com/ittutu/spex).
+Details about the repository's content will follow soon.
 
 Our [core logic paper](https://dl.acm.org/doi/10.1145/3571223) on IPDL has been accepted at a premier venue in programming languages research, the Symposium on the Principles of Programming Languages (POPL 2023) in Boston, USA. The open access version can be found [here](https://hal.inria.fr/hal-03917005/file/main.pdf).
 

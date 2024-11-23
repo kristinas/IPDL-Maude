@@ -1,0 +1,56 @@
+***( SpeX/Lang/Base/PL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Language.maude
+
+********************************************************************************
+
+fmod PL/MODEL-GEN is
+  protecting PL/MODEL-SET .
+
+  var L : PL .
+  var MS : ModelSet{PL} .
+  var QI : Qid .
+  var QIS : QidSet .
+
+  *** models for a given set of propositional symbols  - - - - - - - - - - - - -
+  op models : PL QidSet -> ModelSet{PL} .
+  eq models(L, none) = Model[L]{none} .
+  ceq models(L, QI ; QIS) = MS, add(L, QI, MS)
+   if QI not-in QIS /\ MS := models(L, QIS) .
+  eq models(L, QI ; QIS) = models(L, QIS) [owise] .
+
+  *** add a propositional symbols to each model in a set of PL models  - - - - -
+  op add : PL Qid ModelSet{PL} -> ModelSet{PL} .
+  eq add(L, QI, empty) = empty .
+  eq add(L, QI, (Model[L]{QIS}, MS)) = Model[L]{QI ; QIS}, add(L, QI, MS) .
+endfm
+
+********************************************************************************
+
+fmod PL/CHECK is
+  protecting PL/MODEL-GEN .
+  protecting PL/SATISFACTION .
+
+  var M : Model{PL} .
+  var MS : ModelSet{PL} .
+  var E : Sentence{PL} .
+  var ES : SentenceSet{PL} .
+
+  *** check  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op check : ModelSet{PL} SentenceSet{PL} Sentence{PL} -> ModelSet{PL} .
+  eq check(empty, ES, E) = empty .
+  eq check((M, MS), ES, E)
+   = if (M |= ES) and-then not (M |= E) then M else empty fi,
+     check(MS, ES, E) .
+endfm
+
+********************************************************************************

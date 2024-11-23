@@ -1,0 +1,55 @@
+***( SpeX
+
+  This file is part of SpeX, a simple framework for working with
+  formal specifications based on SAP and REPL.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Core.maude
+sload ./Knowledge-base.maude
+
+********************************************************************************
+
+view SpeX/UI from INTERPRETER/UI to STRING/FORMATTING + PROMPT is
+  op banner to term
+    "\n\033[1m"
+    + "      Welcome to     \n"
+    + "  \033[32m___          \033[31m__  __\n"
+    + " \033[32m/ __|\033[36m_ __  \033[35m___\033[31m\\ \\/ /\n"
+    + " \033[32m\\__ \\ \033[36m'_ \\\033[35m/ -_)\033[31m>  < \n"
+    + " \033[32m|___/ \033[36m.__/\033[35m\\___/\033[31m_/\\_\\\n"
+    + "     \033[36m|_|             \n\n\033[0m" .
+  op prompt to term ["SpeX" >] .
+  op goodbye to term "\n\033[1mGoodbye\033[0m\n\n" .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod SPEX/INTERPRETER is
+  including SPEX/CORE { SpeX/No-preset, SpeX/UI } .
+  including SPEX/KNOWLEDGE-BASE .
+endm
+
+********************************************************************************
+
+view SpeX/UI/No-prompt from INTERPRETER/UI to STRING/FORMATTING + PROMPT is
+  op banner to term printTokens('\n '\! 'Welcome 'to 'SpeX '\o '\n '\n) .
+  op prompt to term empty .
+  op goodbye to term printTokens('\n '\! 'Goodbye '\o '\n '\n) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod SPEX/INTERPRETER/NO-PROMPT is
+  including SPEX/CORE { SpeX/No-preset, SpeX/UI/No-prompt } .
+  including SPEX/KNOWLEDGE-BASE .
+endm
+
+********************************************************************************
+
+select SPEX/INTERPRETER .

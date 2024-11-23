@@ -1,0 +1,63 @@
+***( SpeX/Lang/Base/Triv
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../Processor.maude
+sload ./Language.maude
+
+********************************************************************************
+
+view Triv/SpecBody from TRIV to TRIV/SPEC-BODY is
+  sort Elt to SpecBody{Triv} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view Triv/Command from COMMAND to TRIV/READ is
+  sort Command to Cmd{Triv} .
+  op command-annotations to term 'Command .
+  op read-command(T:ATerm) to term read-cmd(Triv, T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod TRIV/PROCESSOR { P :: PID } is
+  including  BASIC-PROCESSOR { P, Triv/SpecBody, Triv/SpecBody, Triv/Command } .
+  protecting TRIV/PARSING-&-PRINTING .
+
+  var P : P$Pid .
+  var I : Oid .
+  var QIL : QidList .
+  var SB : SpecBody{Triv} .
+  var D : ATerm .
+  var Atts : AttributeSet .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Triv:parse] :
+    < $[P] : PROC | running, Atts >
+    parse($[P], I, QIL, SB)
+   => < $[P] : PROC | running, Atts >
+    parsed(I, $[P], parse Triv command (QIL)) .
+
+  *** executing Triv commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  rl [Triv:list-declarations] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[Triv]{list declarations}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], emph(print(SB))) .
+
+  rl [Triv:add-declaration] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[Triv]{add declaration D}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], SB >>= D) .
+endm
+
+********************************************************************************

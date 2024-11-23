@@ -1,0 +1,110 @@
+***( SpeX/Lang/COMP/BL/MSA
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../../Processor.maude
+sload ./Tools.maude
+
+********************************************************************************
+
+view COMP/MSA/SpecBody from TRIV to COMP/MSA/SPEC-BODY is
+  sort Elt to SpecBody{COMP/MSA} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view COMP/MSA/Command from COMMAND to COMP/MSA/READ is
+  sort Command to Cmd{COMP/MSA} .
+  op command-annotations to term 'Command .
+  op read-command(T:ATerm) to term read-cmd(COMP/MSA, T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod COMP/MSA/PROCESSOR { P :: PID } is
+  including  BASIC-PROCESSOR { P, COMP/MSA/SpecBody, COMP/MSA/SpecBody,
+                               COMP/MSA/Command } .
+  protecting PID-NAME { P } .
+  protecting COMP/MSA/PARSING-&-PRINTING .
+  protecting COMP/MSA/REDUCE .
+
+  var  L : COMP/MSA .
+  var  SB : SpecBody{COMP/MSA} .
+  var  SAS : AnalysisState{COMP/MSA} .
+  var  P : P$Pid .
+  var  I : Oid .
+  var  H : Qid .
+  var  QIL : QidList .
+  vars D T : ATerm .
+  var  TL : TermList .
+  var  Atts : AttributeSet .
+  var  RP : ResultPair .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  crl [COMP/MSA:parse] :
+    < $[P] : PROC | running, Atts >
+    parse($[P], I, QIL, SB)
+   => < $[P] : PROC | running, Atts >
+    parsed(I, $[P], parse COMP/MSA command (QIL) in SAS)
+   if SAS := AnalysisState[COMP/MSA]{SB & none & none} .
+
+  *** executing COMP/MSA commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - -
+  rl [COMP/MSA:list-declarations] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/MSA]{list declarations}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Listing 'declarations) '\n
+      mk-page(print(SB))) .
+
+  rl [COMP/MSA:list-sorts] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/MSA]{list sorts}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Listing 'sorts) '\n
+      mk-page(print-sorts(SB))) .
+
+  rl [COMP/MSA:list-ops] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/MSA]{list ops}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Listing 'operations) '\n
+      mk-page(print-ops(SB))) .
+
+  rl [COMP/MSA:list-sens] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/MSA]{list sens}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Listing 'axioms) '\n
+      mk-page(print-sens(SB))) .
+
+  crl [COMP/MSA:let] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/MSA]{let D}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P],
+      if TL :: Term
+      then log('Adding 'declaration) '\s
+        (print COMP/MSA term TL)
+      else log('Adding 'declarations) '\n
+        mk-page(intercalate('\n, print COMP/MSA terms TL)) fi,
+      add-declaration(SB, D))
+   if TL := show-declarations(D, SB) .
+
+  crl [COMP/MSA:reduce] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/MSA]{reduce T}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Reducing) '\s
+      (print term T given term-grammar(SB)) '\n
+      mk-page('Result: '\s printf(RP, spaced('\! ': '\o), H, SB)))
+   if H := qid(name(P)) /\ RP := reduce(T, H, SB) .
+endm
+
+********************************************************************************

@@ -1,0 +1,333 @@
+***( SpeX/Lang/COMP
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./BL/MSA/Processor.maude
+sload ./BL/HA/Processor.maude
+sload ./Language.maude
+
+********************************************************************************
+
+fmod COMP/PID is
+  protecting COMP/LANGUAGE .
+
+  *** COMP/Pid/DM  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort COMP/Pid/DM .
+  op _/`DM[_] : COMP Qid -> COMP/Pid/DM .
+
+  sort COMP/Pid/OM .
+  op _/`OM[_] : COMP Qid -> COMP/Pid/OM .
+endfm
+
+view COMP/Pid/DM from PID to COMP/PID is
+  sort Pid to COMP/Pid/DM .
+endv
+
+view COMP/Pid/OM from PID to COMP/PID is
+  sort Pid to COMP/Pid/OM .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view COMP/Data from DATA to COMP/DATABASE is
+  sort Data to DB{COMP} .
+  op nil to empty .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view COMP/Command from COMMAND to COMP/READ is
+  sort Command to Cmd{COMP} .
+  op command-annotations to term ('Command ; 'CloseCmd).
+  op read-command(T:ATerm) to term read-cmd(COMP, T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod COMP/PROCESSOR is
+  including SPEX-PROCESSOR { COMP, COMP/Data, COMP/Command } .
+  including COMP/MSA/PROCESSOR { COMP/Pid/DM } .
+  including COMP/HA/PROCESSOR { COMP/Pid/OM } .
+  including COMP/PARSING-&-PRINTING .
+  including SPEX/FORMATTING .
+
+  var  L : COMP .
+  vars I SP : Oid .
+  var  PT : OidList .
+  vars H MN : Qid .
+  var  MN? : [Qid] .
+  vars QIL MNL : QidList .
+  vars NQIL NMNL : NeQidList .
+  var  T : ATerm .
+  var  DB : SpeX/DB .
+  var  SAS : AnalysisState{COMP} .
+  var  CDB : DB{COMP} .
+  var  CM : Module{COMP} .
+  var  DM : DataModule{COMP} .
+  var  OM : BObjModule{COMP} .
+  var  DSB : SpecBody{COMP/MSA} .
+  var  BSB : SpecBody{COMP/HA} .
+  var  V? : [AttrValue] .
+  var  Atts : AttributeSet .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op omod-stack : COMP -> AttrName [ctor] .
+  op omod-database : COMP -> AttrName [ctor] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op omod-stack : COMP AttributeSet -> QidList .
+  ceq omod-stack(L, Atts) = MNL
+   if AttrValue(MNL) := (Atts).get(omod-stack(L)) .
+  eq omod-stack(L, Atts) = nil [owise] .
+
+  op opened-module : COMP Qid AttributeSet -> Bool .
+  ceq opened-module(L, MN, Atts) = occurs(MN, MNL)
+   if AttrValue(MNL) := (Atts).get(omod-stack(L)) .
+  eq opened-module(L, MN, Atts) = false [owise] .
+
+  op last-opened-module : COMP AttributeSet ~> Qid .
+  ceq last-opened-module(L, Atts) = head(NMNL)
+   if AttrValue(NMNL) := (Atts).get(omod-stack(L)) .
+
+  op add-omod-name : COMP Qid -> AttrModifier .
+  eq subject(add-omod-name(L, MN)) = omod-stack(L) .
+  eq add-omod-name(L, MN) AttrValue(MNL)
+   = if occurs(MN, MNL)
+     then AttrValue(MN remove(MN, MNL))
+     else AttrValue(MN MNL) fi .
+  eq add-omod-name(L, MN) V? = AttrValue(MN) [owise] .
+
+  op pop-omod-name : COMP -> AttrModifier .
+  eq subject(pop-omod-name(L)) = omod-stack(L) .
+  eq pop-omod-name(L) AttrValue(NMNL) = AttrValue(tail(NMNL)) .
+  eq pop-omod-name(L) AttrValue(MNL) = AttrValue(MNL) [owise] .
+
+  op odb : COMP AttributeSet -> DB{COMP} .
+  ceq odb(L, Atts) = CDB
+   if AttrValue(CDB) := (Atts).get(omod-database(L)) .
+  eq odb(L, Atts) = empty [owise] .
+
+  op _.open-module(_,_) : AttributeSet Qid DB{COMP} -> AttributeSet [prec 15] .
+  eq (Atts).open-module(MN, CDB)
+   = Atts >>= add-odb-entry(CDB[MN]) >>= add-omod-name(COMP, MN) .
+
+  op _.close-module(_) : AttributeSet COMP -> AttributeSet [prec 15] .
+  ceq (Atts).close-module(L)
+   = Atts >>= delete-odb-entry(L, MN) >>= pop-omod-name(L)
+   if MN := last-opened-module(L, Atts) .
+  eq (Atts).close-module(L) = Atts [owise] .
+
+  op add-odb-entry : Module{COMP} -> AttrModifier .
+  eq subject(add-odb-entry(CM)) = omod-database(COMP) .
+  eq add-odb-entry(CM) AttrValue(CDB)
+   = AttrValue(add(header(CM), CM, CDB)) .
+  eq add-odb-entry(CM) V?
+   = AttrValue(add(header(CM), CM, empty)) .
+
+  op insert-odb-entry : Module{COMP} -> AttrModifier .
+  eq subject(insert-odb-entry(CM)) = omod-database(COMP) .
+  eq insert-odb-entry(CM) AttrValue(CDB)
+   = AttrValue(insert(header(CM), CM, CDB)) .
+  eq insert-odb-entry(CM) V?
+   = AttrValue(insert(header(CM), CM, empty)) .
+
+  op delete-odb-entry : COMP Qid -> AttrModifier .
+  eq subject(delete-odb-entry(L, MN)) = omod-database(COMP) .
+  eq delete-odb-entry(L, MN) AttrValue(CDB)
+   = AttrValue(delete(MN, CDB)) .
+
+  op subprocs : COMP AttributeSet -> OidList .
+  ceq subprocs(L, Atts)
+   = $DM/subprocs(L, list(data-names(CDB)))
+     $OM/subprocs(L, list(bobj-names(CDB)))
+   if CDB := odb(L, Atts) .
+
+  op $DM/subprocs : COMP QidList -> OidList .
+  eq $DM/subprocs(L, nil) = nil .
+  eq $DM/subprocs(L, MN MNL) = $[L / DM[MN]] $DM/subprocs(L, MNL) .
+
+  op $OM/subprocs : COMP QidList -> OidList .
+  eq $OM/subprocs(L, nil) = nil .
+  eq $OM/subprocs(L, MN MNL) = $[L / OM[MN]] $OM/subprocs(L, MNL) .
+
+  op start-processor : COMP Qid Module{COMP} -> Msg .
+  eq start-processor(L, MN, DM) = start-processor($[L / DM[MN]]) .
+  eq start-processor(L, MN, OM) = start-processor($[L / OM[MN]]) .
+
+  op shut-down-processor : COMP Qid Module{COMP} -> Msg .
+  eq shut-down-processor(L, MN, DM) = shut-down($[L / DM[MN]]) .
+  eq shut-down-processor(L, MN, OM) = shut-down($[L / OM[MN]]) .
+
+  op sub-parse : COMP Qid QidList Module{COMP} -> Msg .
+  eq sub-parse(L, MN, QIL, DM)
+   = parse($[L / DM[MN]], $[L], QIL, body(COMP/DL, DM)) .
+  eq sub-parse(L, MN, QIL, OM)
+   = parse($[L / OM[MN]], $[L], QIL, body(COMP/OL, OM)) .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [COMP:start-up] :
+    < $[L] : PROC | starting up, Atts >
+    start-up($[L])
+   => < $[L] : PROC | running, Atts > .
+
+  rl [COMP:get-prompt] :
+    < $[L] : PROC | running, Atts >
+    get-prompt($[L], I)
+   => < $[L] : PROC | running, Atts >
+    if omod-stack(L, Atts) == nil
+    then got-prompt(I, [>])
+    else got-prompt(I, [last-opened-module(L, Atts) >]) fi .
+
+  crl [COMP:parse] :
+    < $[L] : PROC | running, Atts >
+    parse($[L], I, QIL, DB)
+   => < $[L] : PROC | parsing I input, Atts >
+    if omod-stack(L, Atts) == nil
+    then relay($[L], parse L declaration (QIL) in SAS
+             or-else parse L command (QIL) in SAS)
+    else relay($[L], parse L command (QIL) in SAS
+             or-else sub-parse(L, MN?, QIL, odb(L, Atts)[MN?])) fi
+   if MN? := last-opened-module(L, Atts)
+      /\ SAS := AnalysisState[L]{DB[L] & omod-stack(L, Atts)} .
+
+  crl [COMP:process] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L],
+      if defined(DB[L][H])
+      then Advisory: log('redefining 'module) H
+      else log('Loading 'module) H fi,
+      insert(H, CM, DB[L]))
+   if CM := read-module(L, T, DB[L]) /\ H := header(CM) .
+
+  rl [COMP:shut-down] :
+    < $[L] : PROC | running, Atts >
+    shut-down($[L])
+   => < $[L] : PROC | shutting down, Atts >
+    shut-down(subprocs(L, Atts)) quit($[L]) .
+
+  *** executing COMP commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  crl [COMP:list-modules] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[COMP]{list modules}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Listing 'modules) '\n
+      mk-page(if MNL == nil
+        then 'Empty 'module 'list
+        else intersperse('\n, MNL) fi))
+   if MNL := list(module-names(DB[L])) .
+
+  crl [COMP:list-data-modules] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[COMP]{list data modules}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Listing 'data 'modules) '\n
+      mk-page(if MNL == nil
+        then 'Empty 'module 'list
+        else intersperse('\n, MNL) fi))
+   if MNL := list(data-names(DB[L])) .
+
+  crl [COMP:list-bobj-modules] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[COMP]{list bobj modules}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Listing 'bobj 'modules) '\n
+      mk-page(if MNL == nil
+        then 'Empty 'module 'list
+        else intersperse('\n, MNL) fi))
+   if MNL := list(bobj-names(DB[L])) .
+
+  rl [COMP:show-module] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[COMP]{show module MN}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'module) MN '\n
+      mk-page(print(DB[L][MN]))) .
+
+  crl [COMP:list-opened-modules] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[COMP]{list opened modules}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Listing 'opened 'modules) '\n
+      mk-page(if MNL == nil
+        then 'Empty 'module 'list
+        else if MNL :: Qid
+        then MNL
+        else head(MNL) '\s '`( 'most 'recently 'opened '`) '\n
+             intersperse('\n, tail(MNL)) fi fi))
+    if MNL := omod-stack(L, Atts) .
+
+  rl [COMP:open] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[COMP]{open MN}, DB)
+   => < $[L] : PROC | running, (Atts).open-module(MN, DB[L]) >
+    processed(I, $[L], log('Opening) MN)
+    start-processor(L, MN, DB[L][MN]) unless opened-module(L, MN, Atts) .
+
+  crl [COMP:close] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[COMP]{close}, DB)
+   => < $[L] : PROC | running, (Atts).close-module(L) >
+    shut-down-processor(L, MN, DB[L][MN])
+    processed(I, $[L], log('Closing) MN)
+   if MN := last-opened-module(L, Atts) .
+
+  rl [COMP:print] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[COMP]{print QIL}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('* ) '\s mk-page(first-line(QIL), last-lines(QIL))) .
+
+  *** forwarding process(ed) messages to/from COMP subprocessors  -  -  -  -  --
+  *** for data modules  -   -   -   -   -   -   -   -   -   -   -   -   -   -  -
+  rl [COMP:process] :
+    < $[L] : PROC | running, Atts >
+    process($[L], $[L / DM[MN]] PT, I, T, DB)
+   => < $[L] : PROC | processing I input, Atts >
+    process($[L / DM[MN]], PT, $[L], T, body(COMP/DL, odb(L, Atts)[MN])) .
+
+  rl [COMP:processed] :
+    < $[L] : PROC | processing I input, Atts >
+    processed($[L], $[L / DM[MN]], QIL, DSB)
+   => < $[L] : PROC | running, Atts >>= insert-odb-entry(Module[COMP/DL]{
+        MN is nil empty DSB given empty}) >
+    processed(I, $[L], QIL) .
+
+  rl [COMP:processed] :
+    < $[L] : PROC | processing I input, Atts >
+    processed($[L], $[L / DM[MN]], DSB)
+   => < $[L] : PROC | running, Atts >>= insert-odb-entry(Module[COMP/DL]{
+        MN is nil empty DSB given empty}) >
+    processed(I, $[L]) .
+
+  *** for bobj modules  -   -   -   -   -   -   -   -   -   -   -   -   -   -  -
+  rl [COMP:process] :
+    < $[L] : PROC | running, Atts >
+    process($[L], $[L / OM[MN]] PT, I, T, DB)
+   => < $[L] : PROC | processing I input, Atts >
+    process($[L / OM[MN]], PT, $[L], T, body(COMP/OL, odb(L, Atts)[MN])) .
+
+  rl [COMP:processed] :
+    < $[L] : PROC | processing I input, Atts >
+    processed($[L], $[L / OM[MN]], QIL, BSB)
+   => < $[L] : PROC | running, Atts >>= insert-odb-entry(Module[COMP/OL]{
+        MN with states 'State is nil empty BSB given empty}) >
+    processed(I, $[L], QIL) .
+
+  rl [COMP:processed] :
+    < $[L] : PROC | processing I input, Atts >
+    processed($[L], $[L / OM[MN]], BSB)
+   => < $[L] : PROC | running, Atts >>= insert-odb-entry(Module[COMP/OL]{
+        MN with states 'State is nil empty BSB given empty}) >
+    processed(I, $[L]) .
+endm
+
+********************************************************************************

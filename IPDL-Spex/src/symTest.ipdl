@@ -1,0 +1,38 @@
+lang IPDL
+
+channel context delta =
+ output c : bool ;
+ output d : bool 
+.
+
+protocol ideal = 
+ (c ::= x : bool <- read d ; return x)
+ || 
+ (d ::= return True)
+.
+
+
+protocol real =
+  (c ::= return True)
+ || 
+ (d ::= return True)
+.  
+
+start with real over delta 
+
+sym-approx from (change chn c with  x : bool <- read d ; return x in currentProtocol) (
+strict(
+ subst chn d into chn c
+) 
+)
+
+current-protocol
+quit
+
+start with ideal over delta then
+ subst chn d into chn c
+ 
+current-protocol
+quit
+
+

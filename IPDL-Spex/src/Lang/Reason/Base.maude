@@ -1,0 +1,121 @@
+***( SpeX/Lang/Reason
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../Language.maude
+sload ../../Processor.maude
+
+********************************************************************************
+
+fmod REASON/LID { L :: LANGUAGE } is
+  sort Reason{L} .
+  op Reason[_] : L$Lid -> Reason{L} [ctor] .
+endfm
+
+********************************************************************************
+
+fmod REASON/PID { L :: LANGUAGE } is
+  protecting REASON/LID { L } .
+
+  *** Reason/Pid{L}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort Reason/Pid{L} .
+  op _/_ : Reason{L} Qid -> Reason/Pid{L} .
+
+  *** - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  var RL : Reason{L} .
+  var PN : Qid .
+
+  *** proof-name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op proof-name : Reason/Pid{L} -> Qid .
+  eq proof-name(RL / PN) = PN .
+
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Reason/Pid { L :: LANGUAGE } from PID to REASON/PID { L } is
+  sort Pid to Reason/Pid{L} .
+endv
+
+********************************************************************************
+
+fth REASON/BASE-LANG is
+  protecting SPEX/DATABASE .
+  protecting PARSING-OUTCOME .
+
+  sort Library .
+  op library : SpeX/DB -> Library .
+
+  sort StatementBody .
+  op parse-statement : QidList Library -> ParsingOutcome .
+  op read-statement : ATerm Library -> StatementBody .
+  op print-statement : StatementBody -> QidList .
+
+  sort ProofObject .
+  op proof-setup : StatementBody -> ProofObject .
+  op summary : ProofObject -> QidList .
+  op qed : ProofObject -> Bool .
+
+  sort ProofStep .
+  op read-proof-step : ATerm ProofObject -> ProofStep .
+  op print-proof-step : ProofStep ProofObject -> QidList .
+endfth
+
+********************************************************************************
+
+th REASON/SUBPROCESSOR is
+  including PROCESSOR/BASE .
+  including REASON/BASE-LANG .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op parse : Oid Oid QidList ProofObject -> Msg .
+
+  op process : Oid OidList Oid ATerm ProofObject -> Msg .
+  op processed : Oid Oid QidList ProofObject -> Msg .
+  op processed : Oid Oid ProofObject -> Msg .
+endth
+
+*** ----------------------------------------------------------------------------
+
+mod REASON/SUBPROCESSOR-as-BASE-LANG { SP :: REASON/SUBPROCESSOR } is
+endm
+
+*** ----------------------------------------------------------------------------
+
+view Reason/Base-lang { SP :: REASON/SUBPROCESSOR }
+from REASON/BASE-LANG to REASON/SUBPROCESSOR-as-BASE-LANG { SP } is
+  sort Library to SP$Library .
+  op library(DB:SpeX/DB) to term
+    library(DB:SpeX/DB) .
+
+  sort StatementBody to SP$StatementBody .
+  op parse-statement(QIL:QidList, Lib:Library) to term
+    parse-statement(QIL:QidList, Lib:SP$Library) .
+  op read-statement(T:ATerm, Lib:Library) to term
+    read-statement(T:ATerm, Lib:SP$Library) .
+  op print-statement(SB:StatementBody) to term
+    print-statement(SB:SP$StatementBody) .
+
+  sort ProofObject to SP$ProofObject .
+  op proof-setup(SB:StatementBody) to term
+    proof-setup(SB:SP$StatementBody) .
+  op summary(PO:ProofObject) to term
+    summary(PO:SP$ProofObject) .
+  op qed(PO:ProofObject) to term
+    qed(PO:SP$ProofObject) .
+
+  sort ProofStep to SP$ProofStep .
+  op read-proof-step(T:ATerm, PO:ProofObject) to term
+    read-proof-step(T:ATerm, PO:SP$ProofObject) .
+  op print-proof-step(PS:ProofStep, PO:ProofObject) to term
+    print-proof-step(PS:SP$ProofStep, PO:SP$ProofObject) .
+endv
+
+********************************************************************************

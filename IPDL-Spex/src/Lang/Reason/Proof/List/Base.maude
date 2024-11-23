@@ -1,0 +1,77 @@
+***( SpeX/Lang/Reason/Prf/List
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../../Language.maude
+sload ../../../Base/Common/Sentences.maude
+
+********************************************************************************
+
+fmod PRF/LIST/LID { L :: LANGUAGE } is
+  sort PrfList{L} .
+  op PrfList[_] : L$Lid -> PrfList{L} [ctor] .
+endfm
+
+********************************************************************************
+
+fmod PRF/LIST/RULE { L :: LANGUAGE } is
+  protecting PRF/LIST/LID { L } .
+  protecting SEN-DECL-SET .
+
+  var  PR : Rule{PrfList{L}} .
+  vars PS EDS : SenDeclSet .
+  vars CD ED : SenDecl .
+
+  *** proof rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort Rule{PrfList{L}} .
+  op _[_=>_given_] : Rule{PrfList{L}} SenDeclSet SenDecl SenDeclSet -> Bool .
+
+  *** ceq PR [PS ED => CD given EDS] = true
+  ***  if PR [PS => CD given EDS] .
+  *** ceq PR [PS => CD given EDS ED] = true
+  ***  if PR [PS => CD given EDS] .
+  eq  PR [PS => CD given EDS] = false [owise] .
+endfm
+
+********************************************************************************
+
+fth PRF/LIST/BASE-LANG is
+  protecting PARSING-OUTCOME .
+  protecting SEN-DECL-SET .
+
+  sorts Judgment NeJudgmentList JudgmentList .
+  subsorts Judgment < NeJudgmentList < JudgmentList .
+  op nil : -> JudgmentList [ctor] .
+  op __ : JudgmentList JudgmentList -> JudgmentList [ctor assoc id: nil] .
+  op __ : NeJudgmentList JudgmentList -> NeJudgmentList [ctor ditto] .
+  op __ : JudgmentList NeJudgmentList -> NeJudgmentList [ctor ditto] .
+  op print : Judgment -> QidList .
+  op conclusions : JudgmentList -> SenDeclSet .
+
+  sort Cxt .
+  op context : Judgment -> Cxt .
+  op premises : Judgment -> SenDeclSet .
+  op conclusion : Judgment -> SenDecl .
+  op judgment : Cxt SenDeclSet SenDecl -> Judgment .
+  op sentences : Cxt -> SenDeclSet .
+
+  op parse-sentence : QidList Cxt -> ParsingOutcome .
+  op read-sentence : ATerm Cxt ~> SenDecl .
+  op print-sentence : SenDecl Cxt -> QidList .
+
+  sort ProofRule .
+  op parse-proof-rule : QidList Cxt -> ParsingOutcome .
+  op read-proof-rule : ATerm Cxt ~> ProofRule .
+  op print-proof-rule : ProofRule Cxt -> QidList .
+
+  op _[_=>_given_] : ProofRule SenDeclSet SenDecl SenDeclSet -> Bool .
+endfth
+
+********************************************************************************

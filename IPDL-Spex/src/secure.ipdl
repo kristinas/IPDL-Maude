@@ -1,0 +1,211 @@
+lang IPDL 
+
+type msg .
+type key .
+type ctxt .
+ 
+function zeros : unit -> msg .
+function dec : ctxt * key -> msg .
+
+distribution enc : msg * key -> ctxt .
+distribution gen_key : unit -> key .
+
+parameter n : nat .
+
+approx-assumption cpa using m k  :
+ (fam Enc[bound n] :: ctxt) (fam In[bound n] :: msg); 
+  fam In[bound n] ; no assumptions |= 
+  new Key : key in  
+   ( 
+    (Key ::= samp gen_key (()))
+    ||
+    (family Enc[bound n] indices: i bounds: bound n ::= 
+       m : msg <- read In[i] ;
+       k : key <- read Key ;
+       samp enc((m, k))
+    ) 
+   )   
+   =
+   new Key : key in
+   ( 
+    (Key ::= samp gen_key (()))
+    ||
+    (family Enc[bound n] indices: i bounds: bound n ::= 
+       m : msg <- read In[i] ;
+       k : key <- read Key ;
+       samp enc(( zeros(()), k))
+    ) 
+   )
+    .
+ 
+protocol-assumption enc-dec-correctness using m k c  :
+ (chn keyN :: key) (chn encN :: ctxt) (chn decN :: msg) (chn inN :: msg) ; chn inN ; no assumptions 
+ |=
+  (keyN ::= samp gen_key (()) )
+   || 
+   (encN ::= m : msg <- read inN ;
+             k : key <- read keyN ;
+             samp enc((m, k))
+   )
+   ||
+   (decN ::= c : ctxt <- read encN ;
+             k : key <- read keyN ;
+             return dec((c, k))
+   )         
+  =
+   (keyN ::= samp gen_key (()) )
+   || 
+   (encN ::= m : msg <- read inN ;
+             k : key <- read keyN ;
+             samp enc((m, k))
+   )
+   ||
+   (decN ::= in : msg <- read inN ;
+             return in
+   )         
+.
+
+channel context delta =
+input In[bound n] : msg ;
+input OkCtxtAdvNet[bound n] : unit ;
+output Out[bound n] : msg ;
+output LeakCtxtNetAdv[bound n] : ctxt
+.         
+
+protocol real = 
+    new Key : key in
+    newfamily Recv[bound n] indices: i bounds: bound n : ctxt in
+    newfamily Send[bound n] indices: i bounds: bound n : ctxt in (
+    (keygen || alice || channel || bob)
+    where 
+    keygen = 
+     ( Key ::= samp gen_key (()) )
+    and
+    alice = 
+    (family Send[bound n] indices: i bounds: bound n ::= 
+        in : msg <- read In[i] ;
+        k : key <- read Key ;
+        samp enc ( (in, k) )
+    )    
+    and channel = 
+    (family LeakCtxtNetAdv[bound n] indices: i bounds: bound n ::= 
+      send : ctxt <- read Send[i] ; return send
+    )
+    || 
+    (family Recv[bound n] indices: i bounds: bound n ::= 
+        okCtxt : unit <- read OkCtxtAdvNet[i] ;
+        send : ctxt <- read Send[i] ;
+        return send
+    ) 
+    and bob =
+    (family Out[bound n] indices: i bounds: bound n ::=
+        c : ctxt <- read Recv[i] ;
+        k : key <- read Key ;
+        return dec((c, k))
+    ) 
+    )
+    .    
+
+protocol idealPlusSim =
+ newfamily LeakMsgRcvdIdAdv[bound n] indices: i bounds: bound n : unit in
+ newfamily OkMsgAdvId[bound n] indices: i bounds: bound n : unit in 
+ ideal || sim 
+ where 
+ ideal = 
+ (
+   (family LeakMsgRcvdIdAdv[bound n] indices: i bounds: bound n ::= 
+        in : msg <- read In[i] ; return ()
+    )
+    ||
+    (family Out[bound n] indices: i bounds: bound n ::= 
+        okMsg : unit <- read OkMsgAdvId[i] ;
+        in : msg <- read In[i] ;
+        return in
+    )  
+ )
+ and
+ sim = ( new Key : key in
+  (
+  ( Key ::= samp gen_key (()) )
+    ||
+    (family LeakCtxtNetAdv[bound n] indices: i bounds: bound n ::= 
+        x : unit <- read LeakMsgRcvdIdAdv[i] ;
+        k : key <- read Key ;
+        samp enc ( (zeros (()), k) )
+    )
+    ||
+    (family OkMsgAdvId[bound n] indices: i bounds: bound n ::= 
+        okCtxt : unit <- read OkCtxtAdvNet[i] ;
+        return okCtxt
+    )   
+  ) 
+ )
+ .
+
+start with real over delta
+
+subst fam Recv[bound n] into fam Out[bound n] then
+absorb fam Recv[bound n] then
+add internal family Dec indices: i bounds: bound n typed: msg
+    assigned: 
+        k : key <- read Key ;
+        send : ctxt <- read Send [i] ; 
+        return dec ( (send, k) ) then
+add internal family Enc indices: i bounds: bound n typed: ctxt      
+    assigned:
+        in : msg <- read In[i] ; 
+        k : key <- read Key ;
+        samp enc ( (in, k) ) then
+sym from change fam Send[bound n] with
+    e : ctxt <- read Enc[i] ; return e
+    in currentProtocol(
+        subst fam Enc[bound n] into fam Send[bound n]
+    ) then
+sym from change fam Out[bound n] with
+    okCtxt : unit <- read OkCtxtAdvNet[i] ;
+    d : msg <- read Dec[i] ; 
+    return d
+    in currentProtocol(
+        subst fam Dec[bound n] into fam Out[bound n]
+    ) then
+subst fam Send[bound n] into fam LeakCtxtNetAdv[bound n] then
+subst fam Send[bound n] into fam Dec[bound n] then
+absorb fam Send[bound n] then
+compose fam Dec[bound n] with fam Enc[bound n] in group then
+in the presence of chn Key rewrite group Dec[bound n] and Enc[bound n]
+to (family Dec[bound n] indices: i bounds: bound n 
+     ::= in : msg <- read In[i] ; return in
+   )
+   || 
+   (family Enc[bound n] indices: i bounds: bound n 
+      ::= in : msg <- read In[i] ; 
+        k : key <- read Key ;
+        samp enc ( (in, k) )
+   )   
+by induction on i bound B (
+    use assumption enc-dec-correctness on chn Key, chn Dec[B], chn Enc[B]
+) then
+decompose fam Dec[bound n] with fam Enc[bound n] then 
+restructure 
+ (gather chn Key , fam Enc[bound n] from currentProtocol hiding chn Key) then-approx
+use approx assumption cpa then-approx
+bring declarations of hidden channels in front then
+fold fam Enc[bound n] into fam LeakCtxtNetAdv[bound n] then
+fold fam Dec[bound n] into fam Out[bound n] then
+sym from idealPlusSim (
+    subst fam OkMsgAdvId[bound n] into fam Out[bound n] then
+    subst fam LeakMsgRcvdIdAdv[bound n] into fam LeakCtxtNetAdv[bound n] then
+    absorb fam LeakMsgRcvdIdAdv[bound n] then
+    absorb fam OkMsgAdvId[bound n]
+) then 
+restructure idealPlusSim
+
+check-proof idealPlusSim
+current-protocol
+show-bounds
+
+
+
+
+
+

@@ -1,0 +1,108 @@
+***( SpeX/Lang/Reason/Prf/Tree
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Data.maude
+
+********************************************************************************
+
+fmod PRF/TREE/LANGUAGE { L :: LANGUAGE } is
+  protecting PRF/TREE/LID { L } .
+
+  *** commands  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op grammar : PrfTree{L} -> Grammar .
+  eq grammar(PrfTree[Lid])
+   = grammar 'Prf/Tree/Syntax is
+       'Command
+         ::= lit "show open goals"
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view PrfTree { L :: LANGUAGE } from LANGUAGE to PRF/TREE/LANGUAGE { L } is
+  sort Lid to PrfTree{L} .
+  op Lid to term PrfTree[Lid] .
+endv
+
+********************************************************************************
+
+fmod PRF/TREE/READ { L :: LANGUAGE, BL :: PRF/TREE/BASE-LANG } is
+  protecting PRF/TREE/DATA { L, BL } .
+  protecting PRF/TREE/CMD { L } .
+
+  var PL : PrfTree{L} .
+
+  *** read command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-cmd : PrfTree{L} ATerm ~> Cmd{PrfTree{L}} .
+  eq read-cmd(PL, {'show`open`goals.Command : 'Command})
+   = Cmd[PL]{show open goals} .
+endfm
+
+********************************************************************************
+
+fmod PRF/TREE/PARSING { L :: LANGUAGE, BL :: PRF/TREE/BASE-LANG } is
+  including  STATELESS-SYNTACTIC-ANALYSIS { PrfTree{L} } .
+  protecting PRF/TREE/READ { L, BL } .
+
+  var PL : PrfTree{L} .
+  var QIL : QidList .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse PL input (QIL) in [*]
+   = scan PL input (QIL : 'Command) .
+endfm
+
+********************************************************************************
+
+fmod PRF/TREE/PRINTING { L :: LANGUAGE, BL :: PRF/TREE/BASE-LANG } is
+  protecting PRF/TREE/DATA { L, BL } .
+
+  var PL : PrfTree{L} .
+  var PT : ProofTree{L} .
+  var J : BL$Judgment .
+  var NJL : BL$NeJudgmentList .
+  var JL : BL$JudgmentList .
+  var QLL : QidList2 .
+
+  *** print open goals  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print-open-goals : ProofTree{L} -> QidList .
+  ceq print-open-goals(PT)
+   = '\n if QLL :: NeQidList2
+     then intercalate('\n, QLL)
+     else 'No 'open 'goals fi
+   if QLL := print-open-goals(PrfTree[Lid], open-goals(PT)) .
+
+  op print-open-goals : PrfTree{L} BL$JudgmentList -> QidList2 .
+  eq print-open-goals(PL, nil) = nil .
+  eq print-open-goals(PL, J JL)
+   = :[print(J)] print-open-goals(PL, JL) .
+
+  *** print the summary of a proof tree  - - - - - - - - - - - - - - - - - - - -
+  op summary : ProofTree{L} -> QidList .
+  ceq summary(PT)
+   = 'One 'remaining 'goal 'to 'prove: '\n '\n print(J)
+   if J := open-goals(PT) .
+  ceq summary(PT)
+   = qid(s size(NJL)) 'remaining 'goals 'to 'prove.
+     'Here's 'the 'first 'one: '\n '\n print(J)
+   if J NJL := open-goals(PT) .
+  eq summary(PT)
+   = '\n 'QED .
+endfm
+
+********************************************************************************
+
+fmod PRF/TREE/PARSING-&-PRINTING { L :: LANGUAGE, BL :: PRF/TREE/BASE-LANG } is
+  protecting PRF/TREE/PARSING { L, BL } .
+  protecting PRF/TREE/PRINTING { L, BL } .
+endfm
+
+********************************************************************************

@@ -1,0 +1,153 @@
+***( SpeX/Lang/Reason/Prf/List
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Data.maude
+
+********************************************************************************
+
+fmod PRF/LIST/LANGUAGE { L :: LANGUAGE } is
+  protecting PRF/LIST/LID { L } .
+
+  *** proof-step grammar  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op grammar : PrfList{L} -> Grammar .
+  eq grammar(PrfList[Lid])
+   = grammar 'Prf/List/Syntax is
+       'ProofStep
+         ::= "_by_" : 'Conclusion 'ProofRule
+             [format('d 's! 'os 'd)]
+       'Conclusion
+         ::= bubble "conclusion"
+             [balanced-parentheses exclude("by")]
+       'ProofRule
+         ::= bubble "proof-rule"
+             [balanced-parentheses]
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view PrfList { L :: LANGUAGE } from LANGUAGE to PRF/LIST/LANGUAGE { L } is
+  sort Lid to PrfList{L} .
+  op Lid to term PrfList[Lid] .
+endv
+
+********************************************************************************
+
+fmod PRF/LIST/READ { L :: LANGUAGE, BL :: PRF/LIST/BASE-LANG } is
+  protecting PRF/LIST/DATA { L, BL } .
+
+  var  PL : PrfList{L} .
+  vars C PR : ATerm .
+  var  Cxt : BL$Cxt .
+
+  *** read proof step  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-proof-step : PrfList{L} ATerm BL$Cxt ~> RuleApp{PrfList{L}} .
+  eq read-proof-step(PL, {'_by_[C, PR] : 'ProofStep}, Cxt)
+   = RuleApp[PL]{read-sentence(C, Cxt) by read-proof-rule(PR, Cxt)} .
+endfm
+
+********************************************************************************
+
+fmod PRF/LIST/SHOW { L :: LANGUAGE, BL :: PRF/LIST/BASE-LANG } is
+  protecting PRF/LIST/DATA { L, BL } .
+
+  var PL : PrfList{L} .
+  var C : SenDecl .
+  var PR : BL$ProofRule .
+  var Cxt : BL$Cxt .
+
+  *** show rule applications  - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show : RuleApp{PrfList{L}} BL$Cxt -> Term .
+  eq show(RuleApp[PL]{C by PR}, Cxt)
+   = '_by_ [
+      mk-bubble('conclusion, show-qids(print-sentence(C, Cxt))),
+      mk-bubble('proof-rule, show-qids(print-proof-rule(PR, Cxt))) ] .
+endfm
+
+********************************************************************************
+
+view PrfList/AnalysisState { L :: LANGUAGE, BL :: PRF/LIST/BASE-LANG }
+from ANALYSIS-STATE to PRF/LIST/READ { L, BL } is
+  sort State to BL$Cxt .
+  op S:State >>= T:ATerm to term S:BL$Cxt .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod PRF/LIST/PARSING { L :: LANGUAGE, BL :: PRF/LIST/BASE-LANG } is
+  protecting SYNTACTIC-ANALYSIS { PrfList{L}, PrfList/AnalysisState{L,BL} } .
+  protecting ATERM/READ .
+
+  var  PL : PrfList{L} .
+  var  QIL : QidList .
+  var  SAS : BL$Cxt .
+  vars $C C $PR PR : ATerm .
+  var  $ : Qid .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse PL input (QIL) in SAS
+   = scan PL input (QIL : 'ProofStep)
+     then analyse PL input in SAS .
+
+  op analyse_input : PrfList{L} -> AnalysisAction{PrfList{L}} .
+
+  eq analyse PL input {'_by_[$C, $PR] : 'ProofStep}
+   = try { '_by_ [
+        analyse PL input ($C),
+        analyse PL input ($PR)
+      ] : 'ProofStep } .
+
+  ceq analyse PL input {$[C] : 'Conclusion} in SAS
+   = just parse-sentence(QIL, SAS) on QIL
+   if QIL := read-qids(C) .
+
+  ceq analyse PL input {$[PR] : 'ProofRule} in SAS
+   = just parse-proof-rule(QIL, SAS) on QIL
+   if QIL := read-qids(PR) .
+endfm
+
+********************************************************************************
+
+fmod PRF/LIST/PRINTING { L :: LANGUAGE, BL :: PRF/LIST/BASE-LANG } is
+  protecting PRINTING { PrfList{L} } .
+  protecting PRF/LIST/SHOW { L, BL } .
+
+  var  PL : PrfList{L} .
+  var  RA : RuleApp{PrfList{L}} .
+  vars J TJ : BL$Judgment .
+  var  JL : BL$JudgmentList .
+  var  Cxt : BL$Cxt .
+  var  QLL : QidList2 .
+
+  *** print rule applications  - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : RuleApp{PrfList{L}} BL$Cxt -> QidList .
+  eq print(RA, Cxt)
+   = print PrfList[Lid] term show(RA, Cxt) .
+
+  *** print the summary of list of judgments  - - - - - - - - - - - - - - - - --
+  op summary : PrfList{L} BL$JudgmentList -> QidList .
+  ceq summary(PL, JL)
+   = if QLL :: NeQidList2 then '\n intercalate('\n, QLL) else nil fi
+   if QLL := summary2(PL, JL) .
+
+  op summary2 : PrfList{L} BL$JudgmentList -> QidList2 .
+  eq summary2(PL, J JL TJ) = :[print(J)] summary2(PL, JL TJ) .
+  eq summary2(PL, JL) = nil [owise] .
+endfm
+
+********************************************************************************
+
+fmod PRF/LIST/PARSING-&-PRINTING { L :: LANGUAGE, BL :: PRF/LIST/BASE-LANG } is
+  protecting PRF/LIST/PARSING { L, BL } .
+  protecting PRF/LIST/PRINTING { L, BL } .
+endfm
+
+********************************************************************************

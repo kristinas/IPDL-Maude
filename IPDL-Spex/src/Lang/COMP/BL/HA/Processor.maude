@@ -1,0 +1,227 @@
+***( SpeX/Lang/COMP/BL/HA
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../../Processor.maude
+sload ./Tools.maude
+
+********************************************************************************
+
+view COMP/HA/SpecBody from TRIV to COMP/HA/SPEC-BODY is
+  sort Elt to SpecBody{COMP/HA} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view COMP/HA/Command from COMMAND to COMP/HA/READ is
+  sort Command to Cmd{COMP/HA} .
+  op command-annotations to term 'Command .
+  op read-command(T:ATerm) to term read-cmd(COMP/HA, T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod COMP/HA/PROCESSOR { P :: PID } is
+  including  BASIC-PROCESSOR { P, COMP/HA/SpecBody, COMP/HA/SpecBody,
+                               COMP/HA/Command } .
+  protecting PID-NAME { P } .
+  protecting COMP/HA/PARSING-&-PRINTING .
+  protecting COMP/HA/REDUCE .
+  protecting COMP/HA/SOLVE .
+  protecting COMP/HA/CHECK .
+
+  var  L : COMP/HA .
+  var  SB : SpecBody{COMP/HA} .
+  var  SAS : AnalysisState{COMP/HA} .
+  var  P : P$Pid .
+  var  I : Oid .
+  var  SCS : Bool .
+  var  H : Qid .
+  var  QIL : QidList .
+  var  HS : Sort .
+  vars D T Q Q' E : ATerm .
+  var  TL : TermList .
+  var  V? : [AttrValue] .
+  var  Atts : AttributeSet .
+  var  RP : ResultPair .
+  vars ASL ASL' : ASubstList .
+  var  CR : CheckResult{COMP/HA} .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-stats : COMP/HA -> AttrName [ctor] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-check-stats : COMP/HA AttributeSet -> Bool .
+  ceq show-check-stats(L, Atts) = SCS
+   if AttrValue(SCS) := (Atts).get(show-stats(L)) .
+  eq show-check-stats(L, Atts) = false [owise].
+
+  op show-check-stats : COMP/HA -> AttrModifier .
+  eq subject(show-check-stats(L)) = show-stats(L) .
+  eq show-check-stats(L) V? = AttrValue(true) .
+
+  op hide-check-stats : COMP/HA -> AttrModifier .
+  eq subject(hide-check-stats(L)) = show-stats(L) .
+  eq hide-check-stats(L) V? = AttrValue(false) .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  crl [COMP/HA:parse] :
+    < $[P] : PROC | running, Atts >
+    parse($[P], I, QIL, SB)
+   => < $[P] : PROC | running, Atts >
+    parsed(I, $[P], parse COMP/HA command (QIL) in SAS)
+   if SAS := AnalysisState[COMP/HA]{SB & none & none} .
+
+  *** executing COMP/HA commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  rl [COMP/HA:list-declarations] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{list declarations}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Listing 'declarations) '\n
+      mk-page(print(SB))) .
+
+  rl [COMP/HA:list-sorts] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{list sorts}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Listing 'sorts) '\n
+      mk-page(print-sorts(SB))) .
+
+  rl [COMP/HA:list-states] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{list states}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Listing 'states) '\n
+      mk-page(print-states(SB))) .
+
+  rl [COMP/HA:list-data-ops] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{list data ops}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Listing 'data 'operations) '\n
+      mk-page(print-data-ops(SB))) .
+
+  rl [COMP/HA:list-prj] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{list HS prj}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Listing) HS log('projections) '\n
+      mk-page(print-prj(SB, HS))) .
+
+  rl [COMP/HA:list-act] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{list HS act}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Listing) HS log('actions) '\n
+      mk-page(print-act(SB, HS))) .
+
+  rl [COMP/HA:list-obs] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{list HS obs}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Listing) HS log('observations) '\n
+      mk-page(print-obs(SB, HS))) .
+
+  rl [COMP/HA:list-sens] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{list sens}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Listing 'axioms) '\n
+      mk-page(print-sens(SB))) .
+
+  crl [COMP/HA:let] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{let D}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P],
+      if TL :: Term
+      then log('Adding 'declaration) '\s
+        (print COMP/HA term TL)
+      else log('Adding 'declarations) '\n
+        mk-page(intercalate('\n, (print COMP/HA terms TL))) fi,
+      add-declaration(SB, D))
+   if TL := show-declarations(D, SB) .
+
+  crl [COMP/HA:reduce] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{reduce T}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Reducing) '\s
+      (print term T given term-grammar(SB)) '\n
+      mk-page('Result: '\s printf(RP, spaced('\! ': '\o), H, SB)))
+   if H := qid(name(P)) /\ RP := reduce(T, H, SB) .
+
+  crl [COMP/HA:solve] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{solve Q}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Solving) '\s
+      (print term Q given sentence-grammar(SB)) '\n
+      mk-page(printf(ASL, H, SB)))
+   if H := qid(name(P)) /\ ASL := solve(Q, unbounded, H, SB) .
+
+  crl [COMP/HA:check] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{check E}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Checking) '\s
+      (print term E given sentence-grammar(SB)) '\n
+      mk-page(printf(CR, H, SB, show-check-stats(COMP/HA, Atts))))
+   if H := qid(name(P)) /\ CR := check(E, nil, nil, H, SB) .
+
+  crl [COMP/HA:check] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{check E forall Q}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Checking) '\s
+      (print term E given sentence-grammar(SB))
+      '\n '\! 'forall '\o '\s (print term Q given sentence-grammar(SB)) '\n
+      mk-page(printf(CR, ASL, H, SB, show-check-stats(COMP/HA, Atts))))
+   if H := qid(name(P)) /\ ASL := solve(Q, unbounded, H, SB)
+      /\ CR := check(E, ASL, nil, H, SB) .
+
+  crl [COMP/HA:check] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{check E given Q'}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Checking) '\s
+      (print term E given sentence-grammar(SB))
+      '\n '\! 'given '\o '\s (print term Q' given sentence-grammar(SB)) '\n
+      mk-page(printf(CR, H, SB, show-check-stats(COMP/HA, Atts))))
+   if H := qid(name(P)) /\ ASL' := solve(Q', unbounded, H, SB)
+      /\ CR := check(E, nil, ASL', H, SB) .
+
+  crl [COMP/HA:check] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{check E forall Q given Q'}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Checking) '\s
+      (print term E given sentence-grammar(SB))
+      '\n '\! 'forall '\o '\s (print term Q given sentence-grammar(SB))
+      '\n '\! 'given '\o '\s (print term Q' given sentence-grammar(SB)) '\n
+      mk-page(printf(CR, H, SB, show-check-stats(COMP/HA, Atts))))
+   if H := qid(name(P)) /\ ASL := solve(Q, unbounded, H, SB)
+      /\ ASL' := solve(Q', unbounded, H, SB)
+      /\ CR := check(E, ASL, ASL', H, SB) .
+
+  rl [COMP/HA:show-check-stats] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{show check stats}, SB)
+   => < $[P] : PROC | running, Atts >>= show-check-stats(COMP/HA) >
+    processed(I, $[P], log('Showing 'check 'stats)) .
+
+  rl [COMP/HA:show-check-stats] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[COMP/HA]{hide check stats}, SB)
+   => < $[P] : PROC | running, Atts >>= hide-check-stats(COMP/HA)  >
+    processed(I, $[P], log('Hiding 'check 'stats)) .
+endm
+
+********************************************************************************

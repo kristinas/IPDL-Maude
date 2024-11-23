@@ -1,0 +1,165 @@
+***( SpeX/Lang/Reason/Prf/Tree/BL/PL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../../../Judgment/Language.maude
+sload ../../../Judgment/BL/PL.maude
+
+********************************************************************************
+
+mod PRF/TREE//PL/RULE is
+  protecting PRF/TREE/LID {PL} .
+  including  JDG/LIST { PL, Jdg//PL } .
+
+  var  L : PrfTree{PL} .
+  var  M : Module{Spec{PL}} .
+  var  EDS : SenDeclSet .
+  vars ED HD CD HiCD : SenDecl .
+  vars e h c p q r : Sentence{PL} .
+
+  *** proof rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort Rule{PrfTree{PL}} .
+  op Rule[_]{simplify} : PrfTree{PL} -> Rule{PrfTree{PL}} [ctor] .
+  op Rule[_]{suffices_} : PrfTree{PL} SenDecl -> Rule{PrfTree{PL}} [ctor] .
+  op Rule[_]{push} : PrfTree{PL} -> Rule{PrfTree{PL}} [ctor] .
+  op Rule[_]{pull_} : PrfTree{PL} SenDecl -> Rule{PrfTree{PL}} [ctor] .
+
+  *** applying proof rules  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _>>=_ : Judgment{PL} Rule{PrfTree{PL}} ~> JdgList{PL} .
+
+  ceq Judgment[PL]{M ; EDS |- ED} >>= Rule[L]{simplify} = nil
+   if p implies (q implies p) := sen(PL, ED) .
+
+  ceq Judgment[PL]{M ; EDS |- ED} >>= Rule[L]{simplify} = nil
+   if (p implies (q implies r))
+      implies
+      ((p implies q) implies (p implies r)) := sen(PL, ED) .
+
+  ceq Judgment[PL]{M ; EDS |- ED} >>= Rule[L]{simplify} = nil
+   if (not p implies not q) implies (q implies p) := sen(PL, ED) .
+
+  ceq Judgment[PL]{M ; EDS |- ED} >>= Rule[L]{simplify} = nil
+   if ED in sens(body(M)) EDS .
+
+  ceq Judgment[PL]{M ; EDS |- CD}
+     >>= Rule[L]{suffices HD}
+   = Judgment[PL]{M ; EDS |- HD} Judgment[PL]{M ; EDS |- HiCD}
+   if h := sen(PL, HD)
+      /\ c := sen(PL, CD)
+      /\ HiCD := sen-decl(h implies c, attributes(CD)) .
+
+  ceq Judgment[PL]{M ; EDS |- ED} >>= Rule[L]{push}
+   = Judgment[PL]{M ; EDS sen-decl(h, none) |- sen-decl(c, attributes(ED))}
+   if h implies c := sen(PL, ED) .
+
+  ceq Judgment[PL]{M ; EDS |- CD} >>= Rule[L]{pull HD}
+   = Judgment[PL]{M ; EDS \ HD  |- sen-decl(h implies c, attributes(CD))}
+   if HD in EDS
+      /\ h := sen(PL, HD)
+      /\ c := sen(PL, CD) .
+endm
+
+********************************************************************************
+
+mod PRF/TREE//PL/PARSING-&-PRINTING is
+  including  JDG/PARSING-&-PRINTING { PL, Jdg//PL } .
+  protecting PRF/TREE//PL/RULE .
+
+  var L : PrfTree{PL} .
+  var M : Module{Spec{PL}} .
+  var X : Qid .
+  var QIL : QidList .
+  var E : ATerm .
+  var C : Constant .
+  var AtS : AttrSet .
+
+  *** proof-rule grammar  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op proof-rule-grammar : PrfTree{PL} -> Grammar .
+  eq proof-rule-grammar(L)
+   = grammar 'PrfTree/PL/Syntax is
+       'ProofRule
+         ::= lit "simplify" [format ('! 'o)]
+          |  "suffices to prove_" : 'Sentence [format ('! 's 's 'os 'd)]
+          |  lit "push" [format ('! 'o)]
+          |  "pull_" : 'Sentence [format ('! 'os 'd)]
+       'Sentence
+         ::= bubble "sentence"
+             [balanced-parentheses]
+     endgr .
+
+  *** parsing proof rules  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op parse_proof`rule_in_ : PrfTree{PL} QidList Module{Spec{PL}}
+    -> ParsingOutcome .
+
+  eq parse L proof rule (QIL) in M
+   = scan input (QIL : 'ProofRule) given proof-rule-grammar(L)
+     then analyse L proof rule in body(M) .
+
+  op analyse_proof`rule : PrfTree{PL} -> AnalysisAction{PL} .
+  eq analyse L proof rule {C : 'ProofRule}
+   = return {C : 'ProofRule} .
+  eq analyse L proof rule {'suffices`to`prove_[E] : 'ProofRule}
+   = try { 'suffices`to`prove_ [
+        analyse PL sentence (E)
+      ] : 'ProofRule} .
+  eq analyse L proof rule {'pull_[E] : 'ProofRule}
+   = try { 'pull_ [
+        analyse PL sentence (E)
+      ] : 'ProofRule} .
+
+  *** reading proof rules  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-proof-rule : PrfTree{PL} ATerm -> Rule{PrfTree{PL}} .
+  eq read-proof-rule(L, {'simplify.ProofRule : X})
+   = Rule[L]{simplify} .
+  eq read-proof-rule(L, {'suffices`to`prove_[E] : X})
+   = Rule[L]{suffices sen E [none] .} .
+  eq read-proof-rule(L, {'push.ProofRule : X})
+   = Rule[L]{push} .
+  eq read-proof-rule(L, {'pull_[E] : X})
+   = Rule[L]{pull sen E [none] .} .
+
+  *** printing proof rules  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print : Rule{PrfTree{PL}} Module{Spec{PL}} -> QidList .
+  eq print(Rule[L]{simplify}, M)
+   = print term ('simplify.ProofRule) given proof-rule-grammar(L) .
+  eq print(Rule[L]{suffices sen E [AtS] .}, M)
+   = print term ('suffices`to`prove_[
+        mk-bubble('sentence,
+          show-qids(print PL term show-sentence(body(M), E)))])
+     given proof-rule-grammar(L) .
+  eq print(Rule[L]{push}, M)
+   = print term ('push.ProofRule) given proof-rule-grammar(L) .
+  eq print(Rule[L]{pull sen E [AtS] .}, M)
+   = print term ('pull_[
+        mk-bubble('sentence,
+          show-qids(print PL term show-sentence(body(M), E)))])
+     given proof-rule-grammar(L) .
+endm
+
+********************************************************************************
+
+view PrfTree//PL from PRF/TREE/BASE-LANG to PRF/TREE//PL/PARSING-&-PRINTING  is
+  sort Judgment to Judgment{PL} .
+  sort NeJudgmentList to NeJdgList{PL} .
+  sort JudgmentList to JdgList{PL} .
+
+  sort Cxt to Module{Spec{PL}} .
+
+  sort ProofRule to Rule{PrfTree{PL}} .
+  op parse-proof-rule(QIL:QidList, C:Cxt) to term
+    parse PrfTree[PL] proof rule (QIL:QidList) in C:Module{Spec{PL}} .
+  op read-proof-rule(T:ATerm, C:Cxt) to term
+    read-proof-rule(PrfTree[PL], T:ATerm) .
+  op print-proof-rule(PR:ProofRule, C:Cxt) to term
+    print(PR:Rule{PrfTree{PL}}, C:Module{Spec{PL}}) .
+endv
+
+********************************************************************************

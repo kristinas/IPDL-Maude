@@ -1,0 +1,1496 @@
+***( SpeX/Lang/COMP/BL/HA
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../../Language.maude
+sload ../../../Base/Common/CSList.maude
+sload ./Data.maude
+
+********************************************************************************
+
+fmod COMP/HA/LANGUAGE is
+  protecting COMP/HA/SPEC-BODY .
+  protecting GRAMMAR/CS-LIST .
+
+  var  L : COMP/HA .
+  var  S : Sort .
+  vars SS HSS : SortSet .
+  vars ODS BODS : OpDeclSet .
+  var  EDS : SenDeclSet .
+  vars E LHS RHS C : ATerm .
+  var  NEL : NeATermList .
+
+  *** declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op decl-grammar : COMP/HA -> Grammar .
+  eq decl-grammar(COMP/HA)
+   = grammar 'COMP/HA/Syntax is
+       'Declaration
+         ::= just 'VarDeclaration
+         *** sorts
+          |  "sort_" : 'Sort
+             [format('! 'so 'd)]
+          |  "sorts_" : 'NeSortList
+             [format('! 'so 'd)]
+          |  "state_" : 'Sort
+             [format('! 'so 'd)]
+          |  "states_" : 'NeSortList
+             [format('! 'so 'd)]
+         *** ordinary-operation symbols
+          |  "op_:_->_" : 'Symbol 'Arity 'Sort
+             [format('! 'so 's! 'so 's! 'so 'd)]
+          |  "op_:_->_[_]" : 'Symbol 'Arity 'Sort 'NeAttrList
+             [format('! 'so 's! 'so 's! 'so 's! 'o '! 'o)]
+          |  "op_:()->_" : 'Symbol 'Sort
+             [format('! 'so 's! 's 'd 's 'so 'd)]
+          |  "op_:()->_[_]" : 'Symbol 'Sort 'NeAttrList
+             [format('! 'so 's! 's 'd 's 'so 's! 'o '! 'o)]
+          |  "ops_:_->_" : 'NeSymbolList 'Arity 'Sort
+             [format('! 'so 's! 'so 's! 'so 'd)]
+          |  "ops_:_->_[_]" : 'NeSymbolList 'Arity 'Sort 'NeAttrList
+             [format('! 'so 's! 'so 's! 'so 's! 'o '! 'o)]
+          |  "ops_:()->_" : 'NeSymbolList 'Sort
+             [format('! 'so 's! 's 'd 's 'so 'd)]
+          |  "ops_:()->_[_]" : 'NeSymbolList 'Sort 'NeAttrList
+             [format('! 'so 's! 's 'd 's 's 's! 'o '! 'o)]
+         *** behavioural-operation symbols
+          |  "bop_:_->_" : 'Symbol 'Arity 'Sort
+             [format('! 'so 's! 'so 's! 'so 'd)]
+          |  "prj_:_->_" : 'Symbol 'Arity 'Sort
+             [format('! 'so 's! 'so 's! 'so 'd)]
+          |  "act_:_->_" : 'Symbol 'Arity 'Sort
+             [format('! 'so 's! 'so 's! 'so 'd)]
+          |  "obs_:_->_" : 'Symbol 'Arity 'Sort
+             [format('! 'so 's! 'so 's! 'so 'd)]
+          |  "bops_:_->_" : 'NeSymbolList 'Arity 'Sort
+             [format('! 'so 's! 'so 's! 'so 'd)]
+         *** sentences
+          |  "ax_" : 'Sentence
+             [format('! 'so 'd)]
+          |  "ax_[_]" : 'Sentence 'NeAttrList
+             [format('! 'so 's! 'o '! 'o)]
+       'VarDeclaration
+         ::= "var_:_" : 'Symbol 'Sort
+             [format('! 'so 's! 'so 'd)]
+          |  "vars_:_" : 'NeSymbolList 'Sort
+             [format('! 'so 's! 'so 'd)]
+       'Sort
+         ::= token "sort" [exclude("," "(" ")")]
+       'NeSortList
+         ::= bubble "neSortList"
+       'Symbol
+         ::= token "symbol" [exclude("," ":")]
+       'NeSymbolList
+         ::= bubble "neSymbolList" [exclude(":")]
+       'Arity
+         ::= bubble "arity" [exclude("->" "(" ")" "[" "]")]
+       'Sentence
+         ::= bubble "sentence" [balanced-parentheses exclude("label:")]
+       'NeAttrList
+         ::= bubble "neAttrList" [exclude("[" "]")]
+     endgr .
+
+  *** comma-separated lists of sorts  - - - - - - - - - - - - - - - - - - - - --
+  op cs-sorts-grammar : COMP/HA -> Grammar .
+  eq cs-sorts-grammar(COMP/HA)
+   = cs-list-grammar('COMP/HA/cs-sorts-syntax, 'NeSortList,
+      'Sort ::= token "sort" [exclude("," "(" ")")]) .
+
+  *** comma-separated lists of symbols  - - - - - - - - - - - - - - - - - - - --
+  op cs-symbols-grammar : COMP/HA -> Grammar .
+  eq cs-symbols-grammar(COMP/HA)
+   = cs-list-grammar('COMP/HA/cs-symbols-syntax, 'NeSymbolList,
+       'Symbol ::= token "symbol" [exclude("," ":")]) .
+
+  *** operation attributes  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op op-attr-grammar : COMP/HA -> Grammar .
+  eq op-attr-grammar(COMP/HA)
+   = grammar 'COMP/HA/op-attr-syntax is
+       'Attr ::= lit "ctor" [format('! 'o)]
+              |  lit "assoc" [format('! 'o)]
+              |  lit "comm" [format('! 'o)]
+              |  "id:" : 'Term [format('! 'o)]
+       'AttrList ::= just 'Attr | "__" : 'AttrList 'AttrList [assoc]
+       'Term ::= bubble "term" [balanced-parentheses]
+     endgr .
+
+  *** sentence attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op sen-attr-grammar : COMP/HA -> Grammar .
+  eq sen-attr-grammar(COMP/HA)
+   = grammar 'COMP/HA/sen-attr-syntax is
+       'Attr  ::= "label:_" : 'Label [format('! 'o 'd)]
+       'AttrList ::= just 'Attr | "__" : 'AttrList 'AttrList [assoc]
+       'Label ::= token "label"
+     endgr .
+
+
+  *** terms  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op term-grammar : SpecBody{COMP/HA} -> Grammar .
+  eq term-grammar(SpecBody[L]{sorts SS . sorts HSS . ODS BODS EDS})
+   = grammar 'COMP/HA/Term/Syntax is
+       nonterms (SS ; HSS)
+       pr-rules(ODS) pr-rules(BODS)
+     endgr .
+
+  *** atomic sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op atomic-grammar : SpecBody{COMP/HA} -> Grammar .
+  eq atomic-grammar(SpecBody[L]{sorts SS . sorts HSS . ODS BODS EDS})
+   = grammar 'COMP/HA/Atomic/Syntax is
+       atomic-sentences(L, SS, HSS, ODS, BODS)
+     endgr .
+
+  *** full sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op sentence-grammar : SpecBody{COMP/HA} -> Grammar .
+  eq sentence-grammar(SpecBody[L]{sorts SS . sorts HSS . ODS BODS EDS})
+   = grammar 'COMP/HA/Sentence/Syntax is
+       atomic-sentences(L, SS, HSS, ODS, BODS)
+       Boolean-connectives(L)
+     endgr .
+
+  op atomic-sentences : COMP/HA SortSet SortSet OpDeclSet
+    OpDeclSet -> GramDeclSet .
+  eq atomic-sentences(L, SS, HSS, ODS, BODS)
+   = 'Sentence`{HA`}
+       ::= just 'AtomicSentence`{HA`}
+     'AtomicSentence`{HA`}
+       ::= just 'Equation`{HA`}
+        |  just 'BehaviouralEquation`{HA`}
+     pr-rules(ODS) pr-rules(BODS) eqs(L, SS ; HSS) beqs(L, HSS) .
+
+  op eqs : COMP/HA SortSet -> GramDeclSet .
+  eq eqs(L, none) = none .
+  eq eqs(L, S ; SS)
+   = 'Equation`{HA`}
+       ::= "_=_" : S S [format('d 's! 'so 'd) prec(51)]
+     eqs(L, SS) .
+
+  op beqs : COMP/HA SortSet -> GramDeclSet .
+  eq beqs(L, none) = none .
+  eq beqs(L, S ; SS)
+   = 'BehaviouralEquation`{HA`}
+       ::= "_~_" : S S [format('d 's! 'so 'd) prec(51)]
+     beqs(L, SS) .
+
+  op Boolean-connectives : COMP/HA -> GramDeclSet .
+  eq Boolean-connectives(L)
+   = 'Sentence`{HA`}
+       ::= "not_" : 'Sentence`{HA`}
+           [format('! 'so 'd) prec(71)]
+        |  "_and_" : 'Sentence`{HA`} 'Sentence`{HA`}
+           [assoc format('d 's! 'so 'd) prec(75)]
+        |  "_or_" : 'Sentence`{HA`} 'Sentence`{HA`}
+           [assoc format('d 's! 'so 'd) prec(79)]
+        |  "_if_" : 'Sentence`{HA`} 'Sentence`{HA`}
+           [gather('E 'e) format('d 's! 'so 'd) prec(81)] .
+
+  *** equation-building operators  - - - - - - - - - - - - - - - - - - - - - - -
+  op eq(_,_=_) : COMP/HA ATerm ATerm -> ATerm .
+  eq eq(L, LHS = RHS) = {'_=_[LHS, RHS] : 'Equation`{HA`}} .
+
+  op cq(_,_=_if_) : COMP/HA ATerm ATerm ATerm -> ATerm .
+  eq cq(L, LHS = RHS if C) = {'_if_[eq(L, LHS = RHS), C] : 'Sentence`{HA`}} .
+
+  op not : COMP/HA ATerm -> ATerm .
+  eq not(L, E) = {'not_[E] : 'Sentence`{HA`}} .
+
+  op and : COMP/HA NeATermList -> ATerm .
+  eq and(L, E) = E .
+  eq and(L, (E, NEL)) = {'_and_[E, and(L, NEL)] : 'Sentence`{HA`}} .
+
+  *** commands  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op cmd-grammar : COMP/HA -> Grammar .
+  eq cmd-grammar(L)
+   = grammar 'COMP/HA/Cmd/Syntax is
+       'Command
+         ::= lit "list declarations" [format('b 's 'o)]
+          |  lit "list sorts" [format('b 's 'o)]
+          |  lit "list states" [format('b 's 'o)]
+          |  lit "list data operations" [format('b 's 's 'o)]
+          |  "list_projections" : 'Sort [format('b 'so 'sb 'o)]
+          |  "list_actions" : 'Sort [format('b 'so 'sb 'o)]
+          |  "list_observations" : 'Sort [format('b 'so 'sb 'o)]
+          |  lit "list axioms" [format('b 's 'o)]
+          |  "let_." : 'Declaration [format('b 'so 's 'd)]
+          |  "reduce_." : 'Term [format('b 'so 's 'd)]
+          |  "solve_." : 'Query [format('b 'so 's 'd)]
+          |  "check_." : 'Property [format('b 'so 's 'd)]
+          |  "check_forall_." : 'Property 'Query [format('b 'so 'sb 'so 's 'd)]
+          |  "check_given_." : 'Property 'Query [format('b 'so 'sb 'so 's 'd)]
+          |  "check_forall_given_." : 'Property 'Query 'Query
+             [format('b 'so 'sb 'so 'sb 'so 's 'd)]
+          |  lit "show check stats" [format('b 's 's 'o)]
+          |  lit "hide check stats" [format('b 's 's 'o)]
+       'Sort
+         ::= token "sort" [exclude("," "(" ")")]
+       'Declaration
+         ::= bubble "declaration"
+             [balanced-parentheses
+              exclude("protecting" "extending" "including"
+                      "composing" "syncing" "indexing" ".")]
+       'Term
+         ::= bubble "term" [balanced-parentheses exclude("." ";")]
+       'Query
+         ::= bubble "query" [balanced-parentheses exclude("given" ".")]
+       'Property
+         ::= bubble "property"
+             [balanced-parentheses exclude("forall" "given" ".")]
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view COMP/HA from LANGUAGE to COMP/HA/LANGUAGE is
+  sort Lid to COMP/HA .
+  op Lid to COMP/HA .
+  op grammar to decl-grammar .
+endv
+
+********************************************************************************
+
+fmod COMP/HA/READ is
+  protecting COMP/HA/LANGUAGE .
+  protecting COMP/HA/SPEC-BODY .
+  protecting COMP/HA/CMD .
+  protecting ATERM/READ .
+
+  var  L : COMP/HA .
+  var  SB : SpecBody{COMP/HA} .
+  vars S O V : AConstant .
+  vars SL1 SL2 OL1 OL2 A VL1 VL2 E : ATerm .
+  vars AtL AtL1 AtL2 T : ATerm .
+  vars D Q Q' : ATerm .
+  var  TL : ATermList .
+  var  AtS : AttrSet .
+
+  *** read specification body  - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-body : COMP/HA ATermList -> SpecBody{COMP/HA} .
+  eq read-body(L, TL) = extend((nil).SpecBody{COMP/HA}, TL) .
+
+  *** extend spec-body with new declarations  - - - - - - - - - - - - - - - - --
+  op extend : SpecBody{COMP/HA} ATermList -> SpecBody{COMP/HA} .
+  eq extend(SB, empty) = SB .
+  eq extend(SB, (T, TL)) = extend(SB >>= T, TL) .
+
+  *** add declaration  - - - --  - - - - - - - - - - - - - - - - - - - - - - - -
+  op add-declaration : SpecBody{COMP/HA} ATerm -> SpecBody{COMP/HA} .
+  eq add-declaration(SB, T) = SB >>= T .
+
+  op _>>=_ : SpecBody{COMP/HA} ATerm -> SpecBody{COMP/HA} .
+
+  eq SB >>= {'sort_[S] : 'Declaration}
+   = add-visible-sort(read-sort(COMP/HA, S), SB) .
+  eq SB >>= {'sorts_[S] : 'Declaration}
+   = SB >>= {'sort_[S] : 'Declaration} .
+  eq SB >>= {'sorts_[{'_`,_[SL1, SL2] : 'NeSortList}] : 'Declaration}
+   = SB >>= {'sorts_[SL1] : 'Declaration} >>= {'sorts_[SL2] : 'Declaration} .
+
+  eq SB >>= {'state_[S] : 'Declaration}
+   = add-hidden-sort(read-sort(COMP/HA, S), SB) .
+  eq SB >>= {'states_[S] : 'Declaration}
+   = SB >>= {'state_[S] : 'Declaration} .
+  eq SB >>= {'states_[{'_`,_[SL1, SL2] : 'NeSortList}] : 'Declaration}
+   = SB >>= {'states_[SL1] : 'Declaration} >>= {'states_[SL2] : 'Declaration} .
+
+  eq SB >>= {'op_:_->_[O, A, S] : 'Declaration}
+   = add-op(read-op(COMP/HA, 'op_:_->_[O, A, S]), SB) .
+  eq SB >>= {'op_:_->_`[_`][O, A, S, AtL] : 'Declaration}
+   = add-op(read-op(COMP/HA, 'op_:_->_`[_`][O, A, S, AtL]), SB) .
+  eq SB >>= {'op_:`(`)->_[O, S] : 'Declaration}
+   = add-op(read-op(COMP/HA, 'op_:`(`)->_[O, S]), SB) .
+  eq SB >>= {'op_:`(`)->_`[_`][O, S, AtL] : 'Declaration}
+   = add-op(read-op(COMP/HA, 'op_:`(`)->_`[_`][O, S, AtL]), SB) .
+
+  eq SB >>= {'ops_:_->_[O, A, S] : 'Declaration}
+   = SB >>= {'op_:_->_[O, A, S] : 'Declaration} .
+  eq SB >>= {'ops_:_->_[{'_`,_[OL1, OL2] : 'NeSymbolList}, A, S] : 'Declaration}
+   = SB >>= {'ops_:_->_[OL1, A, S] : 'Declaration}
+        >>= {'ops_:_->_[OL2, A, S] : 'Declaration} .
+
+  eq SB >>= {'ops_:_->_`[_`][O, A, S, AtL] : 'Declaration}
+   = SB >>= {'op_:_->_`[_`][O, A, S, AtL] : 'Declaration} .
+  eq SB >>= {'ops_:_->_`[_`][
+        {'_`,_[OL1, OL2] : 'NeSymbolList}, A, S, AtL] : 'Declaration}
+   = SB >>= {'ops_:_->_`[_`][OL1, A, S, AtL] : 'Declaration}
+        >>= {'ops_:_->_`[_`][OL2, A, S, AtL] : 'Declaration} .
+
+  eq SB >>= {'ops_:`(`)->_[O, S] : 'Declaration}
+   = SB >>= {'op_:`(`)->_[O, S] : 'Declaration} .
+  eq SB >>= {'ops_:`(`)->_[{'_`,_[OL1, OL2] : 'NeSymbolList}, S] : 'Declaration}
+   = SB >>= {'ops_:`(`)->_[OL1, S] : 'Declaration}
+        >>= {'ops_:`(`)->_[OL2, S] : 'Declaration} .
+
+  eq SB >>= {'ops_:`(`)->_`[_`][O, S, AtL] : 'Declaration}
+   = SB >>= {'op_:`(`)->_`[_`][O, S, AtL] : 'Declaration} .
+  eq SB >>= {'ops_:`(`)->_`[_`][
+        {'_`,_[OL1, OL2] : 'NeSymbolList}, S, AtL] : 'Declaration}
+   = SB >>= {'ops_:`(`)->_`[_`][OL1, S, AtL] : 'Declaration}
+        >>= {'ops_:`(`)->_`[_`][OL2, S, AtL] : 'Declaration} .
+
+  eq SB >>= {'bop_:_->_[O, A, S] : 'Declaration}
+   = add-bop(read-op(COMP/HA, 'op_:_->_[O, A, S]), SB) .
+  eq SB >>= {'prj_:_->_[O, A, S] : 'Declaration}
+   = SB >>= {'bop_:_->_[O, A, S] : 'Declaration} .
+  eq SB >>= {'act_:_->_[O, A, S] : 'Declaration}
+   = SB >>= {'bop_:_->_[O, A, S] : 'Declaration} .
+  eq SB >>= {'obs_:_->_[O, A, S] : 'Declaration}
+   = SB >>= {'bop_:_->_[O, A, S] : 'Declaration} .
+
+  eq SB >>= {'bops_:_->_[O, A, S] : 'Declaration}
+   = SB >>= {'bop_:_->_[O, A, S] : 'Declaration} .
+  eq SB >>= {'bops_:_->_[
+        {'_`,_[OL1, OL2] : 'NeSymbolList}, A, S] : 'Declaration}
+   = SB >>= {'bops_:_->_[OL1, A, S] : 'Declaration}
+        >>= {'bops_:_->_[OL2, A, S] : 'Declaration} .
+
+  eq SB >>= {'ax_[E] : 'Declaration}
+   = add-sen(read-sentence(COMP/HA, E, none), SB) .
+  eq SB >>= {'ax_`[_`][E, AtL] : 'Declaration}
+   = add-sen(read-sentence(COMP/HA, E, read-attributes(COMP/HA, AtL)), SB) .
+
+  eq SB >>= T = SB [owise] .
+
+  *** read sort  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-sort : COMP/HA ATerm ~> Sort .
+  eq read-sort(L, S) = read-qid(S) .
+
+  *** read op  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-op : COMP/HA ATerm ~> OpDecl .
+  eq read-op(L, 'op_:_->_[O, A, S])
+   = (op read-symbol(L, O) : read-arity(L, A) -> read-sort(L, S) [none] .) .
+  eq read-op(L, 'op_:_->_`[_`][O, A, S, AtL])
+   = (op read-symbol(L, O) : read-arity(L, A) -> read-sort(L, S)
+      [read-attributes(L, AtL)] .) .
+  eq read-op(L, 'op_:`(`)->_[O, S])
+   = (op read-symbol(L, O) : nil -> read-sort(L, S) [none] .) .
+  eq read-op(L, 'op_:`(`)->_`[_`][O, S, AtL])
+   = (op read-symbol(L, O) : nil -> read-sort(L, S)
+      [read-attributes(L, AtL)] .) .
+
+  op read-symbol : COMP/HA ATerm ~> Qid .
+  eq read-symbol(L, O) = read-qid(O) .
+
+  op read-arity : COMP/HA ATerm ~> TypeList .
+  eq read-arity(L, A) = read-qids(A) .
+
+  op read-cs-symbols : COMP/HA ATerm ~> QidSet .
+  eq read-cs-symbols(L, {'_`,_[OL1, OL2] : 'NeSymbolList})
+   = read-cs-symbols(L, OL1) ; read-cs-symbols(L, OL2) .
+  eq read-cs-symbols(L, {O : 'Symbol})
+   = read-symbol(L, O) .
+
+  *** read variables  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort ReadVarOptions{COMP/HA} .
+  op all`vars : -> ReadVarOptions{COMP/HA} [ctor] .
+  op protecting`constants : -> ReadVarOptions{COMP/HA} [ctor] .
+
+  var RVO : ReadVarOptions{COMP/HA} .
+
+  op read-vars : SpecBody{COMP/HA} ATerm ReadVarOptions{COMP/HA}
+    -> VariableSet .
+  eq read-vars(SB, {'var_:_[V, S] : 'VarDeclaration}, RVO)
+   = read-var(SB, 'var_:_[V, S], RVO) .
+  eq read-vars(SB, {'vars_:_[V, S] : 'VarDeclaration}, RVO)
+   = read-var(SB, 'var_:_[V, S], RVO) .
+  eq read-vars(SB, {'vars_:_[
+          {'_`,_[VL1, VL2] : 'NeSymbolList}, S] : 'VarDeclaration}, RVO)
+   = read-vars(SB, {'vars_:_[VL1, S] : 'VarDeclaration}, RVO) ;
+     read-vars(SB, {'vars_:_[VL2, S] : 'VarDeclaration}, RVO) .
+  eq read-vars(SB, T, RVO) = none [owise] .
+
+  op read-var : SpecBody{COMP/HA} ATerm ReadVarOptions{COMP/HA} -> VariableSet .
+  eq read-var(SB, 'var_:_[V, S], RVO)
+   = if (RVO == protecting constants)
+      and-then (read-symbol(COMP/HA, V) in consts(SB, read-sort(COMP/HA, S)))
+     then none
+     else var(read-symbol(COMP/HA, V), read-sort(COMP/HA, S)) fi .
+  eq read-var(SB, T, RVO) = none [owise] .
+
+  *** read sentence  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-sentence : COMP/HA ATerm AttrSet -> SenDecl .
+  eq read-sentence(L, E, AtS) = (sen E [AtS] .) .
+
+  *** read attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-attributes : COMP/HA ATerm -> AttrSet .
+  eq read-attributes(L, {'__[AtL1, AtL2] : 'AttrList})
+   = read-attributes(L, AtL1) read-attributes(L, AtL2) .
+  eq read-attributes(L, {'ctor.Attr : 'Attr}) = ctor .
+  eq read-attributes(L, {'assoc.Attr : 'Attr}) = assoc .
+  eq read-attributes(L, {'comm.Attr : 'Attr}) = comm .
+  eq read-attributes(L, {'id:[T] : 'Attr}) = id(plain-term(T)) .
+  eq read-attributes(L, {'label:_[T] : 'Attr}) = label(read-qid(T)) .
+  eq read-attributes(L, T) = none [owise] .
+
+  *** read command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-cmd : COMP/HA ATerm ~> Cmd{COMP/HA} .
+  eq read-cmd(L, {'list`declarations.Command : 'Command})
+   = Cmd[L]{list declarations} .
+  eq read-cmd(L, {'list`sorts.Command : 'Command})
+   = Cmd[L]{list sorts} .
+  eq read-cmd(L, {'list`states.Command : 'Command})
+   = Cmd[L]{list states} .
+  eq read-cmd(L, {'list`data`operations.Command : 'Command})
+   = Cmd[L]{list data ops} .
+  eq read-cmd(L, {'list_projections[S] : 'Command})
+   = Cmd[L]{list read-qid(S) prj} .
+  eq read-cmd(L, {'list_actions[S] : 'Command})
+   = Cmd[L]{list read-qid(S) act} .
+  eq read-cmd(L, {'list_observations[S] : 'Command})
+   = Cmd[L]{list read-qid(S) obs} .
+  eq read-cmd(L, {'list`axioms.Command : 'Command})
+   = Cmd[L]{list sens} .
+  eq read-cmd(L, {'let_.[D] : 'Command})
+   = Cmd[L]{let D} .
+  eq read-cmd(L, {'reduce_.[T] : 'Command})
+   = Cmd[L]{reduce T} .
+  eq read-cmd(L, {'solve_.[Q] : 'Command})
+   = Cmd[L]{solve Q} .
+  eq read-cmd(L, {'check_.[E] : 'Command})
+   = Cmd[L]{check E} .
+  eq read-cmd(L, {'check_forall_.[E, Q] : 'Command})
+   = Cmd[L]{check E forall Q} .
+  eq read-cmd(L, {'check_given_.[E, Q'] : 'Command})
+   = Cmd[L]{check E given Q'} .
+  eq read-cmd(L, {'check_forall_given_.[E, Q, Q'] : 'Command})
+   = Cmd[L]{check E forall Q given Q'} .
+  eq read-cmd(L, {'show`check`stats.Command : 'Command})
+   = Cmd[L]{show check stats} .
+  eq read-cmd(L, {'hide`check`stats.Command : 'Command})
+   = Cmd[L]{hide check stats} .
+endfm
+
+********************************************************************************
+
+fmod COMP/HA/SHOW is
+  protecting COMP/HA/READ .
+  protecting PRINTING { COMP/HA } .
+
+  var  L : COMP/HA .
+  var  G : Grammar .
+  var  SB : SpecBody{COMP/HA} .
+  var  S : Sort .
+  var  SS : SortSet .
+  vars SSD HSSD : SortSetDecl .
+  var  NSL : NeQidList .
+  vars O QI : Qid .
+  var  A : NeTypeList .
+  var  At : Attr .
+  var  AtS : AttrSet .
+  var  AtL : AttrList .
+  var  OD : OpDecl .
+  vars ODS BODS : OpDeclSet .
+  var  ODL : OpDeclList .
+  var  E : ATerm .
+  vars T : Term .
+  var  NTL : NeTermList .
+  var  ED : SenDecl .
+  var  EDS : SenDeclSet .
+  var  EDL : SenDeclList .
+
+  *** show body  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show : SpecBody{COMP/HA} -> TermList .
+  eq show(SB) = show-fragment(SB, SB) .
+
+  op show-fragment : SpecBody{COMP/HA} SpecBody{COMP/HA} -> TermList .
+  eq show-fragment(SpecBody[L]{SSD HSSD ODS BODS EDS}, SB)
+   = show-visible-sorts(L, list(SSD)),
+     show-hidden-sorts(L, list(HSSD)),
+     show-ops(L, SB, topo-sort(ODS)),
+     show-bops(L, SB, list(BODS)),
+     show-sens(L, SB, list(EDS)) .
+
+  *** show sorts  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-visible-sorts : COMP/HA QidList -> TermList .
+  eq show-visible-sorts(L, nil) = empty .
+  eq show-visible-sorts(L, S) = 'sort_[show-sort(L, S)] .
+  eq show-visible-sorts(L, S NSL)
+   = 'sorts_[cs-bubble('neSortList, show-qids(S NSL))] .
+
+  op show-hidden-sorts : COMP/HA QidList -> TermList .
+  eq show-hidden-sorts(L, nil) = empty .
+  eq show-hidden-sorts(L, S) = 'state_[show-sort(L, S)] .
+  eq show-hidden-sorts(L, S NSL)
+   = 'states_[cs-bubble('neSortList, show-qids(S NSL))] .
+
+  op show-sort : COMP/HA Qid -> Term .
+  eq show-sort(L, S) = mk-bubble('sort, show-qid(S)) .
+
+  *** show ops  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-ops : COMP/HA SpecBody{COMP/HA} OpDeclList -> TermList .
+  eq show-ops(L, SB, nil) = empty .
+  eq show-ops(L, SB, {op O : A -> S [AtS] .} ODL)
+   = if AtS == none
+     then 'op_:_->_[ show-symbol(L, O), show-arity(L, A), show-sort(L, S) ]
+     else 'op_:_->_`[_`] [
+        show-symbol(L, O), show-arity(L, A), show-sort(L, S),
+        show-op-attributes(L, SB, AtS) ] fi,
+     show-ops(L, SB, ODL) .
+  eq show-ops(L, SB, {op O : nil -> S [AtS] .} ODL)
+   = if AtS == none
+     then 'op_:`(`)->_[ show-symbol(L, O), show-sort(L, S) ]
+     else 'op_:`(`)->_`[_`] [
+        show-symbol(L, O), show-sort(L, S),
+        show-op-attributes(L, SB, AtS) ] fi,
+     show-ops(L, SB, ODL) .
+
+  op show-bops : COMP/HA SpecBody{COMP/HA} OpDeclList -> TermList .
+  eq show-bops(L, SB, nil) = empty .
+  eq show-bops(L, SB, {op O : A -> S [AtS] .} ODL)
+   = if projection(op O : A -> S [AtS] ., SB)
+     then 'prj_:_->_
+     else if action(op O : A -> S [AtS] ., SB)
+     then 'act_:_->_
+     else if observation(op O : A -> S [AtS] ., SB)
+     then 'obs_:_->_
+     else 'bop_:_->_
+     fi fi fi [ show-symbol(L, O), show-arity(L, A), show-sort(L, S) ],
+     show-bops(L, SB, ODL) .
+  eq show-ops(L, SB, {op O : nil -> S [AtS] .} ODL) = empty .
+
+  op show-symbol : COMP/HA Qid -> Term .
+  eq show-symbol(L, O) = mk-bubble('symbol, show-qid(O)) .
+
+  op show-arity : COMP/HA NeTypeList -> TermList .
+  eq show-arity(L, nil) = empty .
+  eq show-arity(L, A) = mk-bubble('arity, show-qids(A)) .
+
+  op show-op-attributes : COMP/HA SpecBody{COMP/HA} AttrSet -> TermList .
+  eq show-op-attributes(L, SB, AtS)
+   = show-attributes(L, op-attr-grammar(L),
+      (show-ctor-attr(L, AtS),
+        show-assoc-attr(L, AtS), show-comm-attr(L, AtS),
+        show-id-attr(SB, AtS))) .
+
+  *** show sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-sens : COMP/HA SpecBody{COMP/HA} SenDeclList -> TermList .
+  eq show-sens(L, SB, nil) = empty .
+  eq show-sens(L, SB, {sen E [none] .} EDL)
+   = 'ax_ [ show-sentence(SB, E) ], show-sens(L, SB, EDL) .
+  eq show-sens(L, SB, {sen E [AtS] .} EDL)
+   = 'ax_`[_`] [ show-sentence(SB, E), show-sen-attributes(L, AtS) ],
+     show-sens(L, SB, EDL) [owise] .
+
+  op show-sentence : SpecBody{COMP/HA} ATerm -> Term .
+  eq show-sentence(SB, E)
+   = mk-bubble('sentence, show-qids(print term E given sentence-grammar(SB))) .
+
+  op show-term : SpecBody{COMP/HA} Term -> Term .
+  eq show-term(SB, T)
+   = mk-bubble('term, show-qids(print term T given sentence-grammar(SB))) .
+
+  op show-sen-attributes : COMP/HA AttrSet -> TermList .
+  eq show-sen-attributes(L, AtS)
+   = show-attributes(L, sen-attr-grammar(L), show-label-attr(L, list(AtS))) .
+
+  *** show attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-attributes : COMP/HA Grammar NeTermList -> Term .
+  eq show-attributes(L, G, NTL)
+   = mk-bubble('neAttrList, show-qids(print term pack('__, NTL) given G)) .
+
+  op show-ctor-attr : COMP/HA AttrSet -> TermList .
+  eq show-ctor-attr(L, ctor AtS) = 'ctor.Attr .
+  eq show-ctor-attr(L, AtS) = empty [owise] .
+
+  op show-assoc-attr : COMP/HA AttrSet -> TermList .
+  eq show-assoc-attr(L, assoc AtS) = 'assoc.Attr .
+  eq show-assoc-attr(L, AtS) = empty [owise] .
+
+  op show-comm-attr : COMP/HA AttrSet -> TermList .
+  eq show-comm-attr(L, comm AtS) = 'comm.Attr .
+  eq show-comm-attr(L, AtS) = empty [owise] .
+
+  op show-id-attr : SpecBody{COMP/HA} AttrSet -> TermList .
+  ceq show-id-attr(SB, id(T) AtS) = 'id:[show-term(SB, T)] if AtS is id-free .
+  eq show-id-attr(SB, AtS) = empty [owise] .
+
+  op show-label-attr : COMP/HA AttrList -> TermList .
+  eq show-label-attr(L, nil) = empty .
+  eq show-label-attr(L, {label(QI)} AtL)
+   = 'label:_[mk-bubble('label, show-qid(QI))], show-label-attr(L, AtL) .
+  eq show-label-attr(L, {At} AtL) = show-label-attr(L, AtL) [owise] .
+
+  *** show declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-declarations : ATermList SpecBody{COMP/HA} -> TermList .
+  eq show-declarations(empty, SB) = empty .
+  eq show-declarations((T:ATerm, TL:ATermList), SB)
+   = show-fragment(read-body(COMP/HA, T:ATerm), SB),
+     show-declarations(TL:ATermList, SB) .
+endfm
+
+********************************************************************************
+
+fmod COMP/HA/ANALYSIS-STATE is
+  protecting COMP/HA/READ .
+
+  var  L : COMP/HA .
+  var  SB : SpecBody{COMP/HA} .
+  var  VS : VariableSet .
+  var  AtS : AttrSet .
+  var  TP : Type .
+  var  TPL : TypeList .
+  var  V : AConstant .
+  vars T VL1 VL2 : ATerm .
+  var  RVO : ReadVarOptions{COMP/HA} .
+
+  *** analysis state  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort AnalysisState{COMP/HA} .
+  op AnalysisState[_]{_&_&_} : COMP/HA SpecBody{COMP/HA} VariableSet AttrSet
+      -> AnalysisState{COMP/HA} [ctor] .
+
+  *** initial state (of a specification body)  - - - - - - - - - - - - - - - - -
+  op initial-state : SpecBody{COMP/HA} -> AnalysisState{COMP/HA} .
+  eq initial-state(SB) = AnalysisState[COMP/HA]{SB & none & none} .
+
+  *** projections  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op spec-body : AnalysisState{COMP/HA} -> SpecBody{COMP/HA} .
+  eq spec-body(AnalysisState[L]{SB & VS & AtS}) = SB .
+
+  op vars : AnalysisState{COMP/HA} -> VariableSet .
+  eq vars(AnalysisState[L]{SB & VS & AtS}) = VS .
+
+  op attrs : AnalysisState{COMP/HA} -> AttrSet .
+  eq attrs(AnalysisState[L]{SB & VS & AtS}) = AtS .
+
+  *** state updates  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _>>=_ : AnalysisState{COMP/HA} ATerm -> AnalysisState{COMP/HA} .
+
+  ceq AnalysisState[L]{SB & VS & AtS} >>= T
+   = AnalysisState[L]{SB & VS ; read-vars(SB, T, protecting constants) & AtS}
+   if T :: 'VarDeclaration .
+
+  ceq AnalysisState[L]{SB & VS & AtS} >>= T
+   = AnalysisState[L]{SB & VS & AtS read-attributes(COMP/HA, T)}
+   if T :: ('Attr ; 'AttrList) .
+
+  eq AnalysisState[L]{SB & VS & AtS} >>= T
+   = AnalysisState[L]{SB >>= T & VS & AtS} [owise] .
+
+  *** auxiliary operations on the underlying spec-body of a state  - - - - - - -
+  op sorts : AnalysisState{COMP/HA} -> SortSet .
+  eq sorts(AnalysisState[L]{SB & VS & AtS}) = sorts(SB) .
+
+  op visible-sorts : AnalysisState{COMP/HA} -> SortSet .
+  eq visible-sorts(AnalysisState[L]{SB & VS & AtS}) = visible-sorts(SB) .
+
+  op hidden-sorts : AnalysisState{COMP/HA} -> SortSet .
+  eq hidden-sorts(AnalysisState[L]{SB & VS & AtS}) = hidden-sorts(SB) .
+
+  op ops : AnalysisState{COMP/HA} -> OpDeclSet .
+  eq ops(AnalysisState[L]{SB & VS & AtS}) = ops(SB) .
+
+  op bops : AnalysisState{COMP/HA} -> OpDeclSet .
+  eq bops(AnalysisState[L]{SB & VS & AtS}) = bops(SB) .
+
+  op symbols* : AnalysisState{COMP/HA} TypeList Type -> QidSet .
+  eq symbols*(AnalysisState[L]{SB & VS & AtS}, TPL, TP)
+   = symbols*(SB, TPL, TP) .
+
+  op term-grammar : AnalysisState{COMP/HA} -> Grammar .
+  eq term-grammar(AnalysisState[L]{SB & VS & AtS}) = term-grammar(SB) .
+
+  op atomic-grammar : AnalysisState{COMP/HA} -> Grammar .
+  eq atomic-grammar(AnalysisState[L]{SB & VS & AtS}) = atomic-grammar(SB) .
+
+  op sentence-grammar : AnalysisState{COMP/HA} -> Grammar .
+  eq sentence-grammar(AnalysisState[L]{SB & VS & AtS}) = sentence-grammar(SB) .
+
+  *** read variables  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-vars : AnalysisState{COMP/HA} ATerm ReadVarOptions{COMP/HA}
+    -> VariableSet .
+  eq read-vars(AnalysisState[L]{SB & VS & AtS}, T, RVO)
+   = read-vars(SB, T, RVO) .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view COMP/HA/AnalysisState from ANALYSIS-STATE to COMP/HA/ANALYSIS-STATE is
+  sort State to AnalysisState{COMP/HA} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod COMP/HA/PARSING is
+  including  SYNTACTIC-ANALYSIS { COMP/HA, COMP/HA/AnalysisState } .
+  protecting LANG-NAME { COMP/HA } .
+  protecting COMP/HA/SHOW .
+
+  var  L : COMP/HA .
+  var  SAS : AnalysisState{COMP/HA} .
+  vars SB SB' Sig Sig' : SpecBody{COMP/HA} .
+  var  QIL : QidList .
+  var  QIS : QidSet .
+  vars S O V : AConstant .
+  vars $S $SL SL SL1 SL2 : ATerm .
+  vars $O $OL OL OL1 OL2 $A A : ATerm .
+  vars $V $VL VL VL1 VL2 : ATerm .
+  vars $T T $E E : ATerm .
+  vars $AtL AtL AtL1 AtL2 : ATerm .
+  vars $D D $Q $Q' Q : ATerm .
+  var  TL : ATermList .
+  vars $ QI : Qid .
+  var  QI? : [Qid] .
+  vars C CA : Constant .
+  var  TPL : TypeList .
+  var  TP : Type .
+  vars #O #A : Nat .
+  var  AO : AnalysisOutcome .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse L input (QIL) in SAS
+   = parse L declaration (QIL) in SAS
+     or-else parse L command (QIL) in SAS .
+
+  op parse_declaration_in_ : COMP/HA QidList AnalysisState{COMP/HA}
+    ~> ParsingOutcome .
+  eq parse L declaration (QIL) in SAS
+   = scan L input (QIL : 'Declaration)
+     then analyse L declaration in SAS
+     or-else, if inconclusive, parsing-error ('unexpected 'parsing 'error:
+      'cannot 'parse 'this name(L) 'declaration) .
+
+  op parse_command_in_ : COMP/HA QidList AnalysisState{COMP/HA}
+    ~> ParsingOutcome .
+  eq parse L command (QIL) in SAS
+   = scan input (QIL : 'Command) given cmd-grammar(L)
+     then analyse L command in SAS .
+
+  *** analyse declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_declaration : COMP/HA -> AnalysisAction{COMP/HA} .
+
+  eq analyse L declaration {'sort_[$S] : 'Declaration}
+   = try { 'sort_ [
+        solve L sort ($S)
+        then check L visible-sort identifier
+        then check that L sort hasn't been declared hidden
+      ] : 'Declaration} .
+
+  eq analyse L declaration {'sorts_[$SL] : 'Declaration}
+   = try { 'sorts_ [
+        solve L sorts ($SL)
+        then check L visible-sort identifiers
+        then check that L sorts haven't been declared hidden
+      ] : 'Declaration} .
+
+  eq analyse L declaration {'state_[$S] : 'Declaration}
+   = try { 'state_ [
+        solve L sort ($S)
+        then check that L sort hasn't been declared visible
+      ] : 'Declaration} .
+
+  eq analyse L declaration {'states_[$SL] : 'Declaration}
+   = try { 'states_ [
+        solve L sorts ($SL)
+        then check that L sorts haven't been declared visible
+      ] : 'Declaration} .
+
+  eq analyse L declaration {'op_:_->_[$O, $A, $S] : 'Declaration}
+   = try { 'op_:_->_ [
+        solve L op-symbol ($O),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'op_:_->_`[_`][$O, $A, $S, $AtL] : 'Declaration}
+   = try { 'op_:_->_`[_`] [
+        solve L op-symbol ($O),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared,
+        solve L op-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'op_:`(`)->_[$O, $S] : 'Declaration}
+   = try { 'op_:`(`)->_ [
+        solve L op-symbol ($O),
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'op_:`(`)->_`[_`][$O, $S, $AtL] : 'Declaration}
+   = try { 'op_:`(`)->_`[_`] [
+        solve L op-symbol ($O),
+        solve L sort ($S) then check that L sort is declared,
+        solve L op-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'ops_:_->_[$OL, $A, $S] : 'Declaration}
+   = try { 'ops_:_->_ [
+        solve L op-symbols ($OL),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'ops_:_->_`[_`][$OL, $A, $S, $AtL] : 'Declaration}
+   = try { 'ops_:_->_`[_`] [
+        solve L op-symbols ($OL),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared,
+        solve L op-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'ops_:`(`)->_[$OL, $S] : 'Declaration}
+   = try { 'ops_:`(`)->_ [
+        solve L op-symbols ($OL),
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'ops_:`(`)->_`[_`][$OL, $S, $AtL] : 'Declaration}
+   = try { 'ops_:`(`)->_`[_`] [
+        solve L op-symbols ($OL),
+        solve L sort ($S) then check that L sort is declared,
+        solve L op-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'bop_:_->_[$O, $A, $S] : 'Declaration}
+   = try { 'bop_:_->_ [
+        solve L op-symbol ($O),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'prj_:_->_[$O, $A, $S] : 'Declaration}
+   = try { 'prj_:_->_ [
+        solve L op-symbol ($O),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'act_:_->_[$O, $A, $S] : 'Declaration}
+   = try { 'act_:_->_ [
+        solve L op-symbol ($O),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'obs_:_->_[$O, $A, $S] : 'Declaration}
+   = try { 'obs_:_->_ [
+        solve L op-symbol ($O),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'bops_:_->_[$OL, $A, $S] : 'Declaration}
+   = try { 'bops_:_->_ [
+        solve L op-symbols ($OL),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'var_:_[$V, $S] : 'VarDeclaration}
+   = try { 'var_:_ [
+        solve L variable ($V),
+        solve L sort ($S) then check that L sort is declared
+      ] : 'VarDeclaration } .
+
+  eq analyse L declaration {'vars_:_[$VL, $S] : 'VarDeclaration}
+   = try { 'vars_:_ [
+        solve L variables ($VL),
+        solve L sort ($S) then check that L sort is declared
+      ] : 'VarDeclaration } .
+
+  eq analyse L declaration {'ax_[$E] : 'Declaration}
+   = try { 'ax_ [
+        analyse L sentence ($E)
+      ] : 'Declaration } .
+
+  eq analyse L declaration {'ax_`[_`][$E, $AtL] : 'Declaration}
+   = try { 'ax_`[_`] [
+        analyse L sentence ($E),
+        solve L sen-attributes ($AtL)
+      ] : 'Declaration } .
+
+  *** analyse individual sorts  - - - - - - - - - - - - - - - - - - - - - - - -
+  op solve_sort : COMP/HA -> AnalysisAction{COMP/HA} .
+  ceq solve L sort {$[S] : 'Sort}
+   = check (QI? :: Sort and QI? is ordinary) and-then return {S : 'Sort}
+     or-else
+     fail ('syntax 'error: emph(QI?) 'is 'not 'a 'valid 'sort,
+      (at L term (S), include context))
+   if QI? := read-qid(S) .
+
+  op check_visible-sort`identifier : COMP/HA -> AnalysisAction{COMP/HA} .
+  ceq check L visible-sort identifier {S : 'Sort}
+   = check (find(string(QI), "/", 0) == notFound) and-then return {S : 'Sort}
+     or-else
+     fail ('syntax 'error: emph(QI) 'is 'not 'a 'valid 'sort,
+      (at L term (S), include context))
+   if QI := read-qid(S) .
+
+  op check`that_sort`hasn't`been declared hidden :
+      COMP/HA -> AnalysisAction{COMP/HA} .
+  ceq check that L sort hasn't been declared hidden {S : 'Sort} in SAS
+   = check (QI not-in hidden-sorts(SAS)) and-then return {S : 'Sort}
+     or-else
+     fail (emph(QI) 'has 'already 'been 'declared 'as 'a 'hidden 'sort,
+      (at L term (S), include context))
+     in SAS
+   if QI := read-qid(S) .
+
+  op check`that_sort`hasn't`been declared visible :
+      COMP/HA -> AnalysisAction{COMP/HA} .
+  ceq check that L sort hasn't been declared visible {S : 'Sort} in SAS
+   = check (QI not-in visible-sorts(SAS)) and-then return {S : 'Sort}
+     or-else
+     fail (emph(QI) 'has 'already 'been 'declared 'as 'a 'visible 'sort,
+      (at L term (S), include context))
+     in SAS
+   if QI := read-qid(S) .
+
+  *** analyse comma-separated lists of sorts  - - - - - - - - - - - - - - - - -
+  op solve_sorts : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq solve L sorts {$[SL] : 'NeSortList}
+   = decode input (read-qids(SL) : 'NeSortList) given cs-sorts-grammar(L)
+     then solve L sorts .
+  eq solve L sorts {'_`,_[SL1, SL2] : 'NeSortList}
+   = try {'_`,_ [ solve L sorts (SL1), solve L sorts (SL2) ] : 'NeSortList} .
+  eq solve L sorts {$[S] : 'Sort}
+   = solve L sort {$[S] : 'Sort} .
+
+  op check_visible-sort`identifiers : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq check L visible-sort identifiers {'_`,_[SL1, SL2] : 'NeSortList}
+   = try { '_`,_ [
+        check L visible-sort identifiers (SL1),
+        check L visible-sort identifiers (SL2)
+      ] : 'NeSortList} .
+  eq check L visible-sort identifiers {S : 'Sort}
+   = check L visible-sort identifier {S : 'Sort} .
+
+  op check`that_sorts`haven't`been declared hidden :
+      COMP/HA -> AnalysisAction{COMP/HA} .
+  eq check that L sorts haven't been declared hidden
+       {'_`,_[SL1, SL2] : 'NeSortList}
+   = try { '_`,_ [
+        check that L sorts haven't been declared hidden (SL1),
+        check that L sorts haven't been declared hidden (SL2)
+      ] : 'NeSortList} .
+  eq check that L sorts haven't been declared hidden {S : 'Sort}
+   = check that L sort hasn't been declared hidden {S : 'Sort} .
+
+  op check`that_sorts`haven't`been declared visible :
+      COMP/HA -> AnalysisAction{COMP/HA} .
+  eq check that L sorts haven't been declared visible
+       {'_`,_[SL1, SL2] : 'NeSortList}
+   = try { '_`,_ [
+        check that L sorts haven't been declared visible (SL1),
+        check that L sorts haven't been declared visible (SL2)
+      ] : 'NeSortList} .
+  eq check that L sorts haven't been declared visible {S : 'Sort}
+   = check that L sort hasn't been declared visible {S : 'Sort} .
+
+  *** analyse individual operations  - - - - - - - - - - - - - - - - - - - - - -
+  op solve_op-symbol : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq solve L op-symbol {$[O] : 'Symbol}
+   = check (read-qid(O) :: Qid) and-then return {O : 'Symbol}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[O]))
+      'is 'not 'a 'valid 'operation 'symbol,
+      (at L term (O), include context)) .
+
+  op solve_arity : COMP/HA -> AnalysisAction{COMP/HA} .
+  ceq solve L arity {$[A] : 'Arity}
+   = check (QIL :: NeTypeList) and-then return {A : 'Arity}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[A]))
+      'is 'not 'a 'valid 'arity,
+      (at L term (A), include context))
+   if QIL := read-qids(A) .
+
+  op check`that`all`sorts`in_arity`are`declared :
+      COMP/HA -> AnalysisAction{COMP/HA} .
+  eq check that all sorts in L arity are declared {A : 'Arity}
+   = try {check that all sorts in L sort-seq are declared (A) : 'Arity} .
+
+  op check`that`all`sorts`in_sort-seq`are`declared :
+      COMP/HA -> AnalysisAction{COMP/HA} .
+  eq check that all sorts in L sort-seq are declared {'__[TL] : 'NeQidList}
+   = try { '__ [
+        check that all sorts in L sort-seq are declared (TL)
+      ] : 'NeQidList} .
+  eq check that all sorts in L sort-seq are declared (empty)
+   = return (empty) .
+  eq check that all sorts in L sort-seq are declared ((S, TL))
+   = check that L sort is declared (S)
+     and-then check that all sorts in L sort-seq are declared (TL) .
+
+  op check`that_sort`is`declared : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq check that L sort is declared (S) in SAS
+   = check (read-sort(L, S) in sorts(SAS)) and-then return (S)
+     or-else
+     fail ('undeclared 'sort emph(read-sort(L, S)),
+      (at L term (S), include context))
+     in SAS .
+
+  op solve_op-attributes : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq solve L op-attributes {$[AtL] : 'NeAttrList} in SAS
+   = decode input (read-qids(AtL) : 'AttrList) given op-attr-grammar(L) .
+
+  op check`validity`constraints`for_op : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq check validity constraints for L op
+       {'op_:_->_[O, A, S] : 'Declaration}
+   = try { 'op_:_->_ [
+        check validity constraints for L op
+          [read-arity(L, A) -> read-sort(L, S)] (O),
+        return (A), return (S)
+      ] : 'Declaration } .
+  ceq check validity constraints for L op
+       {'op_:_->_`[_`][O, A, S, AtL] : 'Declaration}
+   = try { 'op_:_->_`[_`] [
+        check validity constraints for L op [TPL -> TP] (O),
+        return (A), return (S),
+        analyse L op-attributes [QI : TPL -> TP] (AtL)
+        ] : 'Declaration }
+   if QI := read-symbol(L, O)
+      /\ TPL := read-arity(L, A) /\ TP := read-sort(L, S) .
+  eq check validity constraints for L op
+       {'op_:`(`)->_[O, S] : 'Declaration}
+   = try { 'op_:`(`)->_ [
+        check validity constraints for L op [nil -> read-sort(L, S)] (O),
+        return (S)
+      ] : 'Declaration } .
+  ceq check validity constraints for L op
+       {'op_:`(`)->_`[_`][O, S, AtL] : 'Declaration}
+   = try { 'op_:`(`)->_`[_`] [
+        check validity constraints for L op [nil -> TP] (O),
+        return (S),
+        analyse L op-attributes [QI : nil -> TP] (AtL)
+      ] : 'Declaration }
+   if QI := read-symbol(L, O) /\ TP := read-sort(L, S) .
+
+  eq check validity constraints for L op
+       {'bop_:_->_[O, A, S] : 'Declaration}
+   = try { 'bop_:_->_ [
+        check validity constraints for L op
+          [read-arity(L, A) -> read-sort(L, S)] (O),
+        check that at least one L sort is hidden (A),
+        return (S)
+      ] : 'Declaration } .
+
+  eq check validity constraints for L op
+       {'prj_:_->_[O, A, S] : 'Declaration}
+   = try { 'prj_:_->_ [
+        check validity constraints for L op
+          [read-arity(L, A) -> read-sort(L, S)] (O),
+        check that exactly one L sort is hidden (A),
+        check sort of L projection with arity [read-arity(L, A)] (S)
+      ] : 'Declaration } .
+
+  eq check validity constraints for L op
+       {'act_:_->_[O, A, S] : 'Declaration}
+   = try { 'act_:_->_ [
+        check validity constraints for L op
+          [read-arity(L, A) -> read-sort(L, S)] (O),
+        check that exactly one L sort is hidden (A),
+        check sort of L action with arity [read-arity(L, A)] (S)
+      ] : 'Declaration } .
+
+  eq check validity constraints for L op
+       {'obs_:_->_[O, A, S] : 'Declaration}
+   = try { 'obs_:_->_ [
+        check validity constraints for L op
+          [read-arity(L, A) -> read-sort(L, S)] (O),
+        check that exactly one L sort is hidden (A),
+        check that L sort is visible (S)
+      ] : 'Declaration } .
+
+  op check`validity`constraints`for_op`[_->_`] :
+      COMP/HA [TypeList] [Type] -> AnalysisAction{COMP/HA} .
+  eq check validity constraints for L op [nil -> TP]
+   = check underscores of L op [nil] .
+  eq check validity constraints for L op [TPL -> TP]
+   = check underscores of L op [TPL] ;
+     check overloading of L symbol [TPL -> TP] [owise] .
+
+  op check`underscores`of_op`[_`] :
+      COMP/HA [TypeList] -> AnalysisAction{COMP/HA} .
+  ceq check underscores of L op [TPL] (O)
+   = check (#O == 0 or #O == #A) and-then return (O)
+     or-else
+     fail ('number 'of 'underscores '\s '`( qid(#O) '`)
+      'does 'not 'match 'number 'of 'arguments '\s '`( qid(#A) '`)
+      'for 'operation emph(read-symbol(L, O)),
+      (at L term (O), include context))
+   if #O := #underscores(read-symbol(L, O)) /\ #A := size(TPL) .
+
+  op check`overloading`of_symbol`[_->_`] :
+      COMP/HA [TypeList] [Type] -> AnalysisAction{COMP/HA} .
+  eq check overloading of L symbol [TPL -> TP] (O) in SAS
+   = check (read-symbol(L, O) not-in symbols*(SAS, TPL, TP)) and-then return (O)
+     or-else
+     fail ('cannot 'overload 'symbol emph(read-symbol(L, O))
+      'with 'arity emph(TPL), (at L term (O), include context))
+     in SAS .
+
+  op check`that`at`least`one_sort`is`hidden :
+      COMP/HA -> AnalysisAction{COMP/HA} .
+  eq check that at least one L sort is hidden {A : 'Arity} in SAS
+   = check (filter-in(read-arity(L, A), hidden-sorts(SAS)) :: NeTypeList)
+     and-then return {A : 'Arity}
+     or-else fail('the 'arity emph(read-arity(L, A))
+      'should 'contain 'at 'least 'one 'hidden 'sort,
+      (at L term (A), include context))
+     in SAS .
+
+  op check`that`exactly`one_sort`is`hidden :
+      COMP/HA -> AnalysisAction{COMP/HA} .
+  eq check that exactly one L sort is hidden {A : 'Arity} in SAS
+   = check (filter-in(read-arity(L, A), hidden-sorts(SAS)) :: Type)
+     and-then return {A : 'Arity}
+     or-else fail('the 'arity emph(read-arity(L, A))
+      'should 'contain 'exactly 'one 'occurrence 'of 'a 'hidden 'sort,
+      (at L term (A), include context))
+     in SAS .
+
+  op check`sort`of_projection`with`arity`[_`] :
+      COMP/HA [TypeList] -> AnalysisAction{COMP/HA} .
+  ceq check sort of L projection with arity [TPL] {S : 'Sort} in SAS
+   = (check (read-sort(L, S) in hidden-sorts(SAS))
+      or-else fail(emph(read-sort(L, S)) 'is 'not 'a 'hidden 'sort,
+        (at L term (S), include context)))
+     and-then
+     (check (read-sort(L, S) =/= TP) and-then return {S : 'Sort}
+      or-else fail('unexpected 'sort; 'shouldn't 'be emph(TP),
+        (at L term (S), include context)))
+     in SAS
+   if TP := filter-in(TPL, hidden-sorts(SAS)) .
+
+  op check`sort`of_action`with`arity`[_`] :
+      COMP/HA [TypeList] -> AnalysisAction{COMP/HA} .
+  ceq check sort of L action with arity [TPL] {S : 'Sort} in SAS
+   = check (read-sort(L, S) == TP) and-then return {S : 'Sort}
+     or-else fail('unexpected 'sort; 'should 'be emph(TP),
+      (at L term (S), include context))
+     in SAS
+   if TP := filter-in(TPL, hidden-sorts(SAS)) .
+
+  op check`that_sort`is`visible : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq check that L sort is visible {S : 'Sort} in SAS
+   = check (read-sort(L, S) in visible-sorts(SAS))
+     and-then return {S : 'Sort}
+     or-else fail(emph(read-sort(L, S)) 'is 'not 'a 'visible 'sort,
+      (at L term (S), include context))
+     in SAS .
+
+  op check`that_sort`is`hidden : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq check that L sort is hidden {S : 'Sort} in SAS
+   = check (read-sort(L, S) in hidden-sorts(SAS))
+     and-then return {S : 'Sort}
+     or-else fail (emph(read-sort(L, S)) 'is 'not 'a 'state 'sort,
+      (at L term (S), include context))
+     in SAS .
+
+  op analyse`hidden_sort : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq analyse hidden L sort = solve L sort ; check that L sort is hidden .
+
+  op analyse_op-attributes`[_:_->_`] :
+      COMP/HA [QidSet] [TypeList] [Type] -> AnalysisAction{COMP/HA} .
+  eq analyse L op-attributes [QIS : TPL -> TP] {'__[AtL1, AtL2] : 'AttrList}
+   = try { '__ [
+        analyse L op-attributes [QIS : TPL -> TP] (AtL1),
+        analyse L op-attributes [QIS : TPL -> TP] (AtL2)
+      ] : 'AttrList } .
+  eq analyse L op-attributes [QIS : TPL -> TP] {'ctor.Attr : 'Attr}
+   = return {'ctor.Attr : 'Attr} .
+  eq analyse L op-attributes [QIS : TPL -> TP] {CA : 'Attr} in SAS
+   = (check (read-attributes(COMP/HA, {CA : 'Attr}) is equational
+        implies TPL == TP TP)
+      or-else
+      fail (emph(print term CA given op-attr-grammar(L))
+        'attribute 'can 'be 'declared 'only 'for 'binary 'operation
+        'symbols 'whose 'domain 'sorts 'and 'range 'sort 'are 'the 'same,
+        (at term CA given op-attr-grammar(L), include context)))
+     and-then return {CA : 'Attr} in SAS .
+  eq analyse L op-attributes [QIS : TPL -> TP] {'id:[$T] : 'Attr} in SAS
+   = (check (TPL == TP TP)
+      or-else
+      fail (emph('id) 'attribute
+        'can 'be 'declared 'only 'for 'binary 'operation 'symbols
+        'whose 'domain 'sorts 'and 'range 'sort 'are 'the 'same,
+        (at term 'id:[$T] given op-attr-grammar(L), include context)))
+     and-then
+     (check (attrs(SAS) is id-free)
+      or-else
+      fail ('multiple 'identity 'declarations,
+        (at term 'id:[$T] given op-attr-grammar(L), include context)))
+     and-then
+     try {'id: [ solve L term [TP] ($T) ] : 'Attr} in SAS .
+
+  op solve_term`[_`] : COMP/HA [Type] -> AnalysisAction{COMP/HA} .
+  eq solve L term [TP] {$[T] : 'Term} in SAS
+   = decode input (read-qids(T) : TP)
+     given (sentence-grammar(SAS) & vars(SAS)) .
+
+  *** analyse comma-separated lists of operation symbols  - - - - - - - - - - --
+  op solve_op-symbols : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq solve L op-symbols {$[OL] : 'NeSymbolList}
+   = decode input (read-qids(OL) : 'NeSymbolList) given cs-symbols-grammar(L)
+     then solve L op-symbols .
+  eq solve L op-symbols {'_`,_[OL1, OL2] : 'NeSymbolList}
+   = try { '_`,_ [
+        solve L op-symbols (OL1),
+        solve L op-symbols (OL2)
+      ] : 'NeSymbolList } .
+  eq solve L op-symbols {$[O] : 'Symbol}
+   = solve L op-symbol {$[O] : 'Symbol} .
+
+  op check`validity`constraints`for_ops : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq check validity constraints for L ops
+      {'ops_:_->_[OL, A, S] : 'Declaration}
+   = try { 'ops_:_->_ [
+        check validity constraints for L ops
+          [read-arity(L, A) -> read-sort(L, S)] (OL),
+        return (A), return (S)
+      ] : 'Declaration } .
+  ceq check validity constraints for L ops
+      {'ops_:_->_`[_`][OL, A, S, AtL] : 'Declaration}
+   = try { 'ops_:_->_`[_`] [
+        check validity constraints for L ops [TPL -> TP] (OL),
+        return (A), return (S),
+        analyse L op-attributes [QIS : TPL -> TP] (AtL)
+      ] : 'Declaration }
+   if QIS := read-cs-symbols(L, OL)
+      /\ TPL := read-arity(L, A) /\ TP := read-sort(L, S) .
+  eq check validity constraints for L ops
+      {'ops_:`(`)->_[OL, S] : 'Declaration}
+   = try { 'ops_:`(`)->_ [
+        check validity constraints for L ops [nil -> read-sort(L, S)] (OL),
+        return (S)
+      ] : 'Declaration } .
+  ceq check validity constraints for L ops
+      {'ops_:`(`)->_`[_`][OL, S, AtL] : 'Declaration}
+   = try { 'ops_:`(`)->_`[_`] [
+        check validity constraints for L ops [nil -> TP] (OL),
+        return (S),
+        analyse L op-attributes [QIS : nil -> TP] (AtL)
+      ] : 'Declaration }
+   if QIS := read-cs-symbols(L, OL) /\ TP := read-sort(L, S) .
+
+  eq check validity constraints for L ops
+      {'bops_:_->_[OL, A, S] : 'Declaration}
+   = try { 'bops_:_->_ [
+        check validity constraints for L ops
+          [read-arity(L, A) -> read-sort(L, S)] (OL),
+        check that at least one L sort is hidden (A),
+        return (S)
+      ] : 'Declaration } .
+
+  op check`validity`constraints`for_ops`[_->_`] :
+      COMP/HA [TypeList] [Type] -> AnalysisAction{COMP/HA} .
+  eq check validity constraints for L ops [TPL -> TP]
+      {'_`,_[OL1, OL2] : 'NeSymbolList}
+   = try { '_`,_ [
+        check validity constraints for L ops [TPL -> TP] (OL1),
+        check validity constraints for L ops [TPL -> TP] (OL2)
+      ] : 'NeSymbolList } .
+  eq check validity constraints for L ops [TPL -> TP] {O : 'Symbol}
+   = check validity constraints for L op [TPL -> TP] {O : 'Symbol} .
+
+  *** analyse individual variables  - - - - - - - - - - - - - - - - - - - - - --
+  op solve_variable : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq solve L variable {$[V] : 'Symbol}
+   = check (read-qid(V) is ordinary)
+     and-then return {V : 'Symbol}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[V]))
+      'is 'not 'a 'valid 'variable,
+      (at L term (V), include context)) .
+
+  *** analyse comma-separated lists of variables  - - - - - - - - - - - - - - --
+  op solve_variables : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq solve L variables {$[VL] : 'NeSymbolList}
+   = decode input (read-qids(VL) : 'NeSymbolList) given cs-symbols-grammar(L)
+     then solve L variables .
+  eq solve L variables {'_`,_[VL1, VL2] : 'NeSymbolList}
+   = try { '_`,_ [
+        solve L variables (VL1),
+        solve L variables (VL2)
+      ] : 'NeSymbolList } .
+  eq solve L variables {$[V] : 'Symbol}
+   = solve L variable {$[V] : 'Symbol} .
+
+  *** analyse sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_sentence : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq analyse L sentence {$[E] : 'Sentence} in SAS
+   = decode input (read-qids(E) : 'Sentence`{HA`})
+     given (sentence-grammar(SAS) & vars(SAS)) .
+
+  op solve_sen-attributes : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq solve L sen-attributes {$[AtL] : 'NeAttrList}
+   = decode input (read-qids(AtL) : 'AttrList) given sen-attr-grammar(L)
+     then solve L sen-attributes .
+  eq solve L sen-attributes {'__[AtL1, AtL2] : 'AttrList}
+   = try { '__ [
+        solve L sen-attributes (AtL1),
+        solve L sen-attributes (AtL2)
+      ] : 'AttrList} .
+  eq solve L sen-attributes {'label:_[$T] : 'Attr}
+   = try {'label:_ [ solve L label ($T) ] : 'Attr} .
+
+  op solve_label : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq solve L label {$[T] : 'Label}
+   = check (read-qid(T) :: Qid) and-then return {T : 'Label}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[T])) 'is 'not 'a 'valid
+      'label, (at L term (T), include context)) .
+
+  *** reanalyse  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op reanalyse : SpecBody{COMP/HA} AnalysisState{COMP/HA} -> AnalysisOutcome .
+  ceq reanalyse(SB, SAS)
+   = if AO :: SuccessfulAnalysis
+     then reanalyse(COMP/HA, show-fragment(SB, SB' + SB), SAS)
+     else AO fi
+   if SB' := spec-body(SAS)
+      /\ Sig := signature(SB)
+      /\ Sig' := signature(SB')
+      /\ AO := reanalyse(COMP/HA, show-fragment(Sig, Sig' + Sig), SAS) .
+
+  *** analyse command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_command : COMP/HA -> AnalysisAction{COMP/HA} .
+
+  eq analyse L command {C : 'Command}
+   = return {C : 'Command} .
+
+  eq analyse L command {'list_projections[$S] : 'Command}
+   = try { 'list_projections[analyse hidden L sort ($S)] : 'Command } .
+
+  eq analyse L command {'list_actions[$S] : 'Command}
+   = try { 'list_actions[analyse hidden L sort ($S)] : 'Command } .
+
+  eq analyse L command {'list_observations[$S] : 'Command}
+   = try { 'list_observations[analyse hidden L sort ($S)] : 'Command } .
+
+  eq analyse L command {'let_.[$D] : 'Command}
+   = try { 'let_.[analyse L $declaration ($D)] : 'Command } .
+
+  eq analyse L command {'reduce_.[$T] : 'Command}
+   = try { 'reduce_.[analyse L term ($T)] : 'Command } .
+
+  eq analyse L command {'solve_.[$Q] : 'Command}
+   = try { 'solve_.[analyse L query ($Q)] : 'Command } .
+
+  eq analyse L command {'check_.[$E] : 'Command}
+   = try { 'check_.[analyse L property ($E)] : 'Command } .
+
+  eq analyse L command {'check_forall_.[$E, $Q] : 'Command}
+   = try { 'check_forall_. [
+        analyse L property ($E),
+        analyse L query ($Q)
+      ] : 'Command } .
+
+  eq analyse L command {'check_given_.[$E, $Q'] : 'Command}
+   = try { 'check_given_. [
+        analyse L property ($E),
+        analyse L query ($Q')
+      ] : 'Command } .
+
+  eq analyse L command {'check_forall_given_.[$E, $Q, $Q'] : 'Command}
+   = try { 'check_forall_given_. [
+        analyse L property ($E),
+        analyse L query ($Q),
+        analyse L query ($Q')
+      ] : 'Command } .
+
+  *** analyse $declaration  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_$declaration : COMP/HA -> AnalysisAction{COMP/HA} .
+  ceq analyse L $declaration {$[D] : 'Declaration} in SAS
+   = just (parse COMP/HA declaration QIL in SAS) on QIL
+    if QIL := read-qids(D) .
+
+  *** analyse term  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_term : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq analyse L term {$[T] : 'Term} in SAS
+   = decode input (read-qids(T) : anyType) given term-grammar(SAS) .
+
+  *** analyse query  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_query : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq analyse L query {$[Q] : 'Query} in SAS
+   = decode input (read-qids(Q) : 'Sentence`{HA`}) given sentence-grammar(SAS) .
+
+  *** analyse property  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_property : COMP/HA -> AnalysisAction{COMP/HA} .
+  eq analyse L property {$[E] : 'Property} in SAS
+   = decode input (read-qids(E) : 'Sentence`{HA`}) given atomic-grammar(SAS) .
+endfm
+
+********************************************************************************
+
+fmod COMP/HA/PRINTING is
+  protecting COMP/HA/SHOW .
+  protecting PRINTING { COMP/HA } .
+
+  var SB : SpecBody{COMP/HA} .
+  var HS : Sort .
+  var NTL : NeTermList .
+
+  *** print  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : SpecBody{COMP/HA} -> QidList .
+  ceq print(SB) = intercalate('\n, print COMP/HA terms NTL)
+   if NTL := show(SB) .
+  eq print(SB) = 'Empty 'declaration 'list [owise] .
+
+  *** print-sorts  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print-sorts : SpecBody{COMP/HA} -> QidList .
+  ceq print-sorts(SB) = print COMP/HA term NTL
+   if NTL := show-visible-sorts(COMP/HA, list(visible-sorts(SB))) .
+  eq print-sorts(SB) = 'No 'sorts [owise] .
+
+  *** print-states  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print-states : SpecBody{COMP/HA} -> QidList .
+  ceq print-states(SB) = print COMP/HA term NTL
+   if NTL := show-hidden-sorts(COMP/HA, list(hidden-sorts(SB))) .
+  eq print-sorts(SB) = 'No 'states [owise] .
+
+  *** print-data-ops  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print-data-ops : SpecBody{COMP/HA} -> QidList .
+  ceq print-data-ops(SB) = intercalate('\n, print COMP/HA terms NTL)
+   if NTL := show-ops(COMP/HA, SB, topo-sort(data-ops(SB))) .
+  eq print-data-ops(SB) = 'No 'operations [owise] .
+
+  *** print-prj  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print-prj : SpecBody{COMP/HA} Sort -> QidList .
+  ceq print-prj(SB, HS) = intercalate('\n, print COMP/HA terms NTL)
+   if NTL := show-bops(COMP/HA, SB, list(projections(SB, HS))) .
+  eq print-prj(SB, HS) = 'No 'projections [owise] .
+
+  *** print-act  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print-act : SpecBody{COMP/HA} Sort -> QidList .
+  ceq print-act(SB, HS) = intercalate('\n, print COMP/HA terms NTL)
+   if NTL := show-bops(COMP/HA, SB, list(actions(SB, HS))) .
+  eq print-act(SB, HS) = 'No 'actions [owise] .
+
+  *** print-obs  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print-obs : SpecBody{COMP/HA} Sort -> QidList .
+  ceq print-obs(SB, HS) = intercalate('\n, print COMP/HA terms NTL)
+   if NTL := show-bops(COMP/HA, SB, list(observations(SB, HS))) .
+  eq print-obs(SB, HS) = 'No 'observations [owise] .
+
+  *** print-sens  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print-sens : SpecBody{COMP/HA} -> QidList .
+  ceq print-sens(SB) = intercalate('\n, print COMP/HA terms NTL)
+   if NTL := show-sens(COMP/HA, SB, list(sens(SB))) .
+  eq print-sens(SB) = 'No 'axioms [owise] .
+endfm
+
+********************************************************************************
+
+fmod COMP/HA/PARSING-&-PRINTING is
+  protecting COMP/HA/PARSING .
+  protecting COMP/HA/PRINTING .
+endfm
+
+********************************************************************************

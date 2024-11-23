@@ -1,0 +1,131 @@
+***( SpeX/Lang/Reason/Prf/List/PL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../../../Judgment/Language.maude
+sload ../../../Judgment/BL/PL.maude
+
+********************************************************************************
+
+mod PRF/LIST//PL/RULE is
+  including PRF/LIST/RULE { PL } .
+  including JDG/LIST { PL, Jdg//PL } .
+
+  var  L : PrfList{PL} .
+  vars ED HD CD HiCD : SenDecl .
+  vars EDS PS : SenDeclSet .
+  vars h c p q r : Sentence{PL} .
+
+  *** proof rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op Rule[_]{a1} : PrfList{PL} -> Rule{PrfList{PL}} .
+  op Rule[_]{a2} : PrfList{PL} -> Rule{PrfList{PL}} .
+  op Rule[_]{a3} : PrfList{PL} -> Rule{PrfList{PL}} .
+  op Rule[_]{re} : PrfList{PL} -> Rule{PrfList{PL}} .
+  op Rule[_]{mp} : PrfList{PL} -> Rule{PrfList{PL}} .
+
+  *** proof-rule applications  - - - - - - - - - - - - - - - - - - - - - - - - -
+  ceq Rule[L]{a1} [ PS => ED given EDS ] = true
+   if p implies (q implies p) := sen(PL, ED) .
+
+  ceq Rule[L]{a2} [ PS => ED given EDS ] = true
+   if (p implies (q implies r))
+      implies
+      ((p implies q) implies (p implies r)) := sen(PL, ED) .
+
+  ceq Rule[L]{a3} [ PS => ED given EDS ] = true
+   if (not p implies not q) implies (q implies p) := sen(PL, ED) .
+
+  ceq Rule[L]{re} [ PS => ED given EDS ] = true
+   if ED in EDS .
+
+  ceq Rule[L]{mp} [ HD HiCD PS => CD given EDS ] = true
+   if h := sen(PL, HD) /\ c := sen(PL, CD) /\ h implies c = sen(PL, HiCD) .
+endm
+
+********************************************************************************
+
+mod PRF/LIST//PL/PARSING-&-PRINTING is
+  including  JDG/PARSING-&-PRINTING { PL, Jdg//PL } .
+  protecting PRF/LIST//PL/RULE .
+
+  var  L : PrfList{PL} .
+  var  X : Qid .
+  var  QIL : QidList .
+  var  PR : Rule{PrfList{PL}} .
+
+  *** proof-rule grammar  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op proof-rule-grammar : PrfList{PL} -> Grammar .
+  eq proof-rule-grammar(L)
+   = grammar 'PrfList/PL/Syntax is
+       'ProofRule
+         ::= lit "a1" [format('! 'o)]
+          |  lit "a2" [format('! 'o)]
+          |  lit "a3" [format('! 'o)]
+          |  lit "re" [format('! 'o)]
+          |  lit "mp" [format('! 'o)]
+     endgr .
+
+  *** parsing proof rules  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op parse_proof`rule_ : PrfList{PL} QidList -> ParsingOutcome .
+  eq parse L proof rule (QIL)
+   = scan input (QIL : 'ProofRule) given proof-rule-grammar(L) .
+
+  *** reading proof rules  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-proof-rule : PrfList{PL} ATerm ~> Rule{PrfList{PL}} .
+  eq read-proof-rule(L, {'a1.ProofRule : X}) = Rule[L]{a1} .
+  eq read-proof-rule(L, {'a2.ProofRule : X}) = Rule[L]{a2} .
+  eq read-proof-rule(L, {'a3.ProofRule : X}) = Rule[L]{a3} .
+  eq read-proof-rule(L, {'re.ProofRule : X}) = Rule[L]{re} .
+  eq read-proof-rule(L, {'mp.ProofRule : X}) = Rule[L]{mp} .
+
+  *** printing proof rules  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print : Rule{PrfList{PL}} -> QidList .
+  eq print(PR) = print term show(PR) given proof-rule-grammar(PrfList[PL]) .
+
+  op show : Rule{PrfList{PL}} -> Term .
+  eq show(Rule[L]{a1}) = 'a1.ProofRule .
+  eq show(Rule[L]{a2}) = 'a2.ProofRule .
+  eq show(Rule[L]{a3}) = 'a3.ProofRule .
+  eq show(Rule[L]{re}) = 're.ProofRule .
+  eq show(Rule[L]{mp}) = 'mp.ProofRule .
+endm
+
+********************************************************************************
+
+view PrfList//PL from PRF/LIST/BASE-LANG to PRF/LIST//PL/PARSING-&-PRINTING is
+  sort Judgment to Judgment{PL} .
+  sort NeJudgmentList to NeJdgList{PL} .
+  sort JudgmentList to JdgList{PL} .
+
+  sort Cxt to Module{Spec{PL}} .
+  op judgment(C:Cxt, PS:SenDeclSet, CD:SenDecl) to term
+    Judgment[PL]{C:Module{Spec{PL}} ; PS:SenDeclSet |- CD:SenDecl} .
+  op sentences(C:Cxt) to term
+    sens(body(C:Module{Spec{PL}})) .
+
+  op parse-sentence(QIL:QidList, C:Cxt) to term
+    scan PL input (QIL:QidList : 'Sentence)
+    then analyse PL sentence in body(C:Module{Spec{PL}}) .
+  op read-sentence(T:ATerm, C:Cxt) to term
+    (sen T:ATerm [none] .) .
+  op print-sentence(ED:SenDecl, C:Cxt) to term
+    print PL term show-sentence(body(C:Module{Spec{PL}}), aterm(ED:SenDecl)) .
+
+  sort ProofRule to Rule{PrfList{PL}} .
+  op parse-proof-rule(QIL:QidList, C:Cxt) to term
+    parse PrfList[PL] proof rule (QIL:QidList) .
+  op read-proof-rule(T:ATerm, C:Cxt) to term
+    read-proof-rule(PrfList[PL], T:ATerm) .
+  op print-proof-rule(PR:ProofRule, C:Cxt) to term
+    print(PR:Rule{PrfList{PL}}) .
+endv
+
+********************************************************************************

@@ -1,0 +1,68 @@
+sload ./REPL/Interpreter.maude
+
+********************************************************************************
+
+fmod FORMAT is
+  protecting NAT .
+
+  op _||_ : Nat Nat -> Nat [assoc format(r o b o)] .
+  op _|||_ : Nat Nat -> Nat [assoc format(b o r o)] .
+endfm
+
+*** red 1 || 2 ||| 3 || 4 ||| 5 .
+
+fmod META-FORMAT is
+  protecting FORMAT .
+  protecting META-LEVEL .
+
+  vars QI OP : Qid .
+  var  QIL : QidList .
+  var  T : Term .
+  var  TL : TermList .
+
+  op printNums : Term -> QidList .
+  eq printNums('_||_[TL]) = color(TL, '\b '\r '\g, '||) .
+  eq printNums(T) = nil [owise] .
+
+  op color : TermList QidList Qid -> QidList .
+  eq color((T, TL), QI QIL, OP)
+   = if TL == empty then QI printF(T) '\o
+     else QI printF(T) '\o OP color(TL, QIL QI, OP) fi .
+  eq color(TL, QIL, OP) = nil [owise] .
+
+  op printF : Term -> QidList .
+  eq printF(T) = metaPrettyPrint(upModule('FORMAT, false), none, T, mixfix number format) .
+endfm
+
+*** red printNums(upTerm(1 || 2 || 3 || 4 || 5)) .
+
+********************************************************************************
+
+view Format from INTERPRETER/NAME to STRING/OPS is
+  op interpreter-name to term "Format" .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod FORMAT-INTERPRETER is
+  including  BASIC-INTERPRETER { NIndex{Snippet/IO/Qid}, Format } .
+  protecting META-FORMAT .
+
+  var O : Oid .
+  var QIL : QidList .
+  var Atts : AttributeSet .
+
+  *** objects  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op Format : -> Oid [ctor] .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl < Format : INT | running, Atts >
+    eval(Format, O, QIL)
+   => < Format : INT | running, Atts >
+    print(O, printNums(upTerm(1 || 2 || 3 || 4 || 5))) .
+endm
+
+********************************************************************************
+
+erew in FORMAT-INTERPRETER : start Format .
+quit

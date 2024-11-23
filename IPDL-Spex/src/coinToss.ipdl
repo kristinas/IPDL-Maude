@@ -1,0 +1,566 @@
+ lang IPDL
+
+`` Sigma
+
+ type msg .
+ type key .
+ type ctxt .
+
+ function xor : bool * bool -> bool .
+
+  distribution enc : msg * key -> ctxt .
+  distribution mu_key : unit -> key .
+  distribution flip : unit -> bool .
+
+`` number of parties
+  parameter N : nat .
+
+`` genA
+  hypothesis honest(N + 1) .
+  hypothesis corrupt(N) .
+
+  `` assumptions
+
+  expression-assumption %automatic xorIdemRight using x y : 
+   (x : bool) (y : bool) |= 
+   xor(  (x, xor( (x, y) ) ) ) = y .
+
+  reaction-assumption flipInvariantXorFixed using x y : 
+   emptyCCtxt ; x : bool ; nil |= 
+    y : bool <- samp flip (()) ; return  xor( (x, y) ) 
+    = samp flip(()) .
+
+``Delta
+
+channel context delta = 
+  input AdvCommitAdvParty[bound N + 2] : bool ;
+  input AdvOpenAdvParty[bound N + 2] : unit ;
+  output Out[bound N + 2] : bool ;
+  output LeakCommittedCommAdv[bound N + 2] : unit ;
+  output LeakOpenedCommAdv[bound N + 2] : bool 
+.
+
+  `` protocols
+
+ protocol idealPlusSim = 
+new OkAdvId : unit in
+newfamily LeakFlipIdAdv[bound N + 2] 
+ indices: i bounds: bound N + 2 : bool in
+ideal  || sim 
+where 
+sim = ( 
+newfamily AllOpen[bound (N + 3)] 
+ indices: j bounds: bound (N + 3) : unit in
+newfamily Commit[bound (N + 1)] 
+ indices: i bounds: bound (N + 1) : bool in
+newfamily Committed[bound (N + 2)] 
+ indices: i bounds: bound (N + 2): unit in
+new LastCommit : bool in
+newfamily Open[bound (N + 2)] 
+ indices: i bounds: bound (N + 2) : unit in
+newfamily Opened[bound (N + 2)] 
+ indices: i bounds: bound (N + 2) : bool in
+newfamily SumCommit[bound (N + 3)] 
+ indices: j bounds: bound (N + 3) : bool in
+( 
+(family Commit[bound (N + 1)] 
+ indices: i bounds: bound (N + 1) ::=
+ (when (honest(i)) --> samp flip (()) )
+ ;; 
+ (when (corrupt(i)) --> 
+  advCommit : bool <- read (AdvCommitAdvParty[i]) ; return advCommit 
+ ) 
+)
+ || 
+( LastCommit ::= 
+ x : bool <- read (SumCommit [ N + 1 ]) ; 
+ f : bool <- read (LeakFlipIdAdv [ N ]) ; 
+ return xor( (x, f) ) 
+)
+ || 
+(family SumCommit[bound (N + 3)] 
+ indices: j bounds: bound (N + 3) ::=
+ (when (j = 0) --> return False)
+ ;; 
+(when (j = N + 2) --> 
+ x : bool <- read (SumCommit [ N + 1 ]) ; 
+ f : bool <- read LastCommit ; 
+ return xor( (x, f) ) 
+)
+ ;; 
+(otherwise --> 
+ x : bool <- read (SumCommit [j - 1]) ; 
+ c : bool <- read (Commit [j - 1]) ; 
+ return xor( (x, c) ) 
+) 
+)
+ || 
+(family Committed[bound (N + 2)] 
+ indices: i bounds: bound (N + 2) ::=
+ (when (i = N + 1) --> return () )
+ ;; 
+ (otherwise --> x : bool <- read (Commit [i]) ; return () ) 
+)
+ || 
+(family LeakCommittedCommAdv[bound (N + 2)] 
+ indices: i bounds: bound (N + 2) ::= 
+  committed : unit <- read (Committed [i]) ; return committed 
+)
+ || 
+(family Open[bound (N + 2)] 
+ indices: i bounds: bound (N + 2) ::=
+ (when (honest(i)) --> sc : bool <- read (SumCommit [N + 1]) ; return () )
+ ;; 
+ (when (corrupt(i)) --> 
+  advOpen : unit <- read (AdvOpenAdvParty[i]) ; return advOpen 
+ ) 
+)
+ || 
+(family AllOpen[bound (N + 3)] 
+ indices: j bounds: bound (N + 3) ::=
+ (when (j = 0) --> return () )
+ ;; 
+(when (not (j = 0)) --> 
+ x : unit <- read (AllOpen [j - 1]) ; 
+ y : unit <- read (Open [j - 1]) ; 
+ return () 
+) 
+)
+ || 
+(family Opened[bound (N + 2)] 
+ indices: i bounds: bound (N + 2) ::=
+ (when (i = N + 1) --> 
+  x : unit <- read (Open [N + 1]) ; 
+  commit : bool <- read LastCommit ; 
+  return commit )
+ ;; 
+( when (not (i = N + 1))--> 
+   x : unit <- read (Open [i]) ; 
+   commit : bool <- read (Commit [i]) ; 
+   return commit
+ ) 
+ )
+ || 
+(family LeakOpenedCommAdv[bound (N + 2)] 
+ indices: i bounds: bound (N + 2) ::= 
+  opened : bool <- read (Opened[i]) ; return opened 
+ )
+ || 
+(OkAdvId ::= 
+  ao : unit <- read (AllOpen[N + 2]) ; 
+  sc : bool <- read (SumCommit[N + 1]) ; 
+  return () 
+) 
+) 
+) 
+and 
+ideal = 
+ ( new Flip : bool in
+( (Flip ::= samp flip (()) )
+ || 
+(family Out[bound N + 2] 
+ indices: i bounds: bound N + 2 ::=
+ (when (honest(i)) --> ok : unit <- read OkAdvId ; f : bool <- read Flip ; return f )
+ ;; 
+(when (corrupt(i)) --> out : bool <- read (Out [i]) ; return out ) )
+ || 
+(family LeakFlipIdAdv[bound (N + 2)] 
+ indices: i bounds: bound (N + 2) ::= 
+  ( (when (honest(i)) --> l : bool <- read (LeakFlipIdAdv[i]) ; return l)
+    ;; 
+    (when (corrupt(i)) --> f : bool <- read Flip ; return f) 
+  ) 
+) 
+) 
+) .
+
+  protocol real = 
+newfamily Commit[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2 : bool
+in
+newfamily Committed[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2 : unit
+in
+newfamily Open[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2 : unit
+in
+newfamily Opened[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2 : bool
+in
+( `` start new
+
+(family Committed[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2
+::= x : bool <- read Commit[i] ; return ()
+)
+||
+(family Opened[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2
+::= commit : bool <- read Commit[i] ; x : unit <- read Open[i] ; return commit
+)
+||
+(family LeakCommittedCommAdv[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2
+::=  committed : unit <- read Committed[i] ; return committed
+)
+|| 
+(family LeakOpenedCommAdv[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2
+::= opened : bool <- read Opened[i] ; return opened
+)
+||
+(
+family Party[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2
+::= (
+(when (honest(i)) --> (
+  newfamily AllCommitted[bound (N + 2) bound (N + 3)] 
+ indices: i, j 
+ bounds: bound (N + 2) bound (N + 3) : unit
+in
+newfamily SumOpened[bound N + 2 bound N + 3] 
+ indices: i, j 
+ bounds: bound N + 2 bound N + 3 : bool
+in
+( `` begin new
+(family SumOpened[bound (N + 2) bound (N + 3)] 
+  indices: i, j 
+  bounds: bound (N + 2) bound (N + 3) 
+  ::= ( (when (0 = j) --> return False ) 
+         ;; 
+         (when (not (0 = j)) --> 
+           x : bool <- read SumOpened[i ,j - 1] ; 
+           y : bool <- read Opened[j - 1] ; 
+           return xor((x, y)) 
+         ) 
+      )
+) 
+||
+(family AllCommitted[bound (N + 2) bound (N + 3)] 
+ indices: i, j 
+ bounds: bound (N + 2) bound (N + 3)
+::= (
+    (when (0 = j) --> return () )
+    ;;
+    (when (not (0 = j)) --> 
+      x : unit <- read AllCommitted[i , j - 1] ; 
+      y : unit <- read Committed[j - 1] ;
+      return ()
+    )   
+    )
+) 
+||
+ (family Open[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2
+::= x : unit <- read AllCommitted[i, N + 2] ;
+ return ()) 
+||
+(family Commit[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2
+::= samp flip (())
+)
+||
+(family Out[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2
+::= 
+ sumOpened : bool <- read (SumOpened[i, N + 2]) ;
+ return sumOpened
+)
+) `` end new
+)) ``end when
+;;
+(when (corrupt(i)) --> (
+ (family Commit[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2
+::=
+ advCommit : bool <- read AdvCommitAdvParty[i] ; return advCommit
+)
+||
+(family Open[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2
+::=
+advOpen : unit <- read AdvOpenAdvParty[i] ; return advOpen
+)
+||
+(family Out[bound N + 2] 
+ indices: i 
+ bounds: bound N + 2
+::=
+out : bool <- read Out[i] ; return out
+)
+)) ``end when
+
+    )
+)
+
+) `` end new
+.
+
+``` proofs
+
+start with real over delta then
+add internal family AllCommitted1 indices: i bounds: bound N + 3 typed: unit 
+    assigned: 
+      (when (i = 0) --> return ()) ;;
+      (when (not (i = 0))  -->  
+       x : unit <- read (AllCommitted1[i - 1]) ; 
+       y : unit <- read (Committed[i - 1]) ; 
+       return () ) then
+add internal family SumOpened1 indices: j bounds: bound N + 3 typed: bool
+    assigned:
+      (when (j = 0) --> return False ) ;;
+      (when (not (j = 0)) --> 
+        x : bool <- read SumOpened1[j - 1] ;
+        y : bool <- read Opened[j - 1] ;
+        return xor( (x, y) )
+      ) then
+case distinction on group Party[bound N + 2] 
+( 
+  case: (
+in the presence of fam AllCommitted1[bound (N + 3)] , fam Committed[bound (N + 2)] 
+rewrite family AllCommitted[bound (N + 2) bound (N + 3)] 
+to x : unit <- read AllCommitted1[j] ; return x
+by induction on j bound B 
+( case distinction on family AllCommitted[bound (N + 2) fixedBound B] 
+  ( case: 
+    ( 
+      sym from change fam AllCommitted[bound (N + 2) fixedBound B] 
+               with x : unit <- read AllCommitted1[B] ; return x
+               in currentProtocol 
+      ( subst fam AllCommitted1[bound (N + 3)] 
+        into fam AllCommitted[bound (N + 2) fixedBound B] 
+      ) 
+    ) 
+    case: 
+    ( subst fam AllCommitted[bound (N + 2) bound B] 
+      into fam AllCommitted[bound (N + 2) fixedBound B] then 
+      sym from change fam AllCommitted[bound (N + 2) fixedBound B] 
+               with x : unit <- read AllCommitted1[B] ; return x
+               in currentProtocol 
+      ( subst fam AllCommitted1[bound (N + 3)] 
+        into fam AllCommitted[bound (N + 2) fixedBound B] 
+      ) 
+    ) 
+  ) then 
+  merge cases for fam AllCommitted[bound (N + 2) fixedBound B] 
+) then 
+subst fam AllCommitted[bound (N + 2) bound (N + 3)] 
+into  fam Open[bound (N + 2)] then
+absorb fam AllCommitted[bound (N + 2) bound (N + 3)] then
+in the presence of fam SumOpened1[bound (N + 3)]
+rewrite family SumOpened[bound (N + 2) bound (N + 3)]
+to  x : bool <- read SumOpened1[j] ; return x
+by induction on j bound B
+(
+  case distinction on family SumOpened[bound (N + 2) fixedBound B]
+  (
+    case: 
+    ( 
+      sym from change fam SumOpened[bound (N + 2) fixedBound B] 
+               with x : bool <- read SumOpened1[B] ; return x
+               in currentProtocol 
+      ( subst fam SumOpened1[bound (N + 3)] 
+        into fam SumOpened[bound (N + 2) fixedBound B] 
+      ) 
+    )  
+     case: 
+    ( subst fam SumOpened[bound (N + 2) bound B] 
+      into  fam SumOpened[bound (N + 2) fixedBound B] then         
+      sym from change fam SumOpened[bound (N + 2) fixedBound B] 
+               with x : bool <- read SumOpened1[B] ; return x 
+               in currentProtocol 
+      ( subst fam SumOpened1[bound (N + 3)] 
+        into fam SumOpened[bound (N + 2) fixedBound B]
+      ) 
+    )  
+  ) then 
+  merge cases for fam SumOpened[bound (N + 2) fixedBound B]
+) then
+subst fam SumOpened[bound (N + 2) bound (N + 3)]
+into  fam Out[bound (N + 2)] then
+absorb fam SumOpened[bound (N + 2) bound (N + 3)]
+  )
+  
+  case: (idle)
+) then 
+combine fam Party[bound N + 2] then
+add internal family SumCommit indices: j bounds: bound N + 3 typed: bool 
+    assigned: 
+          (when (j = 0) --> return False) ;;
+          ( when (not (j = 0)) --> 
+            xj : bool <- read SumCommit[j - 1] ;
+            cj : bool <- read Commit[j - 1] ;
+            return xor( (xj, cj) )
+          ) then
+add internal family AllOpen indices: j bounds: bound N + 3 typed: unit 
+    assigned: 
+          ( when (j = 0) --> return () ) ;;
+          ( when (not (j = 0)) --> 
+            x : unit <- read AllOpen[j - 1] ;
+            y : unit <- read Open[j - 1] ;
+            return () ) then            
+in the presence of 
+ fam AllOpen[bound (N + 3)], fam SumCommit[bound (N + 3)], fam Opened[bound (N + 2)]
+rewrite family SumOpened1[bound (N + 3)] 
+to  
+ ao : unit <- read AllOpen[j] ; 
+ sc : bool <- read SumCommit[j] ;
+ return sc
+by induction on j bound B (
+case distinction on channel SumOpened1[B] (
+  case: (
+    sym from 
+      change chn SumOpened1[B]
+      with ao : unit <- read AllOpen[B] ;
+           sc : bool <- read SumCommit[B] ;
+           return sc
+      in currentProtocol ( 
+        subst fam AllOpen[bound (N + 3)] into  chn SumOpened1[B]  then   
+        subst fam SumCommit[bound (N + 3)] into chn SumOpened1[B] 
+      )  
+  )
+
+  case: (
+    subst fam SumOpened1[bound B] into chn SumOpened1[B] then
+    subst fam Opened[bound (N + 2)] into chn SumOpened1[B] then
+    rename x to y, commit to cj, sc to xj, ao to x in  chn SumOpened1[B] then 
+      sym from change chn SumOpened1[B]
+      with ao : unit <- read AllOpen[B] ;
+           sc : bool <- read SumCommit[B] ;
+           return sc
+      in currentProtocol (
+      subst fam AllOpen[bound (N + 3)] into chn SumOpened1[B] then
+      subst fam SumCommit[bound (N + 3)] into chn SumOpened1[B]
+      )
+  )
+) then 
+   merge cases for chn SumOpened1[B] 
+) then
+on branch honest(i) of family Out[bound N + 2] (
+   subst  fam SumOpened1[bound (N + 3)] into fam Out[bound (N + 2)]
+) then absorb fam SumOpened1[bound (N + 3)] then 
+split fam Committed[bound N + 2] on first index then
+split fam Commit[bound N + 2] on first index then
+drop read chn Commit[N + 1] from chn Committed[N + 1] then
+split fam AllCommitted1[bound N + 3] on first index then
+subst chn Committed[N + 1] into chn AllCommitted1[N + 2] then 
+on branch honest(i) of family Open[bound N + 2] (
+    subst chn AllCommitted1[N + 2] into fam Open[bound (N + 2)]
+) then
+absorb chn AllCommitted1[N + 2] then
+in the presence of
+   fam Committed[bound (N + 1)], 
+   fam SumCommit[bound (N + 3)]
+rewrite family  AllCommitted1[bound (N + 2)]  
+to sc : bool <- read SumCommit[i] ; return ()
+by induction on i bound B (
+case distinction on channel AllCommitted1[B] (
+  case: (
+   sym from change chn AllCommitted1[B]
+       with sc : bool <- read SumCommit[B] ; return ()
+       in currentProtocol (
+      subst  fam SumCommit[bound (N + 3)] into chn AllCommitted1[B]
+       )     
+  )
+
+  case: (
+    subst fam AllCommitted1[bound B]   into chn AllCommitted1[B] then
+    subst fam Committed[bound (N + 1)] into chn AllCommitted1[B] then 
+    rename sc to xj, x to cj in chn AllCommitted1[B] then
+    sym from change chn AllCommitted1[B]
+       with sc : bool <- read SumCommit[B] ; return ()
+       in currentProtocol (
+      subst  fam SumCommit[bound (N + 3)] into chn AllCommitted1[B]
+       )   
+  )
+
+) then 
+merge cases for chn AllCommitted1[B]
+) then
+on branch honest(i) of family Open[bound N + 2](
+   subst fam AllCommitted1[bound (N + 2)] 
+   into fam Open[bound (N + 2)]
+) then
+absorb fam AllCommitted1[bound (N + 2)] then
+turn neg into otherwise for fam SumCommit[bound(N + 3)] then
+unsplit Committed then
+turn neg into otherwise for fam Committed[bound N + 2] then
+sym from idealPlusSim (
+on branch honest(i) of family Out[bound N + 2](
+    subst chn OkAdvId into fam Out[bound (N + 2)]
+) then
+absorb chn OkAdvId then
+subst fam LeakFlipIdAdv[bound N + 2] into chn LastCommit then
+absorb fam LeakFlipIdAdv[bound N + 2] then
+on branch honest(i) of family Out[bound N + 2] (
+sym from change fam Out[bound (N + 2)]
+        with ao : unit <- read AllOpen[N + 2] ;
+             sc : bool <- read SumCommit[N + 2] ; 
+             return sc
+         in currentProtocol (
+subst fam SumCommit[bound (N + 3)] into fam Out[bound (N + 2)] then       
+subst chn LastCommit into fam Out[bound (N + 2)] then
+rename x to sc in fam Out[bound (N + 2)]
+         )
+) then
+fold chn Flip into chn LastCommit then 
+use assumption flipInvariantXorFixed on chn LastCommit then
+sym from extend (change chn LastCommit
+        with  x : bool <- read SumCommit[N + 1] ;
+              commit : bool <- read Commit[N + 1] ;
+              return commit
+        in currentProtocol) 
+        with internal channel Commit[N + 1]
+        typed: bool 
+        assigned: samp flip (()) (
+ fold chn Commit[N + 1] into chn LastCommit
+) then
+on branch i = N + 1 of family Opened[bound N + 2] (
+    rename x to o in fam Opened[bound N + 2] then
+    subst chn LastCommit into fam Opened[bound N + 2]
+) then
+on branch j = N + 2 of family SumCommit[bound N + 3](
+    subst chn LastCommit into fam SumCommit[bound N + 3] then
+    rename commit to c in fam SumCommit[bound N + 3]
+) then
+absorb chn LastCommit then
+merge case j = N + 2 with otherwise for fam SumCommit[bound N + 3] then
+case distinction on family SumCommit[bound N + 3] (
+  case: (
+    idle
+  ) 
+  case: (
+    rename c to cj, x to xj in fam SumCommit[bound N + 3]
+ )
+  ) then
+on branch i = N + 1 of family Opened[bound N + 2] (
+   subst fam Open[bound N + 2] into fam Opened[bound N + 2] then
+   sym from change
+         fam Opened[bound (N + 2)]
+         with commit : bool <- read Commit[N + 1] ;
+              o : unit <- read Open[N + 1] ;
+              return commit
+        in currentProtocol (
+     subst fam Open[bound N + 2] into fam Opened[bound N + 2]
+  ) then 
+  rename o to x in fam Opened[bound N + 2]
+) then
+merge cases for fam Opened[bound N + 2]
+) then
+restructure idealPlusSim
+
+check-proof idealPlusSim

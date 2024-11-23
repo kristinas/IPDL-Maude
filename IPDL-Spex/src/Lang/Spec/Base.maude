@@ -1,0 +1,100 @@
+***( SpeX/Lang/Spec
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../Language.maude
+sload ../../Processor.maude
+
+********************************************************************************
+
+fmod SPEC/LID { L :: LANGUAGE } is
+  sort Spec{L} .
+  op Spec[_] : L$Lid -> Spec{L} [ctor] .
+endfm
+
+********************************************************************************
+
+fmod SPEC/PID { L :: LANGUAGE } is
+  protecting SPEC/LID { L } .
+
+  *** Spec/Pid{L}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort Spec/Pid{L} .
+  op _/_ : Spec{L} Qid -> Spec/Pid{L} .
+
+  *** - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  var L : L$Lid .
+  var MN : Qid .
+
+  *** module-name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op module-name : Spec/Pid{L} -> Qid .
+  eq module-name(Spec[L] / MN) = MN .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Spec/Pid { L :: LANGUAGE } from PID to SPEC/PID { L } is
+  sort Pid to Spec/Pid{L} .
+endv
+
+********************************************************************************
+
+fth SPEC/BASE-LANG is
+  protecting PARSING-OUTCOME .
+  protecting ANALYSIS-OUTCOME .
+  including  ANALYSIS-STATE .
+
+  sort SpecBody .
+  op nil : -> SpecBody .
+  op add-declarations : ATermList SpecBody -> SpecBody .
+  op show-fragment : SpecBody SpecBody -> TermList .
+
+  op initial-state : SpecBody -> State .
+  op update : State AnalysisOutcome -> State .
+  op reanalyse : SpecBody State -> AnalysisOutcome .
+
+  op parse-declaration : QidList State -> ParsingOutcome .
+  op print-declaration : Term -> QidList .
+endfth
+
+********************************************************************************
+
+th SPEC/SUBPROCESSOR is
+  including PROCESSOR/BASE .
+  including SPEC/BASE-LANG .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op parse : Oid Oid QidList SpecBody -> Msg .
+
+  op process : Oid OidList Oid ATerm SpecBody -> Msg .
+  op processed : Oid Oid QidList SpecBody -> Msg .
+  op processed : Oid Oid SpecBody -> Msg .
+endth
+
+*** ----------------------------------------------------------------------------
+
+mod SPEC/SUBPROCESSOR-as-SPEC/BASE-LANG { SP :: SPEC/SUBPROCESSOR } is
+endm
+
+*** ----------------------------------------------------------------------------
+
+view Spec/Base-lang { SP :: SPEC/SUBPROCESSOR }
+from SPEC/BASE-LANG to SPEC/SUBPROCESSOR-as-SPEC/BASE-LANG { SP } is
+  sort State to SP$State .
+  sort SpecBody to SP$SpecBody .
+
+  op add-declarations(TL:ATermList, SB:SpecBody) to term
+    add-declarations(TL:ATermList, SB:SP$SpecBody) .
+  op parse-declaration(QIL:QidList, S:State) to term
+    parse-declaration(QIL:QidList, S:SP$State) .
+  op print-declaration(T:Term) to term
+    print-declaration(T:Term) .
+endv
+
+********************************************************************************

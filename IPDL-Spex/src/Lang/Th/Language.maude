@@ -1,0 +1,318 @@
+***( SpeX/Lang/Th
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Data.maude
+
+********************************************************************************
+
+fmod TH/LANGUAGE { L :: LANGUAGE } is
+  protecting TH/LID { L } .
+
+  var L : L$Lid .
+
+  *** declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op decl-grammar : Th{L} -> Grammar .
+  eq decl-grammar(Th[L])
+   = grammar 'Th/Syntax is
+       'Theory
+         ::= "th_is endth" : 'Header
+             [format('! 'so 's! 'n 'o)]
+          |  "th_is_endth" : 'Header 'DeclList
+             [format('! 'so 's! 'n++io 'n--i! 'o)]
+       'DeclList
+         ::= "_." : 'Declaration
+             [format('d 's! 'o)]
+          |  "__" : 'DeclList 'DeclList
+             [assoc format('d 'ni 'd)]
+       'Header
+         ::= token "header"
+       'Declaration
+         ::= bubble "declaration" [exclude(".")]
+     endgr .
+
+  *** commands  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op cmd-grammar : Th{L} -> Grammar .
+  eq cmd-grammar(Th[L])
+   = grammar 'Th/Cmd/Syntax is
+      'Command    ::= lit "list theories" [format('b 's 'o)]
+                   |  "show theory _" : 'TheoryName [format('b 's 'o 'd)]
+                   |  lit "list opened theories" [format('b 's 's 'o)]
+                   |  "open _" : 'TheoryName [format('b 'so 'd)]
+                   |  lit "close" [format('b 'o)]
+      'TheoryName ::= token "theory-name"
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Th { L :: LANGUAGE } from LANGUAGE to TH/LANGUAGE { L } is
+  sort Lid to Th{L} .
+  op Lid to term Th[Lid] .
+  op grammar to decl-grammar .
+endv
+
+********************************************************************************
+
+fmod TH/READ { L :: LANGUAGE, BL :: TH/BASE-LANG } is
+  protecting TH/MODULE { L, BL } .
+  protecting TH/CMD { L } .
+  protecting ATERM/READ .
+
+  var  L : L$Lid .
+  vars H D DL DL1 DL2 TN T : ATerm .
+  var  Th : Theory{L} .
+
+  *** read theory  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-theory : Th{L} ATerm -> Theory{L} .
+  eq read-theory(Th[L], T) = empty-theory(L) >>= T .
+
+  op _>>=_ : Theory{L} ATerm -> Theory{L} .
+  eq Th >>= {'th_is`endth[H] : 'Theory}
+   = set-header(read-header(Th[Lid], H), Th) .
+  eq Th >>= {'th_is_endth[H, DL] : 'Theory}
+   = set-header(read-header(Th[Lid], H), Th) >>= DL .
+  eq Th >>= {'__[DL1, DL2] : 'DeclList}
+   = (Th >>= DL1) >>= DL2 .
+  eq Th >>= {'_.[D] : 'DeclList}
+   = update-body(add-declaration(D, body(Th)), Th) .
+  eq Th >>= T = Th [owise] .
+
+  *** read header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-header : Th{L} ATerm ~> Qid .
+  eq read-header(Th[L], H) = read-qid(H) .
+
+  *** read theory name  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-theory-name : Th{L} ATerm -> Qid .
+  eq read-theory-name(Th[L], TN) = read-qid(TN) .
+
+  *** read declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-declaration : Th{L} ATerm -> QidList .
+  eq read-declaration(Th[L], {D : 'Declaration}) = read-qids(D) .
+  eq read-declaration(Th[L], T) = nil [owise] .
+
+  *** read command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-cmd : Th{L} ATerm ~> Cmd{Th{L}} .
+  eq read-cmd(Th[L], {'list`theories.Command : 'Command})
+   = Cmd[Th[L]]{list theories} .
+  eq read-cmd(Th[L], {'show`theory_[TN] : 'Command})
+   = Cmd[Th[L]]{show theory read-theory-name(Th[L], TN)} .
+  eq read-cmd(Th[L], {'list`opened`theories.Command : 'Command})
+   = Cmd[Th[L]]{list opened theories} .
+  eq read-cmd(Th[L], {'open_[TN] : 'Command})
+   = Cmd[Th[L]]{open read-theory-name(Th[L], TN)} .
+  eq read-cmd(Th[L], {'close.Command : 'Command})
+   = Cmd[Th[L]]{close} .
+endfm
+
+********************************************************************************
+
+fmod TH/SHOW { L :: LANGUAGE, BL :: TH/BASE-LANG } is
+  protecting TH/MODULE { L, BL } .
+  protecting TERM/OPS .
+
+  var L : L$Lid .
+  var H : Qid .
+  var SB : BL$SpecBody .
+  var T : Term .
+  var TL : TermList .
+
+  *** show theory  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-theory : Theory{L} -> Term .
+  eq show-theory(Theory[L]{H is SB})
+   = show-theory(Th[L], H, format-decls(Th[L], show(SB))) .
+
+  op show-theory : Th{L} Qid TermList -> Term .
+  eq show-theory(Th[L], H, empty)
+   = 'th_is`endth [ show-header(Th[L], H) ] .
+  eq show-theory(Th[L], H, TL)
+   = 'th_is_endth [ show-header(Th[L], H), pack('__, TL) ] [owise] .
+
+  *** show header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-header : Th{L} Qid -> Term .
+  eq show-header(Th[L], H) = mk-bubble('header, show-qid(H)) .
+
+  *** format declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op format-decls : Th{L} TermList -> TermList .
+  eq format-decls(Th[L], empty) = empty .
+  eq format-decls(Th[L], (T, TL))
+   = '_.[mk-bubble('declaration, show-qids(print-declaration(T)))],
+     format-decls(Th[L], TL) .
+endfm
+
+********************************************************************************
+
+fmod TH/ANALYSIS-STATE { L :: LANGUAGE, BL :: TH/BASE-LANG } is
+  protecting TH/READ { L, BL } .
+
+  var  L : L$Lid .
+  var  SAS : AnalysisState{Th{L}} .
+  var  S : BL$State .
+  var  TNS : QidSet .
+  var  TNL : QidList .
+  vars D T : ATerm .
+
+  *** syntactic-analysis states  - - - - - - - - - - - - - - - - - - - - - - - -
+  sort AnalysisState{Th{L}} .
+  op AnalysisState[_]{_} : Th{L} BL$State -> AnalysisState{Th{L}} [ctor] .
+  op AnalysisState[_]{_&_} : Th{L} QidSet QidList -> AnalysisState{Th{L}}
+    [ctor] .
+
+  *** bs (base-state projection)  - - - - - - - - - - - - - - - - - - - - - - --
+  op bs : AnalysisState{Th{L}} -> BL$State .
+  eq bs(AnalysisState[Th[L]]{S}) = S .
+  eq bs(SAS) = initial-state(nil) [owise] .
+
+  *** theory names  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op theory-names : AnalysisState{Th{L}} -> QidSet .
+  eq theory-names(AnalysisState[Th[L]]{TNS & TNL}) = TNS .
+  eq theory-names(SAS) = none [owise] .
+
+  op opened-theories : AnalysisState{Th{L}} -> QidList .
+  eq opened-theories(AnalysisState[Th[L]]{TNS & TNL}) = TNL .
+  eq opened-theories(SAS) = nil [owise] .
+
+  *** state updates  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _>>=_ : AnalysisState{Th{L}} ATerm -> AnalysisState{Th{L}} .
+  eq AnalysisState[Th[L]]{S} >>= {'_.[D] : 'DeclList}
+   = AnalysisState[Th[L]]{S >>= D} .
+  eq SAS >>= T = SAS [owise] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Th/AnalysisState { L :: LANGUAGE, BL :: TH/BASE-LANG }
+from ANALYSIS-STATE to TH/ANALYSIS-STATE { L, BL } is
+  sort State to AnalysisState{Th{L}} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod TH/PARSING { L :: LANGUAGE, BL :: TH/BASE-LANG } is
+  including  SYNTACTIC-ANALYSIS { Th{L}, Th/AnalysisState{L, BL} } .
+  protecting LANG-NAME { L } .
+
+  var  L : L$Lid .
+  var  SAS : AnalysisState{Th{L}} .
+  var  QIL : QidList .
+  var  Th : Theory{L} .
+  var  S : BL$State .
+  var  C : Constant .
+  vars $H H $D D DL DL1 DL2 $TN TN : ATerm .
+  var  $ : Qid .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse Th[L] input (QIL) in SAS
+   = parse Th[L] declaration (QIL) in SAS
+     or-else parse Th[L] command (QIL) in SAS .
+
+  op parse_declaration_in_ : Th{L} QidList AnalysisState{Th{L}}
+    -> ParsingOutcome .
+  eq parse Th[L] declaration (QIL) in SAS
+   = scan Th[L] input (QIL : 'Theory)
+     then analyse Th[L] theory in AnalysisState[Th[L]]{bs(SAS)}
+     or-else, if inconclusive, parsing-error ('unexpected 'parsing 'error:
+        'cannot 'parse 'this name(L) 'theory) .
+
+  op parse_command_in_ : Th{L} QidList AnalysisState{Th{L}}
+    -> ParsingOutcome .
+  eq parse Th[L] command (QIL) in SAS
+   = scan input (QIL : 'Command) given cmd-grammar(Th[L])
+     then analyse Th[L] command
+       in AnalysisState[Th[L]]{theory-names(SAS) & opened-theories(SAS)} .
+
+  *** analyse theory  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_theory : Th{L} -> AnalysisAction{Th{L}} .
+
+  eq analyse Th[L] theory {'th_is`endth[$H] : 'Theory}
+   = try {'th_is`endth [ solve Th[L] header ($H) ] : 'Theory} .
+
+  eq analyse Th[L] theory {'th_is_endth[$H, DL] : 'Theory}
+   = try { 'th_is_endth [
+        solve Th[L] header ($H),
+        analyse Th[L] declarations (DL)
+      ] : 'Theory } .
+
+  *** solve header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op solve_header : Th{L} -> AnalysisAction{Th{L}} .
+  eq solve Th[L] header {$[H] : 'Header}
+   = check (read-qid(H) is ordinary) and-then return {H : 'Header}
+     or-else
+     fail ('syntax 'error: emph(print Th[L] term (H))
+       'is 'not 'a 'valid 'theory 'header,
+       (at Th[L] term (H), include context)) .
+
+  *** analyse theory name  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_theory-name : Th{L} -> AnalysisAction{Th{L}} .
+  eq analyse Th[L] theory-name {$[TN] : 'TheoryName} in SAS
+   = check (read-theory-name(Th[L], TN) in theory-names(SAS))
+     and-then return {TN : 'TheoryName}
+     or-else fail ('no 'such 'theory: emph(read-theory-name(Th[L], TN)))
+     in SAS .
+
+  *** analyse declarations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_declarations : Th{L} -> AnalysisAction{Th{L}} .
+
+  eq analyse Th[L] declarations {'__[DL1, DL2] : 'DeclList}
+   = try { '__ [
+        analyse Th[L] declarations (DL1),
+        analyse Th[L] declarations (DL2)
+      ] : 'DeclList } .
+
+  eq analyse Th[L] declarations {'_.[$D] : 'DeclList}
+   = try {'_. [ analyse Th[L] declarations ($D) ] : 'DeclList}
+     or-else
+     fail with Th[L] trace ('_.[$D]) .
+
+  ceq analyse Th[L] declarations {$[D] : 'Declaration}
+    in AnalysisState[Th[L]]{S}
+   = just parse-declaration(QIL, S) on QIL
+   if QIL := read-declaration(Th[L], {D : 'Declaration}) .
+
+  *** analyse command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_command : Th{L} -> AnalysisAction{Th{L}} .
+
+  eq analyse Th[L] command {C : 'Command} in SAS
+   = check (C == 'close.Command implies opened-theories(SAS) =/= nil)
+     and-then return {C : 'Command}
+     or-else fail ('no 'opened 'theories) in SAS .
+
+  eq analyse Th[L] command {'show`theory_[$TN] : 'Command}
+   = try { 'show`theory_ [
+        analyse Th[L] theory-name ($TN)
+      ] : 'Command } .
+
+  eq analyse Th[L] command {'open_[$TN] : 'Command}
+   = try { 'open_ [
+        analyse Th[L] theory-name ($TN)
+      ] : 'Command } .
+endfm
+
+********************************************************************************
+
+fmod TH/PRINTING { L :: LANGUAGE, BL :: TH/BASE-LANG } is
+  protecting PRINTING { Th{L} } .
+  protecting TH/SHOW { L, BL } .
+
+  var Th : Theory{L} .
+
+  *** print  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : Theory{L} -> QidList .
+  eq print(Th) = print Th[Lid] term (show-theory(Th)) .
+endfm
+
+********************************************************************************
+
+fmod TH/PARSING-&-PRINTING { L :: LANGUAGE, BL :: TH/BASE-LANG } is
+  protecting TH/PARSING { L, BL } .
+  protecting TH/PRINTING { L, BL } .
+endfm
+
+********************************************************************************

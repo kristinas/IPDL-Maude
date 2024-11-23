@@ -1,0 +1,238 @@
+lang IPDL
+
+import BASEGMWN .
+
+parameter N : nat .
+parameter K : nat .
+
+`` Sigma
+
+function xor : bool * bool -> bool .
+function ** : bool * bool  -> bool .
+function neg : bool -> bool .
+distribution flip : unit -> bool .
+
+`` assumptions
+
+assumption %automatic andFalseLeft using x : 
+   (x : bool)  |= 
+   **( (False, x) ) = False .
+
+    assumption %automatic andFalseRight using x : 
+   (x : bool)  |= 
+   **( (x, False) ) = False . 
+
+   assumption %automatic andTrueLeft using x : 
+   (x : bool)  |= 
+   **( (True, x) ) = x .
+
+    assumption %automatic andTrueRight using x : 
+   (x : bool)  |= 
+   **( (x, True) ) = x .
+   
+    assumption %automatic xorFalseLeft using x : 
+   (x : bool)  |= 
+   xor( (False, x) ) = x .
+
+    assumption %automatic xorFalseRight using x : 
+   (x : bool)  |= 
+   xor( (x, False) ) = x . 
+   
+    assumption %automatic xorFalse using x : 
+   (x : bool)  |= 
+   xor( (x, x) ) = False . 
+   
+   assumption %automatic falseXor using x : 
+   (x : bool)  |= 
+   xor( (False, False) ) = False . 
+
+
+hypothesis not (isNotGate(0)) .
+hypothesis not (isXorGate(0)) .
+hypothesis not (isAndGate(0)) .
+hypothesis isHonest(N + 1) .
+
+`` deltaReal 
+
+channel context deltaReal =
+ input InShare[bound N + 2 bound N + 2 dependentBound I] : bool ;
+ 
+ output SendBit[bound N + 2 bound N + 2 bound K] : bool ;
+ output RcvdBit[bound N + 2 bound N + 2 bound K] : bool ; 
+ output Ctrb[bound N + 2 bound N + 2 bound K] : bool ;
+ output CtrbSum[bound N + 2 bound N + 2 bound K] : bool ;
+ output Share[bound N + 2 bound K] : bool 
+  
+.
+
+protocol shares = (
+  family Shares[bound K] indices: k bounds: bound K ::=
+   
+   (when (isInputGate(k)) --> 
+   (
+    (family Ctrb[bound N + 2 bound N + 2 bound K] 
+   indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+     nf(b : bool <- read Ctrb[n, m, k], return b) 
+    )
+    ||
+(
+family CtrbSum[bound N + 2 bound N + 2 bound K] 
+indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+ nf(b : bool <- read CtrbSum[n, m, k], return b) 
+)
+||
+(
+family RcvdBit[bound N + 2 bound N + 2 bound K] 
+indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+ nf(rb : bool <- read RcvdBit[n, m, k], return rb) 
+)
+||
+(
+family SendBit[bound N + 2 bound N + 2 bound K] 
+ indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+ nf(sb : bool <- read SendBit[n, m, k], return sb) 
+)
+||
+(
+family Share[bound N + 2 bound K] 
+ indices: n, k bounds: bound N + 2 bound K ::=
+  nf(in : bool <- read InShare[n, wire0(k), wire1(k)], return in) 
+)
+   
+   ) ``end input gate
+   ) ``end when 
+ ;;
+( when (isNotGate(k)) -->
+(
+ (family Ctrb[bound N + 2 bound N + 2 bound K] 
+   indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+     nf(b : bool <- read Ctrb[n, m, k], return b) 
+)
+||
+(
+family CtrbSum[bound N + 2 bound N + 2 bound K] 
+indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+ nf(b : bool <- read CtrbSum[n, m, k], return b) 
+)
+||
+(
+family RcvdBit[bound N + 2 bound N + 2 bound K] 
+indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+ nf(rb : bool <- read RcvdBit[n, m, k], return rb) 
+)
+||
+(
+family SendBit[bound N + 2 bound N + 2 bound K] 
+ indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+ nf(sb : bool <- read SendBit[n, m, k], return sb) 
+)
+||
+(
+family Share[bound N + 2 bound K] 
+ indices: n, k bounds: bound N + 2 bound K ::=
+  (when (n = N + 1) --> nf(x : bool <- read Share[n, wire0(k)], return neg(x)) 
+  )
+  ;; 
+  (when (not (n = N + 1)) --> nf(s : bool <- read Share[n, wire0(k)], return s)  
+  )
+)
+) `` end not gate
+) `` end when
+;; 
+( when (isXorGate(k)) -->
+(
+ (family Ctrb[bound N + 2 bound N + 2 bound K] 
+   indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+     nf(b : bool <- read Ctrb[n, m, k], return b) 
+)
+||
+(
+family CtrbSum[bound N + 2 bound N + 2 bound K] 
+indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+ nf(b : bool <- read CtrbSum[n, m, k], return b) 
+)
+||
+(
+family RcvdBit[bound N + 2 bound N + 2 bound K] 
+indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+ nf(rb : bool <- read RcvdBit[n, m, k], return rb) 
+)
+||
+(
+family SendBit[bound N + 2 bound N + 2 bound K] 
+ indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+ nf(sb : bool <- read SendBit[n, m, k], return sb) 
+)
+||
+(
+family Share[bound N + 2 bound K] 
+ indices: n, k bounds: bound N + 2 bound K ::=
+  nf((x : bool <- read Share[n, wire0(k)]) y : bool <- read
+    Share[n, wire1(k)], return xor((x, y))) 
+)
+) `` end xor gate
+) `` end when  
+;; 
+( when (isAndGate(k)) --> 
+(
+(family Ctrb[bound N + 2 bound N + 2 bound K]
+  indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+    (when (n < m) --> nf(s : bool <- read SendBit[n, m, k], return s) )
+    ;; 
+    (when (m = n) --> 
+     nf((x : bool <- read Share[n, wire0(k)]) 
+         y : bool <- read Share[n, wire1(k)], return **((x, y))
+       ) 
+    )   
+    ;;
+    (when (m < n) --> nf(r : bool <- read RcvdBit[n, m, k], return r)
+    )
+)
+||
+(
+family CtrbSum[bound N + 2 bound N + 2 bound K]
+  indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::=  
+  (when (0 = m)  --> nf(b : bool <- read Ctrb[n, 0, k], return b) )
+  ;; 
+  (when (not (0 = m)) --> 
+   nf((b : bool <- read Ctrb[n, m, k]) 
+       s : bool <- read CtrbSum[n, m - 1, k], return xor((s, b)) 
+     )
+  )   
+)
+||
+(
+family RcvdBit[bound N + 2 bound N + 2 bound K]
+  indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+   nf((b : bool <- read SendBit[m, n, k])
+      (xm : bool <- read Share[m, wire0(k)])
+      (xn : bool <- read Share[n, wire0(k)])
+      (ym : bool <- read Share[m, wire1(k)]) 
+       yn : bool <- read Share[n, wire1(k)], 
+        return xor((xor((**((xm, yn)), **((xn, ym)))), b))
+     )
+)
+||
+(
+family SendBit[bound N + 2 bound N + 2 bound K]
+  indices: n, m, k bounds: bound N + 2 bound N + 2 bound K ::= 
+ (when (n < m) --> 
+  nf((x : bool <- read Share[n, wire0(k)]) 
+      y : bool <- read Share[n, wire1(k)], samp flip(())
+    ) 
+ )   
+ ;; 
+ (when (m <= n) --> nf(sb : bool <- read SendBit[n, m, k], return sb)
+ )
+)
+||
+(
+family Share[bound N + 2 bound K]
+  indices: n, k bounds: bound N + 2 bound K ::= 
+  nf(bs : bool <- read CtrbSum[n, N + 1, k], return bs)
+)
+) `` end and gate
+) `` end when
+   
+  ) `` end shares
+.

@@ -1,0 +1,43 @@
+***( SpeX/Lang/Base/Triv
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../CommonLibs/QidList2.maude
+sload ../../../CommonLibs/ATerm.maude
+
+********************************************************************************
+
+fmod TRIV/LID is
+  sort Triv .
+  op Triv : -> Triv [ctor] .
+endfm
+
+********************************************************************************
+
+fmod TRIV/SPEC-BODY is
+  protecting TRIV/LID .
+  protecting QID-LIST2 .
+
+  sort SpecBody{Triv} .
+  op SpecBody[_]{_} : Triv QidList2 -> SpecBody{Triv} [ctor] .
+endfm
+
+********************************************************************************
+
+fmod TRIV/CMD is
+  protecting TRIV/LID .
+  protecting ATERM .
+
+  sort Cmd{Triv} .
+  op Cmd[_]{list`declarations} : Triv -> Cmd{Triv} [ctor] .
+  op Cmd[_]{add`declaration_} : Triv ATerm -> Cmd{Triv} [ctor] .
+endfm
+
+********************************************************************************

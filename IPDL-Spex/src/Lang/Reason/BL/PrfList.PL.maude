@@ -1,0 +1,46 @@
+***( SpeX/Lang/Reason/BL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../Proof/List/Processor.maude
+sload ../Proof/List/BL/PL.maude
+
+********************************************************************************
+
+view Reason//PrfList.PL from REASON/SUBPROCESSOR
+to PRF/LIST/PROCESSOR { Reason/Pid{PrfList{PL}}, PL, PrfList//PL } is
+  sort Library to DB{Spec{PL}} .
+  op library(DB:SpeX/DB) to term DB:SpeX/DB[Spec[PL]] .
+
+  sort StatementBody to Judgment{PL} .
+  op parse-statement(QIL:QidList, Lib:Library) to term
+    parse Jdg[PL] input (QIL:QidList) in Lib:DB{Spec{PL}} .
+  op read-statement(T:ATerm, Lib:Library) to term
+    read-judgment(PL, T:ATerm, Lib:DB{Spec{PL}}) .
+  op print-statement(SB:StatementBody) to term
+    print(SB:Judgment{PL}) .
+
+  sort ProofObject to NeJdgList{PL} .
+  op proof-setup(SB:StatementBody) to term
+    SB:Judgment{PL} .
+  op summary(PO:ProofObject) to term
+    summary(PrfList[PL], PO:NeJdgList{PL}) .
+  op qed(PO:ProofObject) to term
+    qed(PrfList[PL], PO:NeJdgList{PL}) .
+
+  sort ProofStep to RuleApp{PrfList{PL}} .
+  op read-proof-step(T:ATerm, PO:ProofObject) to term
+    read-proof-step(PrfList[PL], T:ATerm, context(PrfList[PL], PO:NeJdgList{PL})) .
+  op print-proof-step(PS:ProofStep, PO:ProofObject) to term
+    print(PS:RuleApp{PrfList{PL}}, context(PrfList[PL], PO:NeJdgList{PL})) .
+endv
+
+********************************************************************************

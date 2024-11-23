@@ -1,0 +1,301 @@
+***( SpeX/Lang/Reason
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Language.maude
+
+********************************************************************************
+
+view Reason/Data { L :: LANGUAGE, BL :: REASON/BASE-LANG }
+from DATA to REASON/DATABASE { L, BL } is
+  sort Data to DB{Reason{L}} .
+  op nil to empty .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view Reason/Command { L :: LANGUAGE, BL :: REASON/BASE-LANG }
+from COMMAND to REASON/READ { L, BL } is
+  sort Command to Cmd{Reason{L}} .
+  op command-annotations to term 'Command .
+  op read-command(T:ATerm) to term read-cmd(Reason[Lid], T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod REASON/PROCESSOR { L :: LANGUAGE, SP :: REASON/SUBPROCESSOR } is
+  including  SPEX-PROCESSOR { Reason{L}, Reason/Data{L,Reason/Base-lang{SP}},
+                              Reason/Command{L,Reason/Base-lang{SP}} } .
+  protecting PROCESSOR/SELECTOR { Reason/Pid{L} } .
+  including  REASON/PARSING-&-PRINTING { L, Reason/Base-lang{SP} } .
+  protecting SPEX/FORMATTING .
+
+  var  RL : Reason{L} .
+  var  I : Oid .
+  var  PT : OidList .
+  var  DB : SpeX/DB .
+  var  SAS : AnalysisState{Reason{L}} .
+  vars PDB OPDB : ProofDB{Reason{L}} .
+  var  St : Stmnt{Reason{L}} .
+  vars Pf Pf' : Proof{Reason{L}} .
+  var  PS : SP$ProofStep .
+  var  PO : SP$ProofObject .
+  var  PO? : [SP$ProofObject] .
+  vars SN PN : Qid .
+  var  PN? : [Qid] .
+  vars SNL PNL QIL : QidList .
+  var  NPNL : NeQidList .
+  var  B : Bool .
+  var  T : ATerm .
+  var  V? : [AttrValue] .
+  var  Atts : AttributeSet .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op opf : Reason{L} -> AttrName [ctor] .
+  op opf-stack : Reason{L} -> AttrName [ctor] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op opf : Reason{L} AttributeSet -> ProofDB{Reason{L}} .
+  ceq opf(RL, Atts) = OPDB
+   if AttrValue(OPDB) := (Atts).get(opf(RL)) .
+  eq opf(RL, Atts) = empty [owise] .
+
+  op opf-stack : Reason{L} AttributeSet -> QidList .
+  ceq opf-stack(RL, Atts) = PNL
+   if AttrValue(PNL) := (Atts).get(opf-stack(RL)) .
+  eq opf-stack(RL, Atts) = nil [owise] .
+
+  op ongoing-proof : Reason{L} AttributeSet ~> Proof{Reason{L}} .
+  ceq ongoing-proof(RL, Atts) = opf(RL, Atts)[PN]
+   if PN := last-opf-name(RL, Atts) .
+
+  op last-opf-name : Reason{L} AttributeSet ~> Qid .
+  ceq last-opf-name(RL, Atts) = head(NPNL)
+   if AttrValue(NPNL) := (Atts).get(opf-stack(RL)) .
+
+  op add-opf-entry : Reason{L} Proof{Reason{L}} -> AttrModifier .
+  eq subject(add-opf-entry(RL, Pf)) = opf(RL) .
+  eq add-opf-entry(RL, Pf) AttrValue(OPDB)
+   = AttrValue(add(name(Pf), Pf, OPDB)) .
+  eq add-opf-entry(RL, Pf) V?
+   = AttrValue(add(name(Pf), Pf, empty)) [owise] .
+
+  op insert-opf-entry : Reason{L} Proof{Reason{L}} Bool -> AttrModifier .
+  eq subject(insert-opf-entry(RL, Pf, B)) = opf(RL) .
+  eq insert-opf-entry(RL, Pf, true) AttrValue(OPDB)
+   = AttrValue(insert(name(Pf), Pf, OPDB)) .
+  eq insert-opf-entry(RL, Pf, false) V? = V? .
+  eq insert-opf-entry(RL, Pf, B) V?
+   = AttrValue(insert(name(Pf), Pf, empty)) [owise] .
+
+  op insert-opf-entry : Reason{L} Proof{Reason{L}} -> AttrModifier .
+  eq insert-opf-entry(RL, Pf) = insert-opf-entry(RL, Pf, true) .
+
+  op add-opf-name : Reason{L} Qid -> AttrModifier .
+  eq subject(add-opf-name(RL, PN)) = opf-stack(RL) .
+  eq add-opf-name(RL, PN) AttrValue(PNL)
+   = if occurs(PN, PNL)
+     then AttrValue(PN remove(PN, PNL))
+     else AttrValue(PN PNL) fi .
+  eq add-opf-name(RL, PN) V? = AttrValue(PN) [owise] .
+
+  op delete-opf-entry : Reason{L} Qid -> AttrModifier .
+  eq subject(delete-opf-entry(RL, PN)) = opf(RL) .
+  eq delete-opf-entry(RL, PN) AttrValue(OPDB)
+   = AttrValue(delete(PN, OPDB)) .
+  eq delete-opf-entry(RL, PN) V? = V? [owise] .
+
+  op pop-opf-name : Reason{L} -> AttrModifier .
+  eq subject(pop-opf-name(RL)) = opf-stack(RL) .
+  eq pop-opf-name(RL) AttrValue(NPNL) = AttrValue(tail(NPNL)) .
+  eq pop-opf-name(RL) V? = V? [owise] .
+
+  op annotate : QidList ProofDB{Reason{L}} ProofDB{Reason{L}} -> QidList2 .
+  eq annotate(nil, PDB, OPDB) = nil .
+  ceq annotate(PN PNL, PDB, OPDB)
+   = :[PN wrap-if-ne(intersperse('`, '\s, QIL), '\s '`(, '`))]
+     annotate(PNL, PDB, OPDB)
+   if QIL := if PN in proof-names(OPDB)
+      then if qed(OPDB[PN]) then 'ongoing else 'incomplete 'ongoing fi
+      else if qed(PDB[PN]) then nil else 'incomplete fi fi .
+
+  op subprocs : Reason{L} AttributeSet -> OidList .
+  ceq subprocs(RL, Atts) = $subprocs(RL, PNL)
+   if AttrValue(PNL) := (Atts).get(opf-stack(RL)) .
+  eq subprocs(RL, Atts) = nil [owise] .
+
+  op $subprocs : Reason{L} QidList -> OidList .
+  eq $subprocs(RL, nil) = nil .
+  eq $subprocs(RL, PN PNL) = $[RL / PN] $subprocs(RL, PNL) .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Reason:start-up] :
+    < $[RL] : PROC | starting up, Atts >
+    start-up($[RL])
+   => < $[RL] : PROC | running, Atts > .
+
+  rl [Reason:get-prompt] :
+    < $[RL] : PROC | running, Atts >
+    get-prompt($[RL], I)
+   => < $[RL] : PROC | running, Atts >
+    if opf-stack(RL, Atts) == nil
+    then got-prompt(I, [>])
+    else got-prompt(I, [last-opf-name(RL, Atts) >]) fi .
+
+  crl [Reason:parse] :
+    < $[RL] : PROC | running, Atts >
+    parse($[RL], I, QIL, DB)
+   => < $[RL] : PROC | parsing I input, Atts >
+    if opf-stack(RL, Atts) == nil
+    then relay($[RL], parse RL statement (QIL) in SAS
+              or-else parse RL command (QIL) in SAS)
+    else relay($[RL], parse RL command (QIL) in SAS
+              or-else parse($[RL / PN?], $[RL], QIL, PO?)) fi
+   if PN? := last-opf-name(RL, Atts)
+      /\ OPDB := opf(RL, Atts)
+      /\ PO? := proof-outcome(OPDB[PN?])
+      /\ SAS := AnalysisState[RL]{library(DB) & DB[RL] & OPDB} .
+
+  crl [Reason:process] :
+    < $[RL] : PROC | running, Atts >
+    process($[RL], I, T, DB)
+   => < $[RL] : PROC | running, Atts >
+    processed(I, $[RL],
+      if defined(DB[RL][Stmnt][SN])
+      then Advisory: log('redefining 'statement) SN
+      else log('Loading 'statement) SN fi,
+      insert-stmnt(SN, St, DB[RL]))
+   if St := read-stmnt(RL, T, library(DB))
+      /\ SN := name(St) .
+
+  rl [Reason:shut-down] :
+    < $[RL] : PROC | running, Atts >
+    shut-down($[RL])
+   => < $[RL] : PROC | shutting down, Atts >
+    shut-down(subprocs(RL, Atts)) quit($[RL]) .
+
+  *** executing Reason commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  --
+  crl < $[RL] : PROC | executing I command, Atts >
+    do($[RL], Cmd[RL]{list statements}, DB)
+   => < $[RL] : PROC | running, Atts >
+    processed(I, $[RL], log('Listing 'statements) '\n
+      mk-page(if SNL == nil
+        then 'Empty 'statement 'list
+        else intersperse('\n, SNL) fi))
+   if SNL := list(stmnt-names(DB[RL])) .
+
+  rl < $[RL] : PROC | executing I command, Atts >
+    do($[RL], Cmd[RL]{show statement SN}, DB)
+   => < $[RL] : PROC | running, Atts >
+    processed(I, $[RL], log('Showing 'statement) SN '\n
+      mk-page(print(DB[RL][Stmnt][SN]))) .
+
+  crl < $[RL] : PROC | executing I command, Atts >
+    do($[RL], Cmd[RL]{list proofs}, DB)
+   => < $[RL] : PROC | running, Atts >
+    processed(I, $[RL], log('Listing 'proofs) '\n
+      mk-page(if PNL == nil
+        then 'Empty 'proof 'list
+        else intercalate('\n, annotate(PNL, DB[RL][Proof], OPDB)) fi))
+   if PNL := list(proof-names(DB[RL]) ; set(opf-stack(RL, Atts)))
+      /\ OPDB := opf(RL, Atts) .
+
+  crl < $[RL] : PROC | executing I command, Atts >
+    do($[RL], Cmd[RL]{show proof PN}, DB)
+   => < $[RL] : PROC | running, Atts >
+    processed(I, $[RL], log('Showing 'proof) PN '\n
+      mk-page(if PN in proof-names(OPDB)
+        then print(OPDB[PN])
+        else print(DB[RL][Proof][PN]) fi))
+   if OPDB := opf(RL, Atts) .
+
+  crl < $[RL] : PROC | executing I command, Atts >
+    do($[RL], Cmd[RL]{show ongoing proof}, DB)
+   => < $[RL] : PROC | running, Atts >
+    processed(I, $[RL], log('Showing 'proof) name(Pf) '\n
+      mk-page(print(Pf)))
+   if Pf := ongoing-proof(RL, Atts) .
+
+  crl < $[RL] : PROC | executing I command, Atts >
+    do($[RL], Cmd[RL]{begin proof PN of SN}, DB)
+   => < $[RL] : PROC | running,
+        Atts >>= add-opf-entry(RL, Pf) >>= add-opf-name(RL, PN) >
+    processed(I, $[RL], log('Beginning 'proof) PN log('of) SN
+      mk-page-if-ne('\n, summary(proof-outcome(Pf))))
+    start-processor($[RL / PN]) unless occurs(PN, opf-stack(RL, Atts))
+   if Pf := proof-setup(RL, PN, DB[RL][Stmnt][SN]) .
+
+  crl < $[RL] : PROC | executing I command, Atts >
+    do($[RL], Cmd[RL]{resume proof PN}, DB)
+   => < $[RL] : PROC | running,
+        Atts >>= add-opf-entry(RL, Pf) >>= add-opf-name(RL, PN) >
+    processed(I, $[RL], log('Resuming 'proof) PN
+      mk-page-if-ne('\n, summary(proof-outcome(Pf))))
+    start-processor($[RL / PN]) unless occurs(PN, opf-stack(RL, Atts))
+   if Pf := DB[RL][Proof][PN] .
+
+  crl < $[RL] : PROC | executing I command, Atts >
+    do($[RL], Cmd[RL]{rollback}, DB)
+   => < $[RL] : PROC | running, Atts >>= insert-opf-entry(RL, Pf') >
+    processed(I, $[RL],
+      if size(Pf) > 0
+      then log('Rolling 'back) mk-page-if-ne('\n, summary(proof-outcome(Pf')))
+      else Advisory: 'cannot 'roll 'back 'any 'further fi)
+   if Pf := ongoing-proof(RL, Atts)
+      /\ Pf' := rollback(Pf) .
+
+  crl < $[RL] : PROC | executing I command, Atts >
+    do($[RL], Cmd[RL]{end proof}, DB)
+   => < $[RL] : PROC | running,
+        Atts >>= delete-opf-entry(RL, PN) >>= pop-opf-name(RL) >
+    shut-down($[RL / PN])
+    processed(I, $[RL],
+      if defined(DB[RL][Proof][PN])
+      then Advisory: log('redefining 'proof) PN
+      else log('Loading 'proof) PN fi,
+      insert-proof(PN, Pf, DB[RL]))
+   if Pf := ongoing-proof(RL, Atts)
+      /\ PN := name(Pf) .
+
+  *** forwarding process(ed) messages to/from Reason subprocessors  -  -  -  - -
+  rl [Reason:process] :
+    < $[RL] : PROC | running, Atts >
+    process($[RL], $[RL / PN] PT, I, T, DB)
+   => < $[RL] : PROC | processing I input [T], Atts >
+    process($[RL / PN], PT, $[RL], T, proof-outcome(opf(RL, Atts)[PN])) .
+
+  crl [Reason:processed] :
+    < $[RL] : PROC | processing I input [T], Atts >
+    processed($[RL], $[RL / PN], QIL, PO)
+   => < $[RL] : PROC | running, Atts >>= insert-opf-entry(RL, Pf', not B) >
+    processed(I, $[RL], log('Applying) '\s
+      mk-page-if-nl('\n, print-proof-step(PS, proof-outcome(Pf)))
+      if B then '\n Advisory: 'nothing 'has 'changed
+      else mk-page-if-ne('\n, QIL) fi)
+   if Pf := ongoing-proof(RL, Atts)
+      /\ PS := read-proof-step(T, proof-outcome(Pf))
+      /\ B := proof-outcome(Pf) == PO
+      /\ Pf' := append-proof-step(PS, PO, Pf) .
+
+  crl [Reason:processed] :
+    < $[RL] : PROC | processing I input [T], Atts >
+    processed($[RL], $[RL / PN], PO)
+   => < $[RL] : PROC | running, Atts >>= insert-opf-entry(RL, Pf', not B) >
+    processed(I, $[RL], log('Applying) '\s
+      mk-page-if-nl('\n, print-proof-step(PS, proof-outcome(Pf)))
+      if B then '\n Advisory: 'nothing 'has 'changed
+      else mk-page-if-ne('\n, summary(PO)) fi)
+   if Pf := ongoing-proof(RL, Atts)
+      /\ PS := read-proof-step(T, proof-outcome(Pf))
+      /\ B := proof-outcome(Pf) == PO
+      /\ Pf' := append-proof-step(PS, PO, Pf) .
+endm
+
+********************************************************************************

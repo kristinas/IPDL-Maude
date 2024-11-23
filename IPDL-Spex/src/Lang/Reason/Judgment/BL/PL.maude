@@ -1,0 +1,41 @@
+***( SpeX/Lang/Reason/Jdg/PL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../../../Spec/Processor.maude
+sload ../../../Spec/BL/PL.maude
+
+********************************************************************************
+
+view Jdg//PL from JDG/BASE-LANG to SPEC/PROCESSOR { PL, Spec/PL }  is
+  sort Lib to DB{Spec{PL}} .
+  sort Cxt to Module{Spec{PL}} .
+
+  op parse-context(QIL:QidList, L:Lib) to term
+    parse Spec[PL] module name (QIL:QidList)
+    in AnalysisState[Spec[PL]]{L:DB{Spec{PL}}} .
+  op read-context(T:ATerm, L:Lib) to term
+    L:DB{Spec{PL}}[read-module-name(Spec[PL], T:ATerm)] .
+  op print-context(C:Cxt) to term
+    header(C:Module{Spec{PL}}) .
+
+  op sentences(C:Cxt) to term
+    sens(body(C:Module{Spec{PL}})) .
+  op parse-sentence(QIL:QidList, C:Cxt) to term
+    scan PL input (QIL:QidList : 'Sentence)
+    then analyse PL sentence in body(C:Module{Spec{PL}}) .
+  op read-sentence(T:ATerm, C:Cxt) to term
+    (sen T:ATerm [none] .) .
+  op print-sentence(ED:SenDecl, C:Cxt) to term
+    print PL term show-sentence(body(C:Module{Spec{PL}}), aterm(ED:SenDecl)) .
+endv
+
+********************************************************************************

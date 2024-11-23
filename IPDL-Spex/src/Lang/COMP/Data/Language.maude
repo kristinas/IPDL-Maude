@@ -1,0 +1,326 @@
+***( SpeX/Lang/COMP/Data
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Data.maude
+
+********************************************************************************
+
+fmod COMP/DATA/LANGUAGE is
+  protecting COMP/DATA/LID .
+  protecting GRAMMAR .
+
+  op decl-grammar : COMP/DL -> Grammar .
+  eq decl-grammar(COMP/DL)
+   = grammar 'COMP/DL/Syntax is
+       'DataModule
+         ::= "data_is enddata" : 'Header
+             [format('! 'so 's! 'n 'o)]
+          |  "data_is_enddata" : 'Header 'DeclList
+             [format('! 'so 's! 'on++i 'n--i! 'o)]
+       'DeclList
+         ::= "protecting_." : 'ModuleName
+             [format('! 'so '! 'o)]
+          |  "extending_." : 'ModuleName
+             [format('! 'so '! 'o)]
+          |  "including_." : 'ModuleName
+             [format('! 'so '! 'o)]
+          |  "_." : 'Declaration
+             [format('d 's! 'o)]
+          |  "__" : 'DeclList 'DeclList
+             [assoc format('d 'ni 'd)]
+       'Header
+         ::= token "header"
+       'ModuleName
+         ::= token "module-name"
+       'Declaration
+         ::= bubble "declaration"
+             [exclude("protecting" "extending" "including"
+                      "composing" "syncing" "indexing" ".")]
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view COMP/DL from LANGUAGE to COMP/DATA/LANGUAGE is
+  sort Lid to COMP/DL .
+  op Lid to term COMP/DL .
+  op grammar to decl-grammar .
+endv
+
+********************************************************************************
+
+fmod COMP/DL/READ  is
+  protecting COMP/DL/MODULE .
+  protecting ATERM/READ .
+
+  var  L : COMP/DL .
+  vars H MN D DL DL1 DL2 M T : ATerm .
+  var  ATE : ATermExpansion .
+  var  DM : Module{COMP/DL} .
+  var  CM? : [Module{COMP}] .
+  var  DB : DB{COMP} .
+
+  *** read module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-module : COMP/DL ATerm DB{COMP} ~> Module{COMP/DL} .
+  eq read-module(L, M, DB) = (undefined).[Module{COMP}] >>= M given [L] DB .
+
+  op _>>=_given[_]_ : Module{COMP/DL} ATerm COMP/DL DB{COMP}
+    ~> Module{COMP/DL} .
+
+  eq CM? >>= {'data_is`enddata[H] : 'DataModule} given [L] DB
+   = empty-module(COMP/DL, read-header(COMP/DL, H)) .
+  eq CM? >>= {'data_is_enddata[H, DL] : 'DataModule} given [L] DB
+   = empty-module(COMP/DL, read-header(COMP/DL, H)) >>= DL given [L] DB .
+
+  eq DM >>= {'__[DL1, DL2] : 'DeclList} given [L] DB
+   = (DM >>= DL1 given [L] DB) >>= DL2 given [L] DB .
+  eq DM >>= {'protecting_.[{MN : 'ModuleName | ATE}] : 'DeclList} given [L] DB
+   = add-import(L, protecting read-module-name(COMP/DL, MN) ., ATE, DM, DB) .
+  eq DM >>= {'extending_.[{MN : 'ModuleName | ATE}] : 'DeclList} given [L] DB
+   = add-import(L, extending read-module-name(COMP/DL, MN) ., ATE, DM, DB) .
+  eq DM >>= {'including_.[{MN : 'ModuleName | ATE}] : 'DeclList} given [L] DB
+   = add-import(L, including read-module-name(COMP/DL, MN) ., ATE, DM, DB) .
+  eq DM >>= {'_.[D] : 'DeclList} given [L] DB
+   = add-declaration(L, D, DM) .
+  eq CM? >>= T given [L] DB = CM? [owise] .
+
+  *** read header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-header : COMP/DL ATerm ~> Qid .
+  eq read-header(L, H) = read-qid(H) .
+
+  *** read module name  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-module-name : COMP/DL ATerm ~> Qid .
+  eq read-module-name(L, MN) = read-qid(MN) .
+
+  *** read declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-declaration : COMP/DL ATerm ~> QidList .
+  eq read-declaration(L, D) = read-qids(D) .
+endfm
+
+********************************************************************************
+
+fmod COMP/DL/SHOW is
+  protecting COMP/DL/MODULE .
+  protecting COMP/MSA/SHOW .
+
+  var  L : COMP/DL .
+  vars H MN : Qid .
+  var  I : Import .
+  var  IL : ImportList .
+  var  SB : SpecBody{COMP/MSA} .
+  var  IDB : DB{COMP} .
+  var  T : Term .
+  var  TL : TermList .
+
+  *** show module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-module : COMP/DL Module{COMP/DL} -> Term .
+  eq show-module(L, Module[L]{H is IL TL:ATermList SB given IDB})
+   = show-module(L, H, (show-imports(L, IL),
+      format-decls(L, show-declarations(TL:ATermList, SB)))) .
+
+  op show-module : COMP/DL Qid TermList -> Term .
+  eq show-module(L, H, empty)
+   = 'data_is`enddata [ show-header(L, H) ] .
+  eq show-module(L, H, TL)
+   = 'data_is_enddata [ show-header(L, H), pack('__, TL) ] [owise] .
+
+  *** show header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-header : COMP/DL Qid -> Term .
+  eq show-header(L, H) = mk-bubble('header, show-qid(H)) .
+
+  *** show imports  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-imports : COMP/DL ImportList -> TermList .
+  eq show-imports(L, protecting MN . IL)
+   = 'protecting_.[show-module-name(L, MN)], show-imports(L, IL) .
+  eq show-imports(L, extending MN . IL)
+   = 'extending_.[show-module-name(L, MN)], show-imports(L, IL) .
+  eq show-imports(L, including MN . IL)
+   = 'including_.[show-module-name(L, MN)], show-imports(L, IL) .
+  eq show-imports(L, I IL) = show-imports(L, IL) [owise] .
+  eq show-imports(L, nil) = empty .
+
+  op show-module-name : COMP/DL Qid -> Term .
+  eq show-module-name(L, MN) = mk-bubble('module-name, show-qid(MN)) .
+
+  *** format decls  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op format-decls : COMP/DL TermList -> TermList .
+  eq format-decls(L, empty) = empty .
+  eq format-decls(L, (T, TL))
+   = '_.[show-declaration(L, T)], format-decls(L, TL) .
+
+  op show-declaration : COMP/DL Term -> Term .
+  eq show-declaration(L, T)
+   = mk-bubble('declaration, show-qids(print COMP/MSA term (T))) .
+endfm
+
+********************************************************************************
+
+fmod COMP/DL/ANALYSIS-STATE is
+  protecting COMP/DL/READ .
+  protecting COMP/MSA/PARSING .
+
+  var  L : COMP/DL .
+  var  DB : DB{COMP} .
+  var  SAS : AnalysisState{COMP/MSA} .
+  var  I : Qid .
+  vars H MN D T : ATerm .
+  var  MTL : ATermList .
+
+  *** COMP analysis state  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort AnalysisState{COMP/DL} .
+  op AnalysisState[_]{_} : COMP/DL DB{COMP} -> AnalysisState{COMP/DL} [ctor] .
+  op AnalysisState[_]{_&_} : COMP/DL DB{COMP} AnalysisState{COMP/MSA}
+    -> AnalysisState{COMP/DL} [ctor] .
+
+  *** db (database projection)  - - - - - - - - - - - - - - - - - - - - - - - --
+  op db : AnalysisState{COMP/DL} -> DB{COMP} .
+  eq db(AnalysisState[L]{DB}) = DB .
+  eq db(AnalysisState[L]{DB & SAS}) = DB .
+
+  *** bs (base-state projection)  - - - - - - - - - - - - - - - - - - - - - - --
+  op bs : AnalysisState{COMP/DL} ~> AnalysisState{COMP/MSA} .
+  eq bs(AnalysisState[L]{DB & SAS}) = SAS .
+
+  *** update  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _>>=_ : AnalysisState{COMP/DL} ATerm -> AnalysisState{COMP/DL} .
+
+  eq AnalysisState[L]{DB} >>= {H : 'Header}
+   = AnalysisState[L]{DB & initial-state((nil).SpecBody{COMP/MSA})} .
+  eq AnalysisState[L]{DB} >>= T = AnalysisState[L]{DB} [owise] .
+
+  ceq AnalysisState[L]{DB & SAS} >>= {I[MN] : 'DeclList}
+   = AnalysisState[L]{DB & SAS >>= module-expansion(L, MN)}
+   if I in ('protecting_. ; 'extending_. ; 'including_.) .
+  eq AnalysisState[L]{DB & SAS} >>= {'_.[D] : 'DeclList}
+   = AnalysisState[L]{DB & SAS >>= D} .
+  eq AnalysisState[L]{DB & SAS} >>= T = AnalysisState[L]{DB & SAS} [owise] .
+
+  op module-expansion : COMP/DL ATerm -> AnalysisOutcome .
+  eq module-expansion(L, {MN : 'ModuleName | expanding to MTL})
+   = successful-analysis(MTL) .
+  eq module-expansion(L, T) = successful-analysis(empty) [owise] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view COMP/DL/AnalysisState from ANALYSIS-STATE to COMP/DL/ANALYSIS-STATE is
+  sort State to AnalysisState{COMP/DL} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod COMP/DL/PARSING is
+  including  SYNTACTIC-ANALYSIS { COMP/DL, COMP/DL/AnalysisState } .
+  protecting COMP/DL/READ .
+
+  var  L : COMP/DL .
+  var  DM : Module{COMP/DL} .
+  var  DB : DB{COMP} .
+  var  SAS : AnalysisState{COMP/DL} .
+  var  I : Qid .
+  var  QIL : QidList .
+  vars $H H $MN MN $D D DL DL1 DL2 : ATerm .
+  var  MTL : ATermList .
+  var  $ : Qid .
+  var  QI? : [Qid] .
+  var  AO : AnalysisOutcome .
+  var  WA : WarningArgs .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse L input (QIL) in SAS = parse L declaration (QIL) in SAS .
+
+  op parse_declaration_in_ : COMP/DL QidList AnalysisState{COMP/DL}
+    -> ParsingOutcome .
+  eq parse L declaration (QIL) in SAS
+   = scan L input (QIL : 'DataModule)
+     then analyse L module in SAS .
+
+  *** analyse module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_module : COMP/DL -> AnalysisAction{COMP/DL} .
+
+  eq analyse L module {'data_is`enddata[$H] : 'DataModule}
+   = try {'data_is`enddata [ solve L header ($H) ] : 'DataModule} .
+
+  eq analyse L module {'data_is_enddata[$H, DL] : 'DataModule}
+   = try { 'data_is_enddata [
+        solve L header ($H),
+        analyse L declarations (DL)
+      ] : 'DataModule} .
+
+  *** solve header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op solve_header : COMP/DL -> AnalysisAction{COMP/DL} .
+  ceq solve L header {$[H] : 'Header}
+   = check (QI? :: Sort and QI? is ordinary) and-then return {H : 'Header}
+     or-else
+     fail ('syntax 'error: emph(print L term ($[H]))
+       'is 'not 'a 'valid 'module 'header,
+       (at L term (H), include context))
+    if QI? := read-qid(H) .
+
+  *** analyse declarations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_declarations : COMP/DL -> AnalysisAction{COMP/DL} .
+
+  eq analyse L declarations {'__[DL1, DL2] : 'DeclList}
+   = try { '__ [
+        analyse L declarations (DL1),
+        analyse L declarations (DL2)
+      ] : 'DeclList } .
+
+  ceq analyse L declarations {I[$MN] : 'DeclList}
+   = try {I [ analyse L import ($MN) ] : 'DeclList}
+     or-else
+     fail with L trace (I[$MN])
+   if I in ('protecting_. ; 'extending_. ; 'including_.) .
+
+  eq analyse L declarations {'_.[$D] : 'DeclList}
+   = try {'_. [ analyse L declarations ($D) ] : 'DeclList}
+     or-else
+     fail with L trace ('_.[$D]) .
+
+  ceq analyse L declarations {$[D] : 'Declaration} in SAS
+   = just (parse COMP/MSA declaration QIL in bs(SAS)) on QIL
+   if QIL := read-declaration(L, {D : 'Declaration}) .
+
+  *** analyse imports  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_import : COMP/DL -> AnalysisAction{COMP/DL} .
+
+  ceq analyse L import {$[MN] : 'ModuleName} in SAS
+   = expand L term [AO] {MN : 'ModuleName} in SAS
+   if DM := db(SAS)[read-module-name(L, MN)]
+      /\ AO := reanalyse(body(L, DM), bs(SAS)) .
+
+  eq analyse L import {$[MN] : 'ModuleName} in SAS
+   = fail ('undeclared 'data 'module: emph(read-module-name(L, MN)),
+      (at L term (MN), include context))
+     in SAS [owise] .
+
+  op expand_term`[_`] : COMP/DL AnalysisOutcome -> AnalysisAction{COMP/DL} .
+  eq expand L term [successful-analysis(MTL)] {MN : 'ModuleName}
+   = return {MN : 'ModuleName | expanding to MTL} .
+  eq expand L term [analysis-error(QIL, WA)] {MN : 'ModuleName}
+   = fail (QIL, (at L term (MN), include context)) .
+endfm
+
+********************************************************************************
+
+fmod COMP/DL/PRINTING is
+  protecting PRINTING { COMP/DL } .
+  protecting COMP/DL/SHOW .
+
+  var L : COMP/DL .
+  var DM : Module{COMP/DL} .
+
+  *** print  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : COMP/DL Module{COMP/DL} -> QidList .
+  eq print(L, DM) = print L term (show-module(L, DM)) .
+endfm
+
+********************************************************************************

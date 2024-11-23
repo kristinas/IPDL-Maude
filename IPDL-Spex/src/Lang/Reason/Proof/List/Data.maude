@@ -1,0 +1,57 @@
+***( SpeX/Lang/Reason/Prf/List
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Base.maude
+sload ../../Judgment/Language.maude
+
+********************************************************************************
+
+fmod PRF/LIST/DATA { L :: LANGUAGE, BL :: PRF/LIST/BASE-LANG } is
+  protecting PRF/LIST/LID { L } .
+
+  var  PL : PrfList{L} .
+  vars J TJ : BL$Judgment .
+  vars JL JL1 JL2 : BL$JudgmentList .
+  var  CD : SenDecl .
+  var  PR : BL$ProofRule .
+  var  RA : RuleApp{PrfList{L}} .
+
+  *** proof-rule applications  - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort RuleApp{PrfList{L}} .
+  op RuleApp[_]{_by_} : PrfList{L} SenDecl BL$ProofRule -> RuleApp{PrfList{L}}
+    [ctor] .
+
+  op _>>=_ : BL$JudgmentList RuleApp{PrfList{L}} -> BL$JudgmentList .
+
+  ceq (JL TJ) >>= RuleApp[PL]{CD by PR} = JL J TJ
+   if PR [ conclusions(JL) => CD given sentences(context(PL, JL TJ)) ]
+      /\ J := judgment(context(PL, JL TJ), premises(PL, JL TJ), CD) .
+
+  eq JL >>= RA = JL [owise] .
+
+  *** context  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op context : PrfList{L} BL$JudgmentList ~> BL$Cxt .
+  eq context(PL, TJ) = context(TJ) .
+  eq context(PL, JL J TJ) = context(J) .
+
+  *** premises  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op premises : PrfList{L} BL$JudgmentList -> SenDeclSet .
+  eq premises(PL, nil) = none .
+  eq premises(PL, TJ) = premises(TJ) .
+  eq premises(PL, JL J TJ) = premises(J) .
+
+  *** qed  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op qed : PrfList{L} BL$JudgmentList -> Bool .
+  eq qed(PL, JL1 TJ JL2 TJ) = true .
+  eq qed(PL, JL) = false [owise] .
+endfm
+
+********************************************************************************

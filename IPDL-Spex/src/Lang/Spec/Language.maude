@@ -1,0 +1,407 @@
+***( SpeX/Lang/Spec
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Data.maude
+
+********************************************************************************
+
+fmod SPEC/LANGUAGE { L :: LANGUAGE } is
+  protecting SPEC/LID { L } .
+
+  var L : L$Lid .
+
+  *** declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op decl-grammar : Spec{L} -> Grammar .
+  eq decl-grammar(Spec[L])
+   = grammar 'Spec/Syntax is
+       'Module
+         ::= "spec_is endspec" : 'Header
+             [format ('! 'so 's! 'n 'o)]
+          |  "spec_is_endspec" : 'Header 'DeclList
+             [format ('! 'so 's! 'n++io 'n--i! 'o)]
+       'DeclList
+         ::= "including_." : 'ModuleName
+             [format ('! 'so '! 'o)]
+          |  "_." : 'Declaration
+             [format ('d 's! 'o)]
+          |  "__" : 'DeclList 'DeclList
+             [assoc format ('d 'ni 'd)]
+       'Header
+         ::= token "header"
+       'ModuleName
+         ::= token "module-name"
+       'Declaration
+         ::= bubble "declaration" [exclude ("including" ".")]
+     endgr .
+
+  *** commands  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op cmd-grammar : Spec{L} -> Grammar .
+  eq cmd-grammar(Spec[L])
+   = grammar 'Spec/Cmd/Syntax is
+       'Command
+         ::= lit "list modules" [format ('b 's 'o)]
+          |  "show module _" : 'ModuleName [format ('b 's 'o 'd)]
+          |  lit "list opened modules" [format ('b 's 's 'o)]
+          |  "open _" : 'ModuleName [format ('b 'so 'd)]
+          |  lit "close" [format ('b 'o)]
+       'ModuleName
+         ::= token "module-name"
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Spec { L :: LANGUAGE } from LANGUAGE to SPEC/LANGUAGE { L } is
+  sort Lid to Spec{L} .
+  op Lid to term Spec[Lid] .
+  op grammar to decl-grammar .
+endv
+
+********************************************************************************
+
+fmod SPEC/READ { L :: LANGUAGE, BL :: SPEC/BASE-LANG } is
+  protecting SPEC/MODULE { L, BL } .
+  protecting SPEC/CMD { L } .
+  protecting ATERM/READ .
+
+  var  L : L$Lid .
+  vars H MN D DL DL1 DL2 M T : ATerm .
+  var  TL : ATermList .
+  var  ATE : ATermExpansion .
+  var  SM : Module{Spec{L}} .
+  var  DB : DB{Spec{L}} .
+
+  *** read module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-module : Spec{L} ATerm DB{Spec{L}} -> Module{Spec{L}} .
+  eq read-module(Spec[L], M, DB) = empty-module(Spec[L]) >>= M given DB .
+
+  op _>>=_given_ : Module{Spec{L}} ATerm DB{Spec{L}} -> Module{Spec{L}} .
+  eq SM >>= {'spec_is`endspec[H] : 'Module} given DB
+   = set-header(read-header(Spec[Lid], H), SM) .
+  eq SM >>= {'spec_is_endspec[H, DL] : 'Module} given DB
+   = set-header(read-header(Spec[Lid], H), SM) >>= DL given DB .
+  eq SM >>= {'__[DL1, DL2] : 'DeclList} given DB
+   = (SM >>= DL1 given DB) >>= DL2 given DB .
+  eq SM >>= {'including_.[{MN : 'ModuleName | ATE}] : 'DeclList} given DB
+   = add-import(including read-module-name(Spec[Lid], MN) ., ATE, SM, DB) .
+  eq SM >>= {'_.[D] : 'DeclList} given DB
+   = add-declaration(D, update-body(add-declarations(D, body(SM)), SM)) .
+  eq SM >>= T given DB = SM [owise] .
+
+  *** read header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-header : Spec{L} ATerm ~> Qid .
+  eq read-header(Spec[L], H) = read-qid(H) .
+
+  *** read module name  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-module-name : Spec{L} ATerm ~> Qid .
+  eq read-module-name(Spec[L], MN) = read-qid(MN) .
+
+  *** read declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-declaration : Spec{L} ATerm -> QidList .
+  eq read-declaration(Spec[L], {D : 'Declaration}) = read-qids(D) .
+  eq read-declaration(Spec[L], T) = nil [owise] .
+
+  *** read command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-cmd : Spec{L} ATerm ~> Cmd{Spec{L}} .
+  eq read-cmd(Spec[L], {'list`modules.Command : 'Command})
+   = Cmd[Spec[L]]{list modules} .
+  eq read-cmd(Spec[L], {'show`module_[MN] : 'Command})
+   = Cmd[Spec[L]]{show module read-module-name(Spec[L], MN)} .
+  eq read-cmd(Spec[L], {'list`opened`modules.Command : 'Command})
+   = Cmd[Spec[L]]{list opened modules} .
+  eq read-cmd(Spec[L], {'open_[MN] : 'Command})
+   = Cmd[Spec[L]]{open read-module-name(Spec[L], MN)} .
+  eq read-cmd(Spec[L], {'close.Command : 'Command})
+   = Cmd[Spec[L]]{close} .
+endfm
+
+********************************************************************************
+
+fmod SPEC/SHOW { L :: LANGUAGE, BL :: SPEC/BASE-LANG } is
+  protecting SPEC/MODULE { L, BL } .
+
+  var  L : L$Lid .
+  vars H MN : Qid .
+  var  IL : ImportList .
+  var  SB : BL$SpecBody .
+  var  DB : DB{Spec{L}} .
+  var  T : Term .
+  vars TL ITL DTL : TermList .
+  var  @T : ATerm .
+  var  @TL : ATermList .
+
+  *** show-module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-module : Module{Spec{L}} -> Term .
+  eq show-module(Module[Spec[L]]{H is IL @TL SB given DB})
+   = show-module(Spec[L], H, show-imports(Spec[L], IL),
+       format-decls(Spec[L], show-declarations(Spec[L], SB, @TL))) .
+
+  op show-module : Spec{L} Qid TermList TermList -> Term .
+  eq show-module(Spec[L], H, empty, empty)
+   = 'spec_is`endspec [ show-header(Spec[L], H) ] .
+  eq show-module(Spec[L], H, ITL, DTL)
+   = 'spec_is_endspec [show-header(Spec[L], H),
+       pack('__, (ITL, DTL)) ] [owise] .
+
+  op show-declarations : Spec{L} BL$SpecBody ATermList -> TermList .
+  eq show-declarations(Spec[L], SB, empty) = empty .
+  eq show-declarations(Spec[L], SB, (@T, @TL))
+   = show-fragment(add-declarations(@T, nil), SB),
+     show-declarations(Spec[L], SB, @TL) .
+
+  *** show-header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-header : Spec{L} Qid -> Term .
+  eq show-header(Spec[L], H) = mk-bubble('header, show-qid(H)) .
+
+  *** show-imports  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-imports : Spec{L} ImportList -> TermList .
+  eq show-imports(Spec[L], nil) = empty .
+  eq show-imports(Spec[L], including MN . IL)
+   = 'including_.[mk-bubble('module-name, show-qid(MN))],
+       show-imports(Spec[L], IL) .
+  eq show-imports(Spec[L], IL) = empty [owise] .
+
+  *** format-decls  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op format-decls : Spec{L} TermList -> TermList .
+  eq format-decls(Spec[L], empty) = empty .
+  eq format-decls(Spec[L], (T, TL))
+   = '_.[mk-bubble('declaration, show-qids(print-declaration(T)))],
+     format-decls(Spec[L], TL) .
+endfm
+
+********************************************************************************
+
+fmod SPEC/ANALYSIS-STATE { L :: LANGUAGE, BL :: SPEC/BASE-LANG } is
+  protecting SPEC/READ { L, BL } .
+  protecting SPEC/DATABASE { L, BL } .
+
+  var  L : L$Lid .
+  var  SAS : AnalysisState{Spec{L}} .
+  var  SM : Module{Spec{L}} .
+  var  DB : DB{Spec{L}} .
+  var  S : BL$State .
+  var  MNS : QidSet .
+  var  MNL : QidList .
+  vars MN D T : ATerm .
+  var  TL : ATermList .
+
+  *** syntactic-analysis states  - - - - - - - - - - - - - - - - - - - - - - - -
+  sort AnalysisState{Spec{L}} .
+  op AnalysisState[_]{_&_} : Spec{L} DB{Spec{L}} QidList
+    -> AnalysisState{Spec{L}} [ctor] .
+  op AnalysisState[_]{_&_} : Spec{L} DB{Spec{L}} BL$State
+    -> AnalysisState{Spec{L}} [ctor] .
+  op AnalysisState[_]{_&_} : Spec{L} QidSet QidList
+    -> AnalysisState{Spec{L}} [ctor] .
+
+  *** derived states  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op AnalysisState[_]{_} : Spec{L} DB{Spec{L}} -> AnalysisState{Spec{L}} .
+  eq AnalysisState[Spec[L]]{DB} = AnalysisState[Spec[L]]{DB & (nil).QidList} .
+
+  *** db (database projection)  - - - - - - - - - - - - - - - - - - - - - - - --
+  op db : AnalysisState{Spec{L}} -> DB{Spec{L}} .
+  eq db(AnalysisState[Spec[L]]{DB & MNL}) = DB .
+  eq db(AnalysisState[Spec[L]]{DB & S}) = DB .
+  eq db(SAS) = empty [owise] .
+
+  *** bs (base-state projection)  - - - - - - - - - - - - - - - - - - - - - - --
+  op bs : AnalysisState{Spec{L}} -> BL$State .
+  eq bs(AnalysisState[Spec[L]]{DB & S}) = S .
+  eq bs(SAS) = initial-state(nil) [owise] .
+
+  *** module names  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op module-names : AnalysisState{Spec{L}} -> QidSet .
+  eq module-names(AnalysisState[Spec[L]]{DB & MNL}) = module-names(DB) .
+  eq module-names(AnalysisState[Spec[L]]{MNS & MNL}) = MNS .
+  eq module-names(SAS) = none [owise] .
+
+  op opened-modules : AnalysisState{Spec{L}} -> QidList .
+  eq opened-modules(AnalysisState[Spec[L]]{DB & MNL}) = MNL .
+  eq opened-modules(AnalysisState[Spec[L]]{MNS & MNL}) = MNL .
+  eq opened-modules(SAS) = nil [owise] .
+
+  *** state updates  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _>>=_ : AnalysisState{Spec{L}} ATerm -> AnalysisState{Spec{L}} .
+  eq AnalysisState[Spec[L]]{DB & S} >>= {'including_.[MN] : 'DeclList}
+   = AnalysisState[Spec[L]]{DB & update(S, module-expansion(Spec[L], MN))} .
+  eq AnalysisState[Spec[L]]{DB & S} >>= {'_.[D] : 'DeclList}
+   = AnalysisState[Spec[L]]{DB & S >>= D} .
+  eq SAS >>= T = SAS [owise] .
+
+  op module-expansion : Spec{L} ATerm -> AnalysisOutcome .
+  eq module-expansion(Spec[L], {MN : 'ModuleName | expanding to TL})
+   = successful-analysis(TL) .
+  eq module-expansion(Spec[L], T) = successful-analysis(empty) [owise] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Spec/AnalysisState { L :: LANGUAGE, BL :: SPEC/BASE-LANG }
+from ANALYSIS-STATE to SPEC/ANALYSIS-STATE { L, BL } is
+  sort State to AnalysisState{Spec{L}} .
+endv
+
+********************************************************************************
+
+fmod SPEC/PARSING { L :: LANGUAGE, BL :: SPEC/BASE-LANG } is
+  including  SYNTACTIC-ANALYSIS { Spec{L}, Spec/AnalysisState{L, BL} } .
+  protecting LANG-NAME { L } .
+  protecting SPEC/READ { L, BL } .
+
+  var  L : L$Lid .
+  var  SM : Module{Spec{L}} .
+  var  DB : DB{Spec{L}} .
+  var  SAS : AnalysisState{Spec{L}} .
+  var  QIL : QidList .
+  var  C : Constant .
+  vars $H H $MN MN $D D DL DL1 DL2 T : ATerm .
+  var  TL : ATermList .
+  var  $ : Qid .
+  var  AO : AnalysisOutcome .
+  var  WA : WarningArgs .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse Spec[L] input (QIL) in SAS
+   = parse Spec[L] declaration (QIL) in SAS
+     or-else parse Spec[L] command (QIL) in SAS .
+
+  op parse_module`name_in_ : Spec{L} QidList AnalysisState{Spec{L}}
+    -> ParsingOutcome .
+  eq parse Spec[L] module name (QIL) in SAS
+   = scan Spec[L] input (QIL : 'ModuleName)
+     then analyse Spec[L] module-name
+       in AnalysisState[Spec[L]]{db(SAS)} .
+
+  op parse_declaration_in_ : Spec{L} QidList AnalysisState{Spec{L}}
+    -> ParsingOutcome .
+  eq parse Spec[L] declaration (QIL) in SAS
+   = scan Spec[L] input (QIL : 'Module)
+     then analyse Spec[L] module
+       in AnalysisState[Spec[L]]{db(SAS) & bs(SAS)}
+     or-else, if inconclusive, parsing-error ('unexpected 'parsing 'error:
+       'cannot 'parse 'this name(L) 'module) .
+
+  op parse_command_in_ : Spec{L} QidList AnalysisState{Spec{L}}
+    -> ParsingOutcome .
+  eq parse Spec[L] command (QIL) in SAS
+   = scan input (QIL : 'Command) given cmd-grammar(Spec[L])
+     then analyse Spec[L] command
+       in AnalysisState[Spec[L]]{module-names(SAS) & opened-modules(SAS)} .
+
+  *** analyse module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_module : Spec{L} -> AnalysisAction{Spec{L}} .
+
+  eq analyse Spec[L] module {'spec_is`endspec[$H] : 'Module}
+   = try {'spec_is`endspec [ solve Spec[L] header ($H) ] : 'Module} .
+
+  eq analyse Spec[L] module {'spec_is_endspec[$H, DL] : 'Module}
+   = try { 'spec_is_endspec [
+        solve Spec[L] header ($H),
+        analyse Spec[L] declarations (DL)
+      ] : 'Module } .
+
+  *** solve header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op solve_header : Spec{L} -> AnalysisAction{Spec{L}} .
+  eq solve Spec[L] header {$[H] : 'Header}
+   = check (read-qid(H) is ordinary) and-then return {H : 'Header}
+     or-else
+     fail ('syntax 'error: emph(print Spec[L] term (H))
+       'is 'not 'a 'valid 'module 'header,
+       (at Spec[L] term (H), include context)) .
+
+  *** analyse module name  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_module-name : Spec{L} -> AnalysisAction{Spec{L}} .
+  eq analyse Spec[L] module-name {$[MN] : 'ModuleName} in SAS
+   = check (read-module-name(Spec[L], MN) in module-names(SAS))
+     and-then return {MN : 'ModuleName}
+     or-else fail ('no 'such 'module: emph(read-module-name(Spec[L], MN)))
+     in SAS .
+
+  *** analyse declarations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op analyse_declarations : Spec{L} -> AnalysisAction{Spec{L}} .
+
+  eq analyse Spec[L] declarations {'__[DL1, DL2] : 'DeclList}
+   = try { '__ [
+        analyse Spec[L] declarations (DL1),
+        analyse Spec[L] declarations (DL2)
+      ] : 'DeclList } .
+
+  eq analyse Spec[L] declarations {'including_.[$MN] : 'DeclList}
+   = try {'including_. [ analyse Spec[L] import ($MN) ] : 'DeclList } .
+
+  eq analyse Spec[L] declarations {'_.[$D] : 'DeclList}
+   = try {'_. [ analyse Spec[L] declarations ($D) ] : 'DeclList}
+     or-else
+     fail with Spec[L] trace ('_.[$D]) .
+
+  ceq analyse Spec[L] declarations {$[D] : 'Declaration} in SAS
+   = just parse-declaration(QIL, bs(SAS)) on QIL
+   if QIL := read-declaration(Spec[L], {D : 'Declaration}) .
+
+  *** analyse imports  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_import : Spec{L} -> AnalysisAction{Spec{L}} .
+
+  ceq analyse Spec[L] import {$[MN] : 'ModuleName} in SAS
+   = expand Spec[L] term [AO] {MN : 'ModuleName} in SAS
+   if SM := db(SAS)[read-module-name(Spec[L], MN)]
+      /\ AO := reanalyse(body(SM), bs(SAS)) .
+
+  eq analyse Spec[L] import {$[MN] : 'ModuleName} in SAS
+   = fail ('undeclared name(L) 'module: emph(read-module-name(Spec[L], MN)),
+      (at Spec[L] term (MN), include context))
+     in SAS [owise] .
+
+  op expand_term`[_`] : Spec{L} AnalysisOutcome -> AnalysisAction{Spec{L}} .
+  eq expand Spec[L] term [successful-analysis(TL)] {MN : 'ModuleName}
+   = return {MN : 'ModuleName | expanding to TL} .
+  eq expand Spec[L] term [analysis-error(QIL, WA)] {MN : 'ModuleName}
+   = fail (QIL, (at Spec[L] term (MN), include context)) .
+
+  *** analyse command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_command : Spec{L} -> AnalysisAction{Spec{L}} .
+
+  eq analyse Spec[L] command {C : 'Command} in SAS
+   = check (C == 'close.Command implies opened-modules(SAS) =/= nil)
+     and-then return {C : 'Command}
+     or-else fail ('no 'opened 'modules) in SAS .
+
+  eq analyse Spec[L] command {'show`module_[$MN] : 'Command}
+   = try { 'show`module_ [
+        analyse Spec[L] module-name ($MN)
+      ] : 'Command } .
+
+  eq analyse Spec[L] command {'open_[$MN] : 'Command}
+   = try { 'open_ [
+        analyse Spec[L] module-name ($MN)
+      ] : 'Command } .
+endfm
+
+********************************************************************************
+
+fmod SPEC/PRINTING { L :: LANGUAGE, BL :: SPEC/BASE-LANG } is
+  protecting PRINTING { Spec{L} } .
+  protecting SPEC/SHOW { L, BL }.
+
+  var SM : Module{Spec{L}} .
+
+  *** print  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : Module{Spec{L}} -> QidList .
+  eq print(SM) = print Spec[Lid] term (show-module(SM)) .
+endfm
+
+********************************************************************************
+
+fmod SPEC/PARSING-&-PRINTING { L :: LANGUAGE, BL :: SPEC/BASE-LANG } is
+  protecting SPEC/PARSING { L, BL } .
+  protecting SPEC/PRINTING { L, BL } .
+endfm
+
+********************************************************************************

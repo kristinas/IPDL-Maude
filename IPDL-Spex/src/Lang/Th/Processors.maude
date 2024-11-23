@@ -1,0 +1,33 @@
+***( SpeX/Lang/Th
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Processor.maude
+sload ./BL/Triv.maude
+sload ./BL/PL.maude
+sload ./BL/EQL.maude
+sload ./BL/MSA.maude
+sload ./BL/HA.maude
+sload ./BL/FOL.maude
+sload ./BL/DNI.maude
+
+********************************************************************************
+
+mod TH/PROCESSORS is
+  including TH/PROCESSOR { Triv, Th/Triv } .
+  including TH/PROCESSOR { PL, Th/PL } .
+  including TH/PROCESSOR { EQL, Th/EQL } .
+  including TH/PROCESSOR { MSA, Th/MSA } .
+  including TH/PROCESSOR { HA, Th/HA } .
+  including TH/PROCESSOR { FOL, Th/FOL } .
+  including TH/PROCESSOR { DNI, Th/DNI } .
+endm
+
+********************************************************************************

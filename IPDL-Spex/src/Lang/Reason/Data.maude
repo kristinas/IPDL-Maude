@@ -1,0 +1,224 @@
+***( SpeX/Lang/Reason
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Base.maude
+sload ../../Database.maude
+
+********************************************************************************
+
+fmod REASON/STMNT { L :: LANGUAGE, BL :: REASON/BASE-LANG } is
+  protecting REASON/LID { L } .
+
+  var RL : Reason{L} .
+  var SN : Qid .
+  var BL$SB : BL$StatementBody .
+
+  *** Stmnt{Reason{L}}  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort Stmnt{Reason{L}} .
+  op Stmnt[_]{_is_} : Reason{L} Qid BL$StatementBody
+    -> Stmnt{Reason{L}} [ctor] .
+
+  *** projections  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op name : Stmnt{Reason{L}} -> Qid .
+  eq name(Stmnt[RL]{SN is BL$SB}) = SN .
+
+  op body : Stmnt{Reason{L}} -> BL$StatementBody .
+  eq body(Stmnt[RL]{SN is BL$SB}) = BL$SB .
+endfm
+
+********************************************************************************
+
+fmod REASON/OS-PAIR { L :: LANGUAGE, BL :: REASON/BASE-LANG } is
+  protecting REASON/LID { L } .
+
+  var RL : Reason{L} .
+  var PO : BL$ProofObject .
+  var PS : BL$ProofStep .
+
+  *** OSPair{Reason{L}}  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort OSPair{Reason{L}} .
+  op OSPair[_]{_;_} : Reason{L} BL$ProofStep BL$ProofObject
+    -> OSPair{Reason{L}} [ctor] .
+
+  *** projections  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op proof-step : OSPair{Reason{L}} -> BL$ProofStep .
+  eq proof-step(OSPair[RL]{PS ; PO}) =  PS .
+
+  op proof-object : OSPair{Reason{L}} -> BL$ProofObject .
+  eq proof-object(OSPair[RL]{PS ; PO}) =  PO .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Reason/OSPair { L :: LANGUAGE, BL :: REASON/BASE-LANG }
+from TRIV to REASON/OS-PAIR { L, BL } is
+  sort Elt to OSPair{Reason{L}} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod REASON/OS-LIST { L :: LANGUAGE, BL :: REASON/BASE-LANG } is
+  protecting LIST { Reason/OSPair{L,BL} } *
+    (sort NeList{Reason/OSPair{L,BL}} to NeOSList{Reason{L}},
+     sort List{Reason/OSPair{L,BL}} to OSList{Reason{L}}) .
+
+  vars OSL OSL' : OSList{Reason{L}} .
+
+  *** drop  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op drop : OSList{Reason{L}} OSList{Reason{L}} -> OSList{Reason{L}} .
+  eq drop(OSL, OSL OSL') = OSL' .
+  eq drop(OSL, OSL') = OSL' [owise] .
+endfm
+
+********************************************************************************
+
+fmod REASON/PROOF { L :: LANGUAGE, BL :: REASON/BASE-LANG } is
+  protecting REASON/STMNT { L, BL } .
+  protecting REASON/OS-LIST { L, BL } .
+
+  var  RL : Reason{L} .
+  var  Pf : Proof{Reason{L}} .
+  var  PN : Qid .
+  var  St : Stmnt{Reason{L}} .
+  var  OSP : OSPair{Reason{L}} .
+  var  OSL : OSList{Reason{L}} .
+  var  PS : BL$ProofStep .
+  vars PO PO' : BL$ProofObject .
+
+  *** Proof{Reason{L}}  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort Proof{Reason{L}} .
+  op Proof[_]{_of_is_yields_} : Reason{L} Qid Stmnt{Reason{L}} OSList{Reason{L}}
+    BL$ProofObject -> Proof{Reason{L}}
+    [ctor format(d d d d d d d d d d n++i ni ni --i)] .
+
+  *** projections  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op name : Proof{Reason{L}} -> Qid .
+  eq name(Proof[RL]{PN of St is OSL yields PO}) = PN .
+
+  *** size  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op size : Proof{Reason{L}} -> Nat .
+  eq size(Proof[RL]{PN of St is OSL yields PO}) = size(OSL) .
+
+  *** proof-setup  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op proof-setup : Reason{L} Qid Stmnt{Reason{L}} -> Proof{Reason{L}} .
+  eq proof-setup(RL, PN, St)
+   = Proof[RL]{PN of St is nil yields proof-setup(body(St))} .
+
+  *** proof-outcome  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op proof-outcome : Proof{Reason{L}} -> BL$ProofObject .
+  eq proof-outcome(Proof[RL]{PN of St is OSL yields PO}) = PO .
+
+  *** append-proof-step  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op append-proof-step : BL$ProofStep BL$ProofObject Proof{Reason{L}}
+    -> Proof{Reason{L}} .
+  eq append-proof-step(PS, PO', Proof[RL]{PN of St is OSL yields PO})
+   = Proof[RL]{PN of St is OSL OSPair[RL]{PS ; PO} yields PO'} .
+
+  *** qed  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op qed : Proof{Reason{L}} -> Bool .
+  eq qed(Proof[RL]{PN of St is OSL yields PO}) = qed(PO) .
+
+  *** rollback  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op rollback : Proof{Reason{L}} -> Proof{Reason{L}} .
+  eq rollback(Proof[RL]{PN of St is OSL OSP yields PO})
+   = Proof[RL]{PN of St is OSL yields proof-object(OSP)} .
+  eq rollback(Pf) = Pf [owise] .
+endfm
+
+********************************************************************************
+
+view Reason/Stmnt { L :: LANGUAGE, BL :: REASON/BASE-LANG }
+from TRIV to REASON/STMNT {L, BL } is
+  sort Elt to Stmnt{Reason{L}} .
+endv
+
+view Reason/Proof { L :: LANGUAGE, BL :: REASON/BASE-LANG }
+from TRIV to REASON/PROOF {L, BL } is
+  sort Elt to Proof{Reason{L}} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod REASON/DATABASE { L :: LANGUAGE, BL :: REASON/BASE-LANG } is
+  protecting DICTIONARY { Qid, Reason/Stmnt{L, BL} } *
+    (sort KeyValuePair{Qid,Reason/Stmnt{L,BL}} to StmntDB-Entry{Reason{L}},
+     sort Dict{Qid,Reason/Stmnt{L,BL}} to StmntDB{Reason{L}}) .
+  protecting DICTIONARY { Qid, Reason/Proof{L, BL} } *
+    (sort KeyValuePair{Qid,Reason/Proof{L,BL}} to ProofDB-Entry{Reason{L}},
+     sort Dict{Qid,Reason/Proof{L,BL}} to ProofDB{Reason{L}}) .
+
+  var  RL : Reason{L} .
+  var  DB : DB{Reason{L}} .
+  var  SDB : StmntDB{Reason{L}} .
+  var  PDB : ProofDB{Reason{L}} .
+  var  St : Stmnt{Reason{L}} .
+  var  Pf : Proof{Reason{L}} .
+  vars SN PN : Qid .
+
+  *** DB{Reason{L}}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort DB{Reason{L}} .
+  op DB[_]{_;_} : Reason{L} StmntDB{Reason{L}} ProofDB{Reason{L}}
+    -> DB{Reason{L}} [ctor] .
+
+  *** statement and proof projections  - - - - - - - - - - - - - - - - - - - - -
+  op _[Stmnt] : DB{Reason{L}} -> StmntDB{Reason{L}} [prec 23] .
+  eq DB[RL]{SDB ; PDB}[Stmnt] = SDB .
+
+  op _[Proof] : DB{Reason{L}} -> ProofDB{Reason{L}} [prec 23] .
+  eq DB[RL]{SDB ; PDB}[Proof] = PDB .
+
+  *** empty database  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op empty : -> DB{Reason{L}} .
+  eq (empty).DB{Reason{L}} = DB[Reason[Lid]]{empty ; empty} .
+
+  *** names  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op stmnt-names : StmntDB{Reason{L}} -> QidSet .
+  eq stmnt-names((empty).StmntDB{Reason{L}}) = none .
+  eq stmnt-names((SN : St, SDB)) = SN ; stmnt-names(SDB) .
+
+  op stmnt-names : DB{Reason{L}} -> QidSet .
+  eq stmnt-names(DB) = stmnt-names(DB[Stmnt]) .
+
+  op proof-names : ProofDB{Reason{L}} -> QidSet .
+  eq proof-names((empty).ProofDB{Reason{L}}) = none .
+  eq proof-names((PN : Pf, PDB)) = PN ; proof-names(PDB) .
+
+  op proof-names : DB{Reason{L}} -> QidSet .
+  eq proof-names(DB) = proof-names(DB[Proof]) .
+
+  *** insert  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op insert-stmnt : Qid Stmnt{Reason{L}} DB{Reason{L}} -> DB{Reason{L}} .
+  eq insert-stmnt(SN, St, DB[RL]{SDB ; PDB})
+   = DB[RL]{insert(SN, St, SDB) ; PDB} .
+
+  op insert-proof : Qid Proof{Reason{L}} DB{Reason{L}} -> DB{Reason{L}} .
+  eq insert-proof(PN, Pf, DB[RL]{SDB ; PDB})
+   = DB[RL]{SDB ; insert(PN, Pf, PDB)} .
+endfm
+
+********************************************************************************
+
+fmod REASON/CMD { L :: LANGUAGE } is
+  protecting REASON/LID { L } .
+
+  sorts Cmd{Reason{L}} .
+  op Cmd[_]{list`statements} : Reason{L} -> Cmd{Reason{L}} [ctor] .
+  op Cmd[_]{show`statement_} : Reason{L} Qid -> Cmd{Reason{L}} [ctor] .
+  op Cmd[_]{list`proofs} : Reason{L} -> Cmd{Reason{L}} [ctor] .
+  op Cmd[_]{show`proof_} : Reason{L} Qid -> Cmd{Reason{L}} [ctor] .
+  op Cmd[_]{show`ongoing`proof} : Reason{L} -> Cmd{Reason{L}} [ctor] .
+  op Cmd[_]{begin`proof_of_} : Reason{L} Qid Qid -> Cmd{Reason{L}} [ctor] .
+  op Cmd[_]{resume`proof_} : Reason{L} Qid -> Cmd{Reason{L}} [ctor] .
+  op Cmd[_]{rollback} : Reason{L} -> Cmd{Reason{L}} [ctor] .
+  op Cmd[_]{end`proof} : Reason{L} -> Cmd{Reason{L}} [ctor] .
+endfm
+
+********************************************************************************

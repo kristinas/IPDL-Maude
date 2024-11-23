@@ -1,0 +1,73 @@
+***( SpeX/Lang/Reason/Jdg
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Base.maude
+
+********************************************************************************
+
+fmod JDG/LID { L :: LANGUAGE } is
+  sort Jdg{L} .
+  op Jdg[_] : L$Lid -> Jdg{L} [ctor] .
+endfm
+
+********************************************************************************
+
+fmod JDG/DATA { L :: LANGUAGE, BL :: JDG/BASE-LANG } is
+  protecting JDG/LID { L } .
+
+  var L : L$Lid .
+  var Cxt : BL$Cxt .
+  var PS : SenDeclSet .
+  var C : SenDecl .
+
+  *** judgments  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort Judgment{L} .
+  op Judgment[_]{_;_|-_} : L$Lid BL$Cxt SenDeclSet SenDecl -> Judgment{L}
+    [ctor] .
+
+  *** projections  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op context : Judgment{L} -> BL$Cxt .
+  eq context(Judgment[L]{Cxt ; PS |- C}) = Cxt .
+
+  op premises : Judgment{L} -> SenDeclSet .
+  eq premises(Judgment[L]{Cxt ; PS |- C}) = PS .
+
+  op conclusion : Judgment{L} -> SenDecl .
+  eq conclusion(Judgment[L]{Cxt ; PS |- C}) = C .
+endfm
+
+********************************************************************************
+
+view Judgment { L :: LANGUAGE, BL :: JDG/BASE-LANG }
+from TRIV to JDG/DATA { L, BL } is
+  sort Elt to Judgment{L} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod JDG/LIST { L :: LANGUAGE, BL :: JDG/BASE-LANG } is
+  protecting LIST { Judgment{L,BL} } *
+    (sort NeList{Judgment{L,BL}} to NeJdgList{L},
+     sort List{Judgment{L,BL}} to JdgList{L}) .
+
+  var L : L$Lid .
+  var JL : JdgList{L} .
+  var Cxt : BL$Cxt .
+  var PS : SenDeclSet .
+  var C : SenDecl .
+
+  *** conclusions occurring in a list of judgments  - - - - - - - - - - - - - --
+  op conclusions : JdgList{L} -> SenDeclSet .
+  eq conclusions(nil) = none .
+  eq conclusions(Judgment[L]{Cxt ; PS |- C} JL) = C conclusions(JL) .
+endfm
+
+********************************************************************************

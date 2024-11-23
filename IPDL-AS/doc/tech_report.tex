@@ -1,0 +1,104 @@
+\documentclass[11pt,hidelinks]{article}
+
+\usepackage{amsmath, amssymb, amsthm, stmaryrd}
+\usepackage{url}
+\usepackage{tikz}
+\usepackage[override]{cmtt}
+\usepackage{textcomp}
+\usepackage{cryptocode}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphics}
+\usepackage{float}
+\usepackage{xspace}
+\usepackage{graphicx}
+\usepackage{mathpartir}
+\usepackage[margin=0.45in]{geometry}
+\usepackage[colorlinks]{hyperref}
+\usepackage{pl-syntax}
+\usepackage{mathabx}
+\usepackage{relsize}
+\hypersetup{linkcolor=blue,filecolor=blue,citecolor=blue,urlcolor=blue}
+
+\newcommand{\nat}{\mathbb{N}}
+\newcommand{\ipdl}{\textsf{IPDL} }
+\newcommand{\type}{\mathsf{t}}
+\newcommand{\func}{\mathsf{f}}
+\newcommand{\dist}{\mathsf{d}}
+\newcommand{\one}{\mathsf{1}}
+\newcommand{\Bool}{\mathsf{Bool}}
+\newcommand{\true}{\mathsf{true}}
+\newcommand{\false}{\mathsf{false}}
+\newcommand{\fst}{\mathsf{fst}}
+\newcommand{\snd}{\mathsf{snd}}
+\newcommand{\ret}[1]{\mathsf{ret} \ #1}
+\newcommand{\samp}[1]{\mathsf{samp} \ #1}
+\renewcommand{\read}[1]{\mathsf{read} \ #1}
+\newcommand{\ifte}[3]{\mathsf{if} \ #1 \ \mathsf{then} \ #2 \ \mathsf{else} \ #3}
+\newcommand{\zero}{\mathsf{0}}
+\newcommand{\assign}[2]{#1 \coloneqq #2}
+\newcommand{\Par}[2]{#1 \; || \; #2}
+\newcommand{\new}[3]{\mathsf{new} \ #1 : #2 \ \mathsf{in} \ #3}
+\newcommand{\axiom}{\mathsf{axiom}}
+\renewcommand{\approxeq}[6]{#1 \approx #2 : #3 \to #4 \ \mathsf{width} \ #5 \ \mathsf{length} \ #6}
+\newcommand{\sem}[1]{\llbracket #1 \rrbracket}
+\newcommand{\val}[1]{\mathsf{val} \ #1}
+\newcommand{\outstep}[2]{\xmapsto{#1 \, \coloneqq \, #2}}
+\newcommand{\stuck}{\mathsf{stuck}}
+\newcommand{\final}{\mathsf{final}}
+%\renewcommand{\norm}[1]{\Vert #1 \Vert}
+%\renewcommand{\eval}[1]{#1 \! \Downarrow}
+%\newcommand{\lift}[1]{\mathcal{L}(#1)}
+%\newcommand{\pull}[2]{\stackrel{\hookleftarrow}{#1 \, \coloneqq \, #2}}
+\newcommand{\newNf}{\mathsf{newNF}}
+\newcommand{\preNf}{\mathsf{preNF}}
+\newcommand{\nf}{\mathsf{NF}}
+
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}						
+\newtheorem{definition}{Definition}	
+\newtheorem{corollary}{Corollary}	
+\newtheorem{example}{Example}
+
+% maude macros
+
+\newcommand{\code}[1]{\texttt{#1}}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  literate={~} {$\sim$}{1}
+}
+
+\begin{document}
+\title{A Core Calculus for Equational Proofs of Distributed Cryptographic Protocols: Technical Report}
+\author{Kristina Sojakova \and Mihai Codescu \and Joshua Gancher}
+
+\maketitle
+
+\section*{\small Acknowledgement}
+This project was funded through the NGI Assure Fund, a fund established by NLnet with financial support from the European Commission's Next Generation Internet programme, under the aegis of DG Communications Networks, Content and Technology under grant agreement No. 957073.
+
+\section{Syntax of \ipdl}
+\input{syntax}
+
+%\section{Operational Semantics of \ipdl}
+%\input{semantics}
+
+%\section{Soundness of Exact Equality in \ipdl}
+%\input{soundness}
+
+%\section{Computational Semantics of \ipdl}
+
+%\section{Case Studies in \ipdl}
+
+\section{Maude Formalization}
+\input{maude}
+
+\bibliography{bib} 
+\bibliographystyle{ieeetr}
+
+%\appendix
+%\input{appendix}
+
+\end{document}

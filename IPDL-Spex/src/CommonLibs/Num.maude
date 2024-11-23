@@ -1,0 +1,123 @@
+***( SpeX/CommonLibs
+
+  This file is part of CommonLibs (CL), a suite of Maude 3 libraries
+  that extend the predefined data modules from the standard prelude.
+
+  Copyright : (C) 2020-2023 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+********************************************************************************
+
+fmod NAT/OPS is
+  protecting NAT .
+
+  var N : Nat .
+
+  *** p_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op p_ : Nat -> Nat .
+  eq p (s N) = N .
+  eq p N = N [owise] .
+endfm
+
+********************************************************************************
+
+fmod BOUND/OPS is
+  protecting BOUND .
+  protecting NAT/OPS .
+
+  var N : Nat .
+  var B : Bound .
+
+  *** _<_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _<_ : Bound Bound -> Bool [ditto] .
+  eq N < unbounded = true .
+  eq unbounded < B = false .
+
+  *** _>_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _>_ : Bound Bound -> Bool [ditto] .
+  eq unbounded > N = true .
+  eq B > unbounded = false .
+
+  *** p_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op p_ : Bound -> Bound [ditto] .
+  eq p B = B [owise] .
+endfm
+
+********************************************************************************
+
+fmod FIND-RESULT is
+  protecting STRING .
+  protecting NAT/OPS .
+
+  var FR : FindResult .
+
+  *** s_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op s_ : FindResult -> FindResult [ditto] .
+  eq s notFound = notFound .
+
+  *** p_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op p_ : FindResult -> FindResult [ditto] .
+  eq p FR = FR [owise] .
+
+  *** _+_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _+_ : FindResult FindResult -> FindResult [ditto] .
+  eq notFound + FR = notFound .
+
+  *** min  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op min : [FindResult] [FindResult] -> [FindResult] [ditto] .
+  eq min(notFound, FR) = FR .
+
+  *** max  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op max : [FindResult] [FindResult] -> [FindResult] [ditto] .
+  eq max(notFound, FR) = FR .
+endfm
+
+********************************************************************************
+
+fmod NAT-LIST/OPS is
+  protecting NAT-LIST .
+
+  vars M N : Nat .
+  vars ML NL : NatList .
+
+  *** pointwise add  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _[+]_ : NatList NatList -> NatList .
+  eq nil [+] NL = NL .
+  eq ML [+] nil = ML .
+  eq (M ML) [+] (N NL) = (M + N) (ML [+] NL) .
+endfm
+
+********************************************************************************
+
+fmod NUM/READ is
+  protecting META-LEVEL .
+  protecting RAT .
+
+  var T : Term .
+
+  *** undefined reading result  - - - - - - - - - - - - - - - - - - - - - - - --
+  op undef-read : -> [Rat] [ctor] .
+
+  *** read-num  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-num : Term ~> Rat .
+  eq read-num(T) = downTerm(T, (undef-read).[Rat]) .
+endfm
+
+********************************************************************************
+
+fmod NUM/SHOW is
+  protecting META-LEVEL .
+  protecting RAT .
+
+  var R : Rat .
+
+  *** show-num  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-num : Rat -> Term .
+  eq show-num(R) = upTerm(R) .
+endfm
+
+********************************************************************************

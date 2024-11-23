@@ -1,0 +1,27 @@
+***( SpeX/Lang/Spec/BL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../../Base/DNI/Processor.maude
+
+********************************************************************************
+
+view Spec/DNI from SPEC/SUBPROCESSOR to DNI/PROCESSOR { Spec/Pid{DNI} } is
+  sort SpecBody to SpecBody{DNI} .
+  sort State to AnalysisState{DNI} .
+
+  op parse-declaration(QIL:QidList, S:State) to term
+    parse DNI input (QIL:QidList) in S:AnalysisState{DNI} .
+  op print-declaration(T:Term) to term
+    print DNI term (T:Term) .
+endv
+
+********************************************************************************

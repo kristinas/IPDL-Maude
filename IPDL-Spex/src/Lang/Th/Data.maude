@@ -1,0 +1,89 @@
+***( SpeX/Lang/Th
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Base.maude
+sload ../../Database.maude
+
+********************************************************************************
+
+fmod TH/MODULE { L :: LANGUAGE, BL :: TH/BASE-LANG } is
+  protecting TH/LID { L } .
+
+  var  L : L$Lid .
+  vars H H' : Qid .
+  vars SB SB' : BL$SpecBody .
+
+  *** Theory{L}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort Theory{L} .
+  op Theory[_]{_is_} : L$Lid Qid BL$SpecBody -> Theory{L}
+    [ctor format(d d d d s s n++i n--i d d)] .
+
+  *** header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op header : Theory{L} -> Qid .
+  eq header(Theory[L]{H is SB}) = H .
+
+  op set-header : Qid Theory{L} -> Theory{L} .
+  eq set-header(H, Theory[L]{H' is SB}) = Theory[L]{H is SB} .
+
+  *** body  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op body : Theory{L} -> BL$SpecBody .
+  eq body(Theory[L]{H is SB}) = SB .
+
+  op update-body : BL$SpecBody Theory{L} -> Theory{L} .
+  eq update-body(SB, Theory[L]{H is SB'}) = Theory[L]{H is SB} .
+
+  *** empty-theory  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op empty-theory : L$Lid Qid -> Theory{L} .
+  eq empty-theory(L, H) = Theory[L]{H is nil} .
+
+  op empty-theory : L$Lid -> Theory{L} .
+  eq empty-theory(L) = empty-theory(L, ') .
+endfm
+
+********************************************************************************
+
+view Th/Module { L :: LANGUAGE, BL :: TH/BASE-LANG }
+from TRIV to TH/MODULE { L, BL } is
+  sort Elt to Theory{L} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod TH/DATABASE { L :: LANGUAGE, BL :: TH/BASE-LANG } is
+  protecting DICTIONARY { Qid, Th/Module{L,BL} } *
+    (sort KeyValuePair{Qid,Th/Module{L,BL}} to DB-Entry{Th{L}},
+     sort Dict{Qid,Th/Module{L,BL}} to DB{Th{L}}) .
+
+  var DB : DB{Th{L}} .
+  var TN : Qid .
+  var Th : Theory{L} .
+
+  *** theory-names  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op theory-names : DB{Th{L}} -> QidSet .
+  eq theory-names(empty) = none .
+  eq theory-names((TN : Th, DB)) = TN ; theory-names(DB) .
+endfm
+
+********************************************************************************
+
+fmod TH/CMD { L :: LANGUAGE } is
+  protecting TH/LID { L } .
+
+  sorts Cmd{Th{L}} .
+  op Cmd[_]{list`theories} : Th{L} -> Cmd{Th{L}} [ctor] .
+  op Cmd[_]{show`theory_} : Th{L} Qid -> Cmd{Th{L}} [ctor] .
+
+  op Cmd[_]{list`opened`theories} : Th{L} -> Cmd{Th{L}} [ctor] .
+  op Cmd[_]{open_} : Th{L} Qid -> Cmd{Th{L}} [ctor] .
+  op Cmd[_]{close} : Th{L} -> Cmd{Th{L}} [ctor] .
+endfm
+
+********************************************************************************

@@ -1,0 +1,55 @@
+ lang IPDL
+
+ function xor : bool * bool -> bool .
+   
+ distribution flip : unit -> bool .
+
+ input In : bool .
+ 
+ output LeakCtxtAliceAdv : bool .
+
+assumption flipInvariantXorFixed using x : 
+   emptyCCtxt ; x : bool ; nil |= 
+    y : bool <- samp flip (()) ; return  xor( (x, y) ) 
+    = samp flip(()) .
+
+protocol real =
+    new Ctxt : bool in
+    new Key : bool in
+    (
+    (Key ::= samp flip (()) ) 
+    ||
+    (Ctxt ::= m : bool <- read In ;                
+       k : bool <- read Key ; 
+       return xor((m, k)) )
+    ||
+    (LeakCtxtAliceAdv ::= c : bool <- read Ctxt ; return c)
+    )
+      .
+      
+
+protocol idealPlusSim =
+ new LeakCtxtIdAdv : bool in
+  (
+   (LeakCtxtAliceAdv ::= c : bool <- read LeakCtxtIdAdv ; return c)
+ ||
+ (new Ctxt : bool
+ in
+   ((Ctxt ::= m : bool <- read In ; samp flip (()) )
+  ||
+  (LeakCtxtIdAdv ::= c : bool <- read Ctxt ; return c ) )
+   )
+  )
+ .
+
+start with real then 
+fold Key into Ctxt then
+fold Ctxt into LeakCtxtAliceAdv then
+use assumption flipInvariantXorFixed on LeakCtxtAliceAdv then
+try sym from idealPlusSim : fold LeakCtxtIdAdv into LeakCtxtAliceAdv then fold Ctxt into LeakCtxtAliceAdv done
+
+check-proof idealPlusSim
+
+ 
+
+

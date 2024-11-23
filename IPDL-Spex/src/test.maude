@@ -1,0 +1,7 @@
+fmod test is
+ pr NAT .
+ op myxor  : Bool Bool -> Bool .
+ var x : Bool .
+ eq myxor(false, x) = x .
+ eq myxor(x, false) = x .
+endfm

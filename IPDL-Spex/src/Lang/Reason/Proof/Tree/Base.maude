@@ -1,0 +1,47 @@
+***( SpeX/Lang/Reason/Prf/Tree
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../../Language.maude
+sload ../../../Base/Common/Sentences.maude
+
+********************************************************************************
+
+fmod PRF/TREE/LID { L :: LANGUAGE } is
+  sort PrfTree{L} .
+  op PrfTree[_] : L$Lid -> PrfTree{L} [ctor] .
+endfm
+
+********************************************************************************
+
+fth PRF/TREE/BASE-LANG is
+  protecting PARSING-OUTCOME .
+
+  sorts Judgment NeJudgmentList JudgmentList .
+  subsorts Judgment < NeJudgmentList < JudgmentList .
+  op nil : -> JudgmentList [ctor] .
+  op __ : JudgmentList JudgmentList -> JudgmentList [ctor assoc id: nil] .
+  op __ : NeJudgmentList JudgmentList -> NeJudgmentList [ctor ditto] .
+  op __ : JudgmentList NeJudgmentList -> NeJudgmentList [ctor ditto] .
+  op size : JudgmentList -> Nat .
+  op print : Judgment -> QidList .
+
+  sort Cxt .
+  op context : Judgment -> Cxt .
+
+  sort ProofRule .
+  op parse-proof-rule : QidList Cxt -> ParsingOutcome .
+  op read-proof-rule : ATerm Cxt ~> ProofRule .
+  op print-proof-rule : ProofRule Cxt -> QidList .
+
+  op _>>=_ : Judgment ProofRule ~> JudgmentList .
+endfth
+
+********************************************************************************

@@ -1,0 +1,408 @@
+***( SpeX/Lang/IPDL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2024 IPDLMaude
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : ipdlmaude@gmail.com
+
+)
+
+sload ../../Processor.maude
+sload ./Language.maude
+sload ./syntax.maude
+
+********************************************************************************
+
+view IPDL/Data from DATA to IPDL/ANALYSIS-STATE is
+  sort Data to Env .
+  op nil to emptyEnv .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view IPDL/Command from COMMAND to IPDL/READ is
+  sort Command to Cmd{IPDL} .
+  op command-annotations to term 'Command .
+  op read-command(T:ATerm) to term read-cmd(IPDL, emptyEnv, T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod IPDL/PROCESSOR is
+  including  BASIC-SPEX-PROCESSOR { IPDL, IPDL/Data, IPDL/Command } .
+  protecting IPDL/PARSING-&-PRINTING .
+  including META-LEVEL .
+  including APPROX-EQUALITY .
+
+  var L : IPDL .
+  var I : Oid .
+  var N q : Qid .
+  var QIL : QidList .
+  var T : ATerm .
+  var DB : SpeX/DB .
+  var Atts : AttributeSet .
+  var D : Decl{IPDL} .
+  var P : Proof{IPDL} .
+  var AP : ApproxProof{IPDL} .
+  var DL : DeclList{IPDL} .
+  var Tm : Term .
+  var TP : Type .
+  var aConf : ApproxEqConfig .
+  var env : Env .
+  var protMap : Map{Qid, Protocol} .
+  var dIns dOuts : ChannelContext .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [IPDL:parse] :
+    < $[L] : PROC | running, Atts >
+    parse($[L], I, QIL, DB)
+  => < $[L] : PROC | running, Atts >
+    parsed(I, $[L], parse L input (QIL) in DB[L]) .
+
+  crl [IPDL:process-types] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], id(D), setPConfig (DB[L]) (addTypeToSig (id(D)) (getPConfig (DB[L]))) )
+  if D := read-decl(L, DB[L], T) /\ T :: 'TypeDecl .
+  
+  crl [IPDL:process-ops] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], id(D), 
+      setPConfig (DB[L]) ( addOpToSig (id(D)) (arity(D)) (resultSort(D)) (getPConfig (DB[L]))) )
+  if D := read-decl(L, DB[L], T) /\ T :: 'OpDecl .
+
+ crl [IPDL:process-dists] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], id(D), 
+      setPConfig (DB[L]) (  addDistToSig (id(D)) (arity(D)) (resultSort(D)) (getPConfig (DB[L]))) )
+  if D := read-decl(L, DB[L], T) /\ T :: 'DistDecl . 
+
+   crl [IPDL:process-deltas] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], 
+      *** setDeltaMap env (getDeltaMap env, q |->  dIns pairSetIO dOuts)
+      env >>= T
+      )
+  if (Decl[L]{channel context q =  dIns pairSetIO dOuts .}) := read-decl(L, DB[L], T) 
+  /\ T :: 'DeltaDecl 
+  /\ env := DB[L].
+
+***  crl [IPDL:process-ins] :
+***     < $[L] : PROC | running, Atts >
+***     process($[L], I, T, DB)
+***    => < $[L] : PROC | running, Atts >
+***     processed(I, $[L], listCNB(getCNB(D)), 
+***       setPConfig (DB[L]) ( addInput  (getCNB(D)) (preToType(getChannelType(D)))(getPConfig (DB[L]))) )
+***   if D := read-decl(L, DB[L], T) /\ T :: 'InDecl . 
+
+ crl [IPDL:process-params] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], id(D), 
+      setEnvParams env 
+       (getEnvParams env  (id(D) : preToType(getParameterType(D)))) )
+  if D := read-decl(L, DB[L], T) /\ T :: 'ParamDecl 
+     /\ env := DB[L] .   
+
+***  crl [IPDL:process-outs] :
+***     < $[L] : PROC | running, Atts >
+***     process($[L], I, T, DB)
+***    => < $[L] : PROC | running, Atts >
+***     processed(I, $[L], listCNB(getCNB(D)), 
+***      setPConfig (DB[L]) ( addOutput (getCNB(D)) (preToType(getChannelType(D))) (getPConfig (DB[L]))) )
+***   if D := read-decl(L, DB[L], T) /\ T :: 'OutDecl . 
+
+  crl [IPDL:process-protocols] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], id(D), 
+     setPMap (DB[L]) ( addProtocol (id(D)) (getProtocol(D)) (getPMap (DB[L]))) )
+  if D := read-decl(L, DB[L], T) /\ T :: 'PDecl . 
+
+  crl [IPDL:process-imports] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], DB[L] >>= T )
+  if D := read-decl(L, DB[L], T) /\ T :: 'Import . 
+
+  crl [IPDL:process-subproofs] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], DB[L] >>= T )
+  if D := read-decl(L, DB[L], T) /\ T :: 'SubProofDecl .
+
+   crl [IPDL:process-hypothesis] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], 
+     setPConfig env (addHypothesis (getHypothesis(D)) (getPConfig(env)) )
+      )
+  if D := read-decl(L, DB[L], T) /\ T :: 'HypoDecl
+  /\ env := DB[L] . 
+
+  crl [IPDL:process-assums] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], DB[L] >>= T)
+  if D := read-decl(L, DB[L], T) /\ T :: 'AssumDecl . 
+
+   crl [IPDL:process-approx-assums] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], DB[L] >>= T)
+  if D := read-decl(L, DB[L], T) /\ T :: 'ApproxAssumDecl . 
+  
+  *** crl [IPDL:process-assums] :
+  ***   < $[L] : PROC | running, Atts >
+  ***   process($[L], I, T, DB)
+  ***  => < $[L] : PROC | running, Atts >
+  ***   processed(I, $[L], id(D), 
+  ***    setModule (DB[L]) 
+  ***      ( add-assumption( 
+  ***          getModule (DB[L]),
+  ***          id(D),
+  ***          getAssumVars(D),
+  ***          getAssumDelta(D), 
+  ***          getAssumGamma(D), 
+  ***          getAssumIns(D),
+  ***          getAssumRLeft(D),
+  ***          getAssumRRight(D) )
+  ***     )
+  ***   )
+  *** if D := read-decl(L, T) /\ T :: 'AssumDecl . 
+  
+  *** executing IPDL commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  rl [IPDL:list-types] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show-types}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L], *** comment (nil).QidList  
+        listTypes (DB[L])
+    ) .
+
+  rl [IPDL:list-ops] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show-ops}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L], *** comment (nil).QidList  
+        if listOps (DB[L]) == none then (nil).QidList else listOps (DB[L]) fi 
+    ) .  
+
+  rl [IPDL:list-dists] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show-dists}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L],  
+        if listDists (DB[L]) == none then (nil).QidList else listDists (DB[L]) fi 
+    ) .  
+
+  rl [IPDL:list-assums] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show-assums}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L],
+        if listAssums (DB[L]) == (empty).EmptyCommaList then (nil).QidList else listAssums (DB[L]) fi 
+    ) .      
+
+  rl [IPDL:list-channels] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show-channels}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L], *** comment (nil).QidList  
+        if listChannels (DB[L]) == none then (nil).QidList else listChannels (DB[L]) fi 
+    ) .      
+
+  rl [IPDL:list-parameters] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show-parameters}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L], *** comment (nil).QidList  
+        if listParameters (DB[L]) == none then (nil).QidList else listParameters (DB[L]) fi 
+    ) . 
+
+  rl [IPDL:list-protocols] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show-protocols}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L], *** comment (nil).QidList  
+        if listProtocols (DB[L]) == none then (nil).QidList else listProtocols (DB[L]) fi 
+    ) . 
+
+
+   rl [IPDL:list-hypotheses] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show-hypotheses}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L], *** comment (nil).QidList  
+        if listHypos (DB[L]) == none then (nil).QidList else listHypos (DB[L]) fi 
+    )
+    .  
+
+  rl [IPDL:current-protocol] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{current-protocol}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L], *** comment (nil).QidList  
+        printProtocol(getCrtProtocol (DB[L]), true, '\b '\r '\g)
+    ) . 
+
+  rl [IPDL:list-protocol] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show-protocol N}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L],
+        *** print(Decl[IPDL]{protocol N = (findProtocolInEnv (DB[L]) N) .})
+        *** if listProtocol (DB[L]) N == none then (nil).QidList else listProtocol (DB[L]) N fi 
+        printProtocol(findProtocolInEnv (DB[L]) N, true, '\b '\r '\g)
+    ) .  
+
+  rl [IPDL:check-proof] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{check-proof N}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L],
+        *** print(Decl[IPDL]{protocol N = (findProtocolInEnv (DB[L]) N) .})
+        *** if listProtocol (DB[L]) N == none then (nil).QidList else listProtocol (DB[L]) N fi 
+        if new2NF(computeNF(findProtocolInEnv (DB[L]) N)) == getCrtProtocol (DB[L]) 
+         then 'Done else 'Ongoing fi
+    ) .   
+
+  rl [IPDL:get-channel] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{get-channel (chn N)}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L],
+        *** print(Decl[IPDL]{protocol N = (findProtocolInEnv (DB[L]) N) .})
+        *** if listProtocol (DB[L]) N == none then (nil).QidList else listProtocol (DB[L]) N fi 
+        printProtocol(getChannel (DB[L]) (chn N), true, '\b '\r '\g)
+    ) .    
+  
+  rl [IPDL:show-all] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show all}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L], print(decls (DB[L]))) .
+
+  var nw nl : Int .
+  var pConf : ProtocolConfig .
+
+  crl [IPDL:show-bounds] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show-bounds}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L], printBounds(nw, nl)) 
+  if aConfig(pConf, width nw, length nl) := getAConfig (DB[L])  .  
+
+ ***(
+  crl [IPDL:list] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{add}, DB)
+  => < $[L] : PROC | running, Atts >
+    processed(I, $[L], DL)
+  if
+    {Tm, TP} := metaReduce(upModule('IPDL/MOD, true), 'add[upTerm(DB[L]), '''j.Qid])
+    /\ DL := downTerm(Tm, (nil).DeclList{IPDL}) .
+ )   
+
+ *** proofs --------
+
+ var J I1 I2 : ATerm .
+
+ crl [IPDL:merge-with-owise] :
+ < $[L] : PROC | running, Atts >
+  process($[L], I, T, DB)
+=> < $[L] : PROC | running, Atts >
+   processed(I, $[L], 
+   srewPConfig (DB[L]) 
+   ( 'mergeCaseWithOtherwise[[ upTerm(getCNB(T)), upTerm(getNatTerm(T)) ]] ) 
+   )
+if P := read-proof(L, DB[L], T) 
+/\ T :: 'StrictProof 
+/\ isMergeCase(T) .
+
+op isMergeCase : ATerm -> Bool .
+eq isMergeCase({'merge`case_=_with`otherwise`for_[J, I1, I2] : 'StrictProof}) = true .
+eq isMergeCase(J) = false [owise] .
+
+op getCNB : ATerm -> CNameBound .
+eq getCNB({'merge`case_=_with`otherwise`for_[J, I1, I2] : 'StrictProof}) 
+ = read-cNameBound(IPDL, I2) .
+
+op getNatTerm : ATerm -> NatTerm .
+eq getNatTerm({'merge`case_=_with`otherwise`for_[J, I1, I2] : 'StrictProof}) 
+ = read-natTerm(IPDL, I1) .
+
+*** crl [IPDL:start-proof] :
+***   < $[L] : PROC | running, Atts >
+***   process($[L], I, T, DB)
+*** => < $[L] : PROC | running, Atts >
+***   *** if (getPConfig env == getPConfig (DB[L])) and (P =/= Proof[L]{idle}) 
+***   *** then processed(I, $[L], 'the 'rule 'cannot 'be 'applied '\n
+***      ***'to '\n 
+***      *** printProtocol(proofProtocol (getCrtProtocol(DB[L])) P, true, '\b '\r '\g)
+***      *** '\n 
+***      *** 'the 'LHS 'of 'the 'rule 'is '\n
+***      *** proofLHS P
+***   *** bla )
+***   *** else 
+***   processed(I, $[L], env) 
+***   *** fi
+*** if P := read-proof(L, DB[L], T) /\ T :: 'StrictProof /\ 
+***    env := DB[L] >>= T .
+
+ var env' : Env .
+
+  op errEnv : -> [Env] [ctor] .
+  crl [IPDL:start-proof] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    if env' == errEnv
+    then processed(I, $[L], 'reduce 'error)
+    else
+    ***  if (getPConfig env' == getPConfig env) and (read-proof(L, env, T) =/= Proof[L]{idle})
+    ***  then processed(I, $[L], 'the 'rule 'cannot 'be 'applied)
+    ***  else 
+      processed(I, $[L], env') 
+    ***  fi 
+    fi
+   if T :: 'StrictProof
+      /\ not isMergeCase(T)
+      /\ env := DB[L]
+      /\ Tm := getTerm(metaReduce(upModule('IPDL/ANALYSIS-STATE, false), '_>>=_[upTerm(env), upTerm(T)]))
+      /\ env' := downTerm(Tm, errEnv) .
+
+  crl [IPDL:start-approx-proof] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    if env' == errEnv
+    then processed(I, $[L], 'reduce 'error)
+    else
+      if (getPConfig env' == getPConfig env) and (read-proof(L, env, T) =/= Proof[L]{idle})
+      then processed(I, $[L], 'the 'rule 'cannot 'be 'applied)
+      else processed(I, $[L], env') fi fi
+   if T :: 'ApproxProof
+      /\ not isMergeCase(T)
+      /\ env := DB[L]
+      /\ Tm := getTerm(metaReduce(upModule('IPDL/ANALYSIS-STATE, false), '_>>=_[upTerm(env), upTerm(T)]))
+      /\ env' := downTerm(Tm, errEnv) .    
+
+endm
+
+********************************************************************************

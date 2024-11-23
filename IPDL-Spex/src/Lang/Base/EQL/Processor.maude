@@ -1,0 +1,28 @@
+***( SpeX/Lang/Base/EQL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../Processor.maude
+sload ./Language.maude
+
+********************************************************************************
+
+view EQL/SpecBody from TRIV to EQL/SPEC-BODY is
+  sort Elt to SpecBody{EQL} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod EQL/PROCESSOR { P :: PID } is
+  including  NO-PARSE-PROCESSOR { P, EQL/SpecBody, EQL/SpecBody } .
+  protecting EQL/PARSING-&-PRINTING .
+endm
+
+********************************************************************************

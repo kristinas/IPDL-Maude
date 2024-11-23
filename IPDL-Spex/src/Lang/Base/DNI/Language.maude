@@ -1,0 +1,1838 @@
+***( SpeX/Lang/Base/DNI
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../Language.maude
+sload ../Common/CSList.maude
+sload ./Data.maude
+
+********************************************************************************
+
+fmod DNI/LANGUAGE is
+  protecting DNI/SPEC-BODY .
+  protecting GRAMMAR/CS-LIST .
+
+  var  L : DNI .
+  var  S : Sort .
+  var  SS : SortSet .
+  var  SSD : SortSetDecl .
+  vars QI N : Qid .
+  var  TP : Type .
+  vars TPL ITP OTP : TypeList .
+  var  ODS : OpDeclSet .
+  var  PDS : PredDeclSet .
+  vars NS PS : QidSet .
+  var  NSD : NomSetDecl .
+  var  MDS : TModDeclSet .
+  var  EDS : SenDeclSet .
+  var  AtS : AttrSet .
+
+  *** declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op decl-grammar : DNI -> Grammar .
+  eq decl-grammar(L)
+   = grammar 'DNI/Syntax is
+       'Declaration
+         *** sorts
+         ::= "sort_" : 'Sort
+             [format ('! 'so 'd)]
+          |  "sorts_" : 'NeSortList
+             [format ('! 'so 'd)]
+         *** operation symbols
+          |  "op_:_->_" : 'Symbol 'Arity 'Sort
+             [format ('! 'so 's! 'so 's! 'so 'd)]
+          |  "op_:_->_[_]" : 'Symbol 'Arity 'Sort 'NeAttrList
+             [format ('! 'so 's! 'so 's! 'so 's! 'o '! 'o)]
+          |  "op_:()->_" : 'Symbol 'Sort
+             [format ('! 'so 's! 's 'd 's 'so 'd)]
+          |  "op_:()->_[_]" : 'Symbol 'Sort 'NeAttrList
+             [format ('! 'so 's! 's 'd 's 'so 's! 'o '! 'o)]
+          |  "ops_:_->_" : 'NeSymbolList 'Arity 'Sort
+             [format ('! 'so 's! 'so 's! 'so 'd)]
+          |  "ops_:_->_[_]" : 'NeSymbolList 'Arity 'Sort 'NeAttrList
+             [format ('! 'so 's! 'so 's! 'so 's! 'o '! 'o)]
+          |  "ops_:()->_" : 'NeSymbolList 'Sort
+             [format ('! 'so 's! 's 'd 's 'so 'd)]
+          |  "ops_:()->_[_]" : 'NeSymbolList 'Sort 'NeAttrList
+             [format ('! 'so 's! 's 'd 's 's 's! 'o '! 'o)]
+         *** predicate symbols
+          |  "pred_:_" : 'Symbol 'Arity
+             [format ('! 'so 's! 'so 'd)]
+          |  "pred_:_[_]" : 'Symbol 'Arity 'NeAttrList
+             [format ('! 'so 's! 'so 's! 'o '! 'o)]
+          |  "pred_:()" : 'Symbol
+             [format ('! 'so 's! 's 'd 'o)]
+          |  "pred_:()[_]" : 'Symbol 'NeAttrList
+             [format ('! 'so 's! 's 'd 's! 'o '! 'o)]
+          |  "preds_:_" : 'NeSymbolList 'Arity
+             [format ('! 'so 's! 'so 'd)]
+          |  "preds_:_[_]" : 'NeSymbolList 'Arity 'NeAttrList
+             [format ('! 'so 's! 'so 's! 'o '! 'o)]
+          |  "preds_:()" : 'NeSymbolList
+             [format ('! 'so 's! 's 'd 'o)]
+          |  "preds_:()[_]" : 'NeSymbolList 'NeAttrList
+             [format ('! 'so 's! 's 'd 's 'o '! 'o)]
+         *** nominals
+          |  "nom_" : 'Nominal
+             [format ('! 'so 'd)]
+          |  "noms_" : 'NeNominalList
+             [format ('! 'so 'd)]
+         *** modalities
+          |  "mod_:_><_" : 'Modality 'ModType 'ModType
+             [format ('! 'so 's! 'so 's! 'so 'd)]
+          |  "mod_:()><_" : 'Modality 'ModType
+             [format ('! 'so 's! 's 'd 's 'so 'd)]
+          |  "mod_:_><()" : 'Modality 'ModType
+             [format ('! 'so 's! 'so 's! 's 'd 'o)]
+          |  "mod_:()><()" : 'Modality
+             [format ('! 'so 's! 's 'd 's 's 'd 'o)]
+         *** sentences
+          |  "ax_" : 'Sentence
+             [format ('! 'so 'd)]
+          |  "ax_[_]" : 'Sentence 'NeAttrList
+             [format ('! 'so 's! 'o '! 'o)]
+       'Sort
+         ::= token "sort" [exclude ("," "(" ")")]
+       'NeSortList
+         ::= bubble "neSortList"
+       'Symbol
+         ::= token "symbol" [exclude ("," ":")]
+       'NeSymbolList
+         ::= bubble "neSymbolList" [exclude (":")]
+       'Arity
+         ::= bubble "arity" [exclude ("->" "(" ")" "[" "]")]
+       'Nominal
+         ::= token "nominal" [exclude ("," "(" ")")]
+       'NominalList
+         ::= bubble "neNominalList"
+       'Modality
+         ::= token "modality" [exclude ("," ":")]
+       'ModType
+         ::= bubble "modType" [exclude ("><" "(" ")")]
+       'Sentence
+         ::= bubble "sentence" [balanced-parentheses exclude ("label:")]
+       'NeAttrList
+         ::= bubble "neAttrList" [exclude ("[" "]")]
+    endgr .
+
+  *** comma-separated lists of sorts  - - - - - - - - - - - - - - - - - - - - --
+  op cs-sorts-grammar : DNI -> Grammar .
+  eq cs-sorts-grammar(L)
+   = cs-list-grammar('DNI/cs-sorts-syntax, 'NeSortList,
+      'Sort ::= token "sort" [exclude ("," "(" ")")]) .
+
+  *** comma-separated lists of symbols  - - - - - - - - - - - - - - - - - - - --
+  op cs-symbols-grammar : DNI -> Grammar .
+  eq cs-symbols-grammar(L)
+   = cs-list-grammar('DNI/cs-symbols-syntax, 'NeSymbolList,
+       'Symbol ::= token "symbol" [exclude ("," ":")]) .
+
+  *** comma-separated lists of nominals  - - - - - - - - - - - - - - - - - - - -
+  op cs-nominals-grammar : DNI -> Grammar .
+  eq cs-nominals-grammar(L)
+   = cs-list-grammar('DNI/cs-nominals-syntax, 'NeNominalList,
+       'Nominal ::= token "nominal" [exclude ("," "(" ")")]) .
+
+  *** operation attributes  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op op-attr-grammar : DNI -> Grammar .
+  eq op-attr-grammar(L)
+   = grammar 'DNI/op-attr-syntax is
+       'Attr ::= lit "rigid" [format ('! 'o)]
+              |  lit "shared" [format ('! 'o)]
+              |  lit "flexible" [format ('! 'o)]
+              |  lit "assoc" [format ('! 'o)]
+              |  lit "comm" [format ('! 'o)]
+              |  "id:" : 'Term [format ('! 'o)]
+       'AttrList ::= just 'Attr | "__" : 'AttrList 'AttrList [assoc]
+       'Term ::= bubble "term" [balanced-parentheses]
+     endgr .
+
+  *** predicate attributes  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op pred-attr-grammar : DNI -> Grammar .
+  eq pred-attr-grammar(L)
+   = grammar 'DNI/pred-attr-syntax is
+       'Attr ::= lit "rigid" [format ('! 'o)]
+              |  lit "shared" [format ('! 'o)]
+              |  lit "flexible" [format ('! 'o)]
+       'AttrList ::= just 'Attr | "__" : 'AttrList 'AttrList [assoc]
+     endgr .
+
+  *** sentence attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op sen-attr-grammar : DNI -> Grammar .
+  eq sen-attr-grammar(L)
+   = grammar 'DNI/sen-attr-syntax is
+       'Attr  ::= "label:_" : 'Label [format ('! 'o 'd)]
+       'AttrList ::= just 'Attr | "__" : 'AttrList 'AttrList [assoc]
+       'Label ::= token "label"
+     endgr .
+
+  *** sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op grammar : SpecBody{DNI} -> Grammar .
+  eq grammar(SpecBody[L]{sorts SS . ODS PDS noms NS . MDS EDS})
+   = grammar 'DNI/Sentence/Syntax is
+       atomic-sentences(L, SS, ODS, PDS, NS)
+       Boolean-connectives(L)
+       modal-operators(L, MDS) local-sat-op(L) store-op(L)
+       quantifiers(L, 'Nominal ; SS)
+     endgr .
+
+  op $grammar : SpecBody{DNI} -> Grammar .
+  eq $grammar(SpecBody[L]{sorts SS . ODS PDS noms NS . MDS EDS})
+   = grammar 'DNI/Sentence/$Syntax is
+       'Sentence`{$`}
+         ::= bubble "sentence" [balanced-parentheses exclude ("label:")]
+       atomic-sentences(L, SS, ODS, PDS, NS)
+       Boolean-connectives(L)
+       $modal-operators(L, MDS) local-sat-op(L) $store-op(L)
+       $quantifiers(L, 'Nominal ; SS)
+    endgr .
+
+  *** atomic sentences  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  --
+  op atomic-sentences : DNI SortSet OpDeclSet PredDeclSet
+    QidSet -> GramDeclSet .
+  eq atomic-sentences(L, SS, ODS, PDS, NS)
+   = 'Sentence`{DNI`} ::= just 'AtomicSentence`{DNI`}
+     'AtomicSentence`{DNI`} ::= just 'NominalSentence`{DNI`}
+     ops(L, ODS) @-ops(L, SS)
+     preds(L, eqs(L, SS) local-mb-ops(L, SS) PDS)
+     noms(L, NS, symbols(PDS, nil)) .
+
+  op ops : DNI OpDeclSet -> GramDeclSet .
+  eq ops(L, none) = none .
+  eq ops(L, op QI : TPL -> TP [AtS] . ODS)
+   = TP ::= string(QI) : TPL [filter(AtS)]
+     ops(L, ODS) .
+
+  op @-ops : DNI SortSet -> GramDeclSet .
+  eq @-ops(L, none) = none .
+  eq @-ops(L, S ; SS)
+   = S ::= "@(_)_" : 'Nominal S [format ('! 'd 'o '! 'o 'd)]
+     @-ops(L, SS) .
+
+  op preds : DNI PredDeclSet -> GramDeclSet .
+  eq preds(L, none)
+   = 'AtomicSentence`{DNI`}
+       ::= lit "true" [format ('! 'o)]
+        |  lit "false" [format ('! 'o)] .
+  eq preds(L, pred QI : TPL [AtS] . PDS)
+   = 'AtomicSentence`{DNI`} ::= string(QI) : TPL [filter(AtS)]
+     preds(L, PDS) .
+
+  op eqs : DNI SortSet -> PredDeclSet .
+  eq eqs(L, none) = none .
+  eq eqs(L, S ; SS)
+   = (pred '_=_ : S S [format ('d 's! 'so 'd) prec (51)] .)
+     eqs(L, SS) .
+
+  op local-mb-ops : DNI SortSet -> PredDeclSet .
+  eq local-mb-ops(L, none) = none .
+  eq local-mb-ops(L, S ; SS)
+   = (pred 'local_ : S [format ('! 'so 'd) prec (71)] .)
+     local-mb-ops(L, SS) .
+
+  op noms : DNI QidSet QidSet -> GramDeclSet .
+  eq noms(L, none, PS)
+   = 'AtomicSentence`{DNI`} ::= "nom" : 'Nominal [format ('! 'o)] .
+  eq noms(L, N ; NS, PS)
+   = 'Nominal ::= lit string(N)
+     if N in PS then none
+     else 'NominalSentence`{DNI`} ::= lit string(N) fi
+     noms(L, NS, PS) .
+
+  *** Boolean connectives  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  --
+  op Boolean-connectives : DNI -> GramDeclSet .
+  eq Boolean-connectives(L)
+   = 'Sentence`{DNI`}
+       ::= "not_" : 'Sentence`{DNI`}
+           [format ('! 'so 'd) prec (71)]
+        |  "_and_" : 'Sentence`{DNI`} 'Sentence`{DNI`}
+           [assoc format ('d 's! 'so 'd) prec (75)]
+        |  "_xor_" : 'Sentence`{DNI`} 'Sentence`{DNI`}
+           [assoc format ('d 's! 'so 'd) prec (77)]
+        |  "_or_" : 'Sentence`{DNI`} 'Sentence`{DNI`}
+           [assoc format ('d 's! 'so 'd) prec (79)]
+        |  "_implies_" : 'Sentence`{DNI`} 'Sentence`{DNI`}
+           [gather ('e 'E) format ('d 's! 'so 'd) prec (81)]
+        |  "_iff_" : 'Sentence`{DNI`} 'Sentence`{DNI`}
+           [assoc format ('d 's! 'so 'd) prec (83)] .
+
+  *** modal operators  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - -
+  op modal-operators : DNI TModDeclSet -> GramDeclSet .
+  eq modal-operators(L, MDS)
+   = 'Sentence`{DNI`}
+       ::= "[_]_" : 'Interaction`{DNI`} 'Sentence`{DNI`}
+           [format ('! 'so 's! 'so 'd) prec (87)]
+        |  "<_>_" : 'Interaction`{DNI`} 'Sentence`{DNI`}
+           [format ('! 'so 's! 'so 'd) prec (87)]
+     interactions(L, MDS) .
+
+  op $modal-operators : DNI TModDeclSet -> GramDeclSet .
+  eq $modal-operators(L, MDS)
+   = 'Sentence`{DNI`}
+       ::= "[_]_" : 'Interaction`{DNI`} 'Sentence`{$`}
+           [format ('! 'so 's! 'so 'd) prec (87)]
+        |  "<_>_" : 'Interaction`{DNI`} 'Sentence`{$`}
+           [format ('! 'so 's! 'so 'd) prec (87)]
+     interactions(L, MDS) .
+
+  op interactions : DNI TModDeclSet -> GramDeclSet .
+  eq interactions(L, none) = none .
+  eq interactions(L, mod QI : ITP >< OTP [AtS] . MDS)
+   = 'Interaction`{DNI`}
+       ::= string(QI) : ITP OTP [filter(AtS)]
+     interactions(L, MDS) .
+
+  op local-sat-op : DNI -> GramDeclSet .
+  eq local-sat-op(L)
+   = 'Sentence`{DNI`}
+       ::= "@__" : 'Nominal 'Sentence`{DNI`}
+           [format ('! 'so 's 'd) prec (71)] .
+
+  op store-op : DNI -> GramDeclSet .
+  eq store-op(L)
+   = 'Sentence`{DNI`}
+       ::= "store__" : 'Nominal 'Sentence`{DNI`}
+           [format ('! 'so 's 'd) prec (87)] .
+
+  op $store-op : DNI -> GramDeclSet .
+  eq $store-op(L)
+   = 'Sentence`{DNI`}
+       ::= "store__" : 'Nominal 'Sentence`{$`}
+           [format ('! 'so 's 'd) prec (87)] .
+
+  *** quantifiers  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  op quantifiers : DNI SortSet -> GramDeclSet .
+  eq quantifiers(L, SS)
+   = 'Sentence`{DNI`}
+       ::= "forall__" : 'VarDecl`{DNI`} 'Sentence`{DNI`}
+           [format ('! 'so 's 'd) prec (87)]
+        |  "exists__" : 'VarDecl`{DNI`} 'Sentence`{DNI`}
+           [format ('! 'so 's 'd) prec (87)]
+        |  "forall-local__" : 'VarDecl`{DNI`} 'Sentence`{DNI`}
+           [format ('! 'so 's 'd) prec (87)]
+        |  "exists-local__" : 'VarDecl`{DNI`} 'Sentence`{DNI`}
+           [format ('! 'so 's 'd) prec (87)]
+     qvar-decl(L, SS) .
+
+  op $quantifiers : DNI SortSet -> GramDeclSet .
+  eq $quantifiers(L, SS)
+   = 'Sentence`{DNI`}
+       ::= "forall__" : 'VarDecl`{DNI`} 'Sentence`{$`}
+           [format ('! 'so 's 'd) prec (87)]
+        |  "exists__" : 'VarDecl`{DNI`} 'Sentence`{$`}
+           [format ('! 'so 's 'd) prec (87)]
+        |  "forall-local__" : 'VarDecl`{DNI`} 'Sentence`{$`}
+           [format ('! 'so 's 'd) prec (87)]
+        |  "exists-local__" : 'VarDecl`{DNI`} 'Sentence`{$`}
+           [format ('! 'so 's 'd) prec (87)]
+     qvar-decl(L, SS) .
+
+  op qvar-decl : DNI SortSet -> GramDeclSet .
+  eq qvar-decl(L, none)
+   = 'VarDecl`{DNI`}
+       ::= lit "{}" [format ('! 'd 'o)]
+        | "{_" : 'VarList`{DNI`} [format ('! 'o 'd) prec (25)] .
+  eq qvar-decl(L, S ; SS)
+   = 'VarList`{DNI`}
+       ::= "_}" : S [format ('d '! 'o) prec (21)]
+        |  "_,_" : S 'VarList`{DNI`} [prec (23)]
+     qvar-decl(L, SS) .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view DNI from LANGUAGE to DNI/LANGUAGE is
+  sort Lid to DNI .
+  op Lid to DNI .
+  op grammar to decl-grammar .
+endv
+
+********************************************************************************
+
+fmod DNI/READ is
+  protecting DNI/LANGUAGE .
+  protecting ATERM/READ .
+
+  var  L : DNI .
+  var  SB : SpecBody{DNI} .
+  var  TP : Type .
+  vars TPL ITL OTL : TypeList .
+  var  BC MOP Q QI : Qid .
+  vars EVD CI NS AS : Constant .
+  vars S O P N M : AConstant .
+  var  V : AVariable .
+  var  NT : ATermQid .
+  vars SL1 SL2 OL1 OL2 PL1 PL2 A NL1 NL2 IT OT : ATerm .
+  vars E E1 E2 I VD VL AtL AtL1 AtL2 T : ATerm .
+  var  TL : ATermList .
+  var  NTL : NeATermList .
+  var  AtS : AttrSet .
+
+  *** add declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op add-declaration : ATerm SpecBody{DNI} -> SpecBody{DNI} .
+  eq add-declaration(T, SB) = SB >>= T .
+
+  op _>>=_ : SpecBody{DNI} ATerm -> SpecBody{DNI} .
+
+  eq SB >>= {'sort_[S] : 'Declaration}
+   = add-sort(read-sort(DNI, S), SB) .
+  eq SB >>= {'sorts_[S] : 'Declaration}
+   = SB >>= {'sort_[S] : 'Declaration} .
+  eq SB >>= {'sorts_[{'_`,_[SL1, SL2] : 'NeSortList}] : 'Declaration}
+   = SB >>= {'sorts_[SL1] : 'Declaration} >>= {'sorts_[SL2] : 'Declaration} .
+
+  eq SB >>= {'op_:_->_[O, A, S] : 'Declaration}
+   = add-decl(read-op(DNI, 'op_:_->_[O, A, S]), SB) .
+  eq SB >>= {'op_:_->_`[_`][O, A, S, AtL] : 'Declaration}
+   = add-decl(read-op(DNI, 'op_:_->_`[_`][O, A, S, AtL]), SB) .
+  eq SB >>= {'op_:`(`)->_[O, S] : 'Declaration}
+   = add-decl(read-op(DNI, 'op_:`(`)->_[O, S]), SB) .
+  eq SB >>= {'op_:`(`)->_`[_`][O, S, AtL] : 'Declaration}
+   = add-decl(read-op(DNI, 'op_:`(`)->_`[_`][O, S, AtL]), SB) .
+
+  eq SB >>= {'ops_:_->_[O, A, S] : 'Declaration}
+   = SB >>= {'op_:_->_[O, A, S] : 'Declaration} .
+  eq SB >>= {'ops_:_->_[{'_`,_[OL1, OL2] : 'NeSymbolList}, A, S] : 'Declaration}
+   = SB >>= {'ops_:_->_[OL1, A, S] : 'Declaration}
+        >>= {'ops_:_->_[OL2, A, S] : 'Declaration} .
+
+  eq SB >>= {'ops_:_->_`[_`][O, A, S, AtL] : 'Declaration}
+   = SB >>= {'op_:_->_`[_`][O, A, S, AtL] : 'Declaration} .
+  eq SB >>= {'ops_:_->_`[_`][
+        {'_`,_[OL1, OL2] : 'NeSymbolList}, A, S, AtL] : 'Declaration}
+   = SB >>= {'ops_:_->_`[_`][OL1, A, S, AtL] : 'Declaration}
+        >>= {'ops_:_->_`[_`][OL2, A, S, AtL] : 'Declaration} .
+
+  eq SB >>= {'ops_:`(`)->_[O, S] : 'Declaration}
+   = SB >>= {'op_:`(`)->_[O, S] : 'Declaration} .
+  eq SB >>= {'ops_:`(`)->_[{'_`,_[OL1, OL2] : 'NeSymbolList}, S] : 'Declaration}
+   = SB >>= {'ops_:`(`)->_[OL1, S] : 'Declaration}
+        >>= {'ops_:`(`)->_[OL2, S] : 'Declaration} .
+
+  eq SB >>= {'ops_:`(`)->_`[_`][O, S, AtL] : 'Declaration}
+   = SB >>= {'op_:`(`)->_`[_`][O, S, AtL] : 'Declaration} .
+  eq SB >>= {'ops_:`(`)->_`[_`][
+        {'_`,_[OL1, OL2] : 'NeSymbolList}, S, AtL] : 'Declaration}
+   = SB >>= {'ops_:`(`)->_`[_`][OL1, S, AtL] : 'Declaration}
+        >>= {'ops_:`(`)->_`[_`][OL2, S, AtL] : 'Declaration} .
+
+  eq SB >>= {'pred_:_[P, A] : 'Declaration}
+   = add-decl(read-pred(DNI, 'pred_:_[P, A]), SB) .
+  eq SB >>= {'pred_:_`[_`][P, A, AtL] : 'Declaration}
+   = add-decl(read-pred(DNI, 'pred_:_`[_`][P, A, AtL]), SB) .
+  eq SB >>= {'pred_:`(`)[P] : 'Declaration}
+   = add-decl(read-pred(DNI, 'pred_:`(`)[P]), SB) .
+  eq SB >>= {'pred_:`(`)`[_`][P, AtL] : 'Declaration}
+   = add-decl(read-pred(DNI, 'pred_:`(`)`[_`][P, AtL]), SB) .
+
+  eq SB >>= {'preds_:_[P, A] : 'Declaration}
+   = SB >>= {'pred_:_[P, A] : 'Declaration} .
+  eq SB >>= {'preds_:_[{'_`,_[PL1, PL2] : 'NeSymbolList}, A] : 'Declaration}
+   = SB >>= {'preds_:_[PL1, A] : 'Declaration}
+        >>= {'preds_:_[PL2, A] : 'Declaration} .
+
+  eq SB >>= {'preds_:_`[_`][P, A, AtL] : 'Declaration}
+   = SB >>= {'pred_:_`[_`][P, A, AtL] : 'Declaration} .
+  eq SB >>= {'preds_:_`[_`][
+        {'_`,_[PL1, PL2] : 'NeSymbolList}, A, AtL] : 'Declaration}
+   = SB >>= {'preds_:_`[_`][PL1, A, AtL] : 'Declaration}
+        >>= {'preds_:_`[_`][PL2, A, AtL] : 'Declaration} .
+
+  eq SB >>= {'preds_:`(`)[P] : 'Declaration}
+   = SB >>= {'pred_:`(`)[P] : 'Declaration} .
+  eq SB >>= {'preds_:`(`)[{'_`,_[PL1, PL2] : 'NeSymbolList}] : 'Declaration}
+   = SB >>= {'preds_:`(`)[PL1] : 'Declaration}
+        >>= {'preds_:`(`)[PL2] : 'Declaration} .
+
+  eq SB >>= {'preds_:`(`)`[_`][P, AtL] : 'Declaration}
+   = SB >>= {'pred_:`(`)`[_`][P, AtL] : 'Declaration} .
+  eq SB >>= {'preds_:`(`)`[_`][
+        {'_`,_[PL1, PL2] : 'NeSymbolList}, AtL] : 'Declaration}
+   = SB >>= {'preds_:`(`)`[_`][PL1, AtL] : 'Declaration}
+        >>= {'preds_:`(`)`[_`][PL2, AtL] : 'Declaration} .
+
+  eq SB >>= {'nom_[N] : 'Declaration}
+   = add-nom(read-nom(DNI, N), SB) .
+  eq SB >>= {'noms_[N] : 'Declaration}
+   = SB >>= {'nom_[N] : 'Declaration} .
+  eq SB >>= {'noms_[{'_`,_[NL1, NL2] : 'NeNominalList}] : 'Declaration}
+   = SB >>= {'noms_[NL1] : 'Declaration} >>= {'noms_[NL2] : 'Declaration} .
+
+  eq SB >>= {'mod_:_><_[M, IT, OT] : 'Declaration}
+   = add-decl(read-mod(DNI, 'mod_:_><_[M, IT, OT]), SB) .
+  eq SB >>= {'mod_:`(`)><_[M, OT] : 'Declaration}
+   = add-decl(read-mod(DNI, 'mod_:`(`)><_[M, OT]), SB) .
+  eq SB >>= {'mod_:_><`(`)[M, IT] : 'Declaration}
+   = add-decl(read-mod(DNI, 'mod_:_><`(`)[M, IT]), SB) .
+  eq SB >>= {'mod_:`(`)><`(`)[M] : 'Declaration}
+   = add-decl(read-mod(DNI, 'mod_:`(`)><`(`)[M]), SB) .
+
+  eq SB >>= {'ax_[E] : 'Declaration}
+   = add-sen(read-sentence(SB, E, none), SB) .
+  eq SB >>= {'ax_`[_`][E, AtL] : 'Declaration}
+   = add-sen(read-sentence(SB, E, read-attributes(DNI, AtL)), SB) .
+
+  eq SB >>= T = SB [owise] .
+
+  op add-declarations : ATermList SpecBody{DNI} -> SpecBody{DNI} .
+  eq add-declarations(empty, SB) = SB .
+  eq add-declarations((T, TL), SB)
+   = add-declarations(TL, add-declaration(T, SB)) .
+
+  *** read-sort  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-sort : DNI ATerm ~> Sort .
+  eq read-sort(L, S) = read-qid(S) .
+
+  *** read-op  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-op : DNI ATerm ~> OpDecl .
+  eq read-op(L, 'op_:_->_[O, A, S])
+   = (op read-symbol(L, O) : read-arity(L, A) -> read-sort(L, S) [rigid] .) .
+  eq read-op(L, 'op_:_->_`[_`][O, A, S, AtL])
+   = (op read-symbol(L, O) : read-arity(L, A) -> read-sort(L, S)
+      [read-attributes(L, AtL)] .) .
+  eq read-op(L, 'op_:`(`)->_[O, S])
+   = (op read-symbol(L, O) : nil -> read-sort(L, S) [rigid] .) .
+  eq read-op(L, 'op_:`(`)->_`[_`][O, S, AtL])
+   = (op read-symbol(L, O) : nil -> read-sort(L, S)
+      [read-attributes(L, AtL)] .) .
+
+  op read-symbol : DNI ATerm ~> Qid .
+  eq read-symbol(L, O) = read-qid(O) .
+
+  op read-arity : DNI ATerm ~> TypeList .
+  eq read-arity(L, A) = read-qids(A) .
+
+  op read-cs-symbols : DNI ATerm ~> QidSet .
+  eq read-cs-symbols(L, {'_`,_[OL1, OL2] : 'NeSymbolList})
+   = read-cs-symbols(L, OL1) ; read-cs-symbols(L, OL2) .
+  eq read-cs-symbols(L, {O : 'Symbol})
+   = read-symbol(L, O) .
+
+  *** read-pred  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-pred : DNI ATerm ~> PredDecl .
+  eq read-pred(L, 'pred_:_[P, A])
+   = (pred read-symbol(L, P) : read-arity(L, A) [rigid] .) .
+  eq read-pred(L, 'pred_:_`[_`][P, A, AtL])
+   = (pred read-symbol(L, P) : read-arity(L, A) [read-attributes(L, AtL)] .) .
+  eq read-pred(L, 'pred_:`(`)[P])
+   = (pred read-symbol(L, P) : nil [rigid] .) .
+  eq read-pred(L, 'pred_:`(`)`[_`][P, AtL])
+   = (pred read-symbol(L, P) : nil [read-attributes(L, AtL)] .) .
+
+  *** read-nom  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-nom : DNI ATerm ~> Sort .
+  eq read-nom(L, N) = read-qid(N) .
+
+  *** read-mod  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-mod : DNI ATerm ~> TModDecl .
+  eq read-mod(L, 'mod_:_><_[M, IT, OT])
+   = read-mod(L, M, read-mod-type(L, IT), read-mod-type(L, OT)) .
+  eq read-mod(L, 'mod_:`(`)><_[M, OT])
+   = read-mod(L, M, nil, read-mod-type(L, OT)) .
+  eq read-mod(L, 'mod_:_><`(`)[M, IT])
+   = read-mod(L, M, read-mod-type(L, IT), nil) .
+  eq read-mod(L, 'mod_:`(`)><`(`)[M])
+   = read-mod(L, M, nil, nil) .
+
+  op read-mod : DNI ATerm TypeList TypeList ~> TModDecl .
+  eq read-mod(L, M, ITL, OTL)
+   = (mod read-modality(L, M) : ITL >< OTL [none] .) .
+
+  op read-modality : DNI ATerm ~> Qid .
+  eq read-modality(L, M) = read-qid(M) .
+
+  op read-mod-type : DNI ATerm ~> TypeList .
+  eq read-mod-type(L, T) = read-qids(T) .
+
+  *** read-sentence  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-sentence : SpecBody{DNI} ATerm AttrSet -> SenDecl .
+  eq read-sentence(SB, E, AtS)
+   = (sen mk-nom-sentences-explicit(SB, E) [AtS] .) .
+
+  op mk-nom-sentences-explicit : SpecBody{DNI} ATerm -> ATerm .
+  ceq mk-nom-sentences-explicit(SB, E) = E if E :: 'AtomicSentence`{DNI`} .
+  eq mk-nom-sentences-explicit(SB, {NS : 'NominalSentence`{DNI`}})
+   = {'nom [ {NS as 'Nominal : 'Nominal} ] : 'AtomicSentence`{DNI`}} .
+  eq mk-nom-sentences-explicit(SB, {'not_[E] : 'Sentence`{DNI`}})
+   = {'not_[mk-nom-sentences-explicit(SB, E)] : 'Sentence`{DNI`}} .
+  ceq mk-nom-sentences-explicit(SB, {BC[E1, E2] : 'Sentence`{DNI`}})
+   = {BC[mk-nom-sentences-explicit(SB, E1),
+         mk-nom-sentences-explicit(SB, E2)] : 'Sentence`{DNI`}}
+   if BC in symbols(grammar(SB), 'Sentence`{DNI`} 'Sentence`{DNI`}) .
+  eq mk-nom-sentences-explicit(SB, {'@__[NT, E] : 'Sentence`{DNI`}})
+   = {'@__[NT, mk-nom-sentences-explicit(SB, E)] : 'Sentence`{DNI`}} .
+  ceq mk-nom-sentences-explicit(SB, {MOP[I, E] : 'Sentence`{DNI`}})
+   = {MOP[I, mk-nom-sentences-explicit(SB, E)] : 'Sentence`{DNI`}}
+   if MOP in symbols(grammar(SB), 'Interaction`{DNI`} 'Sentence`{DNI`}) .
+  ceq mk-nom-sentences-explicit(SB, {Q[VD, E] : 'Sentence`{DNI`}})
+   = {Q[VD, mk-nom-sentences-explicit(SB, E)] : 'Sentence`{DNI`}}
+   if Q in symbols(grammar(SB), 'VarDecl`{DNI`} 'Sentence`{DNI`}) .
+  eq mk-nom-sentences-explicit(SB, {'store__[V, E] : 'Sentence`{DNI`}})
+   = {'store__[V, mk-nom-sentences-explicit(SB, E)] : 'Sentence`{DNI`}} .
+
+  op mk-nom-sentences-implicit : SpecBody{DNI} ATerm -> ATerm .
+  eq mk-nom-sentences-implicit(SB, {AS : 'AtomicSentence`{DNI`}})
+   = {AS : 'AtomicSentence`{DNI`}} .
+  eq mk-nom-sentences-implicit(SB,
+      {'nom[{NS : 'Nominal}] : 'AtomicSentence`{DNI`}})
+   = if getName(NS) in symbols(preds(SB), nil)
+     then {'nom[{NS : 'Nominal}] : 'AtomicSentence`{DNI`}}
+     else {NS as 'NominalSentence`{DNI`} : 'NominalSentence`{DNI`}} fi .
+  eq mk-nom-sentences-implicit(SB, {'not_[E] : 'Sentence`{DNI`}})
+   = {'not_[mk-nom-sentences-implicit(SB, E)] : 'Sentence`{DNI`}} .
+  eq mk-nom-sentences-implicit(SB, {E : 'AtomicSentence`{DNI`}})
+   = {E : 'AtomicSentence`{DNI`}} [owise] .
+  ceq mk-nom-sentences-implicit(SB, {BC[E1, E2] : 'Sentence`{DNI`}})
+   = {BC[mk-nom-sentences-implicit(SB, E1),
+         mk-nom-sentences-implicit(SB, E2)] : 'Sentence`{DNI`}}
+   if BC in symbols(grammar(SB), 'Sentence`{DNI`} 'Sentence`{DNI`}) .
+  eq mk-nom-sentences-implicit(SB, {'@__[NT, E] : 'Sentence`{DNI`}})
+   = {'@__[NT, mk-nom-sentences-implicit(SB, E)] : 'Sentence`{DNI`}} .
+  ceq mk-nom-sentences-implicit(SB, {MOP[I, E] : 'Sentence`{DNI`}})
+   = {MOP[I, mk-nom-sentences-implicit(SB, E)] : 'Sentence`{DNI`}}
+   if MOP in symbols(grammar(SB), 'Interaction`{DNI`} 'Sentence`{DNI`}) .
+  ceq mk-nom-sentences-implicit(SB, {Q[VD, E] : 'Sentence`{DNI`}})
+   = {Q[VD, mk-nom-sentences-implicit(SB, E)] : 'Sentence`{DNI`}}
+   if Q in symbols(grammar(SB), 'VarDecl`{DNI`} 'Sentence`{DNI`}) .
+  eq mk-nom-sentences-implicit(SB, {'store__[V, E] : 'Sentence`{DNI`}})
+   = {'store__[V, mk-nom-sentences-implicit(SB, E)] : 'Sentence`{DNI`}} .
+
+  *** read-variables  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort ReadVarOptions{DNI} .
+  op all`vars : -> ReadVarOptions{DNI} [ctor] .
+  op protecting`constants : -> ReadVarOptions{DNI} [ctor] .
+
+  var RVO : ReadVarOptions{DNI} .
+
+  op read-vars : SpecBody{DNI} ATerm ReadVarOptions{DNI} -> VariableSet .
+  eq read-vars(SB, {EVD : 'VarDecl`{DNI`}}, RVO) = none .
+  eq read-vars(SB, {'`{_[VL] : 'VarDecl`{DNI`}}, RVO) = read-vars(SB, VL, RVO) .
+  eq read-vars(SB, {'_`,_[V, VL] : 'VarList`{DNI`}}, RVO)
+   = read-var(SB, V, RVO) ; read-vars(SB, VL, RVO) .
+  eq read-vars(SB, {'_`}[V] : 'VarList`{DNI`}}, RVO) = read-var(SB, V, RVO) .
+
+  eq read-vars(SB, {CI : 'Interaction`{DNI`}}, RVO) = none .
+  ceq read-vars(SB, {QI[NTL] : 'Interaction`{DNI`}}, RVO)
+   = read-i-vars(SB, TPL, NTL, RVO)
+   if TPL := inner-type(mods(SB), QI,
+        least-sorts(grammar(SB), plain-terms(NTL))) .
+
+  eq read-vars(SB, T, RVO) = none [owise] .
+
+  op read-i-vars : SpecBody{DNI} TypeList ATermList
+    ReadVarOptions{DNI} ~> VariableSet .
+  eq read-i-vars(SB, (TP TPL), (T, TL), RVO) = read-i-vars(SB, TPL, TL, RVO) .
+  eq read-i-vars(SB, nil, (T, TL), RVO)
+   = read-var(SB, T, RVO) ; read-i-vars(SB, nil, TL, RVO) .
+  eq read-i-vars(SB, nil, empty, RVO) = none .
+
+  op read-var : SpecBody{DNI} AVariable ReadVarOptions{DNI} -> VariableSet .
+  eq read-var(SB, V, RVO)
+   = if (RVO == protecting constants) and-then (name(V) in consts(SB, type(V)))
+     then none
+     else plain-term(V) fi .
+
+  op inner-vars : SpecBody{DNI} ATerm -> VariableSet .
+  eq inner-vars(SB, {CI : 'Interaction`{DNI`}}) = none .
+  eq inner-vars(SB, {QI[NTL] : 'Interaction`{DNI`}})
+   = $inner-vars(inner-type(mods(SB), QI,
+        least-sorts(grammar(SB), plain-terms(NTL))), NTL) .
+  eq inner-vars(SB, T) = none [owise] .
+
+  op $inner-vars : TypeList ATermList -> VariableSet .
+  eq $inner-vars((TP TPL), (T, TL)) = vars(T) ; $inner-vars(TPL, TL) .
+  eq $inner-vars(nil, (T, TL)) = none .
+  eq $inner-vars(TPL, TL) = none [owise] .
+
+  *** read-attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-attributes : DNI ATerm -> AttrSet .
+  eq read-attributes(L, {'__[AtL1, AtL2] : 'AttrList})
+   = read-attributes(L, AtL1) read-attributes(L, AtL2) .
+  eq read-attributes(L, {'rigid.Attr : 'Attr}) = rigid .
+  eq read-attributes(L, {'shared.Attr : 'Attr}) = shared .
+  eq read-attributes(L, {'flexible.Attr : 'Attr}) = flexible .
+  eq read-attributes(L, {'assoc.Attr : 'Attr}) = assoc .
+  eq read-attributes(L, {'comm.Attr : 'Attr}) = comm .
+  eq read-attributes(L, {'id:[T] : 'Attr}) = id(plain-term(T)) .
+  eq read-attributes(L, {'label:_[T] : 'Attr}) = label(read-qid(T)) .
+  eq read-attributes(L, T) = none [owise] .
+endfm
+
+********************************************************************************
+
+fmod DNI/SHOW is
+  protecting PRINTING { DNI } .
+  protecting DNI/READ .
+
+  var  L : DNI .
+  var  G : Grammar .
+  var  SB : SpecBody{DNI} .
+  var  S : Sort .
+  var  SS : SortSet .
+  var  SSD : SortSetDecl .
+  vars NSL NNL : NeQidList .
+  vars O P N M BC MOP Q QI : Qid .
+  var  QIL : QidList .
+  var  NS : QidSet .
+  vars A TPL ITP OTP : NeTypeList .
+  var  At : Attr .
+  var  AtS : AttrSet .
+  var  AtL : AttrList .
+  var  OD : OpDecl .
+  var  ODS : OpDeclSet .
+  var  ODL : OpDeclList .
+  var  PD : PredDecl .
+  var  PDS : PredDeclSet .
+  var  PDL : PredDeclList .
+  var  NSD : NomSetDecl .
+  var  MD : TModDecl .
+  var  MDS : TModDeclSet .
+  var  MDL : TModDeclList .
+  vars E E1 E2 VD Nom I : ATerm .
+  var  V : AVariable .
+  var  T : Term .
+  var  NTL : NeTermList .
+  var  VS : VariableSet .
+  var  ED : SenDecl .
+  var  EDS : SenDeclSet .
+  var  EDL : SenDeclList .
+
+  *** show body  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show : SpecBody{DNI} -> TermList .
+  eq show(SB) = show-fragment(SB, SB) .
+
+  op show-fragment : SpecBody{DNI} SpecBody{DNI} -> TermList .
+  eq show-fragment(SpecBody[L]{SSD ODS PDS NSD MDS EDS}, SB)
+   = show-sorts(L, list(SSD)),
+     show-ops(L, SB, topo-sort(ODS)),
+     show-preds(L, list(PDS)),
+     show-noms(L, list(NSD)), show-mods(L, list(MDS)),
+     show-sens(L, SB, list(EDS)) .
+
+  *** show sorts  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-sorts : DNI QidList -> TermList .
+  eq show-sorts(L, nil) = empty .
+  eq show-sorts(L, S) = 'sort_[show-sort(L, S)] .
+  eq show-sorts(L, S NSL) = 'sorts_[cs-bubble('neSortList, show-qids(S NSL))] .
+
+  op show-sort : DNI Qid -> Term .
+  eq show-sort(L, S) = mk-bubble('sort, show-qid(S)) .
+
+  *** show ops  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-ops : DNI SpecBody{DNI} OpDeclList -> TermList .
+  eq show-ops(L, SB, nil) = empty .
+  eq show-ops(L, SB, {op O : A -> S [AtS] .} ODL)
+   = 'op_:_->_`[_`][ show-symbol(L, O), show-arity(L, A), show-sort(L, S),
+      show-op-attributes(L, SB, AtS) ], show-ops(L, SB, ODL) .
+  eq show-ops(L, SB, {op O : nil -> S [AtS] .} ODL)
+   = 'op_:`(`)->_`[_`][ show-symbol(L, O), show-sort(L, S),
+      show-op-attributes(L, SB, AtS) ], show-ops(L, SB, ODL) .
+
+  op show-symbol : DNI Qid -> Term .
+  eq show-symbol(L, O) = mk-bubble('symbol, show-qid(O)) .
+
+  op show-arity : DNI NeTypeList -> TermList .
+  eq show-arity(L, nil) = empty .
+  eq show-arity(L, A) = mk-bubble('arity, show-qids(A)) .
+
+  op show-op-attributes : DNI SpecBody{DNI} AttrSet -> TermList .
+  eq show-op-attributes(L, SB, AtS)
+   = show-attributes(L, op-attr-grammar(L),
+      (show-constraint-attr(L, AtS), show-assoc-attr(L, AtS),
+        show-comm-attr(L, AtS), show-id-attr(SB, AtS))) .
+
+  *** show preds  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-preds : DNI PredDeclList -> TermList .
+  eq show-preds(L, nil) = empty .
+  eq show-preds(L, {pred P : A [AtS] .} PDL)
+   = 'pred_:_`[_`][ show-symbol(L, P), show-arity(L, A),
+      show-pred-attributes(L, AtS) ], show-preds(L, PDL) .
+  eq show-preds(L, {pred P : nil [AtS] .} PDL)
+   = 'pred_:`(`)`[_`][ show-symbol(L, P),
+      show-pred-attributes(L, AtS) ], show-preds(L, PDL) .
+
+  op show-pred-attributes : DNI AttrSet -> TermList .
+  eq show-pred-attributes(L, AtS)
+   = show-attributes(L, pred-attr-grammar(L), show-constraint-attr(L, AtS)) .
+
+  *** show noms  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-noms : DNI QidList -> TermList .
+  eq show-noms(L, nil) = empty .
+  eq show-noms(L, N) = 'nom_[show-nom(L, N)] .
+  eq show-noms(L, N NNL) = 'noms_[cs-bubble('neNominalList, show-qids(N NNL))] .
+
+  op show-nom : DNI Qid -> Term .
+  eq show-nom(L, N) = mk-bubble('nominal, show-qid(N)) .
+
+  *** show mods  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-mods : DNI TModDeclList -> TermList .
+  eq show-mods(L, nil) = empty .
+  eq show-mods(L, {mod M : ITP >< OTP [AtS] .} MDL)
+   = 'mod_:_><_[ show-modality(L, M),
+      show-mod-type(L, ITP), show-mod-type(L, OTP) ], show-mods(L, MDL) .
+  eq show-mods(L, {mod M : nil >< OTP [AtS] .} MDL)
+   = 'mod_:`(`)><_[ show-modality(L, M),
+      show-mod-type(L, OTP) ], show-mods(L, MDL) .
+  eq show-mods(L, {mod M : ITP >< nil [AtS] .} MDL)
+   = 'mod_:_><`(`)[ show-modality(L, M),
+      show-mod-type(L, ITP) ], show-mods(L, MDL) .
+  eq show-mods(L, {mod M : nil >< nil [AtS] .} MDL)
+   = 'mod_:`(`)><`(`)[ show-modality(L, M) ], show-mods(L, MDL) .
+
+  op show-modality : DNI Qid -> Term .
+  eq show-modality(L, M) = mk-bubble('modality, show-qid(M)) .
+
+  op show-mod-type : DNI TypeList -> TermList .
+  eq show-mod-type(L, nil) = empty .
+  eq show-mod-type(L, TPL) = mk-bubble('modType, show-qids(TPL)) .
+
+  *** show sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-sens : DNI SpecBody{DNI} SenDeclList -> TermList .
+  eq show-sens(L, SB, nil) = empty .
+  eq show-sens(L, SB, {sen E [none] .} EDL)
+   = 'ax_ [ show-sentence(SB, none, mk-nom-sentences-implicit(SB, E)) ],
+     show-sens(L, SB, EDL) .
+  eq show-sens(L, SB, {sen E [AtS] .} EDL)
+   = 'ax_`[_`] [
+      show-sentence(SB, none, mk-nom-sentences-implicit(SB, E)),
+      show-sen-attributes(L, AtS) ],
+     show-sens(L, SB, EDL) [owise] .
+
+  op show-sentence : SpecBody{DNI} VariableSet ATerm -> Term .
+  ceq show-sentence(SB, VS, E) = mk-bubble('sentence, show-qids(QIL))
+   if QIL := print term $show-sentence(SB, VS, E) given ($grammar(SB) & VS) .
+
+  op $show-sentence : SpecBody{DNI} VariableSet ATerm -> Term .
+  ceq $show-sentence(SB, VS, E) = plain-term(E)
+   if E :: ('NominalSentence`{DNI`} ; 'AtomicSentence`{DNI`}) .
+  eq $show-sentence(SB, VS, {'not_[E] : 'Sentence`{DNI`}})
+   = 'not_[$show-sentence(SB, VS, E)] .
+  ceq $show-sentence(SB, VS, {BC[E1, E2] : 'Sentence`{DNI`}})
+   = BC[$show-sentence(SB, VS, E1), $show-sentence(SB, VS, E2)]
+   if BC in symbols(grammar(SB), 'Sentence`{DNI`} 'Sentence`{DNI`}) .
+  eq $show-sentence(SB, VS, {'@__[Nom, E] : 'Sentence`{DNI`}})
+   = '@__[plain-term(Nom), $show-sentence(SB, VS, E)] .
+  ceq $show-sentence(SB, VS, {MOP[I, E] : 'Sentence`{DNI`}})
+   = MOP[plain-term(I),
+      show-sentence(SB, VS ; read-vars(SB, I, protecting constants), E)]
+   if MOP in symbols(grammar(SB), 'Interaction`{DNI`} 'Sentence`{DNI`}) .
+  ceq $show-sentence(SB, VS, {Q[VD, E] : 'Sentence`{DNI`}})
+   = Q[plain-term(VD),
+      show-sentence(SB, VS ; read-vars(SB, VD, protecting constants), E)]
+   if Q in symbols(grammar(SB), 'VarDecl`{DNI`} 'Sentence`{DNI`}) .
+  eq $show-sentence(SB, VS, {'store__[V, E] : 'Sentence`{DNI`}})
+   = 'store__[plain-term(V),
+      show-sentence(SB, VS ; read-var(SB, V, protecting constants), E)] .
+
+  op show-sen-attributes : DNI AttrSet -> TermList .
+  eq show-sen-attributes(L, AtS)
+   = show-attributes(L, sen-attr-grammar(L), show-label-attr(L, list(AtS))) .
+
+  *** show attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-attributes : DNI Grammar NeTermList -> Term .
+  eq show-attributes(L, G, NTL)
+   = mk-bubble('neAttrList, show-qids(print term pack('__, NTL) given G)) .
+
+  op show-constraint-attr : DNI AttrSet -> NeTermList .
+  ceq show-constraint-attr(L, rigid AtS) = 'rigid.Attr
+   if constraint-attrs(AtS) = none .
+  ceq show-constraint-attr(L, shared AtS) = 'shared.Attr
+   if constraint-attrs(AtS) = none .
+  ceq show-constraint-attr(L, flexible AtS) = 'flexible.Attr
+   if constraint-attrs(AtS) = none .
+  eq show-constraint-attr(L, AtS) = 'rigid.Attr [owise] .
+
+  op show-assoc-attr : DNI AttrSet -> TermList .
+  eq show-assoc-attr(L, assoc AtS) = 'assoc.Attr .
+  eq show-assoc-attr(L, AtS) = empty [owise] .
+
+  op show-comm-attr : DNI AttrSet -> TermList .
+  eq show-comm-attr(L, comm AtS) = 'comm.Attr .
+  eq show-comm-attr(L, AtS) = empty [owise] .
+
+  op show-id-attr : SpecBody{DNI} AttrSet -> TermList .
+  ceq show-id-attr(SB, id(T) AtS)
+   = 'id:[mk-bubble('term, show-qids(print term T given grammar(SB)))]
+   if AtS is id-free .
+  eq show-id-attr(SB, AtS) = empty [owise] .
+
+  op show-label-attr : DNI AttrList -> TermList .
+  eq show-label-attr(L, nil) = empty .
+  eq show-label-attr(L, {label(QI)} AtL)
+   = 'label:_[mk-bubble('label, show-qid(QI))], show-label-attr(L, AtL) .
+  eq show-label-attr(L, {At} AtL) = show-label-attr(L, AtL) [owise] .
+endfm
+
+********************************************************************************
+
+fmod DNI/ANALYSIS-STATE is
+  protecting DNI/READ .
+
+  var L : DNI .
+  var SB : SpecBody{DNI} .
+  var VS : VariableSet .
+  var AtS : AttrSet .
+  var TP : Type .
+  var TPL : TypeList .
+  var V : AVariable .
+  var T : ATerm .
+  var RVO : ReadVarOptions{DNI} .
+
+  *** analysis state  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort AnalysisState{DNI} .
+  op AnalysisState[_]{_&_&_} : DNI SpecBody{DNI} VariableSet AttrSet
+    -> AnalysisState{DNI} [ctor] .
+
+  *** initial-state (of a specification body)  - - - - - - - - - - - - - - - - -
+  op initial-state : SpecBody{DNI} -> AnalysisState{DNI} .
+  eq initial-state(SB) = AnalysisState[DNI]{SB & none & none} .
+
+  *** projections  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op spec-body : AnalysisState{DNI} -> SpecBody{DNI} .
+  eq spec-body(AnalysisState[L]{SB & VS & AtS}) = SB .
+
+  op vars : AnalysisState{DNI} -> VariableSet .
+  eq vars(AnalysisState[L]{SB & VS & AtS}) = VS .
+
+  op attrs : AnalysisState{DNI} -> AttrSet .
+  eq attrs(AnalysisState[L]{SB & VS & AtS}) = AtS .
+
+  op constraint-attrs : AnalysisState{DNI} -> AttrSet .
+  eq constraint-attrs(AnalysisState[L]{SB & VS & AtS}) = constraint-attrs(AtS) .
+
+  *** state updates  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _>>=_ : AnalysisState{DNI} ATerm -> AnalysisState{DNI} .
+
+  ceq AnalysisState[L]{SB & VS & AtS} >>= T
+   = AnalysisState[L]{SB & VS ; read-vars(SB, T, protecting constants) & AtS}
+   if T :: ('VarDecl`{DNI`} ; 'Interaction`{DNI`}) .
+
+  ceq AnalysisState[L]{SB & VS & AtS} >>= V
+   = AnalysisState[L]{SB & VS ; read-var(SB, V, protecting constants) & AtS}
+   if type(V) = 'Nominal .
+
+  ceq AnalysisState[L]{SB & VS & AtS} >>= T
+   = AnalysisState[L]{SB & VS & AtS read-attributes(DNI, T)}
+   if T :: ('Attr ; 'AttrList) .
+
+  eq AnalysisState[L]{SB & VS & AtS} >>= T
+   = AnalysisState[L]{SB >>= T & VS & AtS} [owise] .
+
+  *** auxiliary operations on the underlying spec-body of a state  - - - - - - -
+  op sorts : AnalysisState{DNI} -> SortSet .
+  eq sorts(AnalysisState[L]{SB & VS & AtS}) = sorts(SB) .
+
+  op ops : AnalysisState{DNI} -> OpDeclSet .
+  eq ops(AnalysisState[L]{SB & VS & AtS}) = ops(SB) .
+
+  op preds : AnalysisState{DNI} -> PredDeclSet .
+  eq preds(AnalysisState[L]{SB & VS & AtS}) = preds(SB) .
+
+  op noms : AnalysisState{DNI} -> QidSet .
+  eq noms(AnalysisState[L]{SB & VS & AtS}) = noms(SB) .
+
+  op mods : AnalysisState{DNI} -> TModDeclSet .
+  eq mods(AnalysisState[L]{SB & VS & AtS}) = mods(SB) .
+
+  op symbols* : AnalysisState{DNI} TypeList Type -> QidSet .
+  eq symbols*(AnalysisState[L]{SB & VS & AtS}, TPL, TP)
+   = symbols*(SB, TPL, TP) .
+
+  op grammar : AnalysisState{DNI} -> Grammar .
+  eq grammar(AnalysisState[L]{SB & VS & AtS}) = grammar(SB) .
+
+  op $grammar : AnalysisState{DNI} -> Grammar .
+  eq $grammar(AnalysisState[L]{SB & VS & AtS}) = $grammar(SB) .
+
+  op read-vars : AnalysisState{DNI} ATerm ReadVarOptions{DNI} -> VariableSet .
+  eq read-vars(AnalysisState[L]{SB & VS & AtS}, T, RVO)
+   = read-vars(SB, T, RVO) .
+
+  op read-var : AnalysisState{DNI} ATerm ReadVarOptions{DNI} -> VariableSet .
+  eq read-var(AnalysisState[L]{SB & VS & AtS}, T, RVO) = read-var(SB, T, RVO) .
+
+  op inner-vars : AnalysisState{DNI} ATerm -> VariableSet .
+  eq inner-vars(AnalysisState[L]{SB & VS & AtS}, T) = inner-vars(SB, T) .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view DNI/AnalysisState from ANALYSIS-STATE to DNI/ANALYSIS-STATE is
+  sort State to AnalysisState{DNI} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod DNI/PARSING is
+  including  SYNTACTIC-ANALYSIS { DNI, DNI/AnalysisState } .
+  protecting LANG-NAME { DNI } .
+  protecting DNI/SHOW .
+
+  var  L : DNI .
+  vars SB SB' Sig Sig' : SpecBody{DNI} .
+  var  SAS : AnalysisState{DNI} .
+  var  QIL : QidList .
+  var  QIS : QidSet .
+  vars S O P N M : AConstant .
+  var  NT : ATermQid .
+  vars $S $SL SL SL1 SL2 : ATerm .
+  vars $O $OL OL OL1 OL2 $A A : ATerm .
+  vars $P $PL PL PL1 PL2 : ATerm .
+  vars $N $NL NL NL1 NL2 : ATerm .
+  vars $M $ML ML ML1 ML2 $IT IT $OT OT : ATerm .
+  vars I VD VL V $E E E1 E2 : ATerm .
+  vars $AtL AtL AtL1 AtL2 : ATerm .
+  vars $T T : ATerm .
+  var  TL : ATermList .
+  var  NTL : NeATermList .
+  vars $ BC MOP Q QI : Qid .
+  vars EVD CA CI : Constant .
+  var  VS : VariableSet .
+  vars TPL ITL OTL : TypeList .
+  var  TP : Type .
+  vars #O #P #A #M #TP : Nat .
+  var  At : Attr .
+  var  AO : AnalysisOutcome .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse L input (QIL) in SAS
+   = scan L input (QIL : 'Declaration)
+     then analyse L declaration in SAS
+     or-else, if inconclusive, parsing-error ('unexpected 'parsing 'error:
+      'cannot 'parse 'this name(L) 'declaration) .
+
+  *** analyse declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_declaration : DNI -> AnalysisAction{DNI} .
+
+  eq analyse L declaration {'sort_[$S] : 'Declaration}
+   = try {'sort_ [ solve L sort ($S) ] : 'Declaration} .
+
+  eq analyse L declaration {'sorts_[$SL] : 'Declaration}
+   = try {'sorts_ [ solve L sorts ($SL) ] : 'Declaration} .
+
+  eq analyse L declaration {'op_:_->_[$O, $A, $S] : 'Declaration}
+   = try { 'op_:_->_ [
+        solve L op-symbol ($O),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'op_:_->_`[_`][$O, $A, $S, $AtL] : 'Declaration}
+   = try { 'op_:_->_`[_`] [
+        solve L op-symbol ($O),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared,
+        solve L op-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'op_:`(`)->_[$O, $S] : 'Declaration}
+   = try { 'op_:`(`)->_ [
+        solve L op-symbol ($O),
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'op_:`(`)->_`[_`][$O, $S, $AtL] : 'Declaration}
+   = try { 'op_:`(`)->_`[_`] [
+        solve L op-symbol ($O),
+        solve L sort ($S) then check that L sort is declared,
+        solve L op-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L op .
+
+  eq analyse L declaration {'ops_:_->_[$OL, $A, $S] : 'Declaration}
+   = try { 'ops_:_->_ [
+        solve L op-symbols ($OL),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'ops_:_->_`[_`][$OL, $A, $S, $AtL] : 'Declaration}
+   = try { 'ops_:_->_`[_`] [
+        solve L op-symbols ($OL),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L sort ($S) then check that L sort is declared,
+        solve L op-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'ops_:`(`)->_[$OL, $S] : 'Declaration}
+   = try { 'ops_:`(`)->_ [
+        solve L op-symbols ($OL),
+        solve L sort ($S) then check that L sort is declared
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'ops_:`(`)->_`[_`][$OL, $S, $AtL] : 'Declaration}
+   = try { 'ops_:`(`)->_`[_`] [
+        solve L op-symbols ($OL),
+        solve L sort ($S) then check that L sort is declared,
+        solve L op-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L ops .
+
+  eq analyse L declaration {'pred_:_[$P, $A] : 'Declaration}
+   = try { 'pred_:_ [
+        solve L pred-symbol ($P),
+        solve L arity ($A) then check that all sorts in L arity are declared
+      ] : 'Declaration }
+     then check validity constraints for L pred .
+
+  eq analyse L declaration {'pred_:_`[_`][$P, $A, $AtL] : 'Declaration}
+   = try { 'pred_:_`[_`] [
+        solve L pred-symbol ($P),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L pred-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L pred .
+
+  eq analyse L declaration {'pred_:`(`)[$P] : 'Declaration}
+   = try {'pred_:`(`) [ solve L pred-symbol ($P) ] : 'Declaration}
+     then check validity constraints for L pred .
+
+  eq analyse L declaration {'pred_:`(`)`[_`][$P, $AtL] : 'Declaration}
+   = try { 'pred_:`(`)`[_`] [
+        solve L pred-symbol ($P),
+        solve L pred-attributes ($AtL)
+      ] : 'Declaration}
+     then check validity constraints for L pred .
+
+  eq analyse L declaration {'preds_:_[$PL, $A] : 'Declaration}
+   = try { 'preds_:_ [
+        solve L pred-symbols ($PL),
+        solve L arity ($A) then check that all sorts in L arity are declared
+      ] : 'Declaration }
+     then check validity constraints for L preds .
+
+  eq analyse L declaration {'preds_:_`[_`][$PL, $A, $AtL] : 'Declaration}
+   = try { 'preds_:_`[_`] [
+        solve L pred-symbols ($PL),
+        solve L arity ($A) then check that all sorts in L arity are declared,
+        solve L pred-attributes ($AtL)
+      ] : 'Declaration }
+     then check validity constraints for L preds .
+
+  eq analyse L declaration {'preds_:`(`)[$PL] : 'Declaration}
+   = try {'preds_:`(`) [ solve L pred-symbols ($PL) ] : 'Declaration}
+     then check validity constraints for L preds .
+
+  eq analyse L declaration {'preds_:`(`)`[_`][$PL, $AtL] : 'Declaration}
+   = try { 'preds_:`(`)`[_`] [
+        solve L pred-symbols ($PL),
+        solve L pred-attributes ($AtL)
+      ] : 'Declaration}
+     then check validity constraints for L preds .
+
+  eq analyse L declaration {'nom_[$N] : 'Declaration}
+   = try {'nom_ [ solve L nom ($N) ] : 'Declaration} .
+
+  eq analyse L declaration {'noms_[$NL] : 'Declaration}
+   = try {'noms_ [ solve L noms ($NL) ] : 'Declaration} .
+
+  eq analyse L declaration {'mod_:_><_[$M, $IT, $OT] : 'Declaration}
+   = try { 'mod_:_><_ [
+        solve L modality ($M),
+        solve L mod-type ($IT)
+        then check that all sorts in L mod-type are declared,
+        solve L mod-type ($OT)
+        then check that all sorts in L mod-type are declared
+      ] : 'Declaration }
+     then check validity constraints for L mod .
+
+  eq analyse L declaration {'mod_:`(`)><_[$M, $OT] : 'Declaration}
+   = try { 'mod_:`(`)><_ [
+        solve L modality ($M),
+        solve L mod-type ($OT)
+        then check that all sorts in L mod-type are declared
+      ] : 'Declaration }
+     then check validity constraints for L mod .
+
+  eq analyse L declaration {'mod_:_><`(`)[$M, $IT] : 'Declaration}
+   = try { 'mod_:_><`(`) [
+        solve L modality ($M),
+        solve L mod-type ($IT)
+        then check that all sorts in L mod-type are declared
+      ] : 'Declaration }
+     then check validity constraints for L mod .
+
+  eq analyse L declaration {'mod_:`(`)><`(`)[$M] : 'Declaration}
+   = try {'mod_:`(`)><`(`) [ solve L modality ($M) ] : 'Declaration}
+     then check validity constraints for L mod .
+
+  eq analyse L declaration {'ax_[$E] : 'Declaration}
+   = try { 'ax_ [
+        analyse L sentence ($E) then check that all L variables are bound
+      ] : 'Declaration } .
+
+  eq analyse L declaration {'ax_`[_`][$E, $AtL] : 'Declaration}
+   = try { 'ax_`[_`] [
+        analyse L sentence ($E) then check that all L variables are bound,
+        solve L sen-attributes ($AtL)
+      ] : 'Declaration } .
+
+  *** analyse individual sorts  - - - - - - - - - - - - - - - - - - - - - - - -
+  op solve_sort : DNI -> AnalysisAction{DNI} .
+  ceq solve L sort {$[S] : 'Sort}
+   = check (QI :: Sort and QI is ordinary and QI =/= 'Nominal)
+     and-then return {S : 'Sort}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[S]))
+      'is 'not 'a 'valid 'sort, (at L term (S), include context))
+   if QI := read-qid(S) .
+
+  *** analyse comma-separated lists of sorts  - - - - - - - - - - - - - - - - -
+  op solve_sorts : DNI -> AnalysisAction{DNI} .
+  eq solve L sorts {$[SL] : 'NeSortList}
+   = decode input (read-qids(SL) : 'NeSortList) given cs-sorts-grammar(L)
+     then solve L sorts .
+  eq solve L sorts {'_`,_[SL1, SL2] : 'NeSortList}
+   = try {'_`,_ [ solve L sorts (SL1), solve L sorts (SL2) ] : 'NeSortList} .
+  eq solve L sorts {$[S] : 'Sort}
+   = solve L sort {$[S] : 'Sort} .
+
+  *** analyse individual operations  - - - - - - - - - - - - - - - - - - - - - -
+  op solve_op-symbol : DNI -> AnalysisAction{DNI} .
+  eq solve L op-symbol {$[O] : 'Symbol}
+   = check (read-qid(O) is ordinary) and-then return {O : 'Symbol}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[O]))
+      'is 'not 'a 'valid 'operation 'symbol,
+      (at L term (O), include context)) .
+
+  op solve_arity : DNI -> AnalysisAction{DNI} .
+  ceq solve L arity {$[A] : 'Arity}
+   = check (QIL :: NeTypeList and not occurs('Nominal, QIL))
+     and-then return {A : 'Arity}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[A]))
+      'is 'not 'a 'valid 'arity,
+      (at L term (A), include context))
+   if QIL := read-qids(A) .
+
+  op check`that`all`sorts`in_arity`are`declared : DNI -> AnalysisAction{DNI} .
+  eq check that all sorts in L arity are declared {A : 'Arity}
+   = try {check that all sorts in L sort-seq are declared (A) : 'Arity} .
+
+  op check`that`all`sorts`in_sort-seq`are`declared :
+      DNI -> AnalysisAction{DNI} .
+  eq check that all sorts in L sort-seq are declared {'__[TL] : 'NeQidList}
+   = try { '__ [
+        check that all sorts in L sort-seq are declared (TL)
+      ] : 'NeQidList} .
+  eq check that all sorts in L sort-seq are declared (empty)
+   = return (empty) .
+  eq check that all sorts in L sort-seq are declared ((S, TL))
+   = check that L sort is declared (S)
+     and-then check that all sorts in L sort-seq are declared (TL) .
+
+  op check`that_sort`is`declared : DNI -> AnalysisAction{DNI} .
+  eq check that L sort is declared (S) in SAS
+   = check (read-sort(L, S) in sorts(SAS)) and-then return (S)
+     or-else
+     fail ('undeclared 'sort emph(read-sort(L, S)),
+      (at L term (S), include context))
+     in SAS .
+
+  op solve_op-attributes : DNI -> AnalysisAction{DNI} .
+  eq solve L op-attributes {$[AtL] : 'NeAttrList} in SAS
+   = decode input (read-qids(AtL) : 'AttrList) given op-attr-grammar(L) .
+
+  op check`validity`constraints`for_op : DNI -> AnalysisAction{DNI} .
+  eq check validity constraints for L op
+       {'op_:_->_[O, A, S] : 'Declaration}
+   = try { 'op_:_->_ [
+        check validity constraints for L op
+          [read-arity(L, A) -> read-sort(L, S)] (O),
+        return (A), return (S)
+      ] : 'Declaration } .
+  ceq check validity constraints for L op
+       {'op_:_->_`[_`][O, A, S, AtL] : 'Declaration}
+   = try { 'op_:_->_`[_`] [
+        check validity constraints for L op [TPL -> TP] (O),
+        return (A), return (S),
+        analyse L op-attributes [QI : TPL -> TP] (AtL)
+        ] : 'Declaration }
+   if QI := read-symbol(L, O)
+      /\ TPL := read-arity(L, A) /\ TP := read-sort(L, S) .
+  eq check validity constraints for L op
+       {'op_:`(`)->_[O, S] : 'Declaration}
+   = try { 'op_:`(`)->_ [
+        check validity constraints for L op [nil -> read-sort(L, S)] (O),
+        return (S)
+      ] : 'Declaration } .
+  ceq check validity constraints for L op
+       {'op_:`(`)->_`[_`][O, S, AtL] : 'Declaration}
+   = try { 'op_:`(`)->_`[_`] [
+        check validity constraints for L op [nil -> TP] (O),
+        return (S),
+        analyse L op-attributes [QI : nil -> TP] (AtL)
+      ] : 'Declaration }
+   if QI := read-symbol(L, O) /\ TP := read-sort(L, S) .
+
+  op check`validity`constraints`for_op`[_->_`] :
+      DNI [TypeList] [Type] -> AnalysisAction{DNI} .
+  eq check validity constraints for L op [nil -> TP]
+   = check underscores of L op [nil] .
+  eq check validity constraints for L op [TPL -> TP]
+   = check underscores of L op [TPL] ;
+     check overloading of L symbol [TPL -> TP] [owise] .
+
+  op check`underscores`of_op`[_`] : DNI [TypeList] -> AnalysisAction{DNI} .
+  ceq check underscores of L op [TPL] (O)
+   = check (#O == 0 or #O == #A) and-then return (O)
+     or-else
+     fail ('number 'of 'underscores '\s '`( qid(#O) '`)
+      'does 'not 'match 'number 'of 'arguments '\s '`( qid(#A) '`)
+      'for 'operation emph(read-symbol(L, O)),
+      (at L term (O), include context))
+   if #O := #underscores(read-symbol(L, O)) /\ #A := size(TPL) .
+
+  op check`overloading`of_symbol`[_->_`] :
+      DNI [TypeList] [Type] -> AnalysisAction{DNI} .
+  eq check overloading of L symbol [TPL -> TP] (O) in SAS
+   = check (read-symbol(L, O) not-in symbols*(SAS, TPL, TP)) and-then return (O)
+     or-else
+     fail ('cannot 'overload 'symbol emph(read-symbol(L, O))
+      'with 'arity emph(TPL), (at L term (O), include context))
+     in SAS .
+
+  op analyse_op-attributes`[_:_->_`] :
+      DNI [QidSet] [TypeList] [Type] -> AnalysisAction{DNI} .
+  eq analyse L op-attributes [QIS : TPL -> TP] {'__[AtL1, AtL2] : 'AttrList}
+   = try { '__ [
+        analyse L op-attributes [QIS : TPL -> TP] (AtL1),
+        analyse L op-attributes [QIS : TPL -> TP] (AtL2)
+      ] : 'AttrList } .
+  ceq analyse L op-attributes [QIS : TPL -> TP] {CA : 'Attr} in SAS
+   = (check (constraint-attrs(At) == none or constraint-attrs(SAS) == none)
+      or-else
+      fail ('multiple 'declarations 'of 'rigidity 'constraints,
+        (at term CA given op-attr-grammar(L), include context)))
+     and-then
+     (check (At is-not equational or TPL == TP TP)
+      or-else
+      fail (emph(print term CA given op-attr-grammar(L))
+        'attribute 'can 'be 'declared 'only 'for 'binary 'operation
+        'symbols 'whose 'domain 'sorts 'and 'range 'sort 'are 'the 'same,
+        (at term CA given op-attr-grammar(L), include context)))
+     and-then return {CA : 'Attr} in SAS
+   if At := read-attributes(DNI, {CA : 'Attr}) .
+  eq analyse L op-attributes [QIS : TPL -> TP] {'id:[$T] : 'Attr} in SAS
+   = (check (TPL == TP TP)
+      or-else
+      fail (emph('id) 'attribute
+        'can 'be 'declared 'only 'for 'binary 'operation 'symbols
+        'whose 'domain 'sorts 'and 'range 'sort 'are 'the 'same,
+        (at term 'id:[$T] given op-attr-grammar(L), include context)))
+     and-then
+     (check (attrs(SAS) is id-free)
+      or-else
+      fail ('multiple 'identity 'declarations,
+        (at term 'id:[$T] given op-attr-grammar(L), include context)))
+     and-then
+     try {'id: [ solve L term [TP] ($T) ] : 'Attr} in SAS .
+
+  op solve_term`[_`] : DNI [Type] -> AnalysisAction{DNI} .
+  eq solve L term [TP] {$[T] : 'Term} in SAS
+   = decode input (read-qids(T) : TP) given (grammar(SAS) & vars(SAS)) .
+
+  *** analyse comma-separated lists of operation symbols  - - - - - - - - - - --
+  op solve_op-symbols : DNI -> AnalysisAction{DNI} .
+  eq solve L op-symbols {$[OL] : 'NeSymbolList}
+   = decode input (read-qids(OL) : 'NeSymbolList) given cs-symbols-grammar(L)
+     then solve L op-symbols .
+  eq solve L op-symbols {'_`,_[OL1, OL2] : 'NeSymbolList}
+   = try { '_`,_ [
+        solve L op-symbols (OL1),
+        solve L op-symbols (OL2)
+      ] : 'NeSymbolList } .
+  eq solve L op-symbols {$[O] : 'Symbol}
+   = solve L op-symbol {$[O] : 'Symbol} .
+
+  op check`validity`constraints`for_ops : DNI -> AnalysisAction{DNI} .
+  eq check validity constraints for L ops
+      {'ops_:_->_[OL, A, S] : 'Declaration}
+   = try { 'ops_:_->_ [
+        check validity constraints for L ops
+          [read-arity(L, A) -> read-sort(L, S)] (OL),
+        return (A), return (S)
+      ] : 'Declaration } .
+  ceq check validity constraints for L ops
+      {'ops_:_->_`[_`][OL, A, S, AtL] : 'Declaration}
+   = try { 'ops_:_->_`[_`] [
+        check validity constraints for L ops [TPL -> TP] (OL),
+        return (A), return (S),
+        analyse L op-attributes [QIS : TPL -> TP] (AtL)
+      ] : 'Declaration }
+   if QIS := read-cs-symbols(L, OL)
+      /\ TPL := read-arity(L, A) /\ TP := read-sort(L, S) .
+  eq check validity constraints for L ops
+      {'ops_:`(`)->_[OL, S] : 'Declaration}
+   = try { 'ops_:`(`)->_ [
+        check validity constraints for L ops [nil -> read-sort(L, S)] (OL),
+        return (S)
+      ] : 'Declaration } .
+  ceq check validity constraints for L ops
+      {'ops_:`(`)->_`[_`][OL, S, AtL] : 'Declaration}
+   = try { 'ops_:`(`)->_`[_`] [
+        check validity constraints for L ops [nil -> TP] (OL),
+        return (S),
+        analyse L op-attributes [QIS : nil -> TP] (AtL)
+      ] : 'Declaration }
+   if QIS := read-cs-symbols(L, OL) /\ TP := read-sort(L, S) .
+
+  op check`validity`constraints`for_ops`[_->_`] :
+      DNI [TypeList] [Type] -> AnalysisAction{DNI} .
+  eq check validity constraints for L ops [TPL -> TP]
+      {'_`,_[OL1, OL2] : 'NeSymbolList}
+   = try { '_`,_ [
+        check validity constraints for L ops [TPL -> TP] (OL1),
+        check validity constraints for L ops [TPL -> TP] (OL2)
+      ] : 'NeSymbolList } .
+  eq check validity constraints for L ops [TPL -> TP] {O : 'Symbol}
+   = check validity constraints for L op [TPL -> TP] {O : 'Symbol} .
+
+  *** analyse individual predicates  - - - - - - - - - - - - - - - - - - - - - -
+  op solve_pred-symbol : DNI -> AnalysisAction{DNI} .
+  ceq solve L pred-symbol {$[P] : 'Symbol}
+   = check (QI is ordinary and QI not-in ('true ; 'false ; '_=_ ; 'local_))
+     and-then return {P : 'Symbol}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[P]))
+      'is 'not 'a 'valid 'predicate 'symbol,
+      (at L term (P), include context))
+   if QI := read-qid(P) .
+
+  op solve_pred-attributes : DNI -> AnalysisAction{DNI} .
+  eq solve L pred-attributes {$[AtL] : 'NeAttrList} in SAS
+  = decode input (read-qids(AtL) : 'AttrList) given pred-attr-grammar(L) .
+
+  op check`validity`constraints`for_pred : DNI -> AnalysisAction{DNI} .
+  eq check validity constraints for L pred
+      {'pred_:_[P, A] : 'Declaration}
+   = try { 'pred_:_ [
+        check validity constraints for L pred [read-arity(L, A)] (P),
+        return (A)
+      ] : 'Declaration } .
+  ceq check validity constraints for L pred
+      {'pred_:_`[_`][P, A, AtL] : 'Declaration}
+   = try { 'pred_:_`[_`] [
+        check validity constraints for L pred [TPL] (P),
+        return (A),
+        analyse L pred-attributes [QI : TPL] (AtL)
+      ] : 'Declaration }
+   if QI := read-symbol(L, P) /\ TPL := read-arity(L, A) .
+  eq check validity constraints for L pred
+      {'pred_:`(`)[P] : 'Declaration}
+   = try { 'pred_:`(`) [
+        check validity constraints for L pred [nil] (P)
+      ] : 'Declaration } .
+  ceq check validity constraints for L pred
+      {'pred_:`(`)`[_`][P, AtL] : 'Declaration}
+   = try { 'pred_:`(`)`[_`] [
+        check validity constraints for L pred [nil] (P),
+        analyse L pred-attributes [QI : nil] (AtL)
+      ] : 'Declaration }
+   if QI := read-symbol(L, P) .
+
+  op check`validity`constraints`for_pred`[_`] :
+      DNI [TypeList] -> AnalysisAction{DNI} .
+  eq check validity constraints for L pred [nil]
+   = check underscores of L pred [nil] .
+
+  eq check validity constraints for L pred [TPL]
+   = check underscores of L pred [TPL] ;
+     check overloading of L symbol [TPL -> 'AtomicSentence`{DNI`}] [owise] .
+
+  op check`underscores`of_pred`[_`] : DNI [TypeList] -> AnalysisAction{DNI} .
+  ceq check underscores of L pred [TPL] (P)
+   = check (#P == 0 or #P == #A) and-then return (P)
+     or-else
+     fail ('number 'of 'underscores '\s '`( qid(#P) '`)
+      'does 'not 'match 'number 'of 'arguments '\s '`( qid(#A) '`)
+      'for 'predicate emph(read-symbol(L, P)),
+      (at L term (P), include context))
+   if #P := #underscores(read-symbol(L, P)) /\ #A := size(TPL) .
+
+  op analyse_pred-attributes`[_:_`] :
+      DNI [QidSet] [TypeList] -> AnalysisAction{DNI} .
+  eq analyse L pred-attributes [QIS : TPL] {'__[AtL1, AtL2] : 'AttrList}
+   = try { '__ [
+        analyse L pred-attributes [QIS : TPL] (AtL1),
+        analyse L pred-attributes [QIS : TPL] (AtL2)
+      ] : 'AttrList } .
+  ceq analyse L pred-attributes [QIS : TPL] {CA : 'Attr} in SAS
+   = (check (constraint-attrs(At) == none or constraint-attrs(SAS) == none)
+      or-else
+      fail ('multiple 'declarations 'of 'rigidity 'constraints,
+        (at term CA given op-attr-grammar(L), include context)))
+     and-then return {CA : 'Attr} in SAS
+   if At := read-attributes(DNI, {CA : 'Attr}) .
+
+  *** analyse comma-separated lists of predicate symbols  - - - - - - - - - - --
+  op solve_pred-symbols : DNI -> AnalysisAction{DNI} .
+  eq solve L pred-symbols {$[OL] : 'NeSymbolList}
+   = decode input (read-qids(OL) : 'NeSymbolList) given cs-symbols-grammar(L)
+     then solve L pred-symbols .
+  eq solve L pred-symbols {'_`,_[PL1, PL2] : 'NeSymbolList}
+   = try { '_`,_ [
+        solve L pred-symbols (PL1),
+        solve L pred-symbols (PL2)
+      ] : 'NeSymbolList } .
+  eq solve L pred-symbols {$[P] : 'Symbol}
+   = solve L pred-symbol {$[P] : 'Symbol} .
+
+  op check`validity`constraints`for_preds : DNI -> AnalysisAction{DNI} .
+  eq check validity constraints for L preds
+      {'preds_:_[PL, A] : 'Declaration}
+   = try { 'preds_:_ [
+        check validity constraints for L preds [read-arity(L, A)] (PL),
+        return (A)
+      ] : 'Declaration } .
+  ceq check validity constraints for L preds
+      {'preds_:_`[_`][PL, A, AtL] : 'Declaration}
+   = try { 'preds_:_`[_`] [
+        check validity constraints for L preds [read-arity(L, A)] (PL),
+        return (A),
+        analyse L pred-attributes [QIS : TPL] (AtL)
+      ] : 'Declaration }
+   if QIS := read-cs-symbols(L, PL) /\ TPL := read-arity(L, A) .
+  eq check validity constraints for L preds
+      {'preds_:`(`)[PL] : 'Declaration}
+   = try { 'preds_:`(`) [
+        check validity constraints for L preds [nil] (PL)
+      ] : 'Declaration } .
+  ceq check validity constraints for L preds
+      {'preds_:`(`)`[_`][PL, AtL] : 'Declaration}
+   = try { 'preds_:`(`)`[_`] [
+        check validity constraints for L preds [nil] (PL),
+        analyse L pred-attributes [QIS : nil] (AtL)
+      ] : 'Declaration }
+   if QIS := read-cs-symbols(L, PL) .
+
+  op check`validity`constraints`for_preds`[_`] :
+      DNI [TypeList] -> AnalysisAction{DNI} .
+  eq check validity constraints for L preds [TPL]
+      {'_`,_[PL1, PL2] : 'NeSymbolList}
+   = try { '_`,_ [
+        check validity constraints for L preds [TPL] (PL1),
+        check validity constraints for L preds [TPL] (PL2)
+      ] : 'NeSymbolList } .
+  eq check validity constraints for L preds [TPL] {P : 'Symbol}
+   = check validity constraints for L pred [TPL] {P : 'Symbol} .
+
+  *** analyse individual nominals  - - - - - - - - - - - - - - - - - - - - - - -
+  op solve_nom : DNI -> AnalysisAction{DNI} .
+  eq solve L nom {$[N] : 'Nominal}
+   = check (read-qid(N) is ordinary) and-then return {N : 'Nominal}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[N]))
+      'is 'not 'a 'valid 'nominal,
+      (at L term (N), include context)) .
+
+  *** analyse comma-separated lists of nominals  - - - - - - - - - - - - - - - -
+  op solve_noms : DNI -> AnalysisAction{DNI} .
+  eq solve L noms {$[NL] : 'NeNominalList}
+   = decode input (read-qids(NL) : 'NeNominalList) given cs-nominals-grammar(L)
+     then solve L noms .
+  eq solve L noms {'_`,_[NL1, NL2] : 'NeNominalList}
+   = try {'_`,_ [ solve L noms (NL1), solve L noms (NL2) ] : 'NeNominalList} .
+  eq solve L noms {$[N] : 'Nominal}
+   = solve L nom {$[N] : 'Nominal} .
+
+  *** analyse modalities  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op solve_modality : DNI -> AnalysisAction{DNI} .
+  eq solve L modality {$[M] : 'Modality}
+   = check (read-qid(M) is ordinary) and-then return {M : 'Modality}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[M]))
+      'is 'not 'a 'valid 'modality,
+      (at L term (M), include context)) .
+
+  op solve_mod-type : DNI -> AnalysisAction{DNI} .
+  ceq solve L mod-type {$[T] : 'ModType}
+   = check (QIL :: NeTypeList and not occurs('Nominal, QIL))
+     and-then return {T : 'ModType}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[T]))
+      'is 'not 'a 'valid 'modality 'type,
+      (at L term (T), include context))
+   if QIL := read-qids(T) .
+
+  op check`that`all`sorts`in_mod-type`are`declared :
+      DNI -> AnalysisAction{DNI} .
+  eq check that all sorts in L mod-type are declared {T : 'ModType}
+   = try {check that all sorts in L sort-seq are declared (T) : 'ModType} .
+
+  op check`validity`constraints`for_mod : DNI -> AnalysisAction{DNI} .
+  eq check validity constraints for L mod {'mod_:_><_[M, IT, OT] : 'Declaration}
+   = try { 'mod_:_><_ [
+        check validity constraints for L mod
+          [read-mod-type(L, IT) >< read-mod-type(L, OT)] (M),
+        return (IT), return (OT)
+      ] : 'Declaration } .
+  eq check validity constraints for L mod {'mod_:`(`)><_[M, OT] : 'Declaration}
+   = try { 'mod_:`(`)><_ [
+        check validity constraints for L mod [nil >< read-mod-type(L, OT)] (M),
+        return (OT)
+      ] : 'Declaration } .
+  eq check validity constraints for L mod {'mod_:_><`(`)[M, IT] : 'Declaration}
+   = try { 'mod_:_><`(`) [
+        check validity constraints for L mod [read-mod-type(L, IT) >< nil] (M),
+        return (IT)
+      ] : 'Declaration } .
+  eq check validity constraints for L mod {'mod_:`(`)><`(`)[M] : 'Declaration}
+   = try { 'mod_:`(`)><`(`) [
+        check validity constraints for L mod [nil >< nil] (M)
+      ] : 'Declaration } .
+
+  op check`validity`constraints`for_mod`[_><_`] :
+      DNI [TypeList] [TypeList] -> AnalysisAction{DNI} .
+  eq check validity constraints for L mod [nil >< nil]
+   = check underscores of L mod [nil >< nil] .
+
+  eq check validity constraints for L mod [ITL >< OTL]
+   = check underscores of L mod [ITL >< OTL] ;
+     check overloading of L mod [ITL >< OTL] [owise] .
+
+  op check`underscores`of_mod`[_><_`] :
+      DNI [TypeList] [TypeList] -> AnalysisAction{DNI} .
+  ceq check underscores of L mod [ITL >< OTL] (M)
+   = check (#M == 0 or #M == #TP) and-then return (M)
+     or-else
+     fail ('number 'of 'underscores '\s '`( qid(#M) '`)
+      'does 'not 'match 'number 'of 'arguments '\s '`( qid(#TP) '`)
+      'for 'modality emph(read-modality(L, M)),
+      (at L term (M), include context))
+   if #M := #underscores(read-modality(L, M)) /\ #TP := size(ITL OTL) .
+
+  op check`overloading`of_mod`[_><_`] :
+      DNI [TypeList] [TypeList] -> AnalysisAction{DNI} .
+  eq check overloading of L mod [ITL >< OTL] (M) in SAS
+   = check (read-modality(L, M)
+      not-in symbols*(SAS, ITL OTL, 'Interaction`{DNI`}))
+     and-then return (M)
+     or-else
+     fail ('cannot 'overload 'symbol emph(read-modality(L, M)) 'with
+      'compound 'type emph(ITL OTL), (at L term (M), include context))
+     in SAS .
+
+  *** analyse sentences  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_sentence : DNI -> AnalysisAction{DNI} .
+  eq analyse L sentence {$[E] : 'Sentence}
+   = analyse L sentence {$[E] : 'Sentence`{$`}} .
+  eq analyse L sentence {$[E] : 'Sentence`{$`}} in SAS
+   = decode input (read-qids(E) : 'Sentence`{DNI`})
+       given ($grammar(SAS) & vars(SAS))
+     then solve L sentence in SAS .
+
+  op solve_sentence : DNI -> AnalysisAction{DNI} .
+  ceq solve L sentence (E) = return (E)
+   if E :: 'NominalSentence`{DNI`} .
+  ceq solve L sentence (E) = return (E)
+   if E :: 'AtomicSentence`{DNI`} /\ not E :: AVariable .
+  ceq solve L sentence (E) in SAS
+   = fail ('unexpected 'token: emph(print term E given $grammar(SAS)),
+      (at term E given $grammar(SAS), include context)) in SAS
+   if E :: 'AtomicSentence`{DNI`} /\ E :: AVariable .
+  eq solve L sentence {'not_[E] : 'Sentence`{DNI`}}
+   = try {'not_ [ solve L sentence (E) ] : 'Sentence`{DNI`}} .
+  ceq solve L sentence {BC[E1, E2] : 'Sentence`{DNI`}} in SAS
+   = try { BC [
+        solve L sentence (E1),
+        solve L sentence (E2)
+      ] : 'Sentence`{DNI`}} in SAS
+   if BC in symbols(grammar(SAS), 'Sentence`{DNI`} 'Sentence`{DNI`}) .
+  eq solve L sentence {'@__[NT, E] : 'Sentence`{DNI`}}
+   = try {'@__ [ return (NT), solve L sentence (E) ] : 'Sentence`{DNI`}} .
+  ceq solve L sentence {MOP[I, $E] : 'Sentence`{DNI`}} in SAS
+   = try { MOP [
+        analyse L interaction (I),
+        analyse L sentence ($E)
+      ] : 'Sentence`{DNI`}} in SAS
+   if MOP in symbols(grammar(SAS), 'Interaction`{DNI`} 'Sentence`{DNI`}) .
+  ceq solve L sentence {Q[VD, $E] : 'Sentence`{DNI`}} in SAS
+   = try { Q [
+        check L variables [Q] (VD),
+        analyse L sentence ($E)
+      ] : 'Sentence`{DNI`}} in SAS
+   if Q in symbols(grammar(SAS), 'VarDecl`{DNI`} 'Sentence`{DNI`}) .
+  eq solve L sentence {'store__[V, $E] : 'Sentence`{DNI`}}
+   = try { 'store__ [
+        check L variable ['store__] (V),
+        analyse L sentence ($E)
+      ] : 'Sentence`{DNI`}} .
+
+  op analyse_interaction : DNI -> AnalysisAction{DNI} .
+  eq analyse L interaction {CI : 'Interaction`{DNI`}}
+   = return {CI : 'Interaction`{DNI`}} .
+  ceq analyse L interaction {QI[NTL] : 'Interaction`{DNI`}} in SAS
+   = try { QI [
+        check L interaction variables [TPL] (NTL)
+      ] : 'Interaction`{DNI`}} in SAS
+   if TPL := inner-type(mods(SAS), QI,
+        least-sorts(grammar(SAS), plain-terms(NTL))) .
+
+  op check_interaction`variables`[_`] : DNI [TypeList] -> AnalysisAction{DNI} .
+  eq check L interaction variables [TP TPL] ((T, TL))
+   = return (T), check L interaction variables [TPL] (TL) .
+  eq check L interaction variables [nil] ((V, TL))
+   = check L variable ['] (V), check L interaction variables [nil] (TL) .
+  eq check L interaction variables [nil] (empty)
+   = return (empty) .
+
+  op check_variable`[_`] : DNI [Qid] -> AnalysisAction{DNI} .
+  eq check L variable [Q] (V) in SAS
+   = (check (V :: AVariable)
+      or-else
+      fail (emph(print term V given $grammar(SAS)) 'is 'not 'a 'variable,
+        (at term V given $grammar(SAS), include context)))
+     and-then
+     (check (Q in ('forall-local__ ; 'exists-local__)
+        implies type(V) =/= 'Nominal)
+      or-else
+      fail ('cannot 'locally 'quantify 'over 'nominal 'variables,
+        (at term V given $grammar(SAS), include context)))
+     and-then
+     return (V) in SAS .
+
+  op check_variables`[_`] : DNI [Qid] -> AnalysisAction{DNI} .
+  eq check L variables [Q] {EVD : 'VarDecl`{DNI`}}
+   = return {EVD : 'VarDecl`{DNI`}} .
+  eq check L variables [Q] {'`{_[VL] : 'VarDecl`{DNI`}}
+   = try {'`{_ [ check L variables [Q] (VL) ] : 'VarDecl`{DNI`}} .
+  eq check L variables [Q] {'_`,_[V, VL] : 'VarList`{DNI`}}
+   = try { '_`,_ [
+        check L variable [Q] (V),
+        check L variables [Q] (VL)
+      ] : 'VarList`{DNI`}} .
+  eq check L variables [Q] {'_`}[V] : 'VarList`{DNI`}}
+   = try {'_`} [ check L variable [Q] (V) ] : 'VarList`{DNI`}} .
+
+  op solve_sen-attributes : DNI -> AnalysisAction{DNI} .
+  eq solve L sen-attributes {$[AtL] : 'NeAttrList}
+   = decode input (read-qids(AtL) : 'AttrList) given sen-attr-grammar(L) 
+     then solve L sen-attributes .
+  eq solve L sen-attributes {'__[AtL1, AtL2] : 'AttrList}
+   = try { '__ [
+        solve L sen-attributes (AtL1),
+        solve L sen-attributes (AtL2)
+      ] : 'AttrList} .
+  eq solve L sen-attributes {'label:_[$T] : 'Attr}
+   = try {'label:_ [ solve L label ($T) ] : 'Attr} .
+
+  op solve_label : DNI -> AnalysisAction{DNI} .
+  eq solve L label {$[T] : 'Label}
+   = check (read-qid(T) :: Qid) and-then return {T : 'Label}
+     or-else
+     fail ('syntax 'error: spaced-emph(print L term ($[T])) 'is 'not 'a 'valid
+      'label, (at L term (T), include context)) .
+
+  op check`that`all_variables`are`bound : DNI -> AnalysisAction{DNI} .
+  eq check that all L variables are bound
+   = check that all free L variables belong to [none] .
+
+  op check`that`all`free_variables`belong`to`[_`] :
+      DNI [VariableSet] -> AnalysisAction{DNI} .
+  ceq check that all free L variables belong to [VS] (E) in SAS
+   = check (vars(E) subset VS) and-then return (E)
+     or-else
+     fail ('unbound 'variables: emph(cs-list(vars(E) \ VS)),
+      (at term E given grammar(SAS), include context))
+     in SAS
+   if E :: ('NominalSentence`{DNI`} ; 'AtomicSentence`{DNI`}) .
+  eq check that all free L variables belong to [VS]
+      {'not_[E] : 'Sentence`{DNI`}}
+   = try { 'not_ [
+        check that all free L variables belong to [VS] (E)
+      ] : 'Sentence`{DNI`}} .
+  ceq check that all free L variables belong to [VS]
+      {BC[E1, E2] : 'Sentence`{DNI`}} in SAS
+   = try { BC [
+        check that all free L variables belong to [VS] (E1),
+        check that all free L variables belong to [VS] (E2)
+      ] : 'Sentence`{DNI`} }
+     in SAS
+   if BC in symbols(grammar(SAS), 'Sentence`{DNI`} 'Sentence`{DNI`}) .
+  eq check that all free L variables belong to [VS]
+      {'@__[NT, E] : 'Sentence`{DNI`}} in SAS
+   = try { '@__ [
+        check (NT :: AConstant or-else plain-term(NT) in VS)
+        and-then return (NT)
+        or-else
+        fail ('unbound 'nominal 'variable: emph(name(NT)),
+          (at term NT given grammar(SAS), include context)),
+        check that all free L variables belong to [VS] (E)
+      ] : 'Sentence`{DNI`} }
+     in SAS .
+  ceq check that all free L variables belong to [VS]
+      {MOP[I, E] : 'Sentence`{DNI`}} in SAS
+   = try { MOP [
+        check (inner-vars(SAS, I) subset VS) and-then return (I)
+        or-else
+        fail ('unbound 'variables: emph(cs-list(inner-vars(SAS, I) \ VS)),
+          (at term I given grammar(SAS), include context)),
+        check that all free L variables
+          belong to [VS ; read-vars(SAS, I, all vars)] (E)
+      ] : 'Sentence`{DNI`} }
+     in SAS
+   if MOP in symbols(grammar(SAS), 'Interaction`{DNI`} 'Sentence`{DNI`}) .
+  ceq check that all free L variables belong to [VS]
+      {Q[VD, E] : 'Sentence`{DNI`}} in SAS
+   = try { Q [
+        return (VD),
+        check that all free L variables
+          belong to [VS ; read-vars(SAS, VD, all vars)] (E)
+      ] : 'Sentence`{DNI`} }
+     in SAS
+   if Q in symbols(grammar(SAS), 'VarDecl`{DNI`} 'Sentence`{DNI`}) .
+  eq check that all free L variables belong to [VS]
+      {'store__[V, E] : 'Sentence`{DNI`}} in SAS
+   = try { 'store__ [
+        return (V),
+        check that all free L variables belong to
+          [VS ; read-var(SAS, V, all vars)] (E)
+      ] : 'Sentence`{DNI`} }
+     in SAS .
+
+  *** reanalyse  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op reanalyse : SpecBody{DNI} AnalysisState{DNI} -> AnalysisOutcome .
+  ceq reanalyse(SB, SAS)
+   = if AO :: SuccessfulAnalysis
+     then reanalyse(DNI, show-fragment(SB, SB' + SB), SAS)
+     else AO fi
+   if SB' := spec-body(SAS)
+      /\ Sig := signature(SB)
+      /\ Sig' := signature(SB')
+      /\ AO := reanalyse(DNI, show-fragment(Sig, Sig' + Sig), SAS) .
+endfm
+
+********************************************************************************
+
+fmod DNI/PRINTING is
+  protecting DNI/SHOW .
+
+  var SB : SpecBody{DNI} .
+
+  *** print  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : SpecBody{DNI} -> QidList .
+  eq print(SB) = intercalate('\n, print DNI terms show(SB)) .
+endfm
+
+********************************************************************************
+
+fmod DNI/PARSING-&-PRINTING is
+  protecting DNI/PARSING .
+  protecting DNI/PRINTING .
+endfm
+
+********************************************************************************

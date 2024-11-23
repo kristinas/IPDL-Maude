@@ -1,0 +1,101 @@
+lang IPDL
+
+parameter N : nat .
+parameter K : nat .
+
+channel context delta = 
+output OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output test : bool
+.
+
+protocol P = newfamily OTChc-0[bound N + 2 bound N + 2 bound K] 
+ indices: m, n, k 
+ bounds: bound N + 2 bound N + 2 bound K : bool in
+(
+ (test ::= return True)
+ ||
+ ( family Circuit[bound N + 2 bound K] indices: n, k bounds: bound N + 2 bound K ::= 
+ ( ``when
+ when (isInputGate(k)) -->
+ (( family OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] 
+  indices: n, m, k 
+  bounds: bound N + 2 bound N + 2 bound K 
+  ::= 
+  (when (isSemiHonest(m)) --> 
+    nf(oc : bool <- read OTChc-0[n, m, k], return oc) 
+  )  
+    ;; 
+  (when (isHonest(m)) --> 
+  nf(oc : bool <- read OTChc-0OtAdv[n, m, k], return oc)
+  )
+) || 
+(family OTChc-0[bound N + 2 bound N + 2 bound K] 
+ indices: m, n, k 
+ bounds: bound N + 2 bound N + 2 bound K 
+ ::= 
+ nf(oc : bool <- read OTChc-0[m, n, k], return oc)
+ ))
+ ) `` when
+ ;;
+ ( ``when
+ otherwise -->
+ (( family OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] 
+  indices: n, m, k 
+  bounds: bound N + 2 bound N + 2 bound K 
+  ::= 
+  (when (isSemiHonest(m)) --> 
+    nf(oc : bool <- read OTChc-0[n, m, k], return oc) 
+  )  
+    ;; 
+  (when (isHonest(m)) --> 
+  nf(oc : bool <- read OTChc-0OtAdv[n, m, k], return oc)
+  )
+) || 
+(family OTChc-0[bound N + 2 bound N + 2 bound K] 
+ indices: m, n, k 
+ bounds: bound N + 2 bound N + 2 bound K 
+ ::= 
+ nf(oc : bool <- read OTChc-0[m, n, k], return oc)
+ ))
+ ) `` when
+ ) `` circuit
+)
+.
+
+start with P over delta then
+on branch isInputGate(k) of group Circuit[bound N + 2 bound K] (
+  rename variables m to x, n to y, k to z of fam OTChc-0[bound N + 2 bound N + 2 bound K] then
+    on branch isSemiHonest(m) of family OTChc-0OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTChc-0OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTChc-0[bound N + 2 bound N + 2 bound K]  
+       var oc
+    ) then
+    merge cases for fam OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] then
+    rename variables x to m, y to n, z to k of fam OTChc-0[bound N + 2 bound N + 2 bound K]
+)
+
+current-protocol
+eof
+
+start with P over delta then
+rename variables m to x, n to y, k to z of fam OTChc-0[bound N + 2 bound N + 2 bound K] then
+    on branch isSemiHonest(m) of family OTChc-0OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTChc-0OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTChc-0[bound N + 2 bound N + 2 bound K]  
+       var oc
+    ) then
+    merge cases for fam OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] then
+    rename variables x to m, y to n, z to k of fam OTChc-0[bound N + 2 bound N + 2 bound K]
+
+current-protocol
+
+eof
+on branch isInputGate(k) of group Circuit[bound N + 2 bound K] (
+on branch isSemiHonest(n) of family OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K ] (
+diverge on fam OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K]
+with fam OTMsg-0[bound N + 2 bound N + 2 bound K]  
+var om
+)
+)
+
+current-protocol

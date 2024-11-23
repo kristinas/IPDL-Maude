@@ -1,0 +1,77 @@
+***( SpeX/Lang/Base/Common
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021-2023 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../CommonLibs/ATerm.maude
+
+********************************************************************************
+
+fmod SEN-DECL is
+  protecting ATERM .
+
+  var E : ATerm .
+  var AtS : AttrSet .
+
+  *** sentence declarations  - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort SenDecl .
+  op sen_[_]. : ATerm AttrSet -> SenDecl [ctor format (d s s d d s d)] .
+
+  *** projections  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op aterm : SenDecl -> ATerm .
+  eq aterm(sen E [AtS] .) = E .
+
+  op attributes : SenDecl -> AttrSet .
+  eq attributes(sen E [AtS] .) = AtS .
+endfm
+
+view SenDecl from TRIV to SEN-DECL is
+  sort Elt to SenDecl .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod SEN-DECL-SET is
+  protecting READ { SenDecl } *
+    (sort BrList{SenDecl} to SenDeclList,
+     sort NeBrList{SenDecl} to NeSenDeclList,
+     op read-elt to read-sen,
+     op read-list to read-sens) .
+  protecting TERM/OPS .
+
+  var  ED : SenDecl .
+  vars EDS EDS' : SenDeclSet .
+  var  E : ATerm .
+  vars AtS AtS' : AttrSet .
+
+  *** SenDeclSet  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort SenDeclSet .
+  subsort SenDecl < SenDeclSet .
+  op none : -> SenDeclSet [ctor] .
+  op __ : SenDeclSet SenDeclSet -> SenDeclSet
+    [ctor assoc comm id: none format (d ni d)] .
+  eq ED:SenDecl ED:SenDecl = ED:SenDecl .
+
+  *** set membership  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _in_ : SenDecl SenDeclSet -> Bool .
+  eq (sen E [AtS] .) in (sen E [AtS'] . EDS) = true .
+  eq ED in EDS = false [owise] .
+
+  *** set difference  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _\_ : SenDeclSet SenDeclSet -> SenDeclSet .
+  eq (sen E [AtS] . EDS) \ (sen E [AtS'] . EDS') = EDS \ (sen E [AtS'] . EDS') .
+  eq EDS \ EDS' = EDS [owise] .
+
+  *** list  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op list : SenDeclSet -> SenDeclList .
+  eq list((none).SenDeclSet) = nil .
+  eq list(EDS) = read-sens(unpack('__, upTerm(EDS))) [owise] .
+endfm
+
+********************************************************************************

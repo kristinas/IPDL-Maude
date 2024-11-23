@@ -1,0 +1,120 @@
+sload Lang/IPDL/syntax.maude
+
+mod BASEGMWN is
+ including APPROX-EQUALITY .
+ protecting LIST{NatPairs} .
+ protecting META-LEVEL .
+
+ var i j l k n x : Nat .
+ 
+  *** global parameters
+ op N : -> Nat . 
+ op K : -> Nat .
+ 
+  *** 'N evaluates to N and 'K to K but don't use this in rewrites?
+   
+ *** for each party p, I(p) is the number of inputs for p
+ op I : Nat -> Nat . 
+ op C : -> Circuit . *** the circuit acting as parameter
+ *** gates and circuits
+ sort Gate .
+ op input-gate : Nat Nat -> Gate [ctor] . *** first nat is the party
+ op not-gate : Nat -> Gate [ctor] .
+ op xor-gate : Nat Nat -> Gate [ctor] .
+ op and-gate : Nat Nat -> Gate [ctor] .
+ sort Circuit . *** list of gates
+ subsort Gate < Circuit .
+ op emptyCircuit : -> Circuit [ctor] .
+ op __ : Circuit Circuit -> Circuit [ctor assoc id: emptyCircuit] .
+ op wellFormed : Circuit Nat -> Bool .
+ var circuit : Circuit .
+ eq wellFormed(emptyCircuit, 0) = true .
+ ceq wellFormed(circuit input-gate(i, j), s(n)) = true 
+  if wellFormed(circuit, n) /\ i <= N + 1 /\ j < I(i) .
+ ceq wellFormed(circuit not-gate(k), s(n)) = true
+  if wellFormed(circuit, n) /\ k < n . 
+ ceq wellFormed(circuit and-gate(k, l), s(n)) = true
+  if wellFormed(circuit, n) /\ k < n /\ l < n .
+ ceq wellFormed(circuit xor-gate(k, l), s(n)) = true
+  if wellFormed(circuit, n) /\ k < n /\ l < n .
+ *** helpers
+ *** get the gate at the start of the circuit, after i pops
+ *** i must be at most the length of circuit
+ *** the circuit must be non-empty
+ var gate : Gate .
+ op gateAt : Circuit Nat -> Gate .
+ eq gateAt(gate circuit, 0) = gate .
+ eq gateAt(gate circuit, s(n)) = gateAt(circuit, n) .
+ *** the wires of a gate, as a list
+ op wiresOf : Gate -> List{NatPairs} .
+ eq wiresOf(input-gate(i, j)) = (0 ;; i) (1 ;; j) .
+ eq wiresOf(not-gate(i)) = (0 ;; i) .
+ eq wiresOf(and-gate(k, l)) = (0 ;; k) (1 ;; l) .
+ eq wiresOf(xor-gate(k, l)) = (0 ;; k) (1 ;; l) .
+ *** list as an unsafe map
+ var natPairs : List{NatPairs} .
+ op _@@_ : List{NatPairs} Nat -> Nat .
+ eq ( (i ;; k) natPairs) @@ i = k .
+ ceq ( (l ;; k) natPairs) @@ i = natPairs @@ i if l =/= i .
+ *** wire 0 of the circuit C at a given gate
+ op wire0 : Nat -> Nat .
+ eq wire0(i) = wiresOf(gateAt(C, i)) @@ 0 .
+ *** wire 1 of the circuit C at a given gate
+ op wire1 : Nat -> Nat .
+ eq wire1(i) = wiresOf(gateAt(C, i)) @@ 1 .
+ 
+   *** here we connect 'wire0 with wire0 
+ var nt nt1 nt2 : NatTerm .
+ var f : Map{Qid, NatTerm} .
+ ceq evalTerm (fun 'wire0 nt) f = natAsTerm(wire0(x))
+  if natAsTerm x := (evalTerm nt f) .
+  eq evalTerm (fun 'wire0 nt) f = fun 'wire0 nt [owise] .  
+ ceq evalTerm (fun 'wire1 nt) f = natAsTerm(wire1(x)) 
+  if natAsTerm x := (evalTerm nt f) .
+ eq evalTerm (fun 'wire1 nt) f = fun 'wire1 nt [owise] . 
+ *** for I
+ eq evalTerm (fun 'I nt) f = fun 'I (evalTerm nt f) .
+ 
+  *** here we record the assumptions on indices
+ var q : Qid .
+ var A : Set{BoolTerm} .
+ ceq A |= fun 'wire0 nt <T (qidAsTerm('N) + natAsTerm(2)) with f = true 
+   if (apply 'isInputGate (evalTerm nt f)) in A .
+ ceq A |= fun 'wire0 nt <T qidAsTerm('K) with f = true 
+    if (apply 'isNotGate (evalTerm nt f)) in A .
+ ceq A |= fun 'wire0 nt <T qidAsTerm('K) with f = true 
+    if (apply 'isXorGate (evalTerm nt f)) in A .
+ ceq A |= fun 'wire1 nt <T qidAsTerm('K) with f = true 
+    if (apply 'isXorGate (evalTerm nt f)) in A .   
+ ceq A |= fun 'wire0 nt <T qidAsTerm('K) with f = true 
+    if (apply 'isAndGate (evalTerm nt f)) in A .
+ ceq A |= fun 'wire1 nt <T qidAsTerm('K) with f = true 
+    if (apply 'isAndGate (evalTerm nt f)) in A .
+    
+ ceq A |= fun 'wire0 nt <T nt with f = true  *** was N + 2
+   if (apply 'isInputGate (evalTerm nt f)) in A .
+ ceq A |= (fun 'wire1 nt <T fun 'I (fun 'wire0 nt)) with f = true 
+    if (apply 'isInputGate (evalTerm nt f)) in A [label depBounds] .
+ ceq A |= fun 'wire0 nt <T nt with f = true  *** was K here and below
+    if (apply 'isNotGate (evalTerm nt f)) in A [label notIndex].
+ ceq A |= fun 'wire0 nt <T nt with f = true 
+    if (apply 'isXorGate (evalTerm nt f)) in A .
+ ceq A |= fun 'wire1 nt <T nt with f = true 
+    if (apply 'isXorGate (evalTerm nt f)) in A .   
+ ceq A |= fun 'wire0 nt <T nt with f = true 
+    if (apply 'isAndGate (evalTerm nt f)) in A [label andIndex] .
+ ceq A |= fun 'wire1 nt <T nt with f = true 
+    if (apply 'isAndGate (evalTerm nt f)) in A .
+    
+ ceq A |= fun 'wire0 nt1 <T nt2 with f = true 
+  if A |= nt1 <T nt2 with f [label wireSmallThen0] .
+ ceq A |= fun 'wire1 nt1 <T nt2 with f = true 
+  if A |= nt1 <T nt2 with f [label wireSmallThen1] . 
+  
+ eq (A, apply 'isHonest nt) |= neg (apply 'isSemiHonest nt) with f = true .
+ eq (A, apply 'isSemiHonest nt) |= neg (apply 'isHonest nt) with f = true .     
+ 
+ endm
+
+
+

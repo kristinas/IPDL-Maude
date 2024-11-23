@@ -1,0 +1,90 @@
+***( SpeX/Lang/COMP
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../Database.maude
+sload ../../CommonLibs/QidSet.maude
+
+********************************************************************************
+
+fmod COMP/LID is
+  sort COMP .
+  op COMP : -> COMP [ctor] .
+endfm
+
+********************************************************************************
+
+fmod COMP/MODULE is
+  protecting COMP/LID .
+
+  sorts DataModule{COMP} BObjModule{COMP} Module{COMP} .
+  subsorts DataModule{COMP} BObjModule{COMP} < Module{COMP} .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view COMP/Module from TRIV to COMP/MODULE is
+  sort Elt to Module{COMP} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod COMP/DATABASE is
+  protecting DICTIONARY { Qid, COMP/Module } *
+    (sort KeyValuePair{Qid,COMP/Module} to DB-Entry{COMP},
+     sort Dict{Qid,COMP/Module} to DB{COMP}) .
+  protecting QID-SET/OPS .
+
+  var  MN : Qid .
+  var  DM : DataModule{COMP} .
+  var  BM : BObjModule{COMP} .
+  vars CM CM' : Module{COMP} .
+  vars DB IDB : DB{COMP} .
+
+  *** module-names  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op module-names : DB{COMP} -> QidSet .
+  eq module-names((MN : CM, DB)) = MN ; module-names(DB) .
+  eq module-names(DB) = none [owise] .
+
+  *** data-names  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op data-names : DB{COMP} -> QidSet .
+  eq data-names((MN : DM, DB)) = MN ; data-names(DB) .
+  eq data-names(DB) = none [owise] .
+
+  *** bobj-names  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op bobj-names : DB{COMP} -> QidSet .
+  eq bobj-names((MN : BM, DB)) = MN ; bobj-names(DB) .
+  eq bobj-names(DB) = none [owise] .
+
+  *** copy-module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op copy-module : Qid DB{COMP} DB{COMP} -> DB{COMP} .
+  eq copy-module(MN, (MN : CM, DB), IDB) = insert(MN, CM, IDB) .
+  eq copy-module(MN, DB, IDB) = IDB [owise] .
+endfm
+
+********************************************************************************
+
+fmod COMP/CMD is
+  protecting COMP/LID .
+  protecting QID-LIST .
+
+  sorts Cmd{COMP} .
+  op Cmd[_]{list`modules} : COMP -> Cmd{COMP} [ctor] .
+  op Cmd[_]{list`data`modules} : COMP -> Cmd{COMP} [ctor] .
+  op Cmd[_]{list`bobj`modules} : COMP -> Cmd{COMP} [ctor] .
+  op Cmd[_]{show`module_} : COMP Qid -> Cmd{COMP} [ctor] .
+
+  op Cmd[_]{list`opened`modules} : COMP -> Cmd{COMP} [ctor] .
+  op Cmd[_]{open_} : COMP Qid -> Cmd{COMP} [ctor] .
+  op Cmd[_]{close} : COMP -> Cmd{COMP} [ctor] .
+  op Cmd[_]{print_} : COMP QidList -> Cmd{COMP} [ctor] .
+endfm
+
+********************************************************************************

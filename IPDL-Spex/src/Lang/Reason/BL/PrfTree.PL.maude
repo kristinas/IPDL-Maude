@@ -1,0 +1,42 @@
+***( SpeX/Lang/Reason/BL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../Proof/Tree/Processor.maude
+sload ../Proof/Tree/BL/PL.maude
+
+********************************************************************************
+
+view Reason//PrfTree.PL from REASON/SUBPROCESSOR
+to PRF/TREE/PROCESSOR { Reason/Pid{PrfTree{PL}}, PL, PrfTree//PL } is
+  sort Library to DB{Spec{PL}} .
+  op library(DB:SpeX/DB) to term DB:SpeX/DB[Spec[PL]] .
+
+  sort StatementBody to Judgment{PL} .
+  op parse-statement(QIL:QidList, Lib:Library) to term
+    parse Jdg[PL] input (QIL:QidList) in Lib:DB{Spec{PL}} .
+  op read-statement(T:ATerm, Lib:Library) to term
+    read-judgment(PL, T:ATerm, Lib:DB{Spec{PL}}) .
+  op print-statement(SB:StatementBody) to term
+    print(SB:Judgment{PL}) .
+
+  sort ProofObject to ProofTree{PL} .
+  op proof-setup(SB:StatementBody) to term
+    SB:Judgment{PL}[empty] .
+
+  sort ProofStep to Rule{PrfTree{PL}} .
+  op read-proof-step(T:ATerm, PO:ProofObject) to term
+    read-proof-rule(PrfTree[PL], T:ATerm) .
+  op print-proof-step(PS:ProofStep, PO:ProofObject) to term
+    print(PS:Rule{PrfTree{PL}}, context(PO:ProofTree{PL})) .
+endv
+
+********************************************************************************

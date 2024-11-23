@@ -1,0 +1,28 @@
+***( SpeX/Lang/Base/HA
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../Processor.maude
+sload ./Language.maude
+
+********************************************************************************
+
+view HA/SpecBody from TRIV to HA/SPEC-BODY is
+  sort Elt to SpecBody{HA} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod HA/PROCESSOR { P :: PID } is
+  including  NO-PARSE-PROCESSOR { P, HA/SpecBody, HA/SpecBody } .
+  protecting HA/PARSING-&-PRINTING .
+endm
+
+********************************************************************************

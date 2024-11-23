@@ -1,0 +1,21 @@
+***( SpeX
+
+  This file is part of SpeX, a simple framework for working with
+  formal specifications based on SAP and REPL.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+********************************************************************************
+
+set show command off .
+set show stats off .
+set show advisories off .
+popd
+load SpeX.maude
+erew in SPEX/INTERPRETER/NO-PROMPT : start SpeX .
+quit

@@ -1,0 +1,114 @@
+***( SpeX/Lang/Calc
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2022 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../CommonLibs/Dictionary.maude
+sload ../../CommonLibs/QidSet.maude
+
+********************************************************************************
+
+fmod CALC/LID is
+  sort Calc .
+  op Calc : -> Calc [ctor] .
+endfm
+
+********************************************************************************
+
+fmod CALC/EXP is
+  protecting CALC/LID .
+  protecting QID .
+  protecting RAT .
+
+  *** expressions  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort Exp{Calc} .
+  op num : Calc Rat -> Exp{Calc} [ctor] .
+  op val : Calc Qid -> Exp{Calc} [ctor] .
+  op _+_ : Exp{Calc} Exp{Calc} -> Exp{Calc} [ctor] .
+  op _-_ : Exp{Calc} Exp{Calc} -> Exp{Calc} [ctor] .
+  op _*_ : Exp{Calc} Exp{Calc} -> Exp{Calc} [ctor] .
+  op _/_ : Exp{Calc} Exp{Calc} -> Exp{Calc} [ctor] .
+endfm
+
+********************************************************************************
+
+fmod CALC/DECL is
+  protecting CALC/EXP .
+
+  var X : Qid .
+  var E : Exp{Calc} .
+
+  *** declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort Decl{Calc} .
+  op _:=_ : Qid Exp{Calc} -> Decl{Calc} [ctor] .
+
+  *** projections  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op id : Decl{Calc} -> Qid .
+  eq id(X := E) = X .
+
+  op exp : Decl{Calc} -> Exp{Calc} .
+  eq exp(X := E) = E .
+endfm
+
+********************************************************************************
+
+view Calc/Exp from TRIV to CALC/EXP is
+  sort Elt to Exp{Calc} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod CALC/MEMORY is
+  protecting DICTIONARY { Qid, Calc/Exp } *
+    (sort Dict{Qid,Calc/Exp} to Memory{Calc}) .
+  protecting QID-SET/OPS .
+
+  var M : Memory{Calc} .
+  var X : Qid .
+  var E : Exp{Calc} .
+
+  *** ids  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op ids : Memory{Calc} -> QidSet .
+  eq ids(empty) = none .
+  eq ids((X : E, M)) = X ; ids(M) .
+endfm
+
+********************************************************************************
+
+fmod CALC/EVAL is
+  protecting CALC/MEMORY .
+
+  var  L : Calc .
+  var  M : Memory{Calc} .
+  vars E1 E2 : Exp{Calc} .
+  var  N : Rat .
+  var  X : Qid .
+
+  op eval : Exp{Calc} Memory{Calc} ~> Rat .
+  eq eval(num(L, N), M) = N .
+  eq eval(val(L, X), M) = eval(M[X], M \ X) .
+  eq eval(E1 + E2, M) = eval(E1, M) + eval(E2, M) .
+  eq eval(E1 - E2, M) = eval(E1, M) + - eval(E2, M) .
+  eq eval(E1 * E2, M) = eval(E1, M) * eval(E2, M) .
+  eq eval(E1 / E2, M) = eval(E1, M) / eval(E2, M) .
+endfm
+
+********************************************************************************
+
+fmod CALC/CMD is
+  protecting CALC/LID .
+  protecting QID .
+
+  sort Cmd{Calc} .
+  op Cmd[_]{list`ids} : Calc -> Cmd{Calc} [ctor] .
+  op Cmd[_]{print_} : Calc Qid -> Cmd{Calc} [ctor] .
+  op Cmd[_]{eval_} : Calc Qid -> Cmd{Calc} [ctor] .
+endfm
+
+********************************************************************************

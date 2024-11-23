@@ -1,0 +1,140 @@
+***( SpeX/Lang/COMP/BL/MSA
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Language.maude
+
+********************************************************************************
+
+fmod COMP/MSA/REDUCE is
+  protecting COMP/MSA/LANGUAGE .
+
+  var  L : COMP/MSA .
+  var  SB : SpecBody{COMP/MSA} .
+  vars H QI : Qid .
+  var  QIL : QidList .
+  var  IL : ImportList .
+  var  S : Sort .
+  var  SS : SortSet .
+  var  SSDS : SubsortDeclSet .
+  var  ODS : OpDeclSet .
+  var  MAS : MembAxSet .
+  var  EQS : EquationSet .
+  var  EDS  : SenDeclSet .
+  var  AtS : AttrSet .
+  vars E E1 E2 LHS RHS C T : ATerm .
+  var  RP : ResultPair .
+
+  *** fmod  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op fmod : Qid SpecBody{COMP/MSA} -> FModule .
+  ceq fmod(H, SB)
+   = (fmod H is IL
+        sorts SS ; 'Truth`{MSA`} . SSDS
+        ODS Bool-ops(COMP/MSA, udef-sorts(COMP/MSA, SS))
+        MAS EQS Bool-eqs(COMP/MSA, udef-sorts(COMP/MSA, SS)) clauses(SB)
+      endfm)
+   if (fmod QI is
+         IL sorts SS . SSDS ODS MAS EQS
+       endfm) := fmod(sentence-grammar(SB)) .
+
+  *** Boolean encoding  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op Bool-ops : COMP/MSA SortSet -> OpDeclSet .
+  eq Bool-ops(L, none)
+   = (op 'true : nil -> 'Truth`{MSA`} [ctor] .
+      op 'false : nil -> 'Truth`{MSA`} [ctor] .
+      op 'not_ : 'Truth`{MSA`} -> 'Truth`{MSA`} [prec (71)] .
+      op '_and_ : 'Truth`{MSA`} 'Truth`{MSA`} -> 'Truth`{MSA`}
+         [assoc comm prec (75)] .
+      op '_or_ : 'Truth`{MSA`} 'Truth`{MSA`} -> 'Truth`{MSA`}
+         [assoc comm prec (79)] .
+      op '_if_ : 'Truth`{MSA`} 'Truth`{MSA`} -> 'Truth`{MSA`}
+         [gather ('E 'e) prec (81)] .) .
+  eq Bool-ops(L, S ; SS)
+   = (op '_=?=_ : S S -> 'Truth`{MSA`} [format ('d 's! 'so 'd) prec (51)] .)
+     Bool-ops(L, SS) .
+
+  op Bool-eqs : COMP/MSA SortSet -> EquationSet .
+  eq Bool-eqs(L, none)
+   = (eq 'not_['true.Truth`{MSA`}]
+       = 'false.Truth`{MSA`} [none] .
+      eq 'not_['false.Truth`{MSA`}]
+       = 'true.Truth`{MSA`} [none] .
+      eq '_and_['true.Truth`{MSA`}, 'X:Truth`{MSA`}]
+       = 'X:Truth`{MSA`} [none] .
+      eq '_and_['false.Truth`{MSA`}, 'X:Truth`{MSA`}]
+       = 'false.Truth`{MSA`} [none] .
+      eq '_or_['true.Truth`{MSA`}, 'X:Truth`{MSA`}]
+       = 'true.Truth`{MSA`} [none] .
+      eq '_or_['false.Truth`{MSA`}, 'X:Truth`{MSA`}]
+       = 'X:Truth`{MSA`} [none] .
+      eq '_if_['X:Truth`{MSA`}, 'true.Truth`{MSA`}]
+       = 'X:Truth`{MSA`} [none] .
+      eq '_if_['X:Truth`{MSA`}, 'false.Truth`{MSA`}]
+       = 'true.Truth`{MSA`} [none] .
+      eq '_if_['true.Truth`{MSA`}, 'X:Truth`{MSA`}]
+       = 'true.Truth`{MSA`} [none] .
+      eq '_if_['false.Truth`{MSA`}, 'X:Truth`{MSA`}]
+       = 'not_['X:Truth`{MSA`}] [none] .) .
+  eq Bool-eqs(L, S ; SS)
+   = (eq '_=?=_[var('X, S), var('X, S)] = 'true.Truth`{MSA`} [none] .)
+     Bool-eqs(L, SS) .
+
+  op udef-sorts : COMP/MSA SortSet -> SortSet .
+  eq udef-sorts(L, SS)
+   = SS \ ('AtomicSentence`{MSA`} ; 'Sentence`{MSA`}) .
+
+  op Boolean-encoding : COMP/MSA ATerm ~> Term .
+  eq Boolean-encoding(L, {'_=_[LHS, RHS] : 'AtomicSentence`{MSA`}})
+   = '_=?=_[plain-term(LHS), plain-term(RHS)] .
+  eq Boolean-encoding(L, {'not_[E] : 'Sentence`{MSA`}})
+   = 'not_[Boolean-encoding(L, E)] .
+  eq Boolean-encoding(L, {'_and_[E1, E2] : 'Sentence`{MSA`}})
+   = '_and_[Boolean-encoding(L, E1), Boolean-encoding(L, E2)] .
+  eq Boolean-encoding(L, {'_or_[E1, E2] : 'Sentence`{MSA`}})
+   = '_or_[Boolean-encoding(L, E1), Boolean-encoding(L, E2)] .
+  eq Boolean-encoding(L, {'_if_[E1, E2] : 'Sentence`{MSA`}})
+   = '_if_[Boolean-encoding(L, E1), Boolean-encoding(L, E2)] .
+
+  *** clauses  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op clauses : SpecBody{COMP/MSA} -> EquationSet .
+  eq clauses(SB) = clauses(COMP/MSA, sens(SB)) .
+
+  op clauses : COMP/MSA SenDeclSet -> EquationSet .
+  eq clauses(L, (none).SenDeclSet) = none .
+  eq clauses(L, sen E [AtS] . EDS) = clause(L, E) clauses(L, EDS) .
+
+  op clause : COMP/MSA ATerm -> EquationSet .
+  eq clause(L, {'_=_[LHS, RHS] : 'AtomicSentence`{MSA`}})
+   = (eq plain-term(LHS) = plain-term(RHS) [none] .) .
+  eq clause(L,
+      {'_if_[{'_=_[LHS, RHS] : 'AtomicSentence`{MSA`}}, C] : 'Sentence`{MSA`}})
+   = (ceq plain-term(LHS) = plain-term(RHS)
+      if Boolean-encoding(L, C) = 'true.Truth`{MSA`} [none] .) .
+  eq clause(L, E) = none [owise] .
+
+  *** reduce  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op reduce : ATerm Qid SpecBody{COMP/MSA} -> ResultPair .
+  eq reduce(T, H, SB) = metaReduce(fmod(H, SB), plain-term(T)) .
+
+  *** printf  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op printf : ATerm Qid SpecBody{COMP/MSA} -> QidList .
+  eq printf(T, H, SB) = printf(plain-term(T), H, SB) .
+
+  op printf : Term Qid SpecBody{COMP/MSA} -> QidList .
+  eq printf(T:Term, H, SB)
+   = metaPrettyPrint(fmod(H, SB), none, T:Term, mixfix format number rat) .
+
+  op printf : ResultPair QidList Qid SpecBody{COMP/MSA} -> QidList .
+  eq printf(RP, QIL, H, SB)
+   = metaPrettyPrint(fmod(H, SB), none, getTerm(RP), mixfix format number rat)
+     QIL mksord(getType(RP)) .
+endfm
+
+********************************************************************************

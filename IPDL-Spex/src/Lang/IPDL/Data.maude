@@ -1,0 +1,370 @@
+***( SpeX/Lang/IPDL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2024 IPDLMaude
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : ipdlmaude@gmail.com
+
+)
+
+sload ../../CommonLibs/QidList2.maude
+sload ../../CommonLibs/QidSet.maude
+
+sload ./syntax.maude
+
+********************************************************************************
+
+fmod IPDL/LID is
+  sort IPDL .
+  op IPDL : -> IPDL [ctor] .
+endfm
+********************************************************************************
+
+fmod PAIRSETIO is
+ protecting PROTOCOL-CONFIG .
+
+   *** for Delta, we store I and O separetely
+
+   var Delta Ins Outs Ins' Outs' : ChannelContext .
+   var T1 : IPDLType .
+   var cnb : CNameBound .
+
+  op toCNameBoundSet_ : ChannelContext -> Set{CNameBound} .
+  eq toCNameBoundSet emptyChannelCtx = empty .
+  eq toCNameBoundSet ((cnb :: T1) Delta) = (toCNameBoundSet Delta, cnb) . 
+
+  sort PairSetIO .
+  op _pairSetIO_ : ChannelContext ChannelContext -> PairSetIO [ctor] .
+
+  op toChannelContext_ : PairSetIO -> ChannelContext .
+  eq toChannelContext (Ins pairSetIO Outs) = Ins Outs .
+
+  op getInputs_ : PairSetIO -> Set{CNameBound} .
+  eq getInputs (Ins pairSetIO Outs) = toCNameBoundSet Ins .
+
+  op getOutputs_ : PairSetIO -> Set{CNameBound} .
+  eq getOutputs (Ins pairSetIO Outs) = toCNameBoundSet Outs .
+
+  op union__ : PairSetIO PairSetIO -> PairSetIO [assoc comm] .
+  eq union (Ins pairSetIO Outs) (Ins' pairSetIO Outs')
+   = (union Ins Ins') pairSetIO (union Outs Outs') .
+
+endfm 
+
+view PairSetIO from TRIV to PAIRSETIO is
+ sort Elt to PairSetIO .
+endv
+********************************************************************************
+
+fmod IPDL/PROOF is
+  protecting IPDL/LID .
+  protecting QID .
+  protecting PROTOCOL .
+  protecting CHANNEL .
+
+  var cn : ChannelName .
+  var blist : List{Bounds} .
+
+  sort RuleTarget .
+  op channel_ : ChannelName -> RuleTarget [ctor] .
+  op family_ : FamilyName -> RuleTarget [ctor] .
+  op group_ : FamilyName -> RuleTarget [ctor] .
+
+  op fNameTarget : RuleTarget -> FamilyName .
+  eq fNameTarget(family (cn[blist])) = cn[blist] .
+  eq fNameTarget(group (cn[blist])) = cn[blist] .
+
+  op cNameTarget : RuleTarget -> ChannelName .
+  eq cNameTarget(channel cn) = cn .
+
+  sort ApproxProof{IPDL} .
+  subsort Proof{IPDL} < ApproxProof{IPDL} .
+  *** op ApproxProof[_]{strict(_)} : IPDL Proof{IPDL} -> ApproxProof{IPDL} .
+  op ApproxProof[_]{_then-approx_} : IPDL ApproxProof{IPDL} ApproxProof{IPDL} -> ApproxProof{IPDL} .
+  op ApproxProof[_]{sym-approx from_(_)} : IPDL Protocol ApproxProof{IPDL} -> ApproxProof{IPDL} .
+  op ApproxProof[_]{use approx assumption_on_} : IPDL Qid List{CNameBound} -> ApproxProof{IPDL} [ctor] .
+  op ApproxProof[_]{use approx assumption_} : IPDL Qid -> ApproxProof{IPDL} [ctor] .
+  op ApproxProof[_]{call-approx_} : IPDL Qid -> Proof{IPDL} [ctor] . 
+  op ApproxProof[_]{in the presence of_rewrite_to_by generalization of _ } 
+      : IPDL List{CNameBound} RuleTarget Cases Qid -> Proof{IPDL} [ctor] . 
+
+  sort Proof{IPDL} .
+  op Proof[_]{todo} : IPDL -> Proof{IPDL} [ctor] .
+  op Proof[_]{idle} : IPDL -> Proof{IPDL} [ctor] .
+  op Proof[_]{restructure_} : IPDL Protocol -> Proof{IPDL} [ctor] .
+  op Proof[_]{bring declarations of hidden channels in front} : IPDL -> Proof{IPDL} [ctor] .
+  op Proof[_]{start with_over_} : IPDL Qid Qid -> Proof{IPDL} [ctor] .
+  op Proof[_]{absorb_} : IPDL CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{compose _ with _ in group} : IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{decompose _ with _} : IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{turn neg into otherwise for_} : IPDL CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{merge cases for_} : IPDL CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{merge case_=_with otherwise for_} : IPDL Qid NatTerm CNameBound -> Proof{IPDL} [ctor] .
+    *** the bool term must be an equation q = nt
+  op Proof[_]{turn otherwise into neg for_} : IPDL CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{combine_} : IPDL CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{drop read_from_} : IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{fold_into_} : IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{subst_into_} : IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{use assumption_on_} : IPDL Qid List{CNameBound} -> Proof{IPDL} [ctor] .
+  op Proof[_]{use expression assumption_on_at_} : IPDL Qid List{CNameBound} Nat -> Proof{IPDL} [ctor] . 
+  op Proof[_]{_then_} : IPDL Proof{IPDL} Proof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{sym from_(_)} : IPDL Protocol Proof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{sym from_over_(_)} : IPDL Protocol ChannelContext Proof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{try sym from_:_done} : IPDL Protocol Proof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{try sym from_:_} : IPDL Protocol Proof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{add internal family_indices:_bounds:_typed:_assigned:_} : 
+       IPDL Qid List{NatTerm} List{Bounds} IPDLType Cases -> Proof{IPDL} [ctor] .
+  op Proof[_]{add internal channel_typed:_assigned:_} :
+       IPDL ChannelName IPDLType Cases  -> Proof{IPDL} [ctor] .    
+  op Proof[_]{case distinction on_(_)} : IPDL RuleTarget ProofCaseList -> Proof{IPDL} [ctor] . 
+  op Proof[_]{in the presence of_rewrite_to_by induction on_bound_(_)} 
+      : IPDL List{CNameBound} RuleTarget Cases NatTerm NatTerm Proof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{try in the presence of_rewrite_to_by induction on_bound_:_} 
+      : IPDL List{CNameBound} RuleTarget Cases NatTerm NatTerm Proof{IPDL} -> Proof{IPDL} [ctor] .    
+  op Proof[_]{rename_in_} : IPDL QidPairList CNameBound -> Proof{IPDL} [ctor] . 
+  op Proof[_]{rename variables_of_} : IPDL QidPairList CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{remove only branch of_} : IPDL CNameBound -> Proof{IPDL} [ctor] . 
+  op Proof[_]{on all branches of_split_on first index} : 
+     IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .
+    op Proof[_]{on all branches of_split_on second index} : 
+     IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .   
+  op Proof[_]{split_on first index} : IPDL CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{split_on second index} : IPDL CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{try case distinction on_: (case:_) } : IPDL RuleTarget Proof{IPDL}-> Proof{IPDL} [ctor] .
+  op Proof[_]{try case distinction on_: (case:_done) (case:_) } 
+     : IPDL RuleTarget Proof{IPDL} Proof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{unsplit_} : IPDL ChannelName -> Proof{IPDL} [ctor] .  
+  op Proof[_]{on branch _ of _ (_)} : IPDL BoolTerm RuleTarget Proof{IPDL} -> Proof{IPDL} [ctor] .
+  *** op Proof[_]{try on branch_of_:_} : IPDL BoolTerm RuleTarget Proof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{move_on each branch of_} : IPDL RuleTarget RuleTarget -> Proof{IPDL} [ctor] .  
+  op Proof[_]{diverge on_with_var_} : IPDL CNameBound CNameBound Qid -> Proof{IPDL} [ctor] . 
+  op Proof[_]{reverse subst_in_using_} : IPDL CNameBound CNameBound CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{subst or diverge_into_var_} : IPDL CNameBound CNameBound Qid -> Proof{IPDL} [ctor] . 
+  op Proof[_]{on reaction of _ (_)} : IPDL CNameBound ReactionProof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{diverge on_with branch_of_var_} :
+      IPDL CNameBound BoolTerm CNameBound Qid -> Proof{IPDL} [ctor] .
+  op Proof[_]{group_in_indices:_bounds:_} : 
+      IPDL List{CNameBound} Qid List{NatTerm} List{Bounds} -> Proof{IPDL} [ctor] . 
+  op Proof[_]{ungroup_} : IPDL CNameBound -> Proof{IPDL} [ctor] .     
+
+  op Proof[_]{call_} : IPDL Qid -> Proof{IPDL} [ctor] .    
+
+  sort ReactionProof{IPDL} .
+  op ReactionProof[_]{idle} : IPDL -> ReactionProof{IPDL} [ctor] .
+  op ReactionProof[_]{_then_} : IPDL ReactionProof{IPDL} ReactionProof{IPDL} -> ReactionProof{IPDL} [ctor] .
+  op ReactionProof[_]{if-ext on_} : IPDL Qid -> ReactionProof{IPDL} [ctor] .
+      
+  sort ProofCase .
+  op case_ : Proof{IPDL} -> ProofCase [ctor] .
+
+  sort ProofCaseList .
+  subsort ProofCase < ProofCaseList .
+  op __ : ProofCaseList ProofCaseList -> ProofCaseList [ctor assoc] .     
+
+endfm   
+
+********************************************************************************
+
+fmod IPDL/DECL is
+  protecting IPDL/LID .
+  protecting QID-LIST2 .
+  protecting QID-SET/OPS .
+  protecting PAIRSETIO .
+  protecting IPDL/PROOF .
+
+  var L : IPDL .
+  var QIL : QidList .
+  var QIS : QidSet .
+  var QLL : QidList2 .
+  var I : Qid .
+  var t1 t2 : IPDLPreType .
+  var T1 T2 : IPDLType .
+  var D : Decl{IPDL} .
+  var DL : DeclList{IPDL} .
+  var P : Protocol .
+  var Delta : ChannelContext .
+  var Gamma GammaVar : TypeContext .
+  var Ins : Set{CNameBound} .
+  var cnb : CNameBound .
+  vars R1 R2 : Reaction .
+  var E1 E2 : IPDLExpression .
+  var bt : BoolTerm .
+  var bdl : List{Bounds} .
+
+
+
+  *** DeclList{IPDL}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sorts Decl{IPDL} DeclList{IPDL} .
+  subsort Decl{IPDL} < DeclList{IPDL} .
+  op nil : ->  DeclList{IPDL} [ctor] .
+  op (Decl[_]{strict subproof _ = _ .}) : IPDL Qid Proof{IPDL} -> Decl{IPDL} [ctor] .
+  op (Decl[_]{approx subproof _ = _ .}) : IPDL Qid ApproxProof{IPDL} -> Decl{IPDL} [ctor] .
+  op (Decl[_]{type _ .}) : IPDL Qid -> Decl{IPDL} [ctor] .
+  op (Decl[_]{function _ : _ -> _ .}) : IPDL Qid IPDLPreType IPDLPreType -> Decl{IPDL} [ctor] .
+  op (Decl[_]{distribution _ : _ -> _ .}) : IPDL Qid IPDLPreType IPDLPreType -> Decl{IPDL} [ctor] .
+  *** op (Decl[_]{input _ : _ .}) : IPDL CNameBound IPDLPreType -> Decl{IPDL} [ctor] .
+  op (Decl[_]{parameter _ : _ .}) : IPDL Qid IPDLPreType -> Decl{IPDL} [ctor] .
+  *** op (Decl[_]{output _ : _ .}) : IPDL CNameBound IPDLPreType -> Decl{IPDL} [ctor] .
+  op (Decl[_]{channel context _ = _ .}) : IPDL Qid PairSetIO -> Decl{IPDL} [ctor] .
+  op (Decl[_]{protocol _ = _ .}) : IPDL Qid Protocol -> Decl{IPDL} [ctor] .  
+  op (Decl[_]{import _ .}) : IPDL Qid -> Decl{IPDL} [ctor] .  
+  op (Decl[_]{hypothesis _ .}) : IPDL BoolTerm -> Decl{IPDL} [ctor] .
+  op (Decl[_]{approx assumption _ using _ :  _ ; _ ; _ |= _ = _.}) 
+      : IPDL Qid QidSet ChannelContext Set{CNameBound} Set{BoolTerm}
+        Protocol Protocol -> Decl{IPDL} [ctor] . 
+  op (Decl[_]{protocol-assumption _ using _ :  _ ; _ ; _ |= _ = _.}) 
+      : IPDL Qid QidSet ChannelContext Set{CNameBound} Set{BoolTerm}
+        Protocol Protocol -> Decl{IPDL} [ctor] .       
+  op (Decl[_]{reaction-assumption _ using _ :  _ ; _ ; _ |= _ = _.}) 
+      : IPDL Qid QidSet ChannelContext TypeContext Set{CNameBound} 
+        Reaction Reaction -> Decl{IPDL} [ctor] .
+  op (Decl[_]{assumption manual _ using _ : _ |= _ = _.}) 
+      : IPDL Qid QidSet TypeContext 
+        IPDLExpression IPDLExpression -> Decl{IPDL} [ctor] .      
+  op (Decl[_]{assumption automatic _ using _ : _ |= _ = _.}) 
+      : IPDL Qid QidSet TypeContext 
+        IPDLExpression IPDLExpression -> Decl{IPDL} [ctor] .      
+  *** op (Decl[_]{assumption _ using _ :  _ |= _ = _ option _ .}) 
+  ***     : IPDL Qid QidSet TypeContext
+  ***       IPDLExpression IPDLExpression  AssumOption -> Decl{IPDL} [ctor] .      
+  op __ : DeclList{IPDL} DeclList{IPDL} -> DeclList{IPDL} [ctor assoc id: nil] .
+
+  sort AssumOption .
+  op manualIPDL : -> AssumOption .
+  op automaticIPDL : -> AssumOption .
+
+  sort IPDLPreType .
+  subsort Qid < IPDLPreType .
+  op _*_ : IPDLPreType IPDLPreType -> IPDLPreType [ctor] .
+
+  op preToType : IPDLPreType -> IPDLType .
+  eq preToType(I) = typeName I .
+  eq preToType( t1 * t2 ) = preToType(t1) * preToType(t2) .
+
+  op typeToPre : IPDLType -> IPDLPreType .
+  eq typeToPre(typeName I) = I .
+  eq typeToPre(T1 * T2) = typeToPre(T1) * typeToPre(T2) .
+
+  op typesInPre : IPDLPreType -> QidSet .
+  eq typesInPre(I) = I .
+  eq typesInPre(t1 * t2) = typesInPre(t1) ; typesInPre(t2) .
+
+  op id : Decl{IPDL} -> Qid .
+  eq id(Decl[L]{type I .}) = I .
+  eq id(Decl[L]{function I : t1 -> t2 .}) = I .
+  eq id(Decl[L]{distribution I : t1 -> t2 .}) = I .
+  *** eq id(Decl[L]{input (chn I) : t1 .}) = I .
+  *** eq id(Decl[L]{input (fam (I[bdl])) : t1 .}) = I .
+  eq id(Decl[L]{parameter I : t1 .}) = I .
+  *** eq id(Decl[L]{output (chn I) : t1 .}) = I .
+  *** eq id(Decl[L]{output (fam (I[bdl])) : t1 .}) = I .
+  eq id(Decl[L]{protocol I = P .}) = I .
+  eq id(Decl[L]{reaction-assumption I using QIS : Delta ; Gamma ; Ins |= R1 = R2 .}) = I .
+  eq id(Decl[L]{assumption automatic I using QIS : Gamma |= E1 = E2 .}) = I .
+
+  op arity : Decl{IPDL} -> IPDLPreType .
+  eq arity(Decl[L]{function I : t1 -> t2 .}) = t1 . 
+  eq arity(Decl[L]{distribution I : t1 -> t2 .}) = t1 . 
+
+  op resultSort : Decl{IPDL} -> IPDLPreType .
+  eq resultSort(Decl[L]{function I : t1 -> t2 .}) = t2 . 
+  eq resultSort(Decl[L]{distribution I : t1 -> t2 .}) = t2 .
+
+  var assumOption : AssumOption .
+
+  *** op getCNB : Decl{IPDL} -> CNameBound .
+  *** eq getCNB(Decl[L]{input cnb : t1 .}) = cnb .
+  *** eq getCNB(Decl[L]{output cnb : t1 .}) = cnb .
+
+  *** op getChannelType : Decl{IPDL} -> IPDLPreType .
+  *** eq getChannelType(Decl[L]{input cnb : t1 .}) = t1 .  
+  *** eq getChannelType(Decl[L]{output cnb : t1 .}) = t1 . 
+
+  op getParameterType : Decl{IPDL} -> IPDLPreType .
+  eq getParameterType(Decl[L]{parameter I : t1 .}) = t1 .  
+  
+  op getProtocol : Decl{IPDL} -> Protocol .
+  eq getProtocol(Decl[L]{protocol I = P .}) = P .
+
+  op getAssumVars : Decl{IPDL} -> QidSet .
+  eq getAssumVars(Decl[L]{reaction-assumption I using QIS : Delta ; Gamma ; Ins |= R1 = R2 .}) = QIS .
+
+  op getAssumDelta : Decl{IPDL} -> ChannelContext .
+  eq getAssumDelta(Decl[L]{reaction-assumption I using QIS : Delta ; Gamma ; Ins |= R1 = R2 .}) = Delta .
+ 
+  op getAssumGamma : Decl{IPDL} -> TypeContext .
+  eq getAssumGamma(Decl[L]{reaction-assumption I using QIS : Delta ; Gamma ; Ins |= R1 = R2 .}) = Gamma .
+ 
+  op getAssumIns : Decl{IPDL} -> Set{CNameBound} .
+  eq getAssumIns(Decl[L]{reaction-assumption I using QIS : Delta ; Gamma ; Ins |= R1 = R2 .}) = Ins .
+
+  op getAssumRLeft : Decl{IPDL} -> Reaction .
+  eq getAssumRLeft(Decl[L]{reaction-assumption I using QIS : Delta ; Gamma ; Ins |= R1 = R2  .}) = R1 . 
+
+  op getAssumRRight : Decl{IPDL} -> Reaction .
+  eq getAssumRRight(Decl[L]{reaction-assumption I using QIS : Delta ; Gamma ; Ins |= R1 = R2  .}) = R2 . 
+
+  op getHypothesis : Decl{IPDL} -> BoolTerm .
+  eq getHypothesis(Decl[L]{hypothesis bt .}) = bt .
+
+
+***(
+  op ids : DeclList{IPDL} -> QidSet .
+  eq ids(nil) = none .
+  eq ids(D DL) = id(D) ; ids(DL) .
+
+  op id-list : DeclList{IPDL} -> QidList .
+  eq id-list(nil) = nil .
+  eq id-list(D DL) = id(D) id-list(DL) . )
+endfm
+
+********************************************************************************
+
+fmod IPDL/MOD is
+  protecting IPDL/DECL .
+
+  var  L : IPDL .
+  vars I S : Qid .
+  var  DL : DeclList{IPDL} .
+  ***(
+  op add : DeclList{IPDL} Qid -> DeclList{IPDL} .
+  eq add(nil, S) = nil .
+  eq add(Decl[L]{type I .} DL, S)
+  = Decl[L]{type qid(I S) .} add(DL, S).
+  )
+endfm
+
+********************************************************************************
+
+fmod IPDL/CMD is
+  protecting IPDL/LID .
+  protecting QID .
+  protecting PROTOCOL .
+
+  sort Cmd{IPDL} .
+  
+  *** lists all declarations
+  op Cmd[_]{show all} : IPDL -> Cmd{IPDL} [ctor] .
+  *** list declarations of a certain type
+  op Cmd[_]{show-types} : IPDL -> Cmd{IPDL} [ctor] .
+  op Cmd[_]{show-ops} : IPDL -> Cmd{IPDL} [ctor] .
+  op Cmd[_]{show-dists} : IPDL -> Cmd{IPDL} [ctor] .
+  op Cmd[_]{show-channels} : IPDL -> Cmd{IPDL} [ctor] .
+  op Cmd[_]{show-parameters} : IPDL -> Cmd{IPDL} [ctor] .
+  op Cmd[_]{show-hypotheses} : IPDL -> Cmd{IPDL} [ctor] .
+  op Cmd[_]{show-protocols} : IPDL -> Cmd{IPDL} [ctor] .
+  op Cmd[_]{show-assums} : IPDL -> Cmd{IPDL} [ctor] .
+  *** list the protocol in the config
+  op Cmd[_]{current-protocol} : IPDL -> Cmd{IPDL} [ctor] .
+  *** list a certain protocol from protMap
+  op Cmd[_]{show-protocol_} : IPDL Qid -> Cmd{IPDL} [ctor] .
+  *** show a channel/family from current protocol
+  op Cmd[_]{get-channel_} : IPDL CNameBound -> Cmd{IPDL} [ctor] .
+  *** check whether a protocol is in the current config, and the proof should be finished
+  op Cmd[_]{check-proof_} : IPDL Qid -> Cmd{IPDL} [ctor] .
+  *** op Cmd[_]{add} : IPDL -> Cmd{IPDL} [ctor] .
+  op Cmd[_]{show-bounds} : IPDL -> Cmd{IPDL} [ctor] .
+endfm
+

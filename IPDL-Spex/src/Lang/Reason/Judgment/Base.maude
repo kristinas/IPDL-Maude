@@ -1,0 +1,32 @@
+***( SpeX/Lang/Reason/Jdg
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../Database.maude
+sload ../../Base/Common/Sentences.maude
+
+********************************************************************************
+
+fth JDG/BASE-LANG is
+  protecting PARSING-OUTCOME .
+  protecting SEN-DECL-SET .
+
+  sorts Lib Cxt .
+  op parse-context : QidList Lib -> ParsingOutcome .
+  op read-context : ATerm Lib ~> Cxt .
+  op print-context : Cxt -> QidList .
+
+  op sentences : Cxt -> SenDeclSet .
+  op parse-sentence : QidList Cxt -> ParsingOutcome .
+  op read-sentence : ATerm Cxt ~> SenDecl .
+  op print-sentence : SenDecl Cxt -> QidList .
+endfth
+
+********************************************************************************

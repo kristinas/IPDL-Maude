@@ -1,0 +1,95 @@
+***( SpeX/Lang/Calc
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2022 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../Processor.maude
+sload ./Language.maude
+
+********************************************************************************
+
+view Calc/Data from DATA to CALC/MEMORY is
+  sort Data to Memory{Calc} .
+  op nil to empty .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view Calc/Command from COMMAND to CALC/READ is
+  sort Command to Cmd{Calc} .
+  op command-annotations to term 'Cmd .
+  op read-command(T:ATerm) to term read-cmd(Calc, T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod CALC/PROCESSOR is
+  including  BASIC-SPEX-PROCESSOR { Calc, Calc/Data, Calc/Command } .
+  protecting SPEX/FORMATTING .
+  protecting CALC/PARSING-&-PRINTING .
+  protecting CALC/EVAL .
+
+  var L : Calc .
+  var I : Oid .
+  var N : Qid .
+  var ?V : [Rat] .
+  var X : QidList .
+  var T : ATerm .
+  var DB : SpeX/DB .
+  var E : Exp{Calc} .
+  var Atts : AttributeSet .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Calc:parse] :
+    < $[L] : PROC | running, Atts >
+    parse($[L], I, X, DB)
+   => < $[L] : PROC | running, Atts >
+    parsed(I, $[L], parse L input X in AnalysisState[L]{ids(DB[L])}) .
+
+  crl [Calc:process] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L],
+      if defined(DB[L][N])
+      then Advisory: log('redefining 'id) N
+      else log('Defining 'id) N fi,
+      insert(N, E, DB[L]))
+   if (N := E) := read-decl(L, T) .
+
+  *** executing Calc commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  crl [Calc:list-ids] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{list ids}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Listing 'ids) '\n
+      mk-page(if X == nil
+        then 'Empty 'id 'list
+        else intersperse('\n, X) fi))
+   if X := list(ids(DB[L])) .
+
+  rl [Calc:print] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{print N}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Printing 'the 'definition 'of) N '\n
+      mk-page(print(DB[L][N]))) .
+
+  crl [Calc:eval] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{eval N}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Evaluating) N '\n
+      mk-page(if ?V :: Rat
+        then print(num(L, ?V))
+        else 'undefined fi))
+   if ?V := eval(DB[L][N], DB[L] \ N) .
+endm
+
+********************************************************************************

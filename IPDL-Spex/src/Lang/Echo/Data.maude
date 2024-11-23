@@ -1,0 +1,53 @@
+***( SpeX/Lang/Echo
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../CommonLibs/QidList2.maude
+
+********************************************************************************
+
+fmod ECHO/LID is
+  sort Echo .
+  op Echo : -> Echo [ctor] .
+endfm
+
+********************************************************************************
+
+fmod ECHO/LINES is
+  protecting ECHO/LID .
+  protecting QID-LIST2 .
+
+  var L : Echo .
+  var QIL : QidList .
+  var QLL : QidList2 .
+
+  *** Lines{Echo}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort Lines{Echo} .
+  op Lines[_]{_} : Echo QidList2 -> Lines{Echo} .
+
+  *** add line  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add : Lines{Echo} QidList -> Lines{Echo} .
+  eq add(Lines[L]{QLL}, QIL) = Lines[L]{QLL :[QIL]} .
+
+  *** tokens  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op tokens : Lines{Echo} -> QidList .
+  eq tokens(Lines[L]{QLL}) = intercalate('\n, QLL) .
+endfm
+
+********************************************************************************
+
+fmod ECHO/CMD is
+  protecting ECHO/LID .
+
+  sort Cmd{Echo} .
+  op Cmd[_]{echo} : Echo -> Cmd{Echo} [ctor] .
+endfm
+
+********************************************************************************

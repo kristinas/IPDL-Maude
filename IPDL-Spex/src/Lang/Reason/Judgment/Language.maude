@@ -1,0 +1,240 @@
+***( SpeX/Lang/Reason/Jdg
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Data.maude
+
+********************************************************************************
+
+fmod JDG/LANGUAGE { L :: LANGUAGE } is
+  protecting JDG/LID { L } .
+
+  op grammar : Jdg{L} -> Grammar .
+  eq grammar(Jdg[Lid])
+   = grammar 'Judgment/Syntax is
+       'Judgment
+         ::= "_|-_" : 'Context 'Conclusion
+             [format('d 's! 'os 'd)]
+          |  "_+{_}|-_" : 'Context 'Premises 'Conclusion
+             [format('d 's! 's 'o '! 's! 'os 'd)]
+       'Context
+         ::= bubble "context"
+             [balanced-parentheses exclude("+" "|-")]
+       'Premises
+         ::= just 'Premise
+          |  "_,_" : 'Premises 'Premises
+             [assoc format ('d 'd 's 'd)]
+       'Premise
+         ::= bubble "premise"
+             [balanced-parentheses exclude("," "}")]
+       'Conclusion
+         ::= bubble "conclusion"
+             [balanced-parentheses]
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Jdg { L :: LANGUAGE } from LANGUAGE to JDG/LANGUAGE { L } is
+  sort Lid to Jdg{L} .
+  op Lid to term Jdg[Lid] .
+endv
+
+********************************************************************************
+
+fmod JDG/READ { L :: LANGUAGE, BL :: JDG/BASE-LANG } is
+  protecting JDG/DATA { L, BL } .
+
+  var  L : L$Lid .
+  var  BL$Lib : BL$Lib .
+  var  BL$Cxt : BL$Cxt .
+  vars Cxt PS PS1 PS2 P C : ATerm .
+
+  *** read judgment  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-judgment : L$Lid ATerm BL$Lib ~> Judgment{L} .
+
+  ceq read-judgment(L, {'_|-_[Cxt, C] : 'Judgment}, BL$Lib)
+   = Judgment[L]{BL$Cxt ;
+      none |- read-conclusion(Jdg[L], C, BL$Cxt)}
+   if BL$Cxt := read-context(Jdg[L], Cxt, BL$Lib) .
+
+  ceq read-judgment(L, {'_+`{_`}|-_[Cxt, PS, C] : 'Judgment}, BL$Lib)
+   = Judgment[L]{BL$Cxt ;
+      read-premises(Jdg[L], PS, BL$Cxt) |- read-conclusion(Jdg[L], C, BL$Cxt)}
+   if BL$Cxt := read-context(Jdg[L], Cxt, BL$Lib) .
+
+  *** read the context of a judgment  - - - - - - - - - - - - - - - - - - - - --
+  op read-context : Jdg{L} ATerm BL$Lib ~> BL$Cxt .
+  eq read-context(Jdg[L], {Cxt : 'Context}, BL$Lib)
+   = read-context(Cxt, BL$Lib) .
+
+  *** read the premises of a judgment  - - - - - - - - - - - - - - - - - - - - -
+  op read-premises : Jdg{L} ATerm BL$Cxt ~> SenDeclSet .
+  eq read-premises(Jdg[L], {'_`,_[PS1, PS2] : 'Premises}, BL$Cxt)
+   = read-premises(Jdg[L], PS1, BL$Cxt) read-premises(Jdg[L], PS2, BL$Cxt) .
+  eq read-premises(Jdg[L], {P : 'Premise}, BL$Cxt)
+   = read-sentence(P, BL$Cxt) .
+  eq read-premises(Jdg[L], PS, BL$Cxt) = none [owise] .
+
+  *** read the conclusion of a judgement  - - - - - - - - - - - - - - - - - - --
+  op read-conclusion : Jdg{L} ATerm BL$Cxt ~> SenDecl .
+  eq read-conclusion(Jdg[L], {C : 'Conclusion}, BL$Cxt)
+   = read-sentence(C, BL$Cxt) .
+endfm
+
+********************************************************************************
+
+fmod JDG/SHOW { L :: LANGUAGE, BL :: JDG/BASE-LANG } is
+  protecting JDG/DATA { L, BL } .
+
+  var  L : L$Lid .
+  var  BL$Lib : BL$Lib .
+  var  BL$Cxt : BL$Cxt .
+  vars P C : SenDecl .
+  var  PS : SenDeclSet .
+  var  PL : SenDeclList .
+
+  *** show judgement  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show : Judgment{L} -> Term .
+
+  eq show(Judgment[L]{BL$Cxt ; none |- C})
+   = '_|-_ [
+      mk-bubble('context, show-qids(print-context(BL$Cxt))),
+      mk-bubble('conclusion, show-qids(print-sentence(C, BL$Cxt))) ] .
+
+  eq show(Judgment[L]{BL$Cxt ; P PS |- C})
+   = '_+`{_`}|-_ [
+      mk-bubble('context, show-qids(print-context(BL$Cxt))),
+      pack('_`,_, show-premises(Jdg[L], list(P PS), BL$Cxt)),
+      mk-bubble('conclusion, show-qids(print-sentence(C, BL$Cxt))) ] .
+
+  *** show the premises of a judgment  - - - - - - - - - - - - - - - - - - - - -
+  op show-premises : Jdg{L} SenDeclList BL$Cxt -> TermList .
+  eq show-premises(Jdg[L], nil, BL$Cxt) = empty .
+  eq show-premises(Jdg[L], {P} PL, BL$Cxt)
+   = mk-bubble('premise, show-qids(print-sentence(P, BL$Cxt))),
+     show-premises(Jdg[L], PL, BL$Cxt) .
+endfm
+
+********************************************************************************
+
+fmod JDG/ANALYSIS-STATE { L :: LANGUAGE, BL :: JDG/BASE-LANG } is
+  protecting JDG/READ { L, BL } .
+
+  var L : L$Lid .
+  var SAS : AnalysisState{Jdg{L}} .
+  var Lib : BL$Lib .
+  var Cxt : BL$Cxt .
+  var T : ATerm .
+
+  *** syntactic-analysis states  - - - - - - - - - - - - - - - - - - - - - - - -
+  sort AnalysisState{Jdg{L}} .
+  op AnalysisState[_]{_} : Jdg{L} BL$Lib -> AnalysisState{Jdg{L}} [ctor] .
+  op AnalysisState[_]{_} : Jdg{L} BL$Cxt -> AnalysisState{Jdg{L}} [ctor] .
+
+  *** partial retracts  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op library : AnalysisState{Jdg{L}} ~> BL$Lib .
+  eq library(AnalysisState[Jdg[L]]{Lib}) = Lib .
+
+  op context : AnalysisState{Jdg{L}} ~> BL$Cxt .
+  eq context(AnalysisState[Jdg[L]]{Cxt}) = Cxt .
+
+  *** state updates  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _>>=_ : AnalysisState{Jdg{L}} ATerm -> AnalysisState{Jdg{L}} .
+  eq AnalysisState[Jdg[L]]{Lib} >>= {T : 'Context}
+   = AnalysisState[Jdg[L]]{read-context(T, Lib)} .
+  eq SAS >>= T = SAS [owise] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Jdg/AnalysisState { L :: LANGUAGE, BL :: JDG/BASE-LANG }
+from ANALYSIS-STATE to JDG/ANALYSIS-STATE { L, BL } is
+  sort State to AnalysisState{Jdg{L}} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod JDG/PARSING { L :: LANGUAGE, BL :: JDG/BASE-LANG } is
+  including  SYNTACTIC-ANALYSIS { Jdg{L}, Jdg/AnalysisState{L,BL} } .
+  protecting ATERM/READ .
+
+  var  L : L$Lid .
+  var  QIL : QidList .
+  var  SAS : AnalysisState{Jdg{L}} .
+  var  Lib : BL$Lib .
+  vars $Cxt Cxt PS PS1 PS2 $P P $C C : ATerm .
+  var  $ : Qid .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse Jdg[L] input (QIL) in SAS
+   = scan Jdg[L] input (QIL : 'Judgment)
+     then analyse Jdg[L] input in SAS .
+
+  op parse_input_in_ : Jdg{L} QidList BL$Lib -> ParsingOutcome .
+  eq parse Jdg[L] input (QIL) in Lib
+   = parse Jdg[L] input (QIL) in AnalysisState[Jdg[L]]{Lib} .
+
+  *** analyse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_input : Jdg{L} -> AnalysisAction{Jdg{L}} .
+
+  eq analyse Jdg[L] input {'_|-_[$Cxt, $C] : 'Judgment}
+   = try { '_|-_ [
+        analyse Jdg[L] input ($Cxt),
+        analyse Jdg[L] input ($C)
+      ] : 'Judgment } .
+
+  eq analyse Jdg[L] input {'_+`{_`}|-_[$Cxt, PS, $C] : 'Judgment}
+   = try { '_+`{_`}|-_ [
+        analyse Jdg[L] input ($Cxt),
+        analyse Jdg[L] input (PS),
+        analyse Jdg[L] input ($C)
+      ] : 'Judgment } .
+
+  ceq analyse Jdg[L] input {$[Cxt] : 'Context} in SAS
+   = try {just parse-context(QIL, library(SAS)) on QIL : 'Context}
+   if QIL := read-qids(Cxt) .
+
+  eq analyse Jdg[L] input {'_`,_ [PS1, PS2] : 'Premises}
+   = try { '_`,_ [
+        analyse Jdg[L] input (PS1),
+        analyse Jdg[L] input (PS2)
+      ] : 'Premises } .
+
+  ceq analyse Jdg[L] input {$[P] : 'Premise} in SAS
+   = try {just parse-sentence(QIL, context(SAS)) on QIL : 'Premise}
+   if QIL := read-qids(P) .
+
+  ceq analyse Jdg[L] input {$[C] : 'Conclusion} in SAS
+   = try {just parse-sentence(QIL, context(SAS)) on QIL : 'Conclusion}
+   if QIL := read-qids(C) .
+endfm
+
+********************************************************************************
+
+fmod JDG/PRINTING { L :: LANGUAGE, BL :: JDG/BASE-LANG } is
+  protecting PRINTING { Jdg{L} } .
+  protecting JDG/SHOW { L, BL } .
+
+  var J : Judgment{L} .
+
+  *** print judgments  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : Judgment{L} -> QidList .
+  eq print(J) = print Jdg[Lid] term show(J) .
+endfm
+
+********************************************************************************
+
+fmod JDG/PARSING-&-PRINTING { L :: LANGUAGE, BL :: JDG/BASE-LANG } is
+  protecting JDG/PARSING { L, BL } .
+  protecting JDG/PRINTING { L, BL } .
+endfm
+
+********************************************************************************

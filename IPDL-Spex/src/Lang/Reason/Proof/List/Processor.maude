@@ -1,0 +1,66 @@
+***( SpeX/Lang/Reason/Prf/List
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../../Processor.maude
+sload ./Language.maude
+
+********************************************************************************
+
+********************************************************************************
+
+view PrfList/Data { L :: LANGUAGE, BL :: PRF/LIST/BASE-LANG }
+from TRIV to PRF/LIST/DATA { L, BL } is
+  sort Elt to BL$NeJudgmentList .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod PRF/LIST/PROCESSOR { P :: PID, L :: LANGUAGE, BL :: PRF/LIST/BASE-LANG } is
+  including  BASIC-PROCESSOR { P, PrfList/Data{L,BL}, PrfList/Data{L,BL},
+                               NoCommand{L} } .
+  protecting PRF/LIST/PARSING-&-PRINTING { L, BL } .
+  protecting SPEX/FORMATTING .
+
+  var P : P$Pid .
+  var I : Oid .
+  var QIL : QidList .
+  var T : ATerm .
+  var PL : PrfList{L} .
+  var TJ : BL$Judgment .
+  var JL : BL$JudgmentList .
+  var NJL : BL$NeJudgmentList .
+  var RA : RuleApp{PrfList{L}} .
+  var CD : SenDecl .
+  var PR : BL$ProofRule .
+  var Atts : AttributeSet .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [PrfList:parse] :
+    < $[P] : PROC | running, Atts >
+    parse($[P], I, QIL, NJL)
+   => < $[P] : PROC | running, Atts >
+    parsed(I, $[P], parse PrfList[Lid] input (QIL)
+      in context(PrfList[Lid], NJL)) .
+
+  crl [PrfList:process] :
+    < $[P] : PROC | running, Atts >
+    process($[P], I, T, JL TJ)
+   => < $[P] : PROC | running, Atts >
+    if PR [ conclusions(JL) => CD given sentences(context(PL, JL TJ)) ]
+    then processed(I, $[P], (JL TJ) >>= RA)
+    else processed(I, $[P], Advisory: 'cannot 'apply '\s
+           print(RA, context(PL, JL TJ))) fi
+   if PL := PrfList[Lid]
+      /\ RA := read-proof-step(PL, T, context(PL, JL TJ))
+      /\ RuleApp[PL]{CD by PR} := RA .
+endm
+
+********************************************************************************

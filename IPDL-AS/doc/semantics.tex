@@ -1,0 +1,191 @@
+In this section we define an operational semantics for expressions, reactions, and protocols. This semantics will validate the \emph{exact} fragment of our equational logic and prove perfect observational equivalence. To give semantics to user-defined symbols, we define interpretations:
+
+\begin{definition}[Interpretation]
+An interpretation $\sem{-}$ for a signature $\Sigma$ associates:
+\begin{itemize}
+\item to each type symbol $\type$ a bitstring length $\sem{\type} \in \nat$;
+\item to each function symbol $\func : \sigma \to \tau$ a function $\sem{\func}$ from bitstrings $\{0,1\}^{\sem{\sigma}}$ to bitstrings $\{0,1\}^{\sem{\tau}}$;
+\item to each distribution symbol $\dist : \sigma \to \tau$ a function $\sem{\dist}$ from bitstrings $\{0,1\}^{\sem{\sigma}}$ to \emph{distributions} on bitstrings $\{0,1\}^{\sem{\tau}}$. 
+\end{itemize}
+\end{definition}
+
+\noindent In the above, we naturally lift the interpretation $\sem{-}$ to data types by setting
+\begin{align*}
+\sem{\one} & \coloneqq 0 \\
+\sem{\Bool} & \coloneqq 1 \\
+\sem{\tau \times \sigma} & \coloneqq \sem{\tau} + \sem{\sigma}
+\end{align*}
+
+\noindent To handle partial computations, we augment the syntax of expressions, reactions, and protocols to contain intermediate bitstring values $v \in \{0,1\}^\star$:\smallskip
+
+\begin{syntax}
+\category[Valued Expressions]{e}
+\alternative{{\color{red} v}} \alternative{\dots}
+\category[Valued Reactions]{R, S}
+\alternative{{\color{red} \val{v}}} \alternative{\dots}
+\category[Valued Protocols]{P}
+\alternative{{\color{red} \assign{o}{v}}} \alternative{\dots}
+\end{syntax}\smallskip
+
+\noindent Given an ambient interpretation $\sem{-}$ for the signature $\Sigma$, we can type the valued counterpart of \ipdl constructs as expected: in addition to the regular typing rules, we have
+
+\begin{mathpar}
+\inferrule*{v \in \{0,1\}^{\sem{\tau}}}{\Gamma \vdash v : \tau}\and
+\inferrule*{v \in \{0,1\}^{\sem{\tau}}}{\Delta; \ \Gamma \vdash \val{v} : I \to \tau}\and
+\inferrule*{o : \tau \in \Delta \\ o \notin I \\ v \in \{0,1\}^{\sem{\tau}}}{\Delta \vdash (\assign{o}{v}) : I \to \{o\}}
+\end{mathpar}
+
+\noindent The big-step semantics $e \Downarrow v$ for expressions is straightforward -- see Figure \ref{fig:expressions_semantics}, where we denote the empty bitstring by $()$ and use $v_1 v_2$ for bitstring concatenation. Pairing is given by the aforementioned bitstring concatenation (rule \textsc{pair}), and the projections $\fst_{\sigma \times \tau}$ and $\snd_{\sigma \times \tau}$ unambiguously split the pair according to $\sem{\sigma}$ and $\sem{\tau}$, respectively (rules \textsc{fst} and \textsc{snd}).
+
+\begin{lemma}[Determinism of $\Downarrow$ for expressions]
+For any well-typed expression $\Gamma \vdash e : \tau$ there exists a unique value $v$ such that $e \Downarrow v$, and $v \in \{0,1\}^{\sem{\tau}}$.
+\end{lemma}
+
+Reactions have a straightforward small-step semantics of the form $R \to \eta$, where $\eta$ is a probability distribution over reactions. Figure \ref{fig:reactions_semantics} shows the rules, where we write $1[R]$ for the distribution with unit mass at the reaction $R$, and freely use a distribution in place of a value (rule \textsc{samp}) or a reaction (rule \textsc{bind-react}) to indicate the obvious lifting of the corresponding construct to distributions on reactions. All distributions are implicitly finitely supported. Crucially, there is no semantic rule for stepping the reaction $\read{c}$ -- we model communication via semantics for protocols, which substitute all instances of $\mathsf{read}$ for values. 
+
+We give semantics to protocols via two main small-step rules, see Figure \ref{fig:protocols_semantics}, where we analogously write $1[P]$ for the distribution with unit mass at the protocol $P$, and freely use a distribution in place of a reaction (in rule \textsc{step-react}) or a protocol (rules \textsc{step-comp-left}, \textsc{step-comp-right}, and \textsc{step-new}) to indicate the obvious lifting of the corresponding construct to distributions on protocols.
+
+First we have the \emph{output} relation $P \outstep{o}{v} Q$, which is enabled when the reaction for channel $o$ in $P$ terminates, resulting in value $v$ (rule \textsc{out-val}). When this happens, the value of $o$ is broadcast through the protocol context enveloping $P$ (rules \textsc{out-comp-left}, \textsc{out-comp-left}, and \textsc{out-new}), resulting in each $\read{o}$ command in other reactions to be substituted with $\val{v}$. Note that the value of $o$ is not broadcast above the $\mathsf{new}$ quantifier when the local channel introduced is equal to $o$.
+
+Next we have the \emph{internal stepping} relation $P \to \eta$, specified similarly to the small-step relation for reactions. The rule \textsc{step-react} lifts the stepping relation for $R$ to the stepping relation for $\assign{o}{R}$, while the three rules \textsc{step-comp-left}, \textsc{step-comp-right}, \textsc{step-new} simply propagate the stepping relation through parallel composition and the $\mathsf{new}$ quantifier. The last rule \textsc{out-new-hide} links the output relation with the stepping relation: whenever $P$ steps to $P'$, resulting in the output $\assign{o}{v}$, we have that $\new{o}{\tau}{P}$ steps with unit mass to $\new{o}{\tau}{P'}$.
+
+\begin{figure}
+\begin{mathpar}
+\fbox{$e \Downarrow v$}\\
+\inferrule*[right=val]{ }{v \Downarrow v}\and
+\inferrule*[right=check]{ }{\checkmark \Downarrow ()}\and
+\inferrule*[right=true]{ }{\true \Downarrow 1}\and
+\inferrule*[right=false]{ }{\false \Downarrow 0}\and
+\inferrule*[right=app]{e \Downarrow v}{(\func \ e) \Downarrow \sem{\func}(v)}\and
+\inferrule*[right=pair]{e_1 \Downarrow v_1 \\ e_2 \Downarrow v_2}{(e_1,e_2) \Downarrow v_1 v_2}\and
+\inferrule*[right=fst]{e \Downarrow v_1 v_2 \\ v_1 \in \{0,1\}^{\sem{\sigma}}}{(\fst_{\sigma \times \tau} \ e) \Downarrow v_1}\and
+\inferrule*[right=snd]{e \Downarrow v_1 v_2 \\ v_2 \in \{0,1\}^{\sem{\tau}}}{(\snd_{\sigma \times \tau}) \ e \Downarrow v_2}
+\end{mathpar}
+\caption{Big-step operational semantics for $\ipdl$ expressions.}
+\label{fig:expressions_semantics}
+\end{figure}
+
+\begin{figure}
+\begin{mathpar}
+\fbox{$R \to \eta$}\\
+\inferrule*[right=ret]{e \Downarrow v}{\ret{e} \to 1[\val{v}]}\and
+\inferrule*[right=samp]{e \Downarrow v}{\samp{(\dist \ e)} \to \val{\sem{\dist}(v)}}\and
+\inferrule*[right=if-true]{e \Downarrow 1}{(\ifte{e}{R_1}{R_2}) \to 1[R_1]}\and
+\inferrule*[right=if-false]{e \Downarrow 0}{(\ifte{e}{R_1}{R_2}) \to 1[R_2]}\and
+\inferrule*[right=bind-val]{ }{(x : \sigma \leftarrow \val{v}; \ S) \to 1\big[S[\assign{x}{v}]\big]}\and
+\inferrule*[right=bind-react]{R \to \eta}{(x : \sigma \leftarrow R; \ S) \to {(x : \sigma \leftarrow \eta; \ S)}}
+\end{mathpar}
+\caption{Small-step operational semantics for $\ipdl$ reactions.} 
+\label{fig:reactions_semantics}
+\end{figure}
+
+\begin{figure}
+\begin{mathpar}
+\fbox{$P \outstep{o}{v} Q$}\\
+\inferrule*[right=out-react]{ }{(\assign{o}{\val{v}}) \outstep{o}{v} (\assign{o}{v})}\and
+\inferrule*[right=out-comp-left]{P \outstep{o}{v} P'}{(\Par{P}{Q}) \outstep{o}{v} \big(\Par{P'}{Q[\assign{\read{o}}{\val{v}}]}\big)}\and
+\inferrule*[right=out-comp-right]{Q \outstep{o}{v} Q'}{(\Par{P}{Q}) \outstep{o}{v} \big(\Par{P[\assign{\read{o}}{\val{v}}]}{Q'}\big)}\and
+\inferrule*[right=out-new]{P \outstep{o}{v} P' \\ o \neq c}{(\new{c}{\tau}{P}) \outstep{o}{v} (\new{c}{\tau}{P'})}\\\\
+\fbox{$P \to \eta$}\\
+\inferrule*[right=step-react]{R \to \eta}{(\assign{o}{R}) \to (\assign{o}{\eta})}\and
+\inferrule*[right=step-comp-left]{P \to \eta}{(\Par{P}{Q}) \to (\Par{\eta}{Q})}\and
+\inferrule*[right=step-comp-right]{Q \to \eta}{(\Par{P}{Q}) \to (\Par{P}{\eta})}\and
+\inferrule*[right=step-new]{P \to \eta}{(\new{c}{\tau}{P}) \to (\new{c}{\tau}{\eta})}\and
+\inferrule*[right=out-new-hide]{P \outstep{c}{v} P'}{(\new{c}{\tau}{P}) \to 1[\new{c}{\tau}{P'}]}
+\end{mathpar}
+\caption{Small-step operational semantics for \ipdl protocols.}
+\label{fig:protocols_semantics}
+\end{figure}
+
+The big-step operational semantics for reactions $R \Downarrow \eta$, see Figure \ref{fig:reactions_big_step}, performs as many steps as possible in an attempt to compute $R$, resulting in a distribution $\eta$ on reactions. A reaction that cannot step any further is \emph{final}. We can syntactically describe final reactions as those that have either yielded a final value or have an unresolved read in the leading position (\emph{i.e.}, are \emph{stuck}).
+
+Similarly, the big-step operational semantics for protocols $P \Downarrow \eta$, see Figure \ref{fig:protocols_big_step}, performs as many output and internal steps as possible in an attempt to compute $P$, resulting in a distribution $\eta$ on protocols. Analogously to reactions, a protocol that cannot step any further is \emph{final}. We can syntactically describe final protocols as those where every channel, including the internal ones, carries either a final value or a reaction that is stuck.
+
+\begin{figure}
+\begin{mathpar}
+\fbox{$R \ \stuck$}\\
+\inferrule*{ }{(\read{c}) \ \stuck}\and
+\inferrule*{R \ \stuck}{(x : \tau \leftarrow R; \ S) \ \stuck}\\
+\fbox{$R \ \final$}\\
+\inferrule*{ }{(\val{v}) \ \final}\and
+\inferrule*{R \ \stuck}{R \ \final}\\
+\fbox{$R \Downarrow \eta$}\\
+\inferrule*{}{ }\and
+\inferrule*{R \to \sum_i c_i \, 1[R_i] \\ R_i \Downarrow \eta_i}{R \Downarrow \sum_i c_i \, \eta_i}\and \\
+\inferrule*{R \ \final}{R \Downarrow 1[R]}
+\end{mathpar}
+\caption{Big-step operational semantics for \ipdl reactions.}
+\label{fig:reactions_big_step}
+\end{figure}
+
+\begin{figure}
+\begin{mathpar}
+\fbox{$P \ \final$}\\
+\inferrule*{ }{\zero \ \final}\and
+\inferrule*{ }{(\assign{o}{v}) \ \final}\and
+\inferrule*{R \ \stuck}{(\assign{o}{R}) \ \final}\and
+\inferrule*{P \ \final \\ Q \ \final}{(\Par{P}{Q}) \ \final}\and
+\inferrule*{P \ \final}{(\new{o}{\tau}{P}) \ \final}\\\\
+\fbox{$P \Downarrow \eta$}\\
+\inferrule*{}{ }\and
+\inferrule*{P \to \sum_i c_i \ 1[P_i] \\ P_i \Downarrow \eta_i}{P \Downarrow \sum_i c_i \ \eta_i}\and \\
+\inferrule*{P \outstep{o}{v} Q \\ Q \Downarrow \eta}{P \Downarrow \eta}\and
+\inferrule*{P \ \final}{P \Downarrow 1[P]}
+\end{mathpar}
+\caption{Big-step operational semantics for \ipdl protocols.}
+\label{fig:protocols_big_step}
+\end{figure}
+
+Note that while the semantics for reactions is sequential, both output and internal step relations for protocols are non-deterministic. Indeed, any two channels in a protocol may output in any order. Ordinarily, this presents a problem for reasoning about cryptography, since non-deterministic choice may present a security leak. However, our language introduces \emph{no} way to exploit this extra non-determinism, essentially due to the $\mathsf{read}$ commands in reactions being blocking. This is formalized by a \emph{confluence} result for \textsf{IPDL}:
+
+\begin{lemma}[Confluence]
+If $\Delta \vdash P : I \to O$, then:
+\begin{itemize}
+\item If $P \outstep{o}{v_1} Q_1$ and $P \outstep{o}{v_2} Q_2$, then $v_1 = v_2$ and $Q_1 = Q_2$.
+\item If $P \outstep{o_1}{v_1} Q_1$ and $P \outstep{o_2}{v_2} Q_2$ with
+$o_1 \neq o_2$, then there exists $Q$ such that $Q_1 \outstep{o_2}{v_2} Q$ and $Q_2 \outstep{o_1}{v_1} Q$.
+\item If $P \outstep{o}{v} Q$ and $P \to \eta$, then there exists $\eta'$ such that $\eta \outstep{o}{v} \eta'$ and $Q \to \eta'$.
+\item If $P \to \eta_1$ and $P \to \eta_2$, then either $\eta_1 = \eta_2$ or there exists $\eta$ such that $\eta_1 \to \eta$ and $\eta_2 \to \eta$.
+\end{itemize}
+\end{lemma}
+
+\noindent In the above lemma, we lift the two protocol stepping relations $\outstep{o}{v}$ and $\to$ to distributions in the natural way. \smallskip
+
+To guarantee termination of the semantics for reactions, we count the maximum number of steps the reaction would take \emph{provided all reads were resolved}:
+\begin{align*}
+\norm{\val{v}} & \coloneqq 0 \\
+\norm{\ret{e}} & \coloneqq 1 \\
+\norm{\samp{(\dist \ e)}} & \coloneqq 1 \\
+\norm{\read{c}} & \coloneqq 0 \\
+\norm{\ifte{e}{R_1}{R_2}} & \coloneqq \mathsf{max} \, (\norm{R_1}, \norm{R_2}) + 1 \\
+\norm{x : \tau \leftarrow R; \ S} & \coloneqq (\norm{R} + \norm{S}) + 1
+\end{align*}
+We note that $\norm{-}$ for reactions is invariant under substitutions, embeddings, and input assignment. As expected, stepping reduces the number of steps left, guaranteeing termination:
+
+\begin{lemma}
+If $R \to \sum_i c_i \ 1[R_i]$, $c_i \neq 0$, then $\norm{R_i} < \norm{R}$.
+\end{lemma}
+
+\begin{corollary}[Determinism of $\Downarrow$ for reactions]
+For any well-typed reaction $\Delta; \cdot \vdash R : I \to \tau$ there exists a unique distribution $\eta$ such that $R \Downarrow \eta$. We will denote $\eta$  by $\eval{R}$.
+\end{corollary}
+
+\noindent To guarantee termination of the semantics for protocols, we analogously count the maximum number of steps the protocol would take \emph{provided all reads in reactions were resolved}:
+\begin{align*}
+\norm{\zero} & \coloneqq 0 \\
+\norm{\assign{o}{v}} & \coloneqq 0 \\
+\norm{\assign{o}{R}} & \coloneqq \norm{R} + 1 \\
+\norm{\Par{P}{Q}} & \coloneqq \norm{P} + \norm{Q} \\
+\norm{\new{c}{\tau}{P}} & \coloneqq \norm{P}
+\end{align*}
+As for reactions, $\norm{-}$ for protocols is invariant under embeddings and input assignment, and stepping reduces the number of steps left:
+
+\begin{lemma}
+If $P \outstep{o}{v} Q$, then $\norm{Q} < \norm{P}$, and if $P \to \sum_i c_i \ 1[P_i]$, $c_i \neq 0$, then $\norm{P_i} < \norm{P}$.
+\end{lemma}
+
+\noindent Together with confluence, termination gives us the desired result:
+
+\begin{corollary}[Determinism of $\Downarrow$ for protocols]
+For any well-typed protocol $\Delta \vdash P : I \to O$ there exists a unique distribution $\eta$ such that $P \Downarrow \eta$. We will denote $\eta$ by $\eval{P}$.
+\end{corollary}

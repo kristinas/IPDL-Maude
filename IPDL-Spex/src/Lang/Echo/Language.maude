@@ -1,0 +1,72 @@
+***( SpeX/Lang/Echo
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../Language.maude
+sload ./Data.maude
+
+********************************************************************************
+
+fmod ECHO/LANGUAGE is
+  protecting ECHO/LID .
+  protecting GRAMMAR .
+
+  op grammar : Echo -> Grammar .
+  eq grammar(Echo)
+   = grammar 'Echo/Syntax is
+       'Bubble
+         ::= bubble "bubble" [balanced-parentheses exclude("echo")]
+       'Command
+         ::= lit "echo" [format('b 'o)]
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Echo from LANGUAGE to ECHO/LANGUAGE is
+  sort Lid to Echo .
+  op Lid to Echo .
+endv
+
+********************************************************************************
+
+fmod ECHO/READ is
+  protecting ECHO/CMD .
+  protecting ATERM/READ .
+
+  var L : Echo .
+
+  *** read command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-cmd : Echo ATerm ~> Cmd{Echo} .
+  eq read-cmd(L, {'echo.Command : 'Command})
+   = Cmd[L]{echo} .
+endfm
+
+********************************************************************************
+
+fmod ECHO/PARSING is
+  including STATELESS-SYNTACTIC-ANALYSIS { Echo } .
+
+  var L : Echo .
+  var QIL : QidList .
+  var B : ATerm .
+  var $ : Qid .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse L input (QIL) in [*]
+   = (scan L input (QIL : 'Bubble) then solve L bubble in [*])
+     or-else (scan L input (QIL : 'Command)) .
+
+  *** solve bubble  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op solve_bubble : Echo -> AnalysisAction{Echo} .
+  eq solve L bubble {$[B] : 'Bubble} = return {B : 'Bubble} .
+endfm
+
+********************************************************************************

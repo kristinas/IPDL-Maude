@@ -1,0 +1,43 @@
+***( SpeX/CommonLibs
+
+  This file is part of CommonLibs (CL), a suite of Maude 3 libraries
+  that extend the predefined data modules from the standard prelude.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+********************************************************************************
+
+fmod TREE { V :: TRIV, E :: TRIV } is
+  sorts NeTree{V,E} Tree{V,E} .
+  subsort NeTree{V,E} < Tree{V,E} .
+  op empty : -> Tree{V,E} [ctor] .
+  op _[_] : V$Elt EdgeList{V,E} -> NeTree{V,E} [ctor] .
+
+  sorts Edge{V,E} NeEdgeList{V,E} EdgeList{V,E} .
+  subsorts Edge{V,E} < NeEdgeList{V,E} < EdgeList{V,E} .
+  op _:_ : E$Elt TreeList{V,E} -> Edge{V,E} [ctor prec 101] .
+  op empty : -> EdgeList{V,E} [ctor] .
+  op _,_ : EdgeList{V,E} EdgeList{V,E} -> EdgeList{V,E}
+    [ctor assoc id: empty prec 121 format(d d s d)] .
+  op _,_ : NeEdgeList{V,E} EdgeList{V,E} -> NeEdgeList{V,E}
+    [ctor ditto] .
+  op _,_ : EdgeList{V,E} NeEdgeList{V,E} -> NeEdgeList{V,E}
+    [ctor ditto] .
+
+  sorts NeTreeList{V,E} TreeList{V,E} .
+  subsort Tree{V,E} < NeTreeList{V,E} < TreeList{V,E} .
+  op nil : -> TreeList{V,E} [ctor] .
+  op __ : TreeList{V,E} TreeList{V,E} -> TreeList{V,E}
+    [ctor assoc id: nil prec 81] .
+  op __ : NeTreeList{V,E} TreeList{V,E} -> NeTreeList{V,E}
+    [ctor ditto] .
+  op __ : TreeList{V,E} NeTreeList{V,E} -> NeTreeList{V,E}
+    [ctor ditto] .
+endfm
+
+********************************************************************************

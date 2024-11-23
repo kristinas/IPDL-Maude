@@ -1,0 +1,661 @@
+Soundness of equality at the expression level means that if we substitute the same valued expression for each free variable, the resulting closed expressions will compute to the same value:
+
+\begin{definition}
+An axiom $\Gamma \vdash e_1 = e_2 : \tau$ is \emph{sound} if for any valued substitution $\theta : \cdot \to \Gamma$, we have $\eval{\theta^\star(e_1)} = \eval{\theta^\star(e_2)}$.
+\end{definition}
+
+\noindent The ambient \ipdl theory for expressions is said to be sound if each of its axioms is sound. It is straightforward to show that this implies overall soundness:
+ 
+\begin{lemma}[Soundness of equality of expressions]
+If the ambient \ipdl theory for expressions is sound, then for any equal expressions $\Gamma \vdash e_1 = e_2 : \tau$ and any valued substitution $\theta : \cdot \to \Gamma$, we have that $\eval{\theta^\star(e_1)} = \eval{\theta^\star(e_1)}$.
+\end{lemma}
+
+At the reaction level, two equal reactions should behave in a way that is indistinguishable by an external observer. We formally capture this notion of indistinguishability by a logical relation known as a \emph{bisimulation} -- a binary relation on distributions on reactions that satisfies certain closure properties, together with the crucial \emph{valuation property} that allows us to jointly partition two related distributions so that any two corresponding components are again related and have the same \emph{value}: a reaction $R$ is said to have value $v$ if $R$ is of the form $\val{v}$ (otherwise the value is undefined), and we lift this notion to distributions on reactions in the obvious way. At the reaction level, we only require the valuation property for those distributions that are \emph{final}, \emph{i.e.}, no reaction in the support steps.
+
+\begin{definition}[Reaction bisimulation]
+A \emph{reaction bisimulation} $\sim$ is a binary relation on distributions on reactions $\Delta; \ \cdot \vdash R : I \to \tau$ satisfying the following conditions:
+\begin{itemize}
+\item \emph{Closure under convex combinations}: For any distributions $\eta_1 \sim \varepsilon_1$ and $\eta_2 \sim \varepsilon_2$, and any coefficients $c_1, c_2 > 0$ with $c_1 + c_2 = 1$, we have $c_1 \eta_1 + c_2 \eta_2 \sim c_1 \varepsilon_1 + c_2 \varepsilon_2$.
+
+\item \emph{Closure under input assignment}: For any distributions $\eta \sim \varepsilon$, input channel $i \in I$ of type $\tau$, and value $v \in \{0,1\}^{\sem{\tau}}$, we have $\eta[\read{i} \coloneqq \val{v}] \sim \varepsilon[\read{i} \coloneqq \val{v}]$.
+
+\item \emph{Closure under computation}: For any distributions $\eta \sim \varepsilon$, we have $\eval{\eta} \sim \eval{\varepsilon}$.
+
+\item \emph{Valuation property}: For any distributions $\eta \sim \varepsilon$ that are final, there exists a joint convex combination \[\eta = \sum_i c_i \, \eta_i \; \sim \, \sum_i c_i \, \varepsilon_i = \varepsilon\]
+with $c_i > 0$ and $\sum_i c_i = 1$, such that
+\begin{itemize}
+\item the respective components $\eta_i \sim \varepsilon_i$ are again related, and
+\item the distributions $\eta_i$ and $\varepsilon_j$ have the same value $v$ or lack thereof if and only if $i = j$.
+\end{itemize}
+\end{itemize}
+\end{definition}
+
+\noindent Crucially, we note that the joint convex combination in the valuation property is unique up to the order of the summands. We now describe one canonical way to construct reaction bisimulations:
+
+\begin{definition}
+Let $\sim$ be an arbitrary binary relation on distributions on reactions $\Delta; \ \cdot \vdash R : I \to \tau$. The \emph{lifting} $\lift(\sim)$ is the closure of $\sim$ under joint convex combinations. Explicitly, $\lift(\sim)$ is defined by
+\[\sum_i c_i \, \eta_i \; \lift(\sim) \; \sum_i c_i \, \varepsilon_i\]
+for coefficients $c_i > 0$ with $\sum_i c_i = 1$ and distributions $\eta_i \sim \varepsilon_i$.
+\end{definition}
+
+\begin{lemma}\label{lem:reaction_seed}
+Let $\sim$ be a binary relation on distributions on reactions $\Delta; \ \cdot \vdash R : I \to \tau$ with the following properties:
+\begin{itemize}
+\item \emph{Closure under input assignment}: For any distributions $\eta \sim \varepsilon$, input channel $i \in I$ of type $\tau$, and value $v \in \{0,1\}^{\sem{\tau}}$, we have $\eta[\read{i} \coloneqq \val{v}] \sim \varepsilon[\read{i} \coloneqq \val{v}]$.
+
+\item \emph{Lifting closure under computation}: For any distributions $\eta \sim \varepsilon$, we have $\eval{\eta} \lift(\sim) \, \eval{ \varepsilon}$.
+
+\item \emph{Valuation property}: For any distributions $\eta \sim \varepsilon$ that are final, there exists a joint convex combination \[\eta = \sum_i c_i \, \eta_i \; \sim \, \sum_i c_i \, \varepsilon_i = \varepsilon\]
+with $c_i > 0$ and $\sum_i c_i = 1$, such that
+\begin{itemize}
+\item the respective components $\eta_i \sim \varepsilon_i$ are again related, and
+\item the distributions $\eta_i$ and $\varepsilon_j$ have the same value $v$ or lack thereof if and only if $i = j$.
+\end{itemize}
+\end{itemize}
+Then the lifting $\lift(\sim)$ is a reaction bisimulation.
+\end{lemma}
+
+\begin{lemma}
+We have the following: 
+\begin{itemize}
+\item The identity relation is a reaction bisimulation.
+\item The inverse of a reaction bisimulation is a reaction bisimulation.
+\item The composition of two reaction bisimulations is a reaction bisimulation.
+\end{itemize}
+\end{lemma}
+
+\begin{example}
+Fix two expressions $\cdot \vdash e_1 : \sigma$ and $\cdot \vdash e_2 : \sigma$ such that $\eval{e_1} = \eval{e_2}$. Then the relation $\sim$ defined by
+\begin{itemize}
+\item $1[R(x \coloneqq e_1)] \sim 1[R(x \coloneqq e_2)]$ for reaction $\Delta; \ x : \sigma \vdash R : I \to \tau$
+\end{itemize}
+is a reaction bisimulation.
+\end{example}
+
+\noindent Having defined reaction bisimulations, we can now formally state what it means for reaction equality to be sound:
+
+\begin{definition}
+An axiom $\Delta; \ \Gamma \vdash R_1 = R_2 : I \to \tau$ is \emph{sound} if there is a reaction bisimulation $\sim$ such that for any valued substitution $\theta : \cdot \to \Gamma$, we have $1[\theta^\star(R_1)] \sim 1[\theta^\star(R_2)]$.
+\end{definition}
+
+\noindent The ambient \ipdl theory for reactions is said to be sound if each of its axioms is sound. We now show that this implies overall soundness:
+
+\begin{lemma}[Soundness of equality of reactions]
+If the ambient \ipdl theory for reactions is sound, then for any equal reactions $\Delta; \ \Gamma \vdash R_1 = R_2 : I \to \tau$,     there exists a reaction bisimulation $\sim$ such that for any valued substitution $\theta : \cdot \to \Gamma$, we have $1[\theta^\star(R_1)] \sim 1[\theta^\star(R_2)]$.
+\end{lemma}
+
+\begin{proof}
+We first replace the exchange rule \textsc{exch} by the three rules \textsc{exch-samp-samp}, \textsc{exch-samp-read}, and \textsc{exch-read-read} in Figure \ref{fig:exch_alt}; it is easy to see that this new set of rules is equivalent to the original one. We now proceed by induction on the alternative set of rules for reaction equality. We will freely use a distribution in place of a value (rule \textsc{exch-samp-read}) or a reaction (rules \textsc{embed}, \textsc{cong-bind}) to indicate the obvious lifting of the corresponding construct to distributions on reactions.
+
+\begin{itemize}
+\item \textsc{refl}: Our desired bisimulation is the identity relation.
+\item \textsc{sym}: Our desired bisimulation is the inverse of the bisimulation obtained from the premise.
+\item \textsc{trans}: Our desired bisimulation is the composition of the two bisimulations obtained from the two premises.
+\item \textsc{axiom}: The desired bisimulation exists by assumption.
+\item \textsc{input-unused}: Our desired bisimulation is precisely the bisimulation obtained from the premise, seen as a bisimulation on distributions on reactions with the additional input $i$.
+\item \textsc{subst}: Our desired bisimulation is precisely the bisimulation obtained from the premise.
+\item \textsc{embed}: Let $\sim$ be the bisimulation obtained from the premise. Our desired bisimulation $\sim_\phi$ is defined by
+\begin{itemize}
+\item $\phi^\star(\eta) \sim_\phi \phi^\star(\varepsilon)$ if $\eta \sim \varepsilon$
+\end{itemize}
+\item \textsc{cong-ret}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\ret{e}] \sim 1[\ret{e'}]$ for
+\begin{itemize}
+\item expressions $\cdot \vdash e : \tau$ and $\cdot \vdash e' : \tau$such that $\eval{e} = \eval{e'}$
+\end{itemize}
+\item $1[\val{v}] \sim 1[\val{v}]$ for value $v \in \{0,1\}^{\sem{\tau}}$
+\end{itemize}
+\item \textsc{cong-samp}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\samp{(\dist \ e)}] \sim 1[\samp{(\dist \ e')}]$ for
+\begin{itemize}
+\item expressions $\cdot \vdash e : \tau$ and $\cdot \vdash e' : \tau$such that $\eval{e} = \eval{e'}$
+\end{itemize}
+\item $1[\val{v}] \sim 1[\val{v}]$ for value $v \in \{0,1\}^{\sem{\tau}}$
+\end{itemize}
+\item \textsc{cong-if}: Let $\sim_1$ and $\sim_2$ be the two bisimulations obtained from the two premises. Our desired bisimulation is the lifting of the relation $\sim_\mathsf{if}$ defined by
+\begin{itemize}
+\item $1[\ifte{e}{R_1}{R_2}] \sim_\mathsf{if} \, 1[\ifte{e'}{R'_1}{R'_2}]$ for 
+\begin{itemize}
+\item expressions $\cdot \vdash e : \Bool$ and $\cdot \vdash e' : \Bool $such that $\eval{e} = \eval{e'}$
+\item reactions $\Delta; \ \cdot \vdash R_1 : I \to \tau$ and $\Delta; \ \cdot \vdash R'_1 : I \to \tau$ such that $1[R_1] \sim_1 1[R'_1]$
+\item reactions $\Delta; \ \cdot \vdash R_2 : I \to \tau$ and $\Delta; \ \cdot \vdash R'_2 : I \to \tau$ such that $1[R_2] \sim_2 1[R'_2]$
+\end{itemize}
+\item $\eta_1 \sim_\mathsf{if} \eta'_1$ if $\eta_1 \sim_1 \eta_1'$
+\item $\eta_2 \sim_\mathsf{if} \eta'_2$ if $\eta_2 \sim_2 \eta_2'$
+\end{itemize}
+\item \textsc{cong-bind}: Let $\sim_1$ and $\sim_2$ be the two bisimulations obtained from the two premises. Our desired bisimulation is the lifting of the relation $\sim_\mathsf{bind}$ defined by
+\begin{itemize}
+\item $(x \leftarrow \eta; \ S) \sim_\mathsf{bind} (x \leftarrow \eta'; \ S')$ for
+\begin{itemize}
+\item distributions $\eta \sim_1 \eta'$
+\item reactions $\Delta; \ x : \sigma \vdash S : I \to \tau$ and $\Delta; \ x : \sigma \vdash S' : I \to \tau$ such that for any value $v \in \{0,1\}^{\sem{\sigma}}$, we have $1[S(x \coloneqq v)] \sim_2 1[S'(x \coloneqq v)]$
+\end{itemize}
+\item $\varepsilon \sim_\mathsf{bind} \varepsilon'$ if $\varepsilon \sim_2 \varepsilon'$
+\end{itemize}
+\item \textsc{ret-bind}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[x \leftarrow \ret{e}; \ R] \sim 1[R(x \coloneqq e)]$ for expression $\cdot \vdash e : \sigma$ and reaction $\Delta; \ x : \sigma \vdash R : I \to \tau$
+\item $1[R(x \coloneqq v)] \sim 1[R(x \coloneqq e)]$ for
+\begin{itemize}
+\item reaction $\Delta; \ x : \sigma \vdash R : I \to \tau$
+\item expression $\cdot \vdash e : \sigma$ and value $v \in \{0,1\}^{\sem{\sigma}}$ such that $e \Downarrow v$
+\end{itemize}
+\end{itemize}
+\item \textsc{bind-ret}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[x \leftarrow R; \ \ret{x}] \sim 1[R]$ for reaction $\Delta; \ \cdot \vdash R : I \to \tau$
+\item $1[\val{v}] \sim 1[\val{v}]$ for value $v \in \{0,1\}^{\sem{\tau}}$
+\end{itemize}
+\item \textsc{bind-bind}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[x_2 \leftarrow (x_1 \leftarrow R_1; \ R_2); \ S] \sim 1[x_1 \leftarrow R_1; \ x_2 \leftarrow R_2; \ S]$ for
+\begin{itemize}
+\item reaction $\Delta; \ \cdot \vdash R_1 : I \to \sigma_1$
+\item reaction $\Delta; \ x_1 : \sigma_1 \vdash R_2 : I \to \sigma_2$
+\item reaction $\Delta; \ x_2 : \sigma_2 \vdash S : I \to \tau$
+\end{itemize}
+\item $1[x_2 \leftarrow R_2; \ S] \sim 1[x_2 \leftarrow R_2; \ S]$ for
+\begin{itemize}
+\item reaction $\Delta; \ \cdot \vdash R_2 : I \to \sigma_2$
+\item reaction $\Delta; \ x_2 : \sigma_2 \vdash S : I \to \tau$
+\end{itemize}
+\item $1[S] \sim 1[S]$ for reaction $\Delta; \ \cdot \vdash S : I \to \tau$
+\end{itemize}
+\item \textsc{samp-pure}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[x \leftarrow \samp{(\dist \ e)}; \ R] \sim 1[R]$ for reaction $\Delta; \ \cdot \vdash R : I \to \tau$
+\item $1[R] \sim 1[R]$ for reaction $\Delta; \ \cdot \vdash R : I \to \tau$
+\end{itemize}
+\item \textsc{read-det}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[x \leftarrow \read{i}; \ y \leftarrow \read{i}; \ R] \sim 1[x \leftarrow \read{i}; \ R(y \coloneqq x)]$ for reaction $\Delta; \ x : \sigma, y : \sigma \vdash R : I \to \tau$
+\item $1[x \leftarrow \val{v}; \ y \leftarrow \val{v}; \ R] \sim 1[x \leftarrow \val{v}; \ R(y \coloneqq x)]$ for
+\begin{itemize}
+\item reaction $\Delta; \ x : \sigma, y : \sigma \vdash R : I \to \tau$ 
+\item value $v \in \{0,1\}^{\sem{\sigma}}$
+\end{itemize}
+\item $1[R] \sim 1[R]$ for reaction $\Delta; \ \cdot \vdash R : I \to \tau$
+\end{itemize}
+\item \textsc{if-left}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\ifte{\true}{R_1}{R_2}] \sim 1[R_1]$ for reactions $\Delta; \ \cdot \vdash R_1 : I \to \tau$ and $\Delta; \ \cdot \vdash R_2 : I \to \tau$
+\item $1[R_1] \sim 1[R_1]$ for reaction $\Delta; \ \cdot \vdash R_1 : I \to \tau$
+\end{itemize}
+\item \textsc{if-right}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\ifte{\false}{R_1}{R_2}] \sim 1[R_2]$ for reactions $\Delta; \ \cdot \vdash R_1 : I \to \tau$ and $\Delta; \ \cdot \vdash R_2 : I \to \tau$
+\item $1[R_2] \sim 1[R_2]$ for reaction $\Delta; \ \cdot \vdash R_2 : I \to \tau$
+\end{itemize}
+\item \textsc{if-ext}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[R(x \coloneqq e)] \sim 1[\ifte{e}{R(x \coloneqq \true)}{R(x \coloneqq \false)]}$ for
+\begin{itemize}
+\item reaction $\Delta; \ x : \Bool \vdash R : I \to \tau$
+\item expression $\cdot \vdash e : \Bool$
+\end{itemize}
+\item $1[R(x \coloneqq e)] \sim 1[R(x \coloneqq \true)]$ for
+\begin{itemize}
+\item reaction $\Delta; \ x : \Bool \vdash R : I \to \tau$
+\item expression $\cdot \vdash e : \Bool$ such that $\eval{e} = 1$
+\end{itemize}
+\item $1[R(x \coloneqq e)] \sim 1[R(x \coloneqq \false)]$ for
+\begin{itemize}
+\item reaction $\Delta; \ x : \Bool \vdash R : I \to \tau$
+\item expression $\cdot \vdash e : \Bool$ such that $\eval{e} = 0$
+\end{itemize}
+\end{itemize}
+\item \textsc{exch-samp-samp}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[x_1 \leftarrow \samp{(\dist_1 \ e_1)}; \ x_2 \leftarrow \samp{(\dist_2 \ e_2)}; \ \ret{(x_1,x_2)}] \sim \\ 1[x_2 \leftarrow \samp{(\dist_2 \ e_2)}; \ x_1 \leftarrow \samp{(\dist_1 \ e_1)}; \ \ret{(x_1,x_2)}]$ for
+\begin{itemize}
+\item expressions $\cdot \vdash e_1 : \sigma_1$ and $\cdot \vdash e_2 : \sigma_2$
+\end{itemize}
+\item $1[\val{v_1 v_2}] \sim 1[\val{v_1 v_2}]$ for values $v_1 \in \{0,1\}^{\sem{\tau_1}}$ and $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+\item \textsc{exch-samp-read}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[x_1 \leftarrow \samp{(\dist \ e)}; \ x_2 \leftarrow \read{i}; \ \ret{(x_1,x_2)}] \sim 1[x_2 \leftarrow \read{i}; \ x_1 \leftarrow \samp{(\dist \ e)}; \ \ret{(x_1,x_2)}]$ for
+\begin{itemize}
+\item expression $\cdot \vdash e : \sigma$
+\end{itemize}
+\item $1[x_1 \leftarrow \samp{(\dist \ e)}; \ x_2 \leftarrow \val{v_2}; \ \ret{(x_1,x_2)}] \sim 1[x_2 \leftarrow \val{v_2}; \ x_1 \leftarrow \samp{(\dist \ e)}; \ \ret{(x_1,x_2)}]$ for
+\begin{itemize}
+\item expression $\cdot \vdash e : \sigma$
+\item value $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+\item $\big(x_2 \leftarrow \read{i}; \ \ret{(\sem{\dist}(v),x_2)}\big) \sim 1[x_2 \leftarrow \read{i}; \ x_1 \leftarrow \samp{(\dist \ e)}; \ \ret{(x_1,x_2)}]$ for
+\begin{itemize}
+\item expression $\cdot \vdash e : \sigma$ and value $v \in \{0,1\}^{\sem{\sigma}}$ such that $e \Downarrow v$
+\end{itemize}
+\item $\big(x_2 \leftarrow \val{v_2}; \ \ret{(\sem{\dist}(\eval{e}),x_2)}\big) \sim 1[x_2 \leftarrow \val{v_2}; \ x_1 \leftarrow \samp{(\dist \ e)}; \ \ret{(x_1,x_2)}]$ for
+\begin{itemize}
+\item expression $\cdot \vdash e : \sigma$
+\item value $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+\item $1[\val{v_1 v_2}] \sim 1[\val{v_1 v_2}]$ for values $v_1 \in \{0,1\}^{\sem{\tau_1}}$ and $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+\item \textsc{exch-read-read}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[x_1 \leftarrow \read{i_1}; \ x_2 \leftarrow \read{i_2}; \ \ret{(x_1,x_2)}] \sim 1[x_2 \leftarrow \read{i_2}; \ x_1 \leftarrow \read{i_1}; \ \ret{(x_1,x_2)}]$
+\item $1[x_1 \leftarrow \val{v_1}; \ x_2 \leftarrow \read{i_2}; \ \ret{(x_1,x_2)}] \sim 1[x_2 \leftarrow \read{i_2}; \ x_1 \leftarrow \val{v_1}; \ \ret{(x_1,x_2)}]$ for
+\begin{itemize}
+\item value $v_1 \in \{0,1\}^{\sem{\tau_1}}$
+\end{itemize}
+\item $1[x_1 \leftarrow \read{i_1}; \ x_2 \leftarrow \val{v_2}; \ \ret{(x_1,x_2)}] \sim 1[x_2 \leftarrow \val{v_2}; \ x_1 \leftarrow \read{i_1}; \ \ret{(x_1,x_2)}]$ for
+\begin{itemize}
+\item value $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+\item $1[x_1 \leftarrow \val{v_1}; \ x_2 \leftarrow \val{v_2}; \ \ret{(x_1,x_2)}] \sim 1[x_2 \leftarrow \val{v_2}; \ x_1 \leftarrow \val{v_1}; \ \ret{(x_1,x_2)}]$ for
+\begin{itemize}
+\item values $v_1 \in \{0,1\}^{\sem{\tau_1}}$ and $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+\item $1[x_2 \leftarrow \read{i_2}; \ \ret{(v_1,x_2)}] \sim 1[x_2 \leftarrow \read{i_2}; \ x_1 \leftarrow \val{v_1}; \ \ret{(x_1,x_2)}]$ for value $v_1 \in \{0,1\}^{\sem{\tau_1}}$
+\item $1[x_1 \leftarrow \read{i_1}; \ x_2 \leftarrow \val{v_2}; \ \ret{(x_1,x_2)}] \sim 1[x_1 \leftarrow \read{i_1}; \ \ret{(x_1,v_2)}]$ for value $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\item $1[x_2 \leftarrow \val{v_2}; \ \ret{(v_1,x_2)}] \sim 1[x_2 \leftarrow \val{v_2}; \ x_1 \leftarrow \val{v_1}; \ \ret{(x_1,x_2)}]$ for
+\begin{itemize}
+\item values $v_1 \in \{0,1\}^{\sem{\tau_1}}$ and $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+\item $1[x_1 \leftarrow \val{v_1}; \ x_2 \leftarrow \val{v_2}; \ \ret{(x_1,x_2)}] \sim 1[x_1 \leftarrow \val{v_1}; \ \ret{(x_1,v_2)}]$ for
+\begin{itemize}
+\item values $v_1 \in \{0,1\}^{\sem{\tau_1}}$ and $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+\item $1[\val{v_1 v_2}] \sim 1[\val{v_1 v_2}]$ for values $v_1 \in \{0,1\}^{\sem{\tau_1}}$ and $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+\end{itemize}
+\end{proof}
+
+\begin{figure}[ht!]
+\begin{mathpar}
+\inferrule*[right=exch-samp-samp]{\dist_1 : \sigma_1 \twoheadleftarrow \tau_1, \dist_2 : \sigma_2 \twoheadleftarrow \tau_2 \in \Sigma \\ \Gamma \vdash e_1 : \sigma_1 \\ \Gamma \vdash e_2 : \sigma_2}{\Delta; \ \Gamma \vdash \big(x_1 : \tau_1 \leftarrow \samp{(\dist_1 \ e_1)}; \ x_2 : \tau_2 \leftarrow \samp{(\dist_2 \ e_2)}; \ \ret{(x_1,x_2)}\big) = \\ \big(x_2 : \tau_2 \leftarrow \samp{(\dist_2 \ e_2)}; \ x_1 : \tau_1 \leftarrow \samp{(\dist_1 \ e_1)}; \ \ret{(x_1,x_2)}\big) : I \to \tau_1 \times \tau_2}\and
+\inferrule*[right=exch-samp-read]{\dist : \sigma \to \tau_1 \in \Sigma \\ \Gamma \vdash e : \sigma \\ i : \tau_2 \in \Delta \\ i \in I}{\Delta; \ \Gamma \vdash \big(x_1 : \tau_1 \twoheadleftarrow \samp{(\dist \ e)}; \ x_2 : \tau_2 \leftarrow \read{i}; \ \ret{(x_1,x_2)}\big) =  \\ \big(x_2 : \tau_2 \leftarrow \read{i}; \ x_1 : \tau_1 \leftarrow \samp{(\dist \ e)}; \ \ret{(x_1,x_2)}\big) : I \to \tau_1 \times \tau_2}\and
+\inferrule*[right=exch-read-read]{i_1 : \tau_1, i_2 : \tau_2 \in \Delta \\ i_1, i_2 \in I}{\Delta; \ \Gamma \vdash \big(x_1 : \tau_1 \leftarrow \read{i_1}; \ x_2 : \tau_2 \leftarrow \read{i_2}; \ \ret{(x_1,x_2)}\big) = \hspace{52.3pt} \\ \big(x_2 : \tau_2 \leftarrow \read{i_2}; \ x_1 : \tau_1 \leftarrow \read{i_1}; \ \ret{(x_1,x_2)}\big) : I \to \tau_1 \times \tau_2 \hspace{-39.8pt}}
+\end{mathpar}
+\caption{Alternative formulation of the \textsc{exch} rule for reaction equality.}
+\label{fig:exch_alt}
+\end{figure}
+
+At last we get to the protocol level. A protocol bisimulation is entirely analogous to a reaction bisimulation, except we require the valuation property to hold: \emph{i)} per output channel $o$, and \emph{ii)} for all distributions (not necessarily final).
+
+\begin{definition}[Protocol bisimulation]
+A \emph{protocol bisimulation} $\sim$ is a binary relation on distributions on protocols $\Delta \vdash P : I \to O$ satisfying the following conditions:
+\begin{itemize}
+\item \emph{Closure under convex combinations}: For any distributions $\eta_1 \sim \varepsilon_1$ and $\eta_2 \sim \varepsilon_2$, and any coefficients $c_1, c_2 > 0$ with $c_1 + c_2 = 1$, we have $c_1 \eta_1 + c_2 \eta_2 \sim c_1 \varepsilon_1 + c_2 \varepsilon_2$.
+
+\item \emph{Closure under input assignment}: For any distributions $\eta \sim \varepsilon$, input channel $i \in I$ of type $\tau$, and value $v \in \{0,1\}^{\sem{\tau}}$, we have $\eta[\read{i} \coloneqq \val{v}] \sim \varepsilon[\read{i} \coloneqq \val{v}]$.
+
+\item \emph{Closure under computation}: For any distributions $\eta \sim \varepsilon$, we have $\eval{\eta} \sim \eval{\varepsilon}$.
+
+\item \emph{Valuation property}: For any output channel $o \in O$, and any distributions $\eta \sim \varepsilon$, there exists a joint convex combination \[\eta = \sum_i c_i \, \eta_i \; \sim \, \sum_i c_i \, \varepsilon_i = \varepsilon\]
+with $c_i > 0$ and $\sum_i c_i = 1$, such that
+\begin{itemize}
+\item the respective components $\eta_i \sim \varepsilon_i$ are again related, and
+\item the distributions $\eta_i$ and $\varepsilon_j$ have the same value $v$ or lack thereof on $o$ if and only if $i = j$.
+\end{itemize}
+\end{itemize}
+\end{definition}
+
+\noindent Just like for reaction bisimulations, the joint sum in the valuation property is unique up to the order of the summands. We have an analogous canonical way of constructing protocol bisimulations:
+
+\begin{definition}
+Let $\sim$ be an arbitrary binary relation on distributions on protocols $\Delta \vdash P : I \to O$. The \emph{lifting} $\lift(\sim)$ is the closure of $\sim$ under joint convex combinations. Explicitly, $\lift(\sim)$ is defined by
+\[\sum_i c_i \, \eta_i \; \lift(\sim) \; \sum_i c_i \, \varepsilon_i\]
+for coefficients $c_i > 0$ with $\sum_i c_i = 1$ and distributions $\eta_i \sim \varepsilon_i$.
+\end{definition}
+
+\begin{lemma}\label{lem:protocol_seed}
+Let $\sim$ be a binary relation on distributions on protocols $\Delta \vdash P : I \to O$ with the following properties:
+\begin{itemize}
+\item \emph{Closure under input assignment}: For any distributions $\eta \sim \varepsilon$, input channel $i \in I$ of type $\tau$, and value $v \in \{0,1\}^{\sem{\tau}}$, we have $\eta[\read{i} \coloneqq \val{v}] \sim \varepsilon[\read{i} \coloneqq \val{v}]$.
+
+\item \emph{Lifting closure under computation}: For any distributions $\eta \sim \varepsilon$, we have $\eval{\eta} \lift(\sim) \, \eval{\varepsilon}$.
+
+\item \emph{Valuation property}: For any output channel $o \in O$, and any distributions $\eta \sim \varepsilon$, there exists a joint convex combination \[\eta = \sum_i c_i \, \eta_i \; \sim \, \sum_i c_i \, \varepsilon_i = \varepsilon\]
+with $c_i > 0$ and $\sum_i c_i = 1$, such that
+\begin{itemize}
+\item the respective components $\eta_i \sim \varepsilon_i$ are again related, and
+\item the distributions $\eta_i$ and $\varepsilon_j$ have the same value $v$ or lack thereof on $o$ if and only if $i = j$.
+\end{itemize}
+\end{itemize}
+Then the lifting $\lift(\sim)$ is a protocol bisimulation.
+\end{lemma}
+
+\begin{lemma}
+We have the following: 
+\begin{itemize}
+\item The identity relation is a protocol bisimulation.
+\item The inverse of a protocol bisimulation is a protocol bisimulation.
+\item The composition of two protocol bisimulations is a protocol bisimulation.
+\end{itemize}
+\end{lemma}
+
+\noindent We can now formally state what it means for exact protocol equality to be sound:
+
+\begin{definition}
+An axiom $\Delta \vdash P_1 = P_2 : I \to O$ is \emph{sound} if there is a protocol bisimulation $\sim$ such that $1[P_1] \sim 1[P_2]$.
+\end{definition}
+
+\noindent The ambient \ipdl theory for protocols is said to be sound if each of its axioms is sound. We now show that this implies overall soundness for exact equality:
+
+\begin{lemma}[Soundness of exact equality of protocols]
+If the ambient \ipdl theory for protocols is sound, then for any equal protocols $\Delta \vdash P_1 = P_2 : I \to O$, there exists a protocol bisimulation $\sim$ such that $1[P_1] \sim 1[P_2]$.
+\end{lemma}
+
+\begin{proof}
+We first replace the rules \textsc{fold-if-left} and \textsc{fold-if-right} by the equivalent formulation in Figure \ref{fig:fold_if_alt}. We now proceed by induction on this alternative set of rules for exact protocol equality. We will freely use a measure in place of a reaction (rule \textsc{cong-react}) or a protocol (rules \textsc{embed}, \textsc{absorb-left}) to indicate the obvious lifting of the corresponding construct to measures on protocols.
+
+\begin{itemize}
+\item \textsc{refl}: Our desired bisimulation is the identity relation.
+\item \textsc{sym}: Our desired bisimulation is the inverse of the bisimulation obtained from the premise.
+\item \textsc{trans}: Our desired bisimulation is the composition of the two bisimulations obtained from the two premises.
+\item \textsc{axiom}: The desired bisimulation exists by assumption.
+\item \textsc{input-unused}: Our desired bisimulation is precisely the bisimulation obtained from the premise, seen as a bisimulation on distributions on protocols with the additional input $i$.
+\item \textsc{embed}: Let $\sim$ be the bisimulation obtained from the premise. Our desired bisimulation $\sim_\phi$ is defined by
+\begin{itemize}
+\item $\phi^\star(\eta) \sim_\phi \phi^\star(\varepsilon)$ if $\eta \sim \varepsilon$
+\end{itemize}
+\item \textsc{cong-react}: Let $\sim$ be the reaction bisimulation obtained from the premise. Our desired bisimulation is the lifting of the relation $\sim_{\mathsf{react}}$ defined by
+\begin{itemize}
+\item $(o \coloneqq \eta) \sim_{\mathsf{react}} (o \coloneqq \eta')$ for distributions $\eta \sim \eta'$
+\item $1[o \coloneqq v] \sim_{\mathsf{react}} 1[o \coloneqq v]$ for  value $v \in \{0,1\}^{\sem{\tau}}$
+\end{itemize}
+\item \textsc{cong-comp-left}: Let $\sim$ be the bisimulation obtained from the premise. Our desired bisimulation is the lifting of the relation $\sim_{\mathsf{par}}$ defined by
+\begin{itemize}
+\item $(\Par{\eta}{Q}) \sim_{\mathsf{par}} (\Par{\eta'}{Q})$ for $\eta \sim \eta'$ and protocol $\Delta \vdash Q : I \cup O_1 \to O_2$
+\end{itemize}
+The fact that this is indeed a bisimulation requires a fair amount of work; see Lemma \ref{lem:compositionality_exact}.
+\item \textsc{cong-new}: Let $\sim$ be the bisimulation obtained from the premise. Our desired bisimulation $\sim_{\mathsf{new}}$ is defined by
+\begin{itemize}
+\item $(\new{o}{\tau}{\eta}) \sim_{\mathsf{new}} (\new{o}{\tau}{\eta'})$ if $\eta \sim \eta'$
+\end{itemize}
+\item \textsc{comp-comm}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\Par{P_1}{P_2}] \sim 1[\Par{P_2}{P_1}]$ for protocols $\Delta \vdash P_1 : I \cup O_2 \to O_1$ and $\Delta \vdash P_2 : I \cup O_1 \to O_2$
+\end{itemize}
+\item \textsc{comp-assoc}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1\big[\Par{(\Par{P_1}{P_2})}{P_3}\big] \sim 1\big[\Par{P_1}{(\Par{P_2}{P_3})}\big]$ for
+\begin{itemize}
+\item protocol $\Delta \vdash P_1 : I \cup O_2 \cup O_3 \to O_1$
+\item protocol $\Delta \vdash P_2 : I \cup O_1 \cup O_3 \to O_2$
+\item protocol $\Delta \vdash P_3 : I \cup O_1 \cup O_2 \to O_3$
+\end{itemize}
+\end{itemize}
+\item \textsc{new-exch}: The desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\new{o_1}{\tau_1}{\new{o_2}{\tau_2}{P}}] \sim 1[\new{o_2}{\tau_2}{\new{o_1}{\tau_1}{P}}]$ for
+\begin{itemize}
+\item protocol $\Delta, o_1 : \tau_1, o_2 : \tau_2 \vdash P : I \to O \cup \{o_1,o_2\}$
+\end{itemize}
+\end{itemize}
+\item \textsc{comp-new}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\Par{P}{(\new{o}{\tau}{Q})}] \sim 1[\new{o}{\tau}{(\Par{P}{Q})}]$ for
+\begin{itemize}
+\item protocol $\Delta \vdash P : I \cup O_2 \to O_1$
+\item protocol $\Delta, o : \tau \vdash Q : I \cup O_1 \to O_2 \cup \{o\}$
+\end{itemize}
+\end{itemize}
+\item \textsc{absorb-left}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\Par{P}{Q}] \sim 1[P]$ for protocols $\Delta \vdash P : I \to O$ and $\Delta \vdash Q : I \cup O \to \emptyset$
+\end{itemize}
+\item \textsc{diverge}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\assign{o}{x \leftarrow \read{o}; \ R}] \sim 1[\assign{o}{\read{o}}]$ for reaction $\Delta; \ \cdot \vdash R : I \cup \{o\} \to \tau$
+\end{itemize}
+\item \textsc{fold-if-left}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\new{l}{\tau}{\Par{\assign{o}{x \leftarrow \read{b}; \ \ifte{x}{\read{l}}}{S_2}}{\assign{l}{x \leftarrow \read{b}; \ S_1}}}] \sim \\ 1[\assign{o}{x \leftarrow \read{b}; \ \ifte{x}{S_1}{S_2}}]$ for
+\begin{itemize}
+\item reaction $\Delta; \ \cdot \vdash S_1 : I \cup \{o\} \to \tau$
+\item reaction $\Delta; \ \cdot \vdash S_2 : I \cup \{o\} \to \tau$
+\end{itemize}
+\item $1[\new{l}{\tau}{\Par{\assign{o}{x \leftarrow \val{v}; \ \ifte{x}{\read{l}}}{S_2}}{\assign{l}{x \leftarrow \val{v}; \ S_1}}}] \sim \\ 1[\assign{o}{x \leftarrow \val{v}; \ \ifte{x}{S_1}{S_2}}]$ for
+\begin{itemize}
+\item value $v \in \{0,1\}$
+\item reaction $\Delta; \ \cdot \vdash S_1 : I \cup \{o\} \to \tau$
+\item reaction $\Delta; \ \cdot \vdash S_2 : I \cup \{o\} \to \tau$
+\end{itemize}
+\item $1[\new{l}{\tau}{\Par{\assign{o}{\read{l}}}{\assign{l}{S_1}}}] \sim 1[\assign{o}{S_1}]$ for reaction $\Delta; \ \cdot \vdash S_1 : I \cup \{o\} \to \tau$
+\item $1[\new{l}{\tau}{\Par{\assign{o}{S_2}}{\assign{l}{S_1}}}] \sim 1[\assign{o}{S_2}]$ for
+\begin{itemize}
+\item reaction $\Delta; \ \cdot \vdash S_1 : I \cup \{o\} \to \tau$
+\item reaction $\Delta; \ \cdot \vdash S_2 : I \cup \{o\} \to \tau$
+\end{itemize}
+\item $1[\new{l}{\tau}{\Par{\assign{o}{v_2}}{\assign{l}{S_1}}}] \sim 1[\assign{o}{v_2}]$ for
+\begin{itemize}
+\item reaction $\Delta; \ \cdot \vdash S_1 : I \cup \{o\} \to \tau$
+\item value $v_2 \in \{0,1\}^{\sem{\tau}}$
+\end{itemize}
+\item $1[\new{l}{\tau}{\Par{\assign{o}{S_2}}{\assign{l}{v_1}}}] \sim 1[\assign{o}{S_2}]$ for
+\begin{itemize}
+\item value $v_1 \in \{0,1\}^{\sem{\tau}}$
+\item reaction $\Delta; \ \cdot \vdash S_2 : I \cup \{o\} \to \tau$
+\end{itemize}
+\item $1[\new{l}{\tau}{\Par{\assign{o}{v_2}}{\assign{l}{v_1}}}] \sim 1[\assign{o}{v_2}]$ for values $v_1,v_2 \in \{0,1\}^{\sem{\tau}}$
+\end{itemize}
+\item \textsc{fold-if-right}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\new{r}{\tau}{\Par{\assign{o}{x \leftarrow \read{b}; \ \ifte{x}{S_1}{\read{r}}}}{\assign{r}{x \leftarrow \read{b}; \ S_2}}}] \sim \\ 1[\assign{o}{x \leftarrow \read{b}; \ \ifte{x}{S_1}{S_2}}]$ for
+\begin{itemize}
+\item reaction $\Delta; \ \cdot \vdash S_1 : I \cup \{o\} \to \tau$
+\item reaction $\Delta; \ \cdot \vdash S_2 : I \cup \{o\} \to \tau$
+\end{itemize}
+\item $1[\new{r}{\tau}{\Par{\assign{o}{x \leftarrow \val{v}; \ \ifte{x}{S_1}{\read{r}}}}{\assign{r}{x \leftarrow \val{v}; \ S_2}}}] \sim \\ 1[\assign{o}{x \leftarrow \val{v}; \ \ifte{x}{S_1}{S_2}}]$ for
+\begin{itemize}
+\item value $v \in \{0,1\}$
+\item reaction $\Delta; \ \cdot \vdash S_1 : I \cup \{o\} \to \tau$
+\item reaction $\Delta; \ \cdot \vdash S_2 : I \cup \{o\} \to \tau$
+\end{itemize}
+\item $1[\new{r}{\tau}{\Par{\assign{o}{\read{r}}}{\assign{r}{S_2}}}] \sim 1[\assign{o}{S_2}]$ for reaction $\Delta; \ \cdot \vdash S_2 : I \cup \{o\} \to \tau$
+\item $1[\new{r}{\tau}{\Par{\assign{o}{S_1}}{\assign{r}{S_2}}}] \sim 1[\assign{o}{S_1}]$ for
+\begin{itemize}
+\item reaction $\Delta; \ \cdot \vdash S_1 : I \cup \{o\} \to \tau$
+\item reaction $\Delta; \ \cdot \vdash S_2 : I \cup \{o\} \to \tau$
+\end{itemize}
+\item $1[\new{r}{\tau}{\Par{\assign{o}{v_1}}{\assign{r}{S_2}}}] \sim 1[\assign{o}{v_1}]$ for
+\begin{itemize}
+\item value $v_1 \in \{0,1\}^{\sem{\tau}}$
+\item reaction $\Delta; \ \cdot \vdash S_2 : I \cup \{o\} \to \tau$
+\end{itemize}
+\item $1[\new{r}{\tau}{\Par{\assign{o}{S_1}}{\assign{r}{v_2}}}] \sim 1[\assign{o}{S_1}]$ for
+\begin{itemize}
+\item reaction $\Delta; \ \cdot \vdash S_1 : I \cup \{o\} \to \tau$
+\item value $v_2 \in \{0,1\}^{\sem{\tau}}$
+\end{itemize}
+\item $1[\new{r}{\tau}{\Par{\assign{o}{v_1}}{\assign{r}{v_2}}}] \sim 1[\assign{o}{v_1}]$ for values $v_1, v_2 \in \{0,1\}^{\sem{\tau}}$
+\end{itemize}
+\item \textsc{fold-bind}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\new{c}{\tau_1}{\Par{\assign{o}{x \leftarrow \read{c};} \ R_2}{\assign{c}{R_1}}}] \sim 1[\assign{o}{x \leftarrow R_1; \ R_2}]$ for
+\begin{itemize}
+\item reaction $\Delta; \ \cdot \vdash R_1 : I \cup \{o\} \to \tau_1$
+\item reaction $\Delta; \ x : \tau_1 \vdash R_2 : I \cup \{o\} \to \tau_2$
+\end{itemize}
+\item $1[\new{c}{\tau_1}{\Par{\assign{o}{R_2}}{\assign{c}{v_1}}}] \sim 1[\assign{o}{R_2}]$ for
+\begin{itemize}
+\item value $v_1 \in \{0,1\}^{\sem{\tau_1}}$
+\item reaction $\Delta; \ \cdot \vdash R_2 : I \cup \{o\} \to \tau_2$
+\end{itemize}
+\item $1[\new{c}{\tau_1}{\Par{\assign{o}{v_2}}{\assign{c}{v_1}}}] \sim 1[\assign{o}{v_2}]$ for
+\begin{itemize}
+\item values $v_1 \in \{0,1\}^{\sem{\tau_1}}$ and $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+\end{itemize}
+\item \textsc{subsume}: Our desired bisimulation is the lifting of the relation $\sim$ defined by
+\begin{itemize}
+\item $1[\Par{\assign{o_1}{x_0 \leftarrow \read{o_0}; \ R_1}}{\assign{o_2}{x_0 \leftarrow \read{o_0}; \ x_1 \leftarrow \read{o_1}; \ R_2}}] \sim \\ 1[\Par{\assign{o_1}{x_0 \leftarrow \read{o_0}; \ R_1}}{\assign{o_2}{x_1 \leftarrow \read{o_1}; \ R_2}}]$ for
+\begin{itemize}
+\item reaction $\Delta; \ x_0 : \tau_0 \vdash R_1 : I \cup \{o_1,o_2\} \to \tau_1$
+\item reaction $\Delta; \ x_1 : \tau_1 \vdash R_2 : I \cup \{o_1,o_2\} \to \tau_2$
+\end{itemize}
+\item $1[\Par{\assign{o_1}{x_0 \leftarrow \val{v_0}; \ R_1}}{\assign{o_2}{x_0 \leftarrow \val{v_0}; \ x_1 \leftarrow \read{o_1}; \ R_2}}] \sim \\ 1[\Par{\assign{o_1}{x_0 \leftarrow \val{v_0}; \ R_1}}{\assign{o_2}{x_1 \leftarrow \read{o_1}; \ R_2}}]$ for
+\begin{itemize}
+\item value $v_0 \in \{0,1\}^{\sem{\tau_0}}$
+\item reaction $\Delta; \ x_0 : \tau_0 \vdash R_1 : I \cup \{o_1,o_2\} \to \tau_1$
+\item reaction $\Delta; \ x_1 : \tau_1 \vdash R_2 : I \cup \{o_1,o_2\} \to \tau_2$
+\end{itemize}
+\item $1[\Par{\assign{o_1}{R_1}}{\assign{o_2}{x_1 \leftarrow \read{o_1}; \ R_2}}] \sim 1[\Par{\assign{o_1}{R_1}}{\assign{o_2}{x_1 \leftarrow \read{o_1}; \ R_2}}]$ for
+\begin{itemize}
+\item reaction $\Delta; \ \cdot \vdash R_1 : I \cup \{o_1,o_2\} \to \tau_1$
+\item reaction $\Delta; \ x_1 : \tau_1 \vdash R_2 : I \cup \{o_1,o_2\} \to \tau_2$
+\end{itemize}
+\item $1[\Par{\assign{o_1}{v_1}}{\assign{o_2}{R_2}}] \sim 1[\Par{\assign{o_1}{v_1}}{\assign{o_2}{R_2}}]$ for
+\begin{itemize}
+\item value $v_1 \in \{0,1\}^{\sem{\tau_1}}$
+\item reaction $\Delta; \ \cdot \vdash R_2 : I \cup \{o_1,o_2\} \to \tau_2$
+\end{itemize}
+\item $1[\Par{\assign{o_1}{v_1}}{\assign{o_2}{v_2}}] \sim 1[\Par{\assign{o_1}{v_1}}{\assign{o_2}{v_2}}]$ for values $v_1 \in \{0,1\}^{\sem{\tau_1}}$ and $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+
+
+\item \textsc{subst}: Let $\sim$ be the reaction bisimulation obtained from the premise. Our desired bisimulation is the lifting of the relation $\sim_\mathsf{subst}$ defined by
+\begin{itemize}
+\item $\big(\Par{\assign{o_1}{\eta}}{\assign{o_2}{x_1 \leftarrow \read{o_1}; \ R_2}}\big) \sim_\mathsf{subst} \big(\Par{\assign{o_1}{\eta}}{\assign{o_2}{x_1 \leftarrow \eta; \ R_2}}\big)$ for
+\begin{itemize}
+\item distribution $\eta$ on reactions $\Delta; \ \cdot \vdash R_1 : I \cup \{o_1,o_2\} \to \tau_1$
+\item reaction $\Delta; \ \cdot \vdash R_1 : I \cup \{o_1,o_2\} \to \tau_1$ evaluating to the same distribution as $\eta$
+\item reaction $\Delta; \ x_1 : \tau_1 \vdash R_2 : I \cup \{o_1,o_2\} \to \tau_2$
+\end{itemize}
+such that $1[x_1 \leftarrow R_1; \ x_1' \leftarrow R_1; \ \ret{(x_1,x_1')}] \sim 1[x_1 \leftarrow R_1; \ \ret{(x_1,x_1)}]$
+\item $1[\Par{\assign{o_1}{v_1}}{\assign{o_2}{R_2}}] \sim_\mathsf{subst} 1[\Par{\assign{o_1}{v_1}}{\assign{o_2}{R_2}}]$ for
+\begin{itemize}
+\item value $v_1 \in \{0,1\}^{\sem{\tau_1}}$
+\item reaction $\Delta; \ \cdot \vdash R_2 : I \cup \{o_1,o_2\} \to \tau_2$
+\end{itemize}
+\item $1[\Par{\assign{o_1}{v_1}}{\assign{o_2}{v_2}}] \sim_\mathsf{subst} 1[\Par{\assign{o_1}{v_1}}{\assign{o_2}{v_2}}]$ for values $v_1 \in \{0,1\}^{\sem{\tau_1}}$ and $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+\item \textsc{drop}: Let $\sim$ be the reaction bisimulation obtained from the premise. Our desired bisimulation is the lifting of the relation $\sim_{\mathsf{drop}}$ defined by
+\begin{itemize}
+\item $\big(\Par{\assign{o_1}{\eta_1}}{\assign{o_2}{x_1 \leftarrow \read{o_1}; \ R_2}}\big) \sim_{\mathsf{drop}} \big(\Par{\assign{o_1}{\eta_1}}{\assign{o_2}{\eta_2}}\big)$ for
+\begin{itemize}
+\item measure $\eta_1$ on reactions $\Delta; \ \cdot \vdash R_1 : I \cup \{o_1,o_2\} \to \tau_1$
+\item reaction $\Delta; \ \cdot \vdash R_1 : I \cup \{o_1,o_2\} \to \tau_1$ such that
+\begin{itemize}
+\item[\emph{i)}] $R_1$ either evaluates to the same distribution as $\eta_1$, or
+\item[\emph{ii)}] there exists a measure $\overline{\eta_1}$ on reactions $\Delta; \ \cdot \vdash R_1 : I \cup \{o_1,o_2\} \to \tau_1$ such that $R_1$ evaluates to the same distribution as $\eta_1 + \overline{\eta_1}$
+\end{itemize}
+\item distribution $\eta_2$ on reactions $\Delta; \ \cdot \vdash R_2 : I \cup \{o_1,o_2\} \to \tau_2$
+\item reaction $\Delta; \ \cdot \vdash R_2 : I \cup \{o_1,o_2\} \to \tau_2$ evaluating to the same distribution as $\eta_2$
+\end{itemize}
+such that $1[x_1 \leftarrow R_1; \ R_2] \sim 1[R_2]$
+\item $(\Par{\assign{o_1}{v_1}}{\assign{o_2}{R_2}}) \sim_{\mathsf{drop}} (\Par{\assign{o_1}{v_1}}{\assign{o_2}{R_2}})$ for
+\begin{itemize}
+\item value $v_1 \in \{0,1\}^{\sem{\tau_1}}$
+\item reaction $\Delta; \ \cdot \vdash R_2 : I \cup \{o_1,o_2\} \to \tau_2$
+\end{itemize}
+\item $(\Par{\assign{o_1}{v_1}}{\assign{o_2}{v_2}}) \sim_{\mathsf{drop}} (\Par{\assign{o_1}{v_1}}{\assign{o_2}{v_2}})$ for values $v_1 \in \{0,1\}^{\sem{\tau_1}}$ and $v_2 \in \{0,1\}^{\sem{\tau_2}}$
+\end{itemize}
+\end{itemize}
+\end{proof}
+
+\begin{figure*}[h]
+\begin{mathpar}
+\inferrule*[right=fold-if-left]{o \notin I \\ b \in I \\ b : \Bool, o : \tau \in \Delta \\ \Delta; \ \cdot \vdash S_1 : I \cup \{o\} \to \tau \\ \Delta; \ \cdot \vdash S_2 : I \cup \{o\} \to \tau}{\Delta \vdash \big(\new{l}{\tau}{\Par{\assign{o}{x : \Bool \leftarrow \read{b}; \ \ifte{x}{{\color{red} \read{l}}}{S_2}}}{{\color{red} \assign{l}{x : \Bool \leftarrow \read{b}; \ S_1}}}}\big) = \\ \big(\assign{o}{x : \Bool \leftarrow \read{b}; \ \ifte{x}{{\color{red} S_1}}{S_2}}\big) : I \to \{o\}\hspace{15pt}}\and
+\inferrule*[right=fold-if-right]{o \notin I \\ b \in I \\ b : \Bool, o : \tau \in \Delta \\ \Delta; \ \cdot \vdash S_1 : I \cup \{o\} \to \tau \\ \Delta; \ \cdot \vdash S_2 : I \cup \{o\} \to \tau}{\Delta \vdash \big(\new{r}{\tau}{\Par{\assign{o}{x : \Bool \leftarrow \read{b}; \ \ifte{x}{S_1}{{\color{red} \read{r}}}}}{{\color{red} \assign{r}{x : \Bool \leftarrow \read{b}; \ S_2}}}}\big) = \\ \big(\assign{o}{x : \Bool \leftarrow \read{b}; \ \ifte{x}{S_1}{{\color{red} S_2}}}\big) : I \to \{o\}\hspace{25pt}}
+\end{mathpar}
+\caption{Alternative formulation of the \textsc{fold-if-left} and \textsc{fold-if-right} rules.}
+\label{fig:fold_if_alt}
+\end{figure*}
+
+\noindent The remainder of this section is devoted to proving the following lemma:
+
+\begin{lemma}[Compositionality for the exact equality of protocols]\ref{lem:compositionality_exact}
+Let $\sim$ be a bisimulation on protocols $\Delta \vdash P : I \cup O_2 \to O_1$. Then the lifting of the relation $\sim_{\mathsf{par}}$ defined by
+\begin{itemize}
+\item $(\Par{\eta}{Q}) \sim_{\mathsf{par}} (\Par{\eta'}{Q})$ for $\eta \sim \eta'$ and protocol $\Delta \vdash Q : I \cup O_1 \to O_2$
+\end{itemize}
+is a protocol bisimulation.
+\end{lemma}
+
+\begin{proof}
+The one property difficult to verify is lifting closure under computation: for any protocol $\Delta \vdash Q : I \cup O_1 \to O_2$, and any distributions $\eta \sim \eta'$, we have $\eval{(\Par{\eta}{Q})} \lift(\sim_\mathsf{par}) \eval{(\Par{\eta'}{Q})}$. The difficulty arises from the \emph{global} nature of the protocol semantics: in the composition $\Par{P}{Q}$, a step of the form $P \outstep{o}{v} P'$ \emph{changes} the protocol $Q$ (specifically to $Q[\assign{\read{o}}{\val{v}}]$). This makes it hard to express the computation of $\Par{P}{Q}$ in terms of the computation of $P$, because in the course of the latter we are simultaneously probabilistically updating $Q$.
+%
+%We solve this problem by defining an alternate \emph{local} form of interaction for \ipdl protocols, and showing that the resulting operational semantics agrees with the original one. Informally speaking, the global semantics of \ipdl protocols has a \emph{push} character -- the moment a value $v$ on a channel $o$ is computed, every $\read{o}$ command in all other reactions is replaced by $\val{v}$. In contrast, the local form of the semantics that we are about to define has a \emph{pull} character -- a reaction containing a $\read{o}$ command extracts the value $v$ from channel $o$, if possible, and replaces this \emph{particular} occurrence of $\read{o}$ by $\val{v}$. We formally define this mechanism in Figure {fig:protocols_semantics_local}. The relation 
+%
+%
+%For protocols, the relation $P \in{o}{v} Q$ indicates that we have replaced one occurrence of the command $\read{o}$ in a \emph{single} reaction in $P$ by $\val{v}$, yielding the protocol $Q$. The protocol $Q$ may be seen as a single-step approximation towards the protocol obtained by performing the output assignment $o \coloneqq v$ in $P$.
+%
+%\begin{figure}
+%\begin{mathpar}
+%\fbox{$R \in{o}{v} S$}\\
+%\inferrule*{ }{\read{o} \in{o}{v} \val{v}}\and
+%\inferrule*{R_1 \in{o}{v} R_1'}{(\ifte{e}{R_1}{R_2}) \in{o}{v} (\ifte{e}{R_1'}{R_2})}\and
+%\inferrule*{R_2 \in{o}{v} R_2'}{(\ifte{e}{R_1}{R_2}) \in{o}{v} (\ifte{e}{R_2'}{R_2})}\and
+%\inferrule*{R \in{o}{v} R'}{(x : \sigma \leftarrow R; \ S) \in{o}{v} {(x : \sigma \leftarrow R'; \ S)}}\and
+%\inferrule*{S \in{o}{v} S'}{(x : \sigma \leftarrow R; \ S) \in{o}{v} {(x : \sigma \leftarrow R; \ S')}}\\\\
+%\fbox{$P \in{o}{v} Q$}\\
+%\inferrule*{R \in{o}{v} S}{(\assign{o}{R}) \in{o}{v} (\assign{o}{S})}\and
+%\inferrule*{P \in{o}{v} P'}{(\Par{P}{Q}) \in{o}{v} (\Par{P'}{Q})}\and
+%\inferrule*{Q \in{o}{v} Q'}{(\Par{P}{Q}) \in{o}{v} (\Par{P}{Q'})}\and
+%\inferrule*{P \in{o}{v} P' \\ o \neq c}{(\new{c}{\tau}{P}) \in{o}{v} (\new{c}{\tau}{P'})}\\\\
+%\fbox{$P \hookrightarrow Q$}\\
+%\inferrule*[right=pull-comp-left]{P \outstep{o}{v} P' \\ Q \in{o}{v} Q'}{(\Par{P}{Q}) \pull{o}{v} (\Par{P}{Q'})}\and
+%\inferrule*[right=pull-comp-right]{Q \outstep{o}{v} Q' \\ P \in{o}{v} P'}{(\Par{P}{Q}) \pull{o}{v} (\Par{P'}{Q})}\and
+%\inferrule*[right=pull-new]{P \pull{o}{v} P' \\ o \neq c}{(\new{c}{\tau}{P}) \pull{o}{v} (\new{c}{\tau}{P'})}
+%\end{mathpar}
+%\caption{The local form of small-step operational semantics for \ipdl protocols.}
+%\label{fig:protocols_semantics_local}
+%\end{figure}
+%
+%
+We now have all the preliminaries necessary to prove that $\sim_\mathsf{par}$ enjoys lifting closure under computation.
+
+
+ Since the set $O_1$ of outputs is finite, we can apply the valuation property of $\sim$ in succession for each output channel $o \in O_1$, until we end up with the special case when $\eta$ and $\eta'$ have the same value $v$ or lack thereof on each output channel. In other words, it suffices to prove the following:
+%
+%\emph{\begin{center}
+%Claim 1: For any protocol $\Delta \vdash Q : I \cup O_1 \to O_2$, and any measures $\eta \sim \eta'$ that have the same value $v$ or lack thereof on any output channel $o \in O_1$, if $(\Par{\eta}{Q}) \Downarrow \varepsilon$ and $(\Par{\eta'}{Q}) \Downarrow \varepsilon'$, then $\varepsilon \lift(\sim_\mathsf{par}) \, \varepsilon'$.
+%\end{center}}
+%
+%The remainder of this section is devoted to proving this claim.
+%
+%
+%
+%
+%\emph{\begin{center}
+%Claim 2: For any protocol $\Delta \vdash Q : I \cup O_1 \to O_2$, and any measures $\eta$ and $\eta'$ that have the same value $v$ or lack thereof on any output channel $o \in O_1$, if $(\Par{\eta}{Q}) \Downarrow \varepsilon$ and $(\Par{\eta'}{Q}) \Downarrow \varepsilon'$, then $\varepsilon \lift(\sim_\mathsf{par}) \, \varepsilon'$.
+%\end{center}}
+%
+%
+%The local form of the big-step operational semantics for protocols $P \Downarrow \eta$, see Figure \ref{fig:protocols_big_step_local}, performs as many output and internal steps as possible in an attempt to compute
+%
+%\begin{figure}
+%\begin{mathpar}
+%\fbox{$P \outstep{O} Q$}\\
+%
+%\inferrule*[right=out-val]{ }{(\assign{o}{\val{v}}) \outstep{o}{v} (\assign{o}{v})}\and
+%\inferrule*[right=out-comp-left]{P \outstep{o}{v} P'}{(\Par{P}{Q}) \outstep{o}{v} \big(\Par{P'}{Q[\assign{\read{o}}{\val{v}}]}\big)}\and
+%\inferrule*[right=out-comp-right]{Q \outstep{o}{v} Q'}{(\Par{P}{Q}) \outstep{o}{v} \big(\Par{P[\assign{\read{o}}{\val{v}}]}{Q'}\big)}\and
+%\inferrule*[right=out-new]{P \outstep{o}{v} P' \\ o \neq c}{(\new{c}{\tau}{P}) \outstep{o}{v} (\new{c}{\tau}{P'})}\\\\
+%
+%
+%\inferrule*{P \Downarrow \eta \\ P \outset{\out{P}} \eta}{P \ \lfinal}\\\\
+%
+%
+%\fbox{$P \outset{O} Q$}\\
+%\inferrule*{P \Downarrow \eta \\ P \outset{\out{P}} \eta}{P \ \lfinal}\\\\
+%
+%
+%\fbox{$P \ \lfinal$}\\
+%\inferrule*{P \Downarrow 1[Q] \\ P \outset{\out{P}} Q}{P \ \lfinal}\\\\
+%\fbox{$P \Rightarrow \eta$}\\
+%\inferrule*{}{ }\and
+%\inferrule*{P \to \sum_i c_i \ 1[P_i] \\ P_i \Rightarrow \eta_i}{P \Rightarrow \sum_i c_i \ \eta_i}\and
+%\inferrule*{P \hookrightarrow Q \\ Q \Rightarrow \eta}{P \Rightarrow \eta}\and
+%\inferrule*{P \ \lfinal}{P \Rightarrow 1[P]}
+%\end{mathpar}
+%\caption{The local form of big-step operational semantics for \ipdl protocols.}
+%\label{fig:protocols_big_step_local}
+%\end{figure}
+%
+%
+%
+%
+\end{proof}
+%
+%\begin{definition}[Sound exact theory]
+%Fix a signature $\Sigma$ and an interpretation $\Int$. An \emph{exact} \ipdl theory $\mathbb{T}$ is a triple $(\mathbb{T}_e,\mathbb{T}_r,\mathbb{T}_p)$ of expression-level, reaction-level, and protocol-level \ipdl theories, respectively. The exact theory $\mathbb{T}$ is \emph{sound} with respect to $\Int$, written $\Int \vDash \mathbb{T}$, if each of $\mathbb{T}_e$, $\mathbb{T}_r$, and $\mathbb{T}_p$ is sound with respect to $\Int$.
+%\end{definition}

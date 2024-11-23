@@ -1,0 +1,83 @@
+***( SpeX/Lang/Base/PL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2020-2023 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../Processor.maude
+sload ./Language.maude
+sload ./Tools.maude
+
+********************************************************************************
+
+view PL/SpecBody from TRIV to PL/SPEC-BODY is
+  sort Elt to SpecBody{PL} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view PL/Command from COMMAND to PL/READ is
+  sort Command to Cmd{PL} .
+  op command-annotations to term 'Command .
+  op read-command(T:ATerm) to term read-cmd(PL, T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod PL/PROCESSOR { P :: PID } is
+  including  BASIC-PROCESSOR { P, PL/SpecBody, PL/SpecBody, PL/Command } .
+  protecting PL/PARSING-&-PRINTING .
+  protecting PL/SATISFACTION .
+  protecting PL/CHECK .
+  protecting PL/MODEL-BR-LIST .
+
+  var L : PL .
+  var P : P$Pid .
+  var I : Oid .
+  var QIL : QidList .
+  var SB : SpecBody{PL} .
+  var E : Sentence{PL} .
+  var MS : ModelSet{PL} .
+  var D : ATerm .
+  var Atts : AttributeSet .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [PL:parse] :
+    < $[P] : PROC | running, Atts >
+    parse($[P], I, QIL, SB)
+   => < $[P] : PROC | running, Atts >
+    parsed(I, $[P], parse PL command (QIL) in SB) .
+
+  *** executing PL commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - -
+  rl [PL:list-props] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[L]{list props}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], mk-page(print-props(SB))) .
+
+  rl [PL:list-axioms] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[L]{list axioms}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], mk-page(print-sens(SB))) .
+
+  crl [PL:check] :
+    < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[L]{check E}, SB)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Checking) '\s QIL '\n
+      mk-page(if MS == empty
+        then 'Success: '... '|= '\s QIL
+        else 'Failure: '... '|/= '\s QIL '\n
+          'Here's 'a 'counterexample: '\n
+          print-first-counterexample(SB, MS) fi))
+   if QIL := print term aterm(E) given grammar(SB)
+      /\ MS := check(models(L, props(SB)), sentences(L, sens(SB)), E) .
+endm
+
+********************************************************************************

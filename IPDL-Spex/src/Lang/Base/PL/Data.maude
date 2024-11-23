@@ -1,0 +1,194 @@
+***( SpeX/Lang/Base/PL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2020-2023 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Common/PropSymbols.maude
+sload ../Common/Sentences.maude
+sload ../Common/Attributes.maude
+
+********************************************************************************
+
+fmod PL/LID is
+  sort PL .
+  op PL : -> PL [ctor] .
+endfm
+
+********************************************************************************
+
+fmod PL/SPEC-BODY is
+  protecting PL/LID .
+  protecting PROP-SET-DECL .
+  protecting SEN-DECL-SET .
+  protecting ATTRIBUTE/OPS .
+
+  var  L : PL .
+  vars SB SB' : SpecBody{PL} .
+  var  QI : Qid .
+  var  QIS : QidSet .
+  var  PSD : PropSetDecl .
+  var  ED : SenDecl .
+  var  EDS : SenDeclSet .
+
+  *** SpecBody{PL}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort SpecBody{PL} .
+  op SpecBody[_]{__} : PL PropSetDecl SenDeclSet -> SpecBody{PL}
+    [ctor format (d d d d d n++i ni n--i d)] .
+
+  *** nil (empty PL specification body)  - - - - - - - - - - - - - - - - - - - -
+  op nil : -> SpecBody{PL} .
+  eq nil = (SpecBody[PL]{props none . none}) .
+
+  *** props  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op props : SpecBody{PL} -> QidSet .
+  eq props(SpecBody[L]{props QIS . EDS}) = QIS .
+
+  *** add-prop  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op add-prop : Qid SpecBody{PL} -> SpecBody{PL} .
+  eq add-prop(QI, SpecBody[L]{props QIS . EDS})
+   = SpecBody[L]{props (QI ; QIS) . EDS} .
+
+  *** sens  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op sens : SpecBody{PL} -> SenDeclSet .
+  eq sens(SpecBody[L]{PSD EDS}) = EDS .
+
+  *** add-sen  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op add-sen : SenDecl SpecBody{PL} -> SpecBody{PL} .
+  eq add-sen(ED, SpecBody[L]{PSD EDS}) = SpecBody[L]{PSD (ED EDS)} .
+
+  *** sum  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _+_ : SpecBody{PL} SpecBody{PL} -> SpecBody{PL} .
+  eq SB + SB'
+   = SpecBody[PL]{
+       props props(SB) ; props(SB') .
+       (sens(SB) sens(SB'))
+     } .
+endfm
+
+********************************************************************************
+
+fmod PL/MODEL is
+  protecting PL/SPEC-BODY .
+
+  sort Model{PL} .
+  op Model[_]{_} : PL QidSet -> Model{PL} [ctor] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view PL/Model from TRIV to PL/MODEL is
+  sort Elt to Model{PL} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod PL/MODEL-SET is
+  protecting SET { PL/Model } *
+    (sort Set{PL/Model} to ModelSet{PL},
+     sort NeSet{PL/Model} to NeModelSet{PL}) .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+fmod PL/MODEL-BR-LIST is
+  protecting PL/MODEL-SET .
+  protecting READ { PL/Model } *
+    (sort BrList{PL/Model} to BrModelList{PL},
+     sort NeBrList{PL/Model} to NeBrModelList{PL},
+     op read-elt to read-PL-model,
+     op read-list to read-PL-models) .
+
+  var MS : ModelSet{PL} .
+
+  op list : ModelSet{PL} -> BrModelList{PL} .
+  eq list((empty).ModelSet{PL}) = nil .
+  eq list(MS) = read-PL-models(unpack('_`,_, upTerm(MS))) [owise] .
+endfm
+
+********************************************************************************
+
+fmod PL/SENTENCE is
+  protecting PL/SPEC-BODY .
+
+  sorts AtomicSentence{PL} Sentence{PL} .
+  subsort AtomicSentence{PL} < Sentence{PL} .
+  op Atom[_]{_} : PL Qid -> Sentence{PL}
+    [ctor] .
+  op not_ : Sentence{PL} -> Sentence{PL}
+    [ctor prec 71] .
+  op _and_ : Sentence{PL} Sentence{PL} -> Sentence{PL}
+    [assoc ctor prec 75] .
+  op _xor_ : Sentence{PL} Sentence{PL} -> Sentence{PL}
+    [assoc ctor prec 77] .
+  op _or_ : Sentence{PL} Sentence{PL} -> Sentence{PL}
+    [assoc ctor prec 79] .
+  op _implies_ : Sentence{PL} Sentence{PL} -> Sentence{PL}
+    [gather (e E) ctor prec 81] .
+  op _iff_ : Sentence{PL} Sentence{PL} -> Sentence{PL}
+    [assoc ctor  prec 83] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view PL/Sentence from TRIV to PL/SENTENCE is
+  sort Elt to Sentence{PL} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod PL/SENTENCE-SET is
+  protecting SET { PL/Sentence } *
+    (sort Set{PL/Sentence} to SentenceSet{PL},
+     sort NeSet{PL/Sentence} to NeSentenceSet{PL}) .
+endfm
+
+********************************************************************************
+
+fmod PL/SATISFACTION is
+  protecting PL/MODEL-SET .
+  protecting PL/SENTENCE-SET .
+
+  var  L : PL .
+  var  M : Model{PL} .
+  var  NMS : NeModelSet{PL} .
+  vars E E1 E2 : Sentence{PL} .
+  var  NES : NeSentenceSet{PL} .
+  var  ES : SentenceSet{PL} .
+  var  QI : Qid .
+  var  QIS : QidSet .
+
+  *** - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _|=_ : ModelSet{PL} SentenceSet{PL} -> Bool [prec 91] .
+
+  eq Model[L]{QIS} |= Atom[L]{QI} = QI in QIS .
+  eq M |= not E = not (M |= E) .
+  eq M |= E1 and E2 = (M |= E1) and-then (M |= E2) .
+  eq M |= E1 xor E2 = (M |= E1) xor (M |= E2) .
+  eq M |= E1 or E2 = (M |= E1) or-else (M |= E2) .
+  eq M |= E1 implies E2 = (M |= E1) implies (M |= E2) .
+  eq M |= E1 iff E2 = (M |= E1) == (M |= E2) .
+
+  eq M |= empty = true .
+  eq M |= (E, NES) = (M |= E) and-then (M |= NES) .
+  eq empty |= ES = true .
+  eq (M, NMS) |= ES = (M |= ES) and-then (NMS |= ES) .
+endfm
+
+********************************************************************************
+
+fmod PL/CMD is
+  protecting PL/SENTENCE .
+
+  sort Cmd{PL} .
+  op Cmd[_]{list props} : PL -> Cmd{PL} [ctor] .
+  op Cmd[_]{list axioms} : PL -> Cmd{PL} [ctor] .
+  op Cmd[_]{check_} : PL Sentence{PL} -> Cmd{PL} [ctor] .
+endfm
+
+********************************************************************************

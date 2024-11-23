@@ -1,0 +1,173 @@
+***( SpeX/Lang/Base/Triv
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../Language.maude
+sload ./Data.maude
+
+********************************************************************************
+
+fmod TRIV/LANGUAGE is
+  protecting TRIV/SPEC-BODY .
+  protecting TRIV/CMD .
+  protecting GRAMMAR .
+
+  var L : Triv .
+
+  *** declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op decl-grammar : Triv -> Grammar .
+  eq decl-grammar(L)
+   = grammar 'Triv/Syntax is
+       'Bubble
+         ::= bubble "bubble" [balanced-parentheses exclude("list" "add")]
+     endgr .
+
+  *** commands  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op cmd-grammar : Triv -> Grammar .
+  eq cmd-grammar(L)
+   = grammar 'Triv/Cmd/Syntax is
+       'Command
+         ::= lit "list declarations" [format('b 's 'o)]
+          |  "add declaration_" : 'Bubble [format('b 's 'o 'd)]
+       'Bubble
+         ::= bubble "declaration"
+             [balanced-parentheses exclude("list" "add" ".")]
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Triv from LANGUAGE to TRIV/LANGUAGE is
+  sort Lid to Triv .
+  op Lid to Triv .
+  op grammar to decl-grammar .
+endv
+
+********************************************************************************
+
+fmod TRIV/READ is
+  protecting TRIV/LANGUAGE .
+  protecting ATERM/READ .
+
+  var  L : Triv .
+  var  SB : SpecBody{Triv} .
+  var  QLL : QidList2 .
+  vars T D : ATerm .
+  var  TL : ATermList .
+
+  *** read declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op add-declaration : ATerm SpecBody{Triv} -> SpecBody{Triv} .
+  eq add-declaration(T, SB) = SB >>= T .
+
+  op _>>=_ : SpecBody{Triv} ATerm -> SpecBody{Triv} .
+  eq SpecBody[L]{QLL} >>= {T : 'Bubble}
+   = SpecBody[L]{QLL :[read-qids(T)]} .
+  eq SpecBody[L]{QLL} >>= T = SpecBody[L]{QLL} [owise] .
+
+  op add-declarations : ATermList SpecBody{Triv} -> SpecBody{Triv} .
+  eq add-declarations(empty, SB) = SB .
+  eq add-declarations((T, TL), SB)
+   = add-declarations(TL, add-declaration(T, SB)) .
+
+  *** read command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-cmd : Triv ATerm ~> Cmd{Triv} .
+  eq read-cmd(L, {'list`declarations.Command : 'Command})
+   = Cmd[L]{list declarations} .
+  eq read-cmd(L, {'add`declaration_[D] : 'Command})
+   = Cmd[L]{add declaration D} .
+endfm
+
+********************************************************************************
+
+fmod TRIV/SHOW is
+  protecting TRIV/LANGUAGE .
+  protecting QID/SHOW .
+
+  var L : Triv .
+  var SB : SpecBody{Triv} .
+  var QLL : QidList2 .
+  var NQIL : NeQidList .
+
+  *** show  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show : SpecBody{Triv} -> TermList .
+  eq show(SpecBody[L]{QLL}) = show-lists(L, QLL) .
+
+  op show-fragment : SpecBody{Triv} SpecBody{Triv} -> TermList .
+  eq show-fragment(SpecBody[L]{QLL}, SB) = show-lists(L, QLL) .
+
+  op show-lists : Triv QidList2 -> TermList .
+  eq show-lists(L, nil) = empty .
+  eq show-lists(L, :[nil] QLL) = show-lists(L, QLL) .
+  eq show-lists(L, :[NQIL] QLL)
+   = mk-bubble('bubble, show-qids(NQIL)), show-lists(L, QLL) .
+endfm
+
+********************************************************************************
+
+fmod TRIV/PARSING is
+  protecting STATELESS-SYNTACTIC-ANALYSIS { Triv } .
+  protecting TRIV/READ .
+
+  var L : Triv .
+  var QIL : QidList .
+  var C : Constant .
+  var D : ATerm .
+  var $ : Qid .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse L input (QIL) in [*]
+   = parse L declaration (QIL)
+     or-else parse L command (QIL) .
+
+  op parse_declaration_ : Triv QidList ~> ParsingOutcome .
+  eq parse L declaration (QIL)
+   = scan L input (QIL : 'Bubble)
+     then solve L declaration in [*] .
+
+  op parse_command_ : Triv QidList ~> ParsingOutcome .
+  eq parse L command (QIL)
+   = scan input (QIL : 'Command) given cmd-grammar(L)
+     then solve L command in [*] .
+
+  *** solve declaration  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op solve_declaration : Triv -> AnalysisAction{Triv} .
+  eq solve L declaration {$[D] : 'Bubble} = return {D : 'Bubble} .
+
+  *** solve command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op solve_command : Triv -> AnalysisAction{Triv} .
+  eq solve L command {C : 'Command}
+   = return {C : 'Command} .
+  eq solve L command {'add`declaration_[{$[D] : 'Bubble}] : 'Command}
+   = return {'add`declaration_[{D : 'Bubble}] : 'Command} .
+endfm
+
+********************************************************************************
+
+fmod TRIV/PRINTING is
+  protecting PRINTING { Triv } .
+  protecting TRIV/SHOW .
+
+  var L : Triv .
+  var QLL : QidList2 .
+
+  *** print  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : SpecBody{Triv} -> QidList .
+  eq print(SpecBody[L]{QLL})
+   = intercalate('\n, print L terms show-lists(L, QLL)) .
+endfm
+
+********************************************************************************
+
+fmod TRIV/PARSING-&-PRINTING is
+  protecting TRIV/PARSING .
+  protecting TRIV/PRINTING .
+endfm
+
+********************************************************************************

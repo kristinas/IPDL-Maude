@@ -1,0 +1,289 @@
+***( SpeX/CommonLibs
+
+  This file is part of CommonLibs (CL), a suite of Maude 3 libraries
+  that extend the predefined data modules from the standard prelude.
+
+  Copyright : (C) 2023, 2024 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Term.maude
+
+********************************************************************************
+
+fmod EQUATION/OPS is
+  protecting META-LEVEL .
+
+  var  E : Equation .
+  var  ES : EquationSet .
+  vars T LHS RHS : Term .
+  var  TP : Type .
+  var  EC : EqCondition .
+  var  AtS : AttrSet .
+  var  M : Module .
+  var  I : Nat .
+
+  *** left- and right-hand-side projections  - - - - - - - - - - - - - - - - - -
+  op lhs : Equation -> Term .
+  eq lhs(eq LHS = RHS [AtS] .) = LHS .
+  eq lhs(ceq LHS = RHS if EC [AtS] .) = LHS .
+
+  op rhs : Equation -> Term .
+  eq rhs(eq LHS = RHS [AtS] .) = RHS .
+  eq rhs(ceq LHS = RHS if EC [AtS] .) = RHS .
+
+  *** module equations on elements of a given kind  - - - - - - - - - - - - - --
+  op getEqs : Module Term Nat -> EquationSet .
+  eq getEqs(M, T, I) = $getEqs(M, getEqs(M), T, leastSort(M, T), I) .
+
+  op $getEqs : Module EquationSet Term Type Nat -> EquationSet .
+  eq $getEqs(M, none, T, TP, I) = none .
+  ceq $getEqs(M, E ES, T, TP, I)
+   = if sameKind(M, leastSort(M, LHS), TP)
+        and-then metaDisjointUnify(M, T =? LHS, I, 0) :: UnificationTriple
+     then E else none fi
+     $getEqs(M, ES, T, TP, I)
+   if LHS := lhs(E) .
+endfm
+
+********************************************************************************
+
+fmod EQ-QUERY is
+  protecting TERM/SUBSTITUTION .
+  protecting TERM/POSITION .
+  protecting EQUATION/OPS .
+
+  var  PQ : PrimitiveEqQuery .
+  var  Q : EqQuery .
+  var  EC : EqCondition .
+  var  QI : Qid .
+  vars T LHS LHS' RHS RHS' : Term .
+  var  V : Variable .
+  var  TL : TermList .
+  var  NTL : NeTermList .
+  var  AtS : AttrSet .
+  var  S : Substitution .
+  var  NL : NatList .
+  var  M : Module .
+
+  *** queries  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sorts PrimitiveEqQuery EqQuery .
+  subsort PrimitiveEqQuery < EqQuery .
+  op _=q=_ : Term Term -> PrimitiveEqQuery [ctor prec 71] .
+  op true : -> EqQuery [ctor] .
+  op false : -> EqQuery [ctor] .
+  op _/\_ : EqQuery EqQuery -> EqQuery [ctor assoc comm id: true prec 73] .
+  eq PQ /\ PQ = PQ .
+
+  eq T =q= T = true .
+  eq false /\ PQ = false .
+  eq false /\ false = false .
+
+  *** free variables  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op vars : EqQuery -> VariableSet .
+  eq vars(LHS =q= RHS /\ Q) = vars(LHS) ; vars(RHS) ; vars(Q) .
+  eq vars(Q) = none [owise] .
+
+  *** left- and right-hand-side projections  - - - - - - - - - - - - - - - - - -
+  op lhs : PrimitiveEqQuery -> Term .
+  eq lhs(LHS =q= RHS) = LHS .
+
+  op rhs : PrimitiveEqQuery -> Term .
+  eq rhs(LHS =q= RHS) = RHS .
+
+  *** positions within terms  - - - - - - - - - - - - - - - - - - - - - - - - --
+  op nv-positions : PrimitiveEqQuery -> PositionSet .
+  eq nv-positions(LHS =q= RHS)
+   = prepend(0, nv-positions(LHS)) prepend(1, nv-positions(RHS)) .
+
+  *** subterm at position  - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _[_] : PrimitiveEqQuery Position ~> Term .
+  eq (LHS =q= RHS)[pos 0 NL .] = LHS[pos NL .] .
+  eq (LHS =q= RHS)[pos 1 NL .] = RHS[pos NL .] .
+
+  *** subterm replacement at position  - - - - - - - - - - - - - - - - - - - - -
+  op _[_/_] : PrimitiveEqQuery Term Position ~> PrimitiveEqQuery .
+  eq (LHS =q= RHS)[T / pos 0 NL .] = LHS[T / pos NL .] =q= RHS .
+  eq (LHS =q= RHS)[T / pos 1 NL .] = LHS =q= RHS[T / pos NL .] .
+
+  *** eq-condition-to-query conversion  - - - - - - - - - - - - - - - - - - - --
+  op qond : Equation -> EqQuery .
+  eq qond(eq LHS = RHS [AtS] .) = true .
+  eq qond(ceq LHS = RHS if EC [AtS] .) = query(EC) .
+
+  op query : EqCondition ~> EqQuery .
+  eq query(nil) = true .
+  eq query(LHS = RHS /\ EC) = (LHS =q= RHS) /\ query(EC) .
+  eq query(LHS := RHS /\ EC) = (LHS =q= RHS) /\ query(EC) .
+
+  *** substitution application  - - - - - - - - - - - - - - - - - - - - - - - --
+  op apply : Substitution EqQuery -> EqQuery .
+  eq apply(S, LHS =q= RHS /\ Q)
+   = apply(S, LHS) =q= apply(S, RHS) /\ apply(S, Q) .
+  eq apply(S, Q) = Q [owise] .
+
+  *** term reduction  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op red : Module EqQuery -> EqQuery .
+  ceq red(M, LHS =q= RHS /\ Q)
+   = if LHS' :: GroundTerm and-then RHS' :: GroundTerm and-then LHS' =/= RHS'
+     then false else LHS' =q= RHS' fi
+     /\ red(M, Q)
+   if LHS' := getTerm(metaReduce(M, LHS))
+      /\ RHS' := getTerm(metaReduce(M, RHS)) .
+  eq red(M, Q) = Q [owise] .
+endfm
+
+********************************************************************************
+
+smod NARROWING is
+  protecting EQ-QUERY .
+  protecting BOUND/OPS .
+
+  var  PQ : PrimitiveEqQuery .
+  var  Q : EqQuery .
+  var  P : Position .
+  var  PS : PositionSet .
+  var  V : Variable .
+  var  T : Term .
+  vars N I J J' : Nat .
+  vars D W : Bound .
+  var  M : Module .
+  var  E : Equation .
+  var  ES : EquationSet .
+  vars S LS LS' RS RS' U U' : Substitution .
+  var  UP : UnificationProblem .
+  var  UPS : UnificationPairSet .
+  var  UTS : UnificationTripleSet .
+
+  *** sets of unifiers  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort UnificationPairSet .
+  subsort UnificationPair < UnificationPairSet .
+  op none : -> UnificationPairSet [ctor] .
+  op __ : UnificationPairSet UnificationPairSet -> UnificationPairSet
+    [ctor assoc comm id: none] .
+
+  op unifiers : UnificationProblem Module Nat Bound ~> UnificationPairSet .
+  eq unifiers(UP, M, I, W) = $unifiers(UP, M, I, 0, W) .
+
+  op $unifiers : UnificationProblem Module Nat Nat Bound ~> UnificationPairSet .
+  ceq $unifiers(UP, M, I, N, W)
+   = {S, J} $unifiers(UP, M, I, s N, W)
+   if N < W /\ {S, J} := metaUnify(M, UP, I, N) .
+  eq $unifiers(UP, M, I, N, W) = none [owise] .
+
+  sort UnificationTripleSet .
+  subsort UnificationTriple < UnificationTripleSet .
+  op none : -> UnificationTripleSet [ctor] .
+  op __ : UnificationTripleSet UnificationTripleSet -> UnificationTripleSet
+    [ctor assoc comm id: none] .
+
+  op disjoint-unifiers : UnificationProblem Module Nat Bound
+    ~> UnificationTripleSet .
+  eq disjoint-unifiers(UP, M, I, W) = $disjoint-unifiers(UP, M, I, 0, W) .
+
+  op $disjoint-unifiers : UnificationProblem Module Nat Nat Bound
+    ~> UnificationTripleSet .
+  ceq $disjoint-unifiers(UP, M, I, N, W)
+   = {LS, RS, J} $disjoint-unifiers(UP, M, I, s N, W)
+   if N < W /\ {LS, RS, J} := metaDisjointUnify(M, UP, I, N) .
+  eq $disjoint-unifiers(UP, M, I, N, W) = none [owise] .
+
+  *** narrowing problems  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort NarrowingProblem .
+
+  op Solve[_,_]{_given_} : Bound Bound EqQuery Module -> NarrowingProblem
+    [ctor format(! d o d d ! d o ! o ! o)] .
+
+  op Solve[_,_]{_given_, with
+      var ids up to_and
+      computed answer_}
+    : Bound Bound EqQuery Module Nat Substitution
+    -> NarrowingProblem
+    [ctor format(! d o d d ! d o ! o ! s n++i d s s os s! ni d os s! --)] .
+
+  op Solve[_,_]{_then_given_, with
+      unifier {_,_},
+      var ids up to_,and
+      computed answer_}
+    : Bound Bound PrimitiveEqQuery EqQuery Module Substitution Nat Nat
+      Substitution -> NarrowingProblem
+    [ctor format(! d o d d ! d o ! os s! o ! s n++i s! o ! o s! d ni d s s
+      os s! d ni d os s! --)] .
+
+  op Solve[_,_]{_[_/_] then_given_in_, with
+      unifier {_,_,_},
+      var ids up to_, and
+      computed answer_}
+    : Bound Bound PrimitiveEqQuery Term Position EqQuery Equation Module
+      Substitution Substitution Nat Nat Substitution -> NarrowingProblem
+    [ctor format(! d o d d ! d o s! o ! o ! s os s! os s! os ! s n++i s! o
+      ! o ! o ! d ni d d d so ! s ni s so ! --)] .
+
+  op Solved{_} : Substitution -> NarrowingProblem [ctor format(! d o ! d)] .
+
+  eq Solve[D, W]{true given M} = Solved{none} .
+
+  eq Solve[D, W]{true given M, with
+      var ids up to I and
+      computed answer S} = Solved{S} .
+
+  *** initialization rules  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  rl [ready] :
+      Solve[D, W]{Q given M}
+   => Solve[D, W]{Q given M, with
+        var ids up to 0 and
+        computed answer id-substitution(vars(Q))} .
+
+  *** unification rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  crl [unify] :
+      Solve[D, W]{PQ /\ Q given M, with
+        var ids up to I and
+        computed answer S}
+   => Solve[D, W]{apply(U, Q) given M, with
+        var ids up to J and
+        computed answer (S comp U)}
+   if {U, J} UPS := unifiers(lhs(PQ) =? rhs(PQ), M, I, W) .
+
+  *** narrowing rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  crl [narrow] :
+      Solve[D, W]{PQ /\ Q given M, with
+        var ids up to I and
+        computed answer S}
+   => Solve[p D, W]{apply(LS, Q)
+        /\ apply(LS, PQ)[apply(RS, rhs(E)) / P]
+        /\ apply(RS, qond(E)) given M, with
+        var ids up to J and
+        computed answer (S comp LS)}
+   if D > 0
+      /\ P PS := nv-positions(PQ)
+      /\ T := PQ[P]
+      /\ E ES := getEqs(M, T, I)
+      /\ {LS, RS, J} UTS := disjoint-unifiers(T =? lhs(E), M, I, W) .
+
+  *** simplification rules  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  rl [red] :
+      Solve[D, W]{Q given M, with
+        var ids up to I and
+        computed answer S}
+   => Solve[D, W]{red(M, Q) given M, with
+        var ids up to I and
+        computed answer S} .
+
+  *** narrowing strategies  - - - - - - - - - - - - - - - - - - - - - - - - - -
+  strat simplify : @ NarrowingProblem .
+  sd simplify := try(red) ; (unify ; try(red)) ! .
+
+  strat init : @ NarrowingProblem .
+  sd init := ready ; simplify .
+
+  strat step : @ NarrowingProblem .
+  sd step := narrow ; simplify .
+
+  strat narrowing : @ NarrowingProblem .
+  sd narrowing := init ; step * ; match Solved{S:Substitution} .
+endsm
+
+********************************************************************************

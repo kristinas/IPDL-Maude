@@ -1,0 +1,169 @@
+***( IPDL
+
+  Copyright : (C) 2022-23, Kristina Sojakova, Mihai Codescu
+  License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
+
+Hello world-like example,
+see Sec. 2.7 of doc/tech_report_maude.pdf
+
+)
+
+load ../src/strategies
+
+mod HELLO-WORLD is
+ protecting APPROX-EQUALITY .
+ 
+ op xorF : -> SigElem .
+ eq xorF = 'xor : (bool * bool) ~> bool .
+ 
+ op flipF : -> SigElem .
+ eq flipF = 'flip : unit ~>> bool .
+ 
+ op sig : -> Signature .
+ eq sig = xorF flipF .
+
+ op ideal : -> Protocol .
+ eq ideal = 
+    new 'Ctxt : bool in
+    (
+    ('LeakCtxt ^^ 'id .. 'adv ::= 
+      nf(('c : bool <- read 'Ctxt),
+          return 'c,
+          'c )
+    )  
+    ||
+    ('Ctxt ::= 
+       nf( 'm : bool <- read 'In,
+           samp ('flip < () >),
+           'm )
+    )
+    )
+ .
+
+ op sim : -> Protocol .
+ eq sim = 
+    ('LeakCtxt ^^ 'Alice .. 'adv ::= 
+       nf('c : bool <- read ('LeakCtxt ^^ 'id .. 'adv),
+          return 'c, 
+          'c )
+    )
+ .
+ 
+ op idealPlusSim : -> Protocol .
+ eq idealPlusSim = 
+    new 'LeakCtxt ^^ 'id .. 'adv : bool in
+    (
+    ideal || sim
+    )
+ .
+ 
+  op real : -> Protocol .
+  eq real = 
+    new 'Key : bool in
+    new 'Ctxt : bool in
+    (
+     ('Key ::= samp ('flip < () >))
+     || 
+     ('Ctxt ::= 
+       nf( ('m : bool <- read 'In)
+            'k : bool <- read 'Key,
+            return (ap 'xor pair('m, 'k)),
+           'm 'k 
+               )
+     )
+     ||
+     ('LeakCtxt ^^ 'Alice .. 'adv ::= 
+       nf( 'c : bool <- read 'Ctxt ,
+           return 'c,
+          'c )  
+     )
+    ) 
+         
+  .
+  
+endm 
+ 
+smod EXECUTE is
+  protecting STRATS .
+  protecting HELLO-WORLD .
+ 
+ var x y : Qid . 
+ var Sigma : Signature .
+ var Delta : ChannelContext .
+ var Gamma : TypeContext .
+ var I O : Set{CNameBound} .
+ var A : Set{BoolTerm} .
+ var cn f : ChannelName .
+ var pConf : ProtocolConfig .
+ var P : Protocol .
+  
+  rl [assumption] :
+    rConfig(Sigma, Delta, Gamma (x : bool),
+            y : bool <- samp ('flip < () >) ; 
+            return (ap 'xor pair(x, y)), I, A, bool
+            )
+     => 
+     rConfig(Sigma, Delta, Gamma (x : bool),
+             samp ('flip < () >), I, A, bool)
+  .  
+  
+  strat applyAssumption : ChannelName @ ProtocolConfig .
+  sd applyAssumption(cn) := 
+   match pConf s.t. startsWithNew pConf
+    ? CONG-NEW-NF{applyAssumption(cn)}
+    : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using CONG-REACT[o:ChannelName <- cn]
+                { cong-pre-nf{assumption} ; 
+                  try (pre2Nf)}   
+  .
+   
+ endsm
+ 
+srew [1] 
+ pConfig(sig, 
+         (chn 'In :: bool) 
+         (chn ('LeakCtxt ^^ 'Alice .. 'adv) :: bool), 
+         real, 
+         chn 'In, 
+         getOutputs(real), 
+         empty)
+using 
+       sugar-newNF
+     ; foldNF('Key, 'Ctxt)
+     ; foldNF('Ctxt, 'LeakCtxt ^^ 'Alice .. 'adv)
+     ; applyAssumption('LeakCtxt ^^ 'Alice .. 'adv)
+     ; matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
+       using
+       SYM[P1:Protocol <- idealPlusSim, 
+           Delta1:ChannelContext <- Delta, 
+           O1:Set{CNameBound} <- O]{
+       sugar-newNF
+     ; moveNewToFront  
+     ; foldNF('LeakCtxt ^^ 'id .. 'adv, 'LeakCtxt ^^ 'Alice .. 'adv) 
+     ; foldNF('Ctxt, 'LeakCtxt ^^ 'Alice .. 'adv)  
+     }     
+     
+.  
+ 
+***( Here we record the proof from idealPlusSim.
+It has been plugged in the SYM proof from real, so we don't need 
+it anymore and we can comment it out.
+
+srew [1] 
+pConfig(sig,
+        (chn 'In :: bool) 
+         (chn ('LeakCtxt ^^ 'Alice .. 'adv) :: bool) , 
+         idealPlusSim, 
+         chn 'In, 
+         getOutputs(idealPlusSim), 
+         empty)
+using 
+       sugar-newNF
+     ; moveNewToFront  
+     ; foldNF('LeakCtxt ^^ 'id .. 'adv, 'LeakCtxt ^^ 'Alice .. 'adv) 
+     ; foldNF('Ctxt, 'LeakCtxt ^^ 'Alice .. 'adv)    
+.
+)
+

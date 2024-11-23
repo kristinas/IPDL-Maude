@@ -1,0 +1,33 @@
+***( SpeX
+
+  This file is part of SpeX, a simple framework for working with
+  formal specifications based on SAP and REPL.
+
+  Copyright : (C) 2021-2023 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Lang/Echo/Processor.maude
+sload ./Lang/IPDL/Processor.maude
+sload ./Lang/Calc/Processor.maude
+*** sload ./Lang/Th/Processors.maude
+*** sload ./Lang/Spec/Processors.maude
+*** sload ./Lang/Reason/Processors.maude
+*** sload ./Lang/COMP/Processor.maude
+
+********************************************************************************
+
+mod SPEX/KNOWLEDGE-BASE is
+  including ECHO/PROCESSOR .
+  including IPDL/PROCESSOR .
+  including CALC/PROCESSOR .
+  *** including TH/PROCESSORS .
+  *** including SPEC/PROCESSORS .
+  *** including REASON/PROCESSORS .
+  *** including COMP/PROCESSOR .
+endm
+
+********************************************************************************

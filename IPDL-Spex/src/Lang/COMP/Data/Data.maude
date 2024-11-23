@@ -1,0 +1,90 @@
+***( SpeX/Lang/COMP/Data
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../BL/MSA/Language.maude
+sload ../Data.maude
+
+********************************************************************************
+
+fmod COMP/DATA/LID is
+  sort COMP/DL .
+  op COMP/DL : -> COMP/DL [ctor] .
+endfm
+
+********************************************************************************
+
+fmod COMP/DL/MODULE is
+  protecting COMP/DATA/LID .
+  protecting COMP/MSA/READ .
+  protecting ATERM/EXPANSION .
+  extending  COMP/DATABASE .
+
+  *** Module{COMP/DL}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort Module{COMP/DL} .
+  subsort Module{COMP/DL} < DataModule{COMP} .
+  op Module[_]{_is___given_} : COMP/DL Qid ImportList ATermList
+    SpecBody{COMP/MSA} DB{COMP} -> Module{COMP/DL}
+    [ctor format (d d d d d s s n++i ni ni n--i n++i n--i d)] .
+
+  *** - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  var  L : COMP/DL .
+  vars H H? MN : Qid .
+  var  I : Import .
+  var  IL : ImportList .
+  var  T : ATerm .
+  vars TL MTL : ATermList .
+  var  SB : SpecBody{COMP/MSA} .
+  vars DB IDB : DB{COMP} .
+
+  *** header  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op header : COMP/DL Module{COMP/DL} -> Qid .
+  eq header(L, Module[L]{H is IL TL SB given IDB}) = H .
+
+  op set-header : COMP/DL Qid Module{COMP/DL} -> Module{COMP/DL} .
+  eq set-header(L, H, Module[L]{H? is IL TL SB given IDB})
+   = Module[L]{H is IL TL SB given IDB} .
+
+  *** imports  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op import-list : COMP/DL Module{COMP/DL} -> ImportList .
+  eq import-list(L, Module[L]{H is IL TL SB given IDB}) = IL .
+
+  op add-import : COMP/DL Import ATermExpansion Module{COMP/DL} DB{COMP}
+    -> Module{COMP/DL} .
+  ceq add-import(L, I, expanding to MTL, Module[L]{H is IL TL SB given IDB}, DB)
+   = Module[L]{H is (IL I) TL extend(SB, MTL)
+      given copy-module(MN, DB, IDB)}
+   if MN := module-name(L, I) .
+  eq add-import(L, I, expanding to MTL, Module[L]{H is IL TL SB given IDB}, DB)
+   = Module[L]{H is IL TL SB given IDB} [owise] .
+
+  op module-name : COMP/DL Import ~> Qid .
+  eq module-name(L, protecting MN .) = MN .
+  eq module-name(L, extending MN .) = MN .
+  eq module-name(L, including MN .) = MN .
+
+  *** declarations  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op declarations : COMP/DL Module{COMP/DL} -> ATermList .
+  eq declarations(L, Module[L]{H is IL TL SB given IDB}) = TL .
+
+  op add-declaration : COMP/DL ATerm Module{COMP/DL} -> Module{COMP/DL} .
+  eq add-declaration(L, T, Module[L]{H is IL TL SB given IDB})
+   = Module[L]{H is IL (TL, T) (SB >>= T) given IDB} .
+
+  *** body  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op body : COMP/DL Module{COMP/DL} -> SpecBody{COMP/MSA} .
+  eq body(L, Module[L]{H is IL TL SB given IDB}) = SB .
+
+  *** empty module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op empty-module : COMP/DL Qid -> Module{COMP/DL} .
+  eq empty-module(L, H) = Module[L]{H is nil empty nil given empty} .
+endfm
+
+********************************************************************************

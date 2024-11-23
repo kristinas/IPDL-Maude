@@ -1,0 +1,32 @@
+***( SpeX/Lang/Th/BL
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Base.maude
+sload ../../Base/FOL/Processor.maude
+
+********************************************************************************
+
+view Th/FOL from TH/SUBPROCESSOR to FOL/PROCESSOR { Th/Pid{FOL} } is
+  sort SpecBody to SpecBody{FOL} .
+  op (nil).SpecBody to term
+    SpecBody[FOL]{sorts none . none none none} .
+
+  sort State to AnalysisState{FOL} .
+  op initial-state(SB:SpecBody) to term
+    AnalysisState[FOL]{SB:SpecBody{FOL} & none & none} .
+
+  op parse-declaration(QIL:QidList, S:State) to term
+    parse FOL input (QIL:QidList) in S:AnalysisState{FOL} .
+  op print-declaration(T:Term) to term
+    print FOL term (T:Term) .
+endv
+
+********************************************************************************

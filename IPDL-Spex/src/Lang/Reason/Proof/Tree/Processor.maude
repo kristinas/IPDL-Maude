@@ -1,0 +1,81 @@
+***( SpeX/Lang/Reason/Prf/Tree
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2023 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../../Processor.maude
+sload ./Language.maude
+
+********************************************************************************
+
+view PrfTree/Data { L :: LANGUAGE, BL :: PRF/TREE/BASE-LANG }
+from TRIV to PRF/TREE/JDG { L, BL } is
+  sort Elt to ProofTree{L} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view PrfTree/Command { L :: LANGUAGE, BL :: PRF/TREE/BASE-LANG }
+from COMMAND to PRF/TREE/READ { L, BL } is
+  sort Command to Cmd{PrfTree{L}} .
+  op command-annotations to term 'Command .
+  op read-command(T:ATerm) to term read-cmd(PrfTree[Lid], T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod PRF/TREE/PROCESSOR { P :: PID, L :: LANGUAGE, BL :: PRF/TREE/BASE-LANG } is
+  including  BASIC-PROCESSOR { P, PrfTree/Data{L,BL}, PrfTree/Data{L,BL},
+                               PrfTree/Command{L,BL} } .
+  protecting PRF/TREE/PARSING-&-PRINTING { L, BL } .
+  protecting SPEX/FORMATTING .
+
+  var P : P$Pid .
+  var I : Oid .
+  var QIL : QidList .
+  var T : ATerm .
+  var PL : PrfTree{L} .
+  var PT : ProofTree{L} .
+  var PR : BL$ProofRule .
+  var J? : [BL$Judgment] .
+  var Cxt? : [BL$Cxt] .
+  var Atts : AttributeSet .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  crl [PrfTree:parse] :
+    < $[P] : PROC | running, Atts >
+    parse($[P], I, QIL, PT)
+   => < $[P] : PROC | running, Atts >
+    parsed(I, $[P],
+      if Cxt? :: BL$Cxt
+      then parse PrfTree[Lid] input (QIL) in [*]
+           or-else parse-proof-rule(QIL, context(PT))
+      else parse PrfTree[Lid] input (QIL) in [*] fi)
+   if Cxt? := context(PT) .
+
+  crl [PrfTree:process] :
+    < $[P] : PROC | running, Atts >
+    process($[P], I, T, PT)
+   => < $[P] : PROC | running, Atts >
+    if J? >>= PR :: BL$JudgmentList
+    then processed(I, $[P], PT >>= PR)
+    else processed(I, $[P], Advisory: 'cannot 'apply '\s
+           print-proof-rule(PR, context(PT))) fi
+   if PR := read-proof-rule(T, context(PT))
+      /\ J? := first-open-goal(PT) .
+
+  *** executing PrfTree commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  rl < $[P] : PROC | executing I command, Atts >
+    do($[P], Cmd[PL]{show open goals}, PT)
+   => < $[P] : PROC | running, Atts >
+    processed(I, $[P], log('Showing 'open 'goals) '\n
+      mk-page(print-open-goals(PT))) .
+endm
+
+********************************************************************************
