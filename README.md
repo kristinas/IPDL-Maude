@@ -21,8 +21,10 @@ relies heavily on integrating IPDL as a new language in [SpeX](https://gitlab.co
 Details about the repository's content will follow soon.
 
 To run our case studies with the new syntax run
-`cd IPDL-Spex/src`
-`maude -no-banner -allow-files run-SpeX`
+```
+cd IPDL-Spex/src
+maude -no-banner -allow-files run-SpeX
+```
 then at the SpeX prompt enter
 `load dhke.ipdl`
 or other file with extension `.ipdl` from the src folder.
