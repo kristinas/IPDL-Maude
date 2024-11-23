@@ -20,7 +20,7 @@ translating the case studies to the new syntax. The new implementation
 relies heavily on integrating IPDL as a new language in [SpeX](https://gitlab.com/ittutu/spex).
 Details about the repository's content will follow soon.
 
-To run our case studies with the new syntax run
+To test our case studies with the new syntax run
 ```
 cd IPDL-Spex/src
 maude -no-banner -allow-files run-SpeX
