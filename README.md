@@ -17,8 +17,15 @@ Alternatively, run `nix-shell -p maude`.
 We are currently in the middle of reorganizing the repository due to switching 
 from a low-level Maude specific syntax to a user-friendly notation, and we are
 translating the case studies to the new syntax. The new implementation
-relies heavily on [SpeX](https://gitlab.com/ittutu/spex).
+relies heavily on integrating IPDL as a new language in [SpeX](https://gitlab.com/ittutu/spex).
 Details about the repository's content will follow soon.
+
+To run our case studies with the new syntax run
+`cd IPDL-Spex/src`
+`maude -no-banner -allow-files run-SpeX`
+then at the SpeX prompt enter
+`load dhke.ipdl`
+or other file with extension `.ipdl` from the src folder.
 
 Our [core logic paper](https://dl.acm.org/doi/10.1145/3571223) on IPDL has been accepted at a premier venue in programming languages research, the Symposium on the Principles of Programming Languages (POPL 2023) in Boston, USA. The open access version can be found [here](https://hal.inria.fr/hal-03917005/file/main.pdf).
 
