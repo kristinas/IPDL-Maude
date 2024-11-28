@@ -1,0 +1,157 @@
+\documentclass[11pt,hidelinks]{article}
+
+\usepackage{amsmath, amssymb, amsthm, stmaryrd}
+\usepackage{url}
+\usepackage{tikz}
+\usepackage[override]{cmtt}
+\usepackage{textcomp}
+\usepackage{cryptocode}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphics}
+\usepackage{float}
+\usepackage{xspace}
+\usepackage{graphicx}
+\usepackage{mathpartir}
+\usepackage[margin=0.45in]{geometry}
+\usepackage[colorlinks]{hyperref}
+\usepackage{pl-syntax}
+\usepackage{mathabx}
+\usepackage{relsize}
+\hypersetup{linkcolor=blue,filecolor=blue,citecolor=blue,urlcolor=blue}
+
+\makeatletter
+\newcommand*{\downmapsto}{\mathrel{\mathpalette\down@mapsto\relax}}
+\newcommand*{\down@mapsto}[2]{%
+   \vcenter{%
+      \m@th
+      \setbox\z@=\hbox{$#1\dabar@$}%
+      \ialign{\hfil$#1##$\hfil\cr\noalign{\kern-.45\ht\z@}
+         \copy\z@\cr\noalign{\nointerlineskip\kern-.55\ht\z@}
+         \downarrow\cr
+      }%
+   }%
+}
+\makeatother
+
+\newcommand{\nat}{\mathbb{N}}
+\newcommand{\rat}{\mathbb{Q}}
+\newcommand{\ipdl}{\textsf{IPDL} }
+\newcommand{\type}{\mathsf{t}}
+\newcommand{\func}{\mathsf{f}}
+\newcommand{\dist}{\mathsf{d}}
+\newcommand{\one}{\mathsf{1}}
+\newcommand{\Bool}{\mathsf{Bool}}
+\newcommand{\true}{\mathsf{true}}
+\newcommand{\false}{\mathsf{false}}
+\newcommand{\fst}{\mathsf{fst}}
+\newcommand{\snd}{\mathsf{snd}}
+\newcommand{\Var}[2]{\mathsf{var}(#1 : #2)}
+\newcommand{\App}[4]{\mathsf{app}_{#2 \to #3} \ #1 \ #4}
+\newcommand{\ret}[1]{\mathsf{ret} \ #1}
+\newcommand{\Samp}[4]{\mathsf{samp}_{#2 \twoheadrightarrow #3} \ #1 \ #4}
+\newcommand{\samp}[2]{\mathsf{samp} \ #1 \ #2}
+\newcommand{\Read}[2]{\mathsf{read}(#1 : #2)}
+\renewcommand{\read}[1]{\mathsf{read} \ #1}
+\newcommand{\ifte}[3]{\mathsf{if} \ #1 \ \mathsf{then} \ #2 \ \mathsf{else} \ #3}
+\newcommand{\zero}{\mathsf{0}}
+\newcommand{\assign}[2]{#1 \coloneqq #2}
+\newcommand{\Par}[2]{#1 \; \| \; #2}
+\newcommand{\new}[3]{\mathsf{new} \ #1 : #2 \ \mathsf{in} \ #3}
+\newcommand{\axiom}{\mathsf{axiom}}
+\newcommand{\approxcong}[5]{#1 \cong #2 : #3 \to #4 \ \mathsf{len} \ #5}
+\renewcommand{\approxeq}[6]{#1 \approx #2 : #3 \to #4 \ \mathsf{wid} \ #5 \ \mathsf{len} \ #6}
+\renewcommand{\int}[1]{\llbracket #1 \rrbracket}
+\newcommand{\val}[1]{\mathsf{val} \ #1}
+\newcommand{\outstep}[2]{\xmapsto{#1 \, \coloneqq \, #2}}
+\newcommand{\stuck}{\mathsf{stuck}}
+\newcommand{\final}{\mathsf{final}}
+\newcommand{\snorm}[1]{\Vert #1 \Vert_{\mathsf{str}}}
+\newcommand{\eval}[1]{{#1 \hspace{-2.5pt} \Downarrow}}
+\newcommand{\valueof}[1]{#1 \, |_{\mathsf{val}}}
+\newcommand{\lift}[1]{\mathcal{L}(#1)}
+\newcommand{\valueat}[2]{#1|_{\mathsf{val}(#2)}}
+\newcommand{\localvalueat}[2]{#1|^{\mathsf{react}}_{\mathsf{val}(#2)}}
+\newcommand{\pull}[2]{\xhookrightarrow{#1 \, \coloneqq \, #2}}
+\newcommand{\localassign}[2]{\downarrow_{#1 \, \coloneqq \, #2}}
+\renewcommand{\max}{\mathsf{max}}
+\newcommand{\size}[1]{\mathsf{size}(#1)}
+\newcommand{\tmnorm}[1]{\Vert #1 \Vert_{\scriptscriptstyle \mathsf{TM}}}
+\newcommand{\TM}{\mathsf{TM}}
+\newcommand{\Adv}{\mathsf{Adv}}
+\newcommand{\round}{\mathsf{round}}
+\newcommand{\tape}{\mathsf{tape}}
+\newcommand{\var}{\mathsf{var}}
+\newcommand{\chan}{\mathsf{chan}}
+\newcommand{\St}{\mathsf{St}}
+\newcommand{\Symb}{\mathsf{Symb}}
+\newcommand{\Step}{\mathsf{T}}
+\newcommand{\In}{\mathsf{I}}
+\newcommand{\Out}{\mathsf{O}}
+\newcommand{\Dec}{\mathsf{D}}
+\newcommand{\err}{\mathsf{err}}
+\newcommand{\sem}{\mathsf{sem}}
+\newcommand{\adv}{\mathsf{adv}}
+\newcommand{\width}{\mathsf{wid}}
+\newcommand{\length}{\mathsf{len}}
+\newcommand{\poly}{\mathsf{poly}}
+\newcommand{\lapproxcong}[6]{#1 \cong_{#6} #2 : #3 \to #4 \ \mathsf{len} \ #5}
+\newcommand{\lapproxeq}[7]{#1 \approx_{#7} #2 : #3 \to #4 \ \mathsf{wid} \ #5 \ \mathsf{len} \ #6}
+\newcommand{\interaction}[3]{#1 \xrightleftharpoons{#3} #2}
+\newcommand{\bnorm}[1]{\Vert #1 \Vert_{\mathsf{var}}}
+\newcommand{\nnorm}[1]{\Vert #1 \Vert_{\mathsf{chan}}}
+\newcommand{\qnorm}[1]{\Vert #1 \Vert_{\mathsf{query}}}
+\newcommand{\tmenc}[1]{\mathsf{Enc}_{\scriptscriptstyle \mathsf{TM}}[#1]}
+\newcommand{\QAnnRead}[3]{\mathsf{read}[a](#1 : #2)}
+\newcommand{\query}{\;\mathsf{query}\;}
+\newcommand{\QAnn}[2]{\mathsf{QueryAnn}_{#2}[#1]}
+\newcommand{\MinQIn}[2]{\mathsf{MinQueryIn}_{#2}[#1]}
+
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}						
+\newtheorem{definition}{Definition}	
+\newtheorem{corollary}{Corollary}	
+\newtheorem{example}{Example}
+\newtheorem{claim}{Claim}
+
+% maude macros
+
+\newcommand{\code}[1]{\texttt{#1}}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  literate={~} {$\sim$}{1}
+}
+
+\begin{document}
+\title{A Core Calculus for Equational Proofs of Distributed Cryptographic Protocols: Technical Report}
+\author{Kristina Sojakova \and Mihai Codescu \and Joshua Gancher}
+
+\maketitle
+
+\section*{\small Acknowledgement}
+This project was funded through the NGI Assure Fund, a fund established by NLnet with financial support from the European Commission's Next Generation Internet programme, under the aegis of DG Communications Networks, Content and Technology under grant agreement No. 957073.
+
+\section{Syntax of IPDL}
+\input{syntax}
+
+\section{Operational Semantics of IPDL}
+\input{semantics_operational}
+
+\section{Soundness of Exact Equality in IPDL}
+\input{soundness_exact}
+
+\section{Computational Semantics of IPDL}
+\input{semantics_computational}
+
+\section{Soundness of Approximate Equality in IPDL}
+\input{soundness_approximate}
+
+%\section{Maude Formalization}
+%\input{maude}
+
+\bibliography{bib} 
+\bibliographystyle{ieeetr}
+
+\end{document}

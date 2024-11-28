@@ -1,0 +1,342 @@
+\newcommand{\Sim}{\mathsf{Sim}}
+
+\ipdl is built from three layers: \emph{protocols} are networks of
+mutually interacting \emph{reactions}, which are simple monadic programs probabilistically computing an \emph{expression}. In the context of a protocol, a reaction operates on a unique \emph{channel} and may read from other channels, thereby utilizing computations coming from other reactions. The syntax and judgements of \ipdl are outlined in Figures \ref{fig:syntax}, \ref{fig:judgements}, respectively, and are parameterized by a user-defined \emph{signature} $\Sigma$:
+
+\begin{definition}[Signature]
+An \ipdl signature $\Sigma$ is a finite collection of:
+\begin{itemize}
+\item type constants $\type$;
+\item function symbols $\func : \sigma \rightarrow \tau$; and
+\item distribution symbols $\dist : \sigma \twoheadrightarrow \tau$.
+\end{itemize}
+\end{definition}
+
+We have a minimal set of data types, including the unit type $\one$, Booleans, products, as well as arbitrary type symbols $\mathsf{t}$, drawn from the signature $\Sigma$. Expressions are used for non-probabilistic computations, and are standard. All values in \ipdl are bitstrings of a length given by data types, so we annotate the operations $\fst_{\tau \times \sigma}$ and $\snd_{\tau \times \sigma}$ with the type of the pair to determine the index to split the pair into two; for readability we omit this subscript whenever appropriate. All function symbols $\func$ and distribution symbols $\dist$ must be declared in the signature $\Sigma$. Substitutions $\theta : \Gamma_1 \to \Gamma_2$ between type contexts are standard.
+
+As mentioned above, reactions are monadic programs which may return expressions, perform probabilistic sampling, read from channels, branch on a value of type $\Bool$, and sequentially compose. Protocols in \ipdl are given by a simple but expressive syntax: channel assignment $\assign{o}{R}$ assigns the reaction $R$ to channel $o$; parallel composition $\Par{P}{Q}$ allows $P$ and $Q$ to freely interact concurrently; and channel generation $\new{o}{\tau}{P}$ creates a new, internal channel for use in $P$. \emph{Embeddings} $\phi : \Delta_1 \to \Delta_2$ between channel contexts are injective, type-preserving mappings that specify how to rename channels in $\Delta_2$ to fit in the larger context $\Delta_1$.
+
+Formally, references $\Var{x}{\tau}$ to variables and $\Read{c}{\tau}$ to channels include a typing annotation. This will come in handy later when we encode an \ipdl construct as a sequence of symbols on a Turing Machine tape; knowing the type $\tau$ will allow us to allocate the correct number of bits for the variable $x$ or the channel $c$. In almost all other instances, we simply write $x$ and $\read{c}$. Similarly, we often write $\func \ e$ instead of $\App{\func}{\sigma}{\tau}{e}$ and $\samp{\dist}{e}$ instead of $\Samp{\dist}{\sigma}{\tau}{e}$. For a constant $\func : \one \rightarrow \tau$, we write $\func$ in place of $\func \ \checkmark$, and for a constant $\dist : \one \twoheadrightarrow \tau$, we write $\dist$ instead of $\dist \ \checkmark$. We also frequently omit the type of the bound variable in a sequential composition. Finally, we might omit the typing subscript in expressions $\fst_{\sigma \times \tau}$ and $\snd_{\sigma \times \tau}$ if the types can be inferred from the context or are irrelevant.
+
+%and write $x \leftarrow \read{c}; \ R$ and $x \leftarrow \samp{d}; \ R$ simply as $x \leftarrow c; \ R$ and $x \leftarrow d; \ R$ whenever appropriate.
+
+%When binding the result of a reaction $R$ of type $\sigma_1 \times \sigma_2$, the syntactic sugar $(x_1,x_2) \leftarrow R; \ S(x_1,x_2)$ will stand for $x \leftarrow R; \ S(\fst \ x, \snd \ x)$. When binding the result of a reaction $R$ of type $\sigma_1 \times (\sigma_2 \times \sigma_3)$, the syntactic sugar $\big(x_1,(x_2,x_3)\big) \leftarrow R; \ S(x_1,x_2,x_3)$ will stand for $x \leftarrow R; \ S\big(\fst \ x, \fst \ (\snd \ x), \snd \ (\snd \ x)\big)$.
+
+\begin{figure}[ht]
+\begin{syntax}
+
+  \abstractCategory[Variables]{x, y, z}+
+  \abstractCategory[Channels]{i, o, c}
+	
+	\category[Channel Sets]{I, O}
+    \alternative{\{c_1, \ldots, c_n\}}
+
+  \category[Data Types]{\tau, \sigma}
+    \alternative{\type}
+		\alternative{\one}
+    \alternative{\Bool}
+    \alternative{\tau_1 \times \tau_2}
+
+  \category[Expressions]{e}
+    \alternative{\Var{x}{\tau}}
+    \alternative{\checkmark}
+	  \alternative{\true}
+	  \alternative{\false}		
+	  \alternative{\App{\func}{\sigma}{\tau}{e}} 
+	  \alternative{(e_1,e_2)}    
+	  \alternative{\fst_{\sigma \times \tau} \ e}
+		\alternative{\snd_{\sigma \times \tau} \ e}		
+
+  \category[Reactions]{R, S}
+    \alternative{\ret{e}}
+    \alternative{\Samp{\dist}{\sigma}{\tau}{e}}
+    \alternative{\Read{c}{\tau}}
+    \alternative{\ifte{e}{R_1}{R_2}}
+    \alternative{x : \sigma \leftarrow R; \ S}         
+
+	\category[Protocols]{P, Q}
+	  \alternative{\zero}	
+	  \alternative{\assign{o}{R}}
+	  \alternative{\Par{P}{Q}}
+	  \alternative{\new{o}{\tau}{P}}
+		
+  \category[Type Contexts]{\Gamma}
+    \alternative{\cdot}
+    \alternative{\Gamma, x : \tau}
+
+  \category[Channel Contexts]{\Delta}
+    \alternative{\cdot}
+    \alternative{\Delta, c : \tau}
+\end{syntax}
+\caption{Syntax of \textsf{IPDL}.}
+\label{fig:syntax}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{syntax}
+  \abstractCategory[Expression Typing]{\Gamma \vdash e : \tau}
+  \abstractCategory[Reaction Typing]{\Delta; \ \Gamma \vdash R : I \to \tau}
+  \abstractCategory[Protocol Typing]{\Delta \vdash P : I \to O} \\
+
+  \abstractCategory[Substitutions]{\theta : \Gamma_1 \to \Gamma_2}
+  \abstractCategory[Embeddings]{\phi : \Delta_1 \to \Delta_2} \\
+
+	\abstractCategory[Expression Equality]{\Gamma \vdash e_1 = e_2 : \tau}
+  \abstractCategory[Reaction Equality]{\Delta; \ \Gamma \vdash R_1 = R_2 : I \to \tau}
+  \abstractCategory[Protocol Equality (Strict)]{\Delta \vdash P_1 = P_2 : I \to O}
+\end{syntax}
+\caption{Judgements of the exact fragment of \textsf{IPDL}.}
+\label{fig:judgements}
+\end{figure}
+
+\subsection{Typing}
+We restrict our attention to well-typed \ipdl constructs. In addition to respecting data types, the typing judgments guarantee that all reads from channels in reactions are in scope, and that all channels are assigned at most one reaction in protocols. The typing $\Gamma \vdash e : \tau$ for expressions is standard, see Figure \ref{fig:expressions_typing}. Figure \ref{fig:reactions_typing} shows the typing rules for reactions. Intuitively, $\Delta; \ \Gamma \vdash R : I \to \tau$ holds when $R$ uses variables in $\Gamma$, reads from channels in $I$ typed according to $\Delta$, and returns a value of type $\tau$. Figure \ref{fig:protocols_typing} gives the typing rules for protocols: $\Delta \vdash P : I \to O$ holds when $P$ uses inputs in $I$ to assign reactions to the channels in $O$, all typed according to $\Delta$.
+
+Channel assignment $\assign{o}{R}$ has the type $I \to \{o\}$ 
+when $R$ is well-typed with an empty variable context, making use of inputs from $I$ as well as of $o$. We allow $R$ to read from its own output $o$ to express divergence: the protocol $\assign{o}{\read{o}}$ cannot reduce, which is useful for (conditionally) deactivating certain outputs. The typing rule for parallel composition $\Par{P}{Q}$ states that $P$ may use the outputs of $Q$ as inputs while defining its own outputs, and vice versa. Importantly, the typing rules ensure that the outputs of $P$ and $Q$ are disjoint so that each channel carries a unique reaction. Finally, the rule for channel generation allows a protocol to select a fresh channel name $o$, assign it a type $\tau$, and use it for internal computation and communication. Protocol typing plays a crucial role for modeling security. 
+Simulation-based security in \ipdl is modeled by the existence of a \emph{simulator}  with an appropriate typing judgment, $\Delta \vdash \Sim : I \to O$. Restricting the behavior of $\Sim$ to only use inputs along $I$ is necessary to rule out trivial results (\emph{e.g.}, $\Sim$ simply copies a secret from the specification).
+
+\begin{figure}
+\begin{mathpar}
+\fbox{$\Gamma \vdash e : \tau$}\\
+\inferrule*{x : \tau \in \Gamma}{\Gamma \vdash \Var{x}{\tau} : \tau}\and
+\inferrule*{ }{\Gamma \vdash \checkmark : \one}\and
+\inferrule*{ }{\Gamma \vdash \true : \Bool}\and
+\inferrule*{ }{\Gamma \vdash \false : \Bool}\and
+\inferrule*{\func : \sigma \rightarrow \tau \in \Sigma \\ \Gamma \vdash e : \sigma}{\Gamma \vdash \App{\func}{\sigma}{\tau}{e} : \tau}\and
+\inferrule*{\Gamma \vdash e_1 : \tau_1 \\ \Gamma \vdash e_2 : \tau_2}{\Gamma \vdash (e_1,e_2) : \tau_1 \times \tau_2}\and
+\inferrule*{\Gamma \vdash e : \sigma \times \tau}{\Gamma \vdash \fst_{\sigma \times \tau} \ e : \sigma}\and
+\inferrule*{\Gamma \vdash e : \sigma \times \tau}{\Gamma \vdash \snd_{\sigma \times \tau} \ e : \tau}
+\end{mathpar}
+\caption{Typing for \ipdl expressions.}
+\label{fig:expressions_typing}
+\end{figure}
+
+\begin{figure*}
+\begin{mathpar}
+\fbox{$\Delta; \ \Gamma \vdash R : I \to \tau$}\\
+\inferrule*{\Gamma \vdash e : \tau}{\Delta; \ \Gamma \vdash \ret{e} : I \to \tau}\and
+\inferrule*{\dist : \sigma \twoheadrightarrow \tau \in \Sigma \\ \Gamma \vdash e : \sigma}{\Delta; \ \Gamma \vdash \Samp{\dist}{\sigma}{\tau}{e} : I \to \tau}\and
+\inferrule*{i : \tau \in \Delta \\ i \in I}{\Delta; \ \Gamma \vdash \Read{i}{\tau} : I \to \tau}\and
+\inferrule*{\Gamma \vdash e : \Bool \\ \Delta; \ \Gamma \vdash R_1 : I \to \tau \\ \Delta; \ \Gamma \vdash R_2 : I \to \tau}{\Delta; \
+\Gamma \vdash \ifte{e}{R_1}{R_2} : I \to \tau}\and
+\inferrule*{\Delta; \ \Gamma \vdash R : I \to \sigma \\ \Delta; \ \Gamma, x : \sigma \vdash S : I \to \tau}{\Delta; \ \Gamma \vdash (x : \sigma \leftarrow R; \ S) : I \to \tau}
+\end{mathpar}
+\caption{Typing for \ipdl reactions.}
+\label{fig:reactions_typing}
+\end{figure*}
+
+\begin{figure*}
+\begin{mathpar}
+\fbox{$\Delta \vdash P : I \to O$}\\
+\inferrule*{ }{\Delta \vdash \zero : I \to \emptyset}\and
+\inferrule*{o \notin I \\ o : \tau \in \Delta \\ \Delta; \ \cdot \vdash R : I \cup \{o\} \to \tau}{\Delta \vdash \big(\assign{o}{R}\big) : I \to \{o\}}\and
+\inferrule*{\Delta \vdash P : I \cup O_2 \to O_1 \\ \Delta \vdash    Q : I \cup O_1 \to O_2}{\Delta \vdash \Par{P}{Q} : I \to O_1 \cup O_2}\and
+\inferrule*{\Delta, o : \tau \vdash P : I \to O \cup \{o\}}{\Delta \vdash \big(\new{o}{\tau}{P}\big) : I \to O}
+\end{mathpar}
+\caption{Typing for \ipdl protocols.}
+\label{fig:protocols_typing}
+\end{figure*}
+
+\subsection{Equational Logic}
+We now present the equational logic of \textsf{IPDL}. As mentioned above, the logic is divided into \emph{exact} rules that establish semantic equality between protocols, and \emph{approximate} rules that are used to discharge computational indistinguishability assumptions. 
+
+\subsubsection{Exact Equality}
+The majority of the reasoning in \ipdl is done using exact equalities. At the expression level, we assume an ambient finite set $\mathbb{T}_\mathsf{exp}$ of axioms of the form $\Gamma \vdash e_1 = e_2 : \tau$, where $\Gamma \vdash e_1 : \tau$ and $\Gamma \vdash e_2 : \tau$. The rules for the equality of expressions are standard, see Figure \ref{fig:expressions_equality}.
+
+At the reaction level, we similarly assume an ambient finite set $\mathbb{T}_\mathsf{dist}$ of axioms of the form $\Gamma \vdash R_1 = R_2 : \tau$, where $\cdot \ ; \ \Gamma \vdash R_1 : \emptyset \to \tau$ and $\cdot \ ; \ \Gamma \vdash R_2 : \emptyset \to \tau$. The absence of any input channels means that the reactions $R_1$ and $R_2$ are in fact \emph{distributions}, represented using monadic syntax. We will therefore refer to axioms of this form as distribution-level axioms. The rules for reaction equality, shown in Figures \ref{fig:reactions_equality_1} and \ref{fig:reactions_equality_2}, ensure in particular that reactions form a \emph{commutative monad}: we have \[\big(x \leftarrow R_1; \ y \leftarrow R_2; \ S(x,y)\big) = \big(y \leftarrow R_2; \ x \leftarrow R_1; \ S(x,y)\big)\] whenever $R_2$ does not depend on $x$. All expected equalities for commutative monads hold for reactions, including the usual monad laws and congruence of equality under monadic bind. The \textsc{samp-pure} rule allows us to drop an unused sampling, and the \textsc{read-det} rule allows us to replace two reads from the same channel by a single one. The rules \textsc{if-left}, \textsc{if-right}, and \textsc{if-ext} allow us to manipulate conditionals.
+
+At the protocol level, we again assume an ambient finite set $\mathbb{T}_\mathsf{prot}$ of axioms of the form $\Delta \vdash P_1 = P_2 : I \to O$, where $\Delta \vdash P_1 : I \to O$ and $\Delta \vdash P_2 : I \to O$. We use these axioms to specify user-defined functional assumptions, \emph{e.g.}, the correctness of decryption. Exact protocol equalities allow us to reason about communication between subprotocols and functional correctness, and to simplify intermediate computations. We will see later that exact equality implies the existence of a \emph{bisimulation} on protocols, which in turn implies perfect computational indistinguishability against an arbitrary distinguisher. The rules for the exact equality of protocols are in Figures~\ref{fig:protocols_equality_strict_1}, \ref{fig:protocols_equality_strict_2}; we now describe them informally.
+
+The \textsc{comp-new} rule allows us to permute parallel composition and the creation of a new channel, and the same as \emph{scope
+extrusion} in process calculi~\cite{picalc}. The \textsc{absorb-left} 
+rule allows us to discard a component in a parallel composition if it has no outputs; this allows us to eliminate internal channels once they are no longer used. The \textsc{diverge} rule allows us to simplify diverging reactions: if a channel reads from itself and continues as an arbitrary reaction $R$, then we can safely discard $R$ as we will never reach it in the first place. The three (un)folding rules \textsc{fold-if-left}, \textsc{fold-if-right}, and \textsc{fold-bind} allow us to simplify composite reactions by bringing their
+components into the protocol level as separate internal channels. The rule \textsc{subsume} states that channel dependency is transitive: if we depend on $o_1$, and $o_1$ in turn depends on $o_0$, then we also depend on $o_0$, and this dependency can be made explicit. The \textsc{subst} rule allows us to inline certain reactions into $\mathsf{read}$ commands. Inlining $\assign{o_1}{R_1}$ into $\assign{o_2}{x \leftarrow \read{o_1}; \ R_2}$ is sound provided $R_1$ is \emph{duplicable}: observing two independent results of evaluating $R_1$ is equivalent to observing the same result twice. This side condition is easily discharged whenever $R_1$ does not contain probabilistic
+sampling. Finally, the \textsc{drop} rule allows dropping unused reads from channels in certain situations. Due to timing dependencies among channels, we only allow dropping reads from the channel $\assign{o_1}{R_1}$ in the context of $\assign{o_2}{\_ \leftarrow \read{o_1};\ R_2}$ when we have that $(\_ \leftarrow R_1; \ R_2) = R_2$. This side condition is met in particular whenever all reads present in $R_1$ are also present in $R_2$.
+
+\begin{figure*}
+\begin{mathpar}
+\fbox{$\Gamma \vdash e_1 = e_2 : \tau$}\\
+\inferrule*[right=refl]{\Gamma \vdash e : \tau}{\Gamma \vdash e = e : \tau}\and
+\inferrule*[right=sym]{\Gamma \vdash e_1 = e_2 : \tau}{\Gamma \vdash e_2 = e_1 : \tau}\and
+\inferrule*[right=trans]{\Gamma \vdash e_1 = e_2 : \tau \\ \Gamma \vdash e_2 = e_3 : \tau}{\Gamma \vdash e_1 = e_3 : \tau}\and
+\inferrule*[right=axiom]{\Gamma \vdash e_1 = e_2 : \tau \ \axiom}{\Gamma \vdash e_1 = e_2 : \tau}\and
+\inferrule*[right=subst]{\theta : \Gamma_1 \to \Gamma_2 \\ \Gamma_2 \vdash e_1 = e_2 : \tau}{\Gamma_1 \vdash \theta^\star(e_1) = \theta^\star(e_2) : \tau}\and
+\inferrule*[right=app-cong]{\func : \sigma \rightarrow \tau \in \Sigma \\ \Gamma \vdash e = e' : \sigma}{\Gamma \vdash \App{\func}{\sigma}{\tau}{e} = \App{\func}{\sigma}{\tau}{e'} : \tau}\and
+\inferrule*[right=pair-cong]{\Gamma \vdash e_1 = e_1' : \tau_1 \\ \Gamma \vdash e_2 = e_2' : \tau_2}{\Gamma \vdash (e_1,e_2) = (e_1',e_2') : \tau_1 \times \tau_2}\and
+\inferrule*[right=fst-cong]{\Gamma \vdash e = e' : \sigma \times \tau}{\Gamma \vdash \fst_{\sigma \times \tau} \ e = \fst_{\sigma \times \tau} \ e' : \sigma}\and
+\inferrule*[right=snd-cong]{\Gamma \vdash e = e' : \sigma \times \tau}{\Gamma \vdash \snd_{\sigma \times \tau} \ e = \snd_{\sigma \times \tau} \ e' : \tau}\and
+\inferrule*[right=fst-pair]{\Gamma \vdash e_1 : \tau_1 \\ \Gamma \vdash e_2 : \tau_2}{\Gamma \vdash \fst_{\tau_1 \times \tau_2} \ (e_1, e_2) = e_1 : \tau_1}\and
+\inferrule*[right=snd-pair]{\Gamma \vdash e_1 : \tau_1 \\ \Gamma \vdash e_2 : \tau_2}{\Gamma \vdash \snd_{\tau_1 \times \tau_2} \ (e_1, e_2) = e_2 : \tau_2}\and
+\inferrule*[right=pair-ext]{\Gamma \vdash e : \sigma \times \tau}{\Gamma \vdash e = \big(\fst_{\sigma \times \tau} \ e, \ \snd_{\sigma \times \tau} \ e\big) : \sigma \times \tau}\and
+\inferrule*[right=unit-ext]{\Gamma \vdash e : \one}{\Gamma \vdash e = \checkmark : \one}
+\end{mathpar}
+\caption{Equality for \ipdl expressions.}
+\label{fig:expressions_equality}
+\end{figure*}
+
+\begin{figure*}
+\begin{mathpar}
+\fbox{$\Delta; \ \Gamma \vdash R_1 = R_2 : I \to \tau$}\\
+\inferrule*[right=refl]{\Delta; \ \Gamma \vdash R : I \to \tau}{\Delta; \ \Gamma \vdash R = R : I \to \tau}\and
+\inferrule*[right=sym]{\Delta; \ \Gamma \vdash R_1 = R_2 : I \to \tau}{\Delta; \ \Gamma \vdash R_2 = R_1 : I \to \tau}\and
+\inferrule*[right=trans]{\Delta; \ \Gamma \vdash R_1 = R_2 : I \to \tau \\ \Delta; \ \Gamma \vdash R_2 = R_3 : I \to \tau}{\Delta; \ \Gamma \vdash R_1 = R_3 : I \to \tau}\and
+\inferrule*[right=axiom]{\Gamma \vdash R_1 = R_2 : \tau \ \axiom}{\cdot \ ; \ \Gamma \vdash R_1 = R_2 : \emptyset \to \tau}\and
+\inferrule*[right=input-unused]{i \notin I \\ \Delta; \ \Gamma \vdash R_1 = R_2 : I \to \tau}{\Delta; \ \Gamma \vdash R_1 = R_2 : I \cup \{i\} \to \tau}\and
+\inferrule*[right=embed]{\phi : \Delta_1 \to \Delta_2 \\ \Delta_2 \vdash R_1 = R_2 : I \to \tau}{\Delta_1 \vdash \phi^\star(R_1) = \phi^\star(R_2) : \phi^\star(I) \to \tau}\and
+\inferrule*[right=subst]{\theta : \Gamma_1 \to \Gamma_2 \\ \Delta; \ \Gamma_2 \vdash R_1 = R_2 : I \to \tau}{\Delta; \ \Gamma_1 \vdash \theta^\star(R_1) = \theta^\star(R_2) : I \to \tau}\and
+\inferrule*[right=cong-ret]{\Gamma \vdash e = e' : \tau}{\Delta; \ \Gamma \vdash \ret{e} = \ret{e'} : I \to \tau}\and
+\inferrule*[right=cong-samp]{\dist : \sigma \twoheadrightarrow \tau \in \Sigma \\ \Gamma \vdash e = e' : \sigma}{\Delta; \ \Gamma \vdash \Samp{\dist}{\sigma}{\tau}{e} = \Samp{\dist}{\sigma}{\tau}{e'} : I \to \tau}\and
+\inferrule*[right=cong-if]{\Gamma \vdash e = e' : \Bool \\ \Delta; \ \Gamma \vdash R_1 = R_1' : I \to \tau \\ \Delta; \ \Gamma \vdash R_2 = R_2' : I \to \tau}{\Delta; \ \Gamma \vdash \big(\ifte{e}{R_1}{R_2}\big) = \big(\ifte{e'}{R_1'}{R_2'}\big) : I \to \tau}\and
+\inferrule*[right=cong-bind]{\Delta; \ \Gamma \vdash R = R' : I \to \sigma \\ \Delta; \ \Gamma, x : \sigma \vdash S = S' : I \to \tau}{\Delta; \ \Gamma \vdash (x : \sigma \leftarrow R; \ S) = (x : \sigma \leftarrow R'; \ S') : I \to \tau}
+\end{mathpar}
+\caption{Equality for \ipdl reactions. Additional rules are given in
+Figure~\ref{fig:reactions_equality_2}.}
+\label{fig:reactions_equality_1}
+\end{figure*}
+
+\begin{figure*}
+\begin{mathpar}
+\fbox{$\Delta; \ \Gamma \vdash R_1 = R_2 : I \to \tau$}\\
+\inferrule*[right=ret-bind]{\Gamma \vdash e : \sigma \\ \Delta; \ \Gamma, x : \sigma \vdash R : I \to \tau}{\Delta; \ \Gamma \vdash (x : \sigma \leftarrow \ret{e}; \ R) = R[\assign{x}{e}] : I \to \tau}\and
+\inferrule*[right=bind-ret]{\Delta; \ \Gamma \vdash R : I \to \tau}{\Delta; \ \Gamma \vdash (x : \tau \leftarrow R; \ \ret{x}) = R : I \to \tau}\and
+\inferrule*[right=bind-bind]{\Delta; \ \Gamma \vdash R_1 : I \to \sigma_1 \\ \Delta; \ \Gamma, x_1 : \sigma_1 \vdash R_2 : I \to \sigma_2 \\ \Delta; \ \Gamma, x_2 : \sigma_2 \vdash S : I \to \tau}{\Delta; \ \Gamma \vdash \big(x_2 : \sigma_2 \leftarrow (x_1 : \sigma_1 \leftarrow R_1; \ R_2); \ S\big) = \big(x_1 : \sigma_1 \leftarrow R_1; \ x_2 : \sigma_2 \leftarrow  R_2; \ S\big) : I \to \tau}\and
+\inferrule*[right=exch]{\Delta; \ \Gamma \vdash R_1 : I \to \sigma_1 \\ \Delta; \ \Gamma \vdash R_2 : I \to \sigma_2 \\ \Delta; \ \Gamma, x_1 : \sigma_1, x_2 : \sigma_2 \vdash S : I \to \tau}{\Delta; \ \Gamma \vdash \big(x_1 : \sigma_1 \leftarrow R_1; \ x_2 : \sigma_2 \leftarrow R_2; \ S\big) = \big(x_2 : \sigma_2 \leftarrow R_2; \ x_1 : \sigma_1 \leftarrow R_1; \ S\big) : I \to \tau}\and
+\inferrule*[right=samp-pure]{\dist : \rho \twoheadrightarrow \sigma \in \Sigma \\ \Gamma \vdash e : \rho \\ \Delta; \ \Gamma \vdash R : I \to \tau}{\Delta; \ \Gamma \vdash (x : \sigma \leftarrow \Samp{\dist}{\rho}{\sigma}{e}; \ R) = R : I \to \tau}\and
+\inferrule*[right=read-det]{i : \sigma \in \Delta \\ i \in I \\ \Delta; \ \Gamma, x : \sigma, y : \sigma \vdash R : I \to \tau}{\Delta; \ \Gamma \vdash \big(x : \sigma \leftarrow \read{i}; \ y : \sigma \leftarrow \read{i}; \ R\big) = \big(x : \sigma \leftarrow \read{i}; \ R[\assign{y}{x}]\big) : I \to \tau}\and
+\inferrule*[right=if-left]{\Delta; \ \Gamma \vdash R_1 : I \to \tau \\ \Delta; \ \Gamma \vdash R_2 : I \to \tau}{\Delta; \ \Gamma \vdash \big(\ifte{\true}{R_1}{R_2}\big) = R_1 : I \to \tau}\and
+\inferrule*[right=if-right]{\Delta; \ \Gamma \vdash R_1 : I \to \tau \\ \Delta; \ \Gamma \vdash R_2 : I \to \tau}{\Delta; \ \Gamma \vdash \big(\ifte{\false}{R_1}{R_2}\big) = R_2 : I \to \tau}\and
+\inferrule*[right=if-ext]{\Delta; \ \Gamma, x : \Bool \vdash R : I \to \tau \\ \Gamma \vdash e : \Bool}{\Delta; \ \Gamma \vdash \big(\ifte{e}{R[\assign{x}{\true}]}{R[\assign{x}{\false}]}\big) = R[\assign{x}{e}] : I \to \tau}
+\end{mathpar}
+\caption{Equality for \ipdl reactions.}
+\label{fig:reactions_equality_2}
+\end{figure*}
+
+\begin{figure*}
+\begin{mathpar}
+\fbox{$\Delta \vdash P_1 = P_2 : I \to O$}\\
+\inferrule*[right=refl]{\Delta \vdash P : I \to O}{\Delta \vdash P = P : I \to O}\and
+\inferrule*[right=sym]{\Delta \vdash P_1 = P_2 : I \to O}{\Delta \vdash P_2 = P_1 : I \to O}\and
+\inferrule*[right=trans]{\Delta \vdash P_1 = P_2 : I \to O \\ \Delta \vdash P_2 = P_3 : I \to O}{\Delta \vdash P_1 = P_3 : I \to O}\and
+\inferrule*[right=axiom]{\Delta \vdash P_1 = P_2 : I \to O \ \axiom}{\Delta \vdash P_1 = P_2 : I \to O}\and
+\inferrule*[right=input-unused]{i \notin I \cup O \\ \Delta \vdash P_1 = P_2 : I \to O}{\Delta \vdash P_1 = P_2 : I \cup \{i\} \to O}\and
+\inferrule*[right=embed]{\phi : \Delta_1 \to \Delta_2 \\ \Delta_2 \vdash P_1 = P_2 : I \to O}{\Delta_1 \vdash \phi^\star(P_1) = \phi^\star(P_2) : \phi^\star(I) \to \phi^\star(O)}\and
+\inferrule*[right=cong-react]{o \notin I \\ o : \tau \in \Delta \\ \Delta; \ \cdot \vdash R = R' : I \cup \{o\} \to \tau}{\Delta \vdash \big(\assign{o}{R}\big) = \big(\assign{o}{R'}\big) : I \to \{o\}}\and
+\inferrule*[right=cong-comp-left]{\Delta \vdash P = P' : I \cup O_2 \to O_1 \\ \Delta \vdash Q : I \cup O_1 \to O_2}{\Delta \vdash \Par{P}{Q} = \Par{P'}{Q} : I \to O_1 \cup O_2}\and
+\inferrule*[right=cong-new]{\Delta, o : \tau \vdash P = P' : I \to O \cup \{o\}}{\Delta \vdash \big(\new{o}{\tau}{P}\big) = \big(\new{o}{\tau}{P'}\big) : I \to O}\and
+\inferrule*[right=comp-comm]{\Delta \vdash P_1 : I \cup O_2 \to O_1 \\ \Delta \vdash P_2 : I \cup O_1 \to O_2}{\Delta \vdash \Par{P_1}{P_2} = \Par{P_2}{P_1} : I \to O_1 \cup O_2}\and
+\inferrule*[right=comp-assoc]{\Delta \vdash P_1 : I \cup O_2 \cup O_3 \to O_1 \\ \Delta \vdash P_2 : I \cup O_1 \cup O_3 \to O_2 \\ \Delta \vdash P_3 : I \cup O_1 \cup O_2 \to O_3}{\Delta \vdash \Par{(\Par{P_1}{P_2})}{P_3} = \Par{P_1}{(\Par{P_2}{P_3})} : I \to O_1 \cup O_2 \cup O_3}\and
+\inferrule*[right=new-exch]{\Delta, o_1 : \tau_1, o_2 : \tau_2 \vdash P : I \to O \cup \{o_1,o_2\}}{\Delta \vdash \big(\new{o_1}{\tau_1}{\new{o_2}{\tau_2}{P}}\big) = \big(\new{o_2}{\tau_2}{\new{o_1}{\tau_1}{P}}\big) : I \to O}\and
+\inferrule*[right=comp-new]{\Delta \vdash P : I \cup O_2 \to O_1 \\ \Delta, o : \tau \vdash Q : I \cup O_1 \to O_2 \cup \{o\}}{\Delta \vdash \Par{P}{\big(\new{o}{\tau}{Q}\big)} = \new{o}{\tau}{(\Par{P}{Q})} : I \to O_1 \cup O_2}\and
+\inferrule*[right=absorb-left]{\Delta \vdash P : I \to O \\ \Delta \vdash Q : I \cup O \to \emptyset}{\Delta \vdash \Par{P}{Q} = P : I \to O}
+\end{mathpar}
+\caption{Exact equality for \ipdl protocols. Additional rules are given in Figure~\ref{fig:protocols_equality_strict_2}.}
+\label{fig:protocols_equality_strict_1}
+\end{figure*}
+
+\begin{figure*}
+\begin{mathpar}
+\fbox{$\Delta \vdash P = Q : I \to O$}\\
+\inferrule*[right=diverge]{o : \tau \in \Delta \\ \Delta; \ \cdot \vdash R : I \to \tau}{\Delta \vdash \big(\assign{o}{x \leftarrow \read{o}; \ R}\big) = \big(\assign{o}{\read{o}}\big) : I \, \setminus \, \{o\} \to \{o\}}\and
+\inferrule*[right=fold-if-left]{o : \tau \in \Delta \\ \Delta; \ \cdot \vdash R : I \to \Bool \\ \Delta; \ \cdot \vdash S_1 : I \to \tau \\ \Delta; \ \cdot \vdash S_2 : I \to \tau}{\Delta \vdash \big(\new{l}{\tau}{\Par{\assign{o}{x \leftarrow R; \ \ifte{x}{{\color{red} \read{l}}}{S_2}}}{{\color{red} \assign{l}{S_1}}}}\big) = \\ \big(\assign{o}{x \leftarrow R; \ \ifte{x}{{\color{red} S_1}}{S_2}}\big) : I \, \setminus \, \{o\} \to \{o\}\hspace{-80pt}}\and
+\inferrule*[right=fold-if-right]{o : \tau \in \Delta \\ \Delta; \ \cdot \vdash R : I \to \Bool \\ \Delta; \ \cdot \vdash S_1 : I \to \tau \\ \Delta; \ \cdot \vdash S_2 : I \to \tau}{\Delta \vdash \big(\new{r}{\tau}{\Par{\assign{o}{x \leftarrow R; \ \ifte{x}{S_1}{{\color{red} \read{r}}}}}{{\color{red} \assign{r}{S_2}}}}\big) = \\ \big(\assign{o}{x \leftarrow R; \ \ifte{x}{S_1}{{\color{red} S_2}}}\big) : I \, \setminus \, \{o\} \to \{o\}\hspace{-78pt}}\and
+\inferrule*[right=fold-bind]{o : \tau \in \Delta \\ \Delta; \ \cdot \vdash R : I \to \sigma \\ \Delta; \ x : \sigma \vdash S : I \to \tau}{\Delta \vdash \big(\new{c}{\sigma}{\Par{\assign{o}{{\color{red} x \leftarrow \read{c};} \ S}}{{\color{red} \assign{c}{R}}}}\big) = \big(\assign{o}{{\color{red} x \leftarrow R; \ } S}\big) : I \, \setminus \, \{o\} \to \{o\}}\and
+\inferrule*[right=subst]{o_1 \neq o_2 \\ o_1 : \tau_1, o_2 : \tau_2 \in \Delta \\ \Delta; \ \cdot \vdash R_1 : I \to \tau_1 \\ \Delta; \ x_1 : \tau_1 \vdash R_2 : I \to \tau_2 \\ \Delta; \ \cdot \vdash \big(x_1 \leftarrow R_1; \ {\color{red} x'_1 \leftarrow R_1; \ } \ret{(x_1,{\color{red} x'_1})}\big) = \big(x_1 \leftarrow R_1; \ \ret{(x_1,{\color{red} x_1})}\big) : I \to \tau_1 \times \tau_1}{\Delta \vdash \big(\Par{\assign{o_1}{R_1}}{\assign{o_2}{{\color{red} x_1 \leftarrow \read{o_1}; \ } R_2}}\big) = \big(\Par{\assign{o_1}{R_1}}{\assign{o_2}{{\color{red} x_1 \leftarrow R_1; \ } R_2}}\big) : I \, \setminus \, \{o_1,o_2\} \to \{o_1, o_2\}}\and
+\inferrule*[right=drop]{\\ o_1 \neq o_2 \\ o_1 : \tau_1, o_2 : \tau_2 \in \Delta \\ \\ \Delta; \ \cdot \vdash R_1 : I \to \tau_1 \\ \Delta; \ \cdot \vdash R_2 : I \to \tau_2 \\ \Delta; \ \cdot \vdash \big({\color{red} x_1 \leftarrow R_1; \ } R_2\big) = R_2 : I \to \tau_2}{\Delta \vdash \big(\Par{\assign{o_1}{R_1}}{\assign{o_2}{{\color{red} x_1 \leftarrow \read{o_1}; \ } R_2}}\big) = \big(\Par{\assign{o_1}{R_1}}{\assign{o_2}{R_2}}\big) : I \, \setminus \, \{o_1,o_2\} \to \{o_1, o_2\}}
+\end{mathpar}
+\caption{Additional rules for exact equality of \ipdl protocols. Distinguishing changes of equalities are highlighed in {\color{red} red}.}
+\label{fig:protocols_equality_strict_2}
+\end{figure*}
+
+\subsubsection{Approximate Equality}
+The equational theory for the approximate fragment of \ipdl consists of two layers: one for the \emph{approximate equality} of protocols, and one for the \emph{asymptotic equality} of protocol families as functions of the security parameter $\lambda \in \nat$. Informally, if two protocol families are asymptotically equal, then any \emph{resource-bounded} adversary cannot distinguish them with greater than negligible error. Analogously to exact protocol equality, for approximate equality we assume an ambient finite set of \emph{approximate axioms} of the form $\Delta \vdash P \approx Q : I \to O$, where $\Delta \vdash P : I \to O$ and $\Delta \vdash Q : I \to O$. These axioms capture cryptographic assumptions on computational indistinguishability. The approximate equality of two such protocols has the form $\Delta \vdash \approxeq{P}{Q}{I}{O}{k}{l}$, and we think of this proof as corresponding to a specific security parameter $\lambda$. In the asymptotic equality judgement, both parameters $k, l$ become functions of the security parameter $\lambda$, and must be bounded by a polynomial in $\lambda$.
+
+\begin{figure*}
+\begin{mathpar}
+\fbox{$\Delta \vdash \approxcong{P}{Q}{I}{O}{l}$}\\
+\inferrule*[right=axiom]{\Delta \vdash P \approx Q : I \to O \ \axiom}{\Delta \vdash \approxcong{P}{Q}{I}{O}{0}}\and
+\inferrule*[right=input-unused]{i \notin I \cup O \\ \Delta \vdash \approxcong{P}{Q}{I}{O}{l}}{\Delta \vdash \approxcong{P}{Q}{I \cup \{i\}}{O}{l}}\and
+\inferrule*[right=embed]{\phi : \Delta_1 \to \Delta_2 \\ \Delta_2 \vdash \approxcong{P}{Q}{I}{O}{l}}{\Delta_1 \vdash \approxcong{\phi^\star(P)}{\phi^\star(Q)}{\phi^\star(I)}{\phi^\star(O)}{l}}\and
+\inferrule*[right=cong-comp-left]{\Delta \vdash \approxcong{P}{P'}{I \cup O_2}{O_1}{l} \\ \Delta \vdash Q : I \cup O_1 \to O_2}{\Delta \vdash \approxcong{\Par{P}{Q}}{\Par{P'}{Q}}{I}{O_1 \cup O_2}{l + \tmnorm{Q} + 3}}\and
+\inferrule*[right=cong-new]{\Delta, o : \tau \vdash \approxcong{P}{P'}{I}{O \cup \{o\}}{l}}{\Delta \vdash \approxcong{\big(\new{o}{\tau}{P}\big)}{\big(\new{o}{\tau}{P'}\big)}{I}{O}{l}}
+\end{mathpar}
+\caption{Approximate congruence of \ipdl protocols.}
+\label{fig:protocols_congruence_approx}
+\end{figure*}
+
+\begin{figure*}
+\begin{mathpar}
+\fbox{$\Delta \vdash \approxeq{P}{Q}{I}{O}{k}{l}$}\\
+\inferrule*[right=strict]{\Delta \vdash P = Q : I \to O}{\Delta \vdash \approxeq{P}{Q}{I}{O}{0}{0}}\and
+\inferrule*[right=approx-cong]{\Delta \vdash \approxcong{P}{Q}{I}{O}{l}}{\Delta \vdash \approxeq{P}{Q}{I}{O}{1}{l}}\and
+\inferrule*[right=sym]{\Delta \vdash \approxeq{P_1}{P_2}{I}{O}{k}{l}}{\Delta \vdash \approxeq{P_2}{P_1}{I}{O}{k}{l}}\and
+\inferrule*[right=trans]{\Delta \vdash \approxeq{P_1}{P_2}{I}{O}{k_1}{l_1} \\ \Delta \vdash \approxeq{P_2}{P_3}{I}{O}{k_2}{l_2}}{\Delta \vdash \approxeq{P_1}{P_3}{I}{O}{k_1 + k_2}{\max(l_1, l_2)}}\and
+\end{mathpar}
+\caption{Approximate equality for \ipdl protocols.}
+\label{fig:protocols_equality_approx}
+\end{figure*}
+
+Figure \ref{fig:protocols_equality_approx} shows the rules for the approximate equality of \ipdl protocols, where we chain together a sequence of strict equalities and \emph{approximate congruence} transformations, see Figure \ref{fig:protocols_congruence_approx}. The parameter $k \in \nat$ counts the number of axiom invocations. Applying a single approximate axiom incurs $k = 1$ (rule \textsc{approx-cong}, and the use of transitivity requires us to add up the respective values of $k$ (rule \textsc{trans}). Even though each individual axiom invocation introduces a negligible error, the sum of exponentially many negligible errors might not be negligible, which is why we later impose a polynomial bound on $k$.
+
+The parameter $l$ tracks the increase in adversarial resources incurred by the proof. The bulk of the reasoning in \ipdl is done in the exact fragment, where a typical proof step transforms the protocol into a form where an approximate axiom applies. We subsequently carry out an approximate congruence step, where we use the approximate axiom to replace a small protocol fragment nested inside a larger program context by its computationally indistinguishable counterpart. The program context is formally a part of the adversary, and as such it must be resource-bounded for the indistinguishability assumption to apply. Some nesting patterns do not effect any change on the adversary's resources: for example, a simple renaming of channels (rule \textsc{embed}); the formal addition of an unused channel $i$ to the protocol's inputs $I$ (rule \textsc{input-unused}), in which case any value assigned by the adversary to channel $i$ will leave the protocol unchanged; or the introduction of an internal channel $o : \tau$ (rule \textsc{cong-new}), in which case the adversary will never query $o$ because internal channels are only visible in the scope of their declaration.
+
+On the other hand, composing two approximately equal protocols $P \approx P'$ with another protocol $Q$ requires the adversary to simulate the interaction of the common protocol $Q$ with $P$ versus $P'$. In other words, the adversary \emph{absorbs} $Q$ and the protocol becomes part of the new adversary's code. In particular, the number of symbols needed to encode the adversary's code on a Turing Machine tape increases, and the parameter $l$ measures this increase. As we can see in rule \textsc{cong-comp-left}, we use $\tmnorm{Q} + 3$ additional symbols: $\tmnorm{Q}$ symbols for encoding the protocol $Q$; a parallel composition symbol to combine the original adversary code with the protocol $Q$; and two parenthesis symbols \textsf{``(''}, \textsf{``)''} for enclosing the composition. We emphasize that the exact numbers here are not crucial; what matters is that we eventually deliver a polynomial in $\lambda$. \smallskip
+
+List the type constants declared in the signature $\Sigma$ as $\type_1,\ldots,\type_{|\Sigma_\type|}$. Unlike the parameter $k \in \nat$, the parameter $l$ is not a natural number but a function $l(t_1,\ldots,t_{|\Sigma_\type|}) : \nat^{|\Sigma_\type|} \to \nat$ that is \emph{monotonically increasing in each argument}. When encoding a protocol $Q$ as a sequence of symbols on a Turing Machine tape, we invariably encounter type annotations such as $\Var{x}{\tau}$. At this point, we do not know how many bits we will need to encode values of type $\tau$, because the type constants $\type \in \Sigma$ are as of yet uninterpreted. Instead, we leave the size of each type constant as a variable to the function $l$, which will later be instantiated by the appropriate natural number according to $\int{-}$. With this proviso, the Turing Machine bound of a type $\tau$ is straightforward:
+\begin{align*}
+\tmnorm{\type_i} & \coloneqq t_i \\
+\tmnorm{\one} & \coloneqq 0 \\
+\tmnorm{\Bool} & \coloneqq 1 \\
+\tmnorm{\tau_1 \times \tau_2} & \coloneqq \tmnorm{\tau_1} + \tmnorm{\tau_2}
+\end{align*}
+For variables $\Var{x}{\tau}$, we use the symbols \textsf{``(''}, \textsf{``var''}, \textsf{``:''}, \textsf{``)''} in addition to the de Bruijn index of the variable $x$, encoded as a single symbol, and the encoding of the type annotation $\tau$. For expressions $\checkmark$, $\true$, $\false$, we use the corresponding symbols \textsf{``$\checkmark$''}, \textsf{``true''}, \textsf{``false''} and the two parenthesis symbols \textsf{``(''}, \textsf{``)''}. For an application $\App{\func}{\sigma}{\tau}{e}$, we use the symbols \textsf{``(''}, \textsf{``app''}, \textsf{``$\to$''}, \textsf{``)''} in addition to the function symbol $\func$, encoded as a single symbol, and the encodings of the two type annotations $\sigma, \tau$ and the expression $e$. To encode a pair $(e_1, e_2)$, we will only need the encodings of the two expressions $e_1$ and $e_2$. Finally, to encode first and second projections, we will use the symbols \textsf{``(''}, \textsf{``fst''} or \textsf{``snd''}, \textsf{``$\times$''}, \textsf{)''} in addition to the encodings of the two type annotations $\sigma, \tau$ and the expression $e$.
+\begin{align*}
+\tmnorm{\Var{x}{\tau}} & \coloneqq \tmnorm{\tau} + 5 \\
+\tmnorm{\checkmark} & \coloneqq 3 \\
+\tmnorm{\true} & \coloneqq 3 \\
+\tmnorm{\false} & \coloneqq 3 \\
+\tmnorm{\App{\func}{\sigma}{\tau}{e}} & \coloneqq \tmnorm{\sigma} + \tmnorm{\tau} + \tmnorm{e} + 5 \\
+\tmnorm{(e_1, e_2)} & \coloneqq \tmnorm{e_1} + \tmnorm{e_2} \\
+\tmnorm{\fst_{\sigma \times \tau} \ e} & \coloneqq \tmnorm{\sigma} + \tmnorm{\tau} + \tmnorm{e} + 5 \\
+\tmnorm{\snd_{\sigma \times \tau} \ e} & \coloneqq \tmnorm{\sigma} + \tmnorm{\tau} + \tmnorm{e} + 5
+\end{align*}
+For a return $\ret{e}$, we use the symbols \textsf{``(''}, \textsf{``ret''}, \textsf{)''} in addition to the encoding of the expression $e$. For a sampling $\Samp{\dist}{\sigma}{\tau}{e}$, we use the symbols \textsf{``(''}, \textsf{``samp''}, \textsf{``$\twoheadrightarrow$''}, \textsf{``)''} in addition to the distribution symbol $\dist$, encoded as a single symbol, and the encodings of the two type annotations $\sigma, \tau$ and the expression $e$. For a read $\Read{c}{\tau}$, we use the symbols \textsf{``(''}, \textsf{``read''}, \textsf{``:''}, \textsf{``)''} in addition to the de Bruijn index of the channel $c$, encoded as a single symbol, and the encoding of the type annotation $\tau$. Furthermore, we will need one extra symbol: one of \textsf{``input-to-query''}, \textsf{``input-queried''}, \textsf{``input-not-to-query''}. When encoding a protocol $Q : I \cup O_1 \to O_2$ coming from the \textsc{comp-cong-left} rule, we use \textsf{``input-to-query''} or \textsf{``input-queried''} if we are reading from a channel $o_1 \in O_1$, according to whether we have already queried the channel $o_1$, and \textsf{``input-not-to-query''} otherwise. For a conditional $\ifte{e}{R_1}{R_2}$, we use the symbols \textsf{``(''}, \textsf{``if''}, \textsf{``then''}, \textsf{``else''}, \textsf{``)''} in addition to the encodings of the expression $e$ and the two reactions $R_1, R_2$. Finally, to encode a bind, we use the symbols \textsf{``$\{$''}, \textsf{``$\_$''}, \textsf{``:''}, \textsf{``$\leftarrow$''}, \textsf{``;''}, \textsf{``$\}$''} in addition to the encodings of the type annotation $\sigma$ and the two reactions $R$ and $S$. The symbol \textsf{``$\_$''} is used in lieu of the bound variable name $x$ and stands for de Bruijn index $0$.
+\begin{align*}
+\tmnorm{\ret{e}} & \coloneqq \tmnorm{e} + 3 \\
+\tmnorm{\Samp{\dist}{\sigma}{\tau}{e}} & \coloneqq \tmnorm{\sigma} + \tmnorm{\tau} + \tmnorm{e} + 5 \\
+\tmnorm{\Read{c}{\tau}} & \coloneqq \tmnorm{\tau} + 6 \\
+\tmnorm{\ifte{e}{R_1}{R_2}} & \coloneqq \tmnorm{e} + \tmnorm{R_1} + \tmnorm{R_2} + 5 \\
+\tmnorm{x : \sigma \leftarrow R; \ S} & \coloneqq \tmnorm{\sigma} + \tmnorm{R} + \tmnorm{S} + 6
+\end{align*}
+To encode the zero protocol $\zero$, we use the single symbol \textsf{``0''}. For an assignment $\assign{o}{R}$, we use the symbols \textsf{``[''}, \textsf{``$\coloneqq$''}, \textsf{``react''}, \textsf{``]''} in addition to the de Bruijn index of the channel $c$, encoded as a single symbol, and the encoding of the reaction $R$. For a parallel composition $\Par{P}{Q}$, we use the symbols \textsf{``(''}, \textsf{``$\|$''}, \textsf{``)''} in addition to the encodings of the two protocols $P$ and $Q$. Finally, for the declaration of a new channel $\new{o}{\tau}{P}$, we use the symbols \textsf{``new''}, \textsf{``$\_$''}, \textsf{``:''}, \textsf{``in''}, \textsf{``wen''} in addition to the encodings of the typing annotation $\tau$ and the protocol $P$. The symbol \textsf{``$\_$''} is used in lieu of the bound channel name $c$ and stands for de Bruijn index $0$. The symbol \textsf{``wen''} indicates the end of the binding scope.
+\begin{align*}
+\tmnorm{\zero} & \coloneqq 1 \\
+\tmnorm{\assign{o}{R}} & \coloneqq \tmnorm{R} + 5 \\
+\tmnorm{\Par{P}{Q}} & \coloneqq \tmnorm{P} + \tmnorm{Q} + 3 \\
+\tmnorm{\new{c}{\tau}{P}} & \coloneqq \tmnorm{\tau} + \tmnorm{P} + 5
+\end{align*}
+We note that the Turing Machine bound of each construct is invariant under embeddings. \medskip
+
+\noindent To make the ambient approximate theory with axioms $\Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n$ explicit, we write the approximate equality judgement as
+\[\Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta \vdash \approxeq{P}{Q}{I}{O}{k}{l}.\]
+We also recall that the exact fragment of \ipdl is formulated with respect to ambient theories $\mathbb{T}_\mathsf{exp}$, $\mathbb{T}_\mathsf{dist}$, and $\mathbb{T}_\mathsf{prot}$ for expressions, distributions, and protocols. If we want to make these explicit, we combine them into a single exact \ipdl theory $\mathbb{T}_= \coloneqq (\mathbb{T}_\mathsf{exp}, \mathbb{T}_\mathsf{dist}, \mathbb{T}_\mathsf{prot})$, and write the approximate equality judgement as
+\[\mathbb{T}_=; \, \Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta \vdash \approxeq{P}{Q}{I}{O}{k}{l}.\]
+
+\noindent For the asymptotic equality of \ipdl protocols, we assume a finite set $\mathbb{T}_\approx$ of \emph{approximate axiom families} of the form $\big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$, where $\big\{\Delta_\lambda \vdash P_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$ and $\big\{\Delta_\lambda \vdash Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$ are two protocol families with pointwise-identical typing judgements. The asymptotic equality of two such protocol families has the form $\mathbb{T}_\approx \, \mathlarger{\mathlarger{\Rightarrow}} \, \big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$, see Figure \ref{fig:protocols_equality_asympto}, where the left-hand side of $\Rightarrow$ lists the approximate axiom families comprising the asymptotic \ipdl theory $\mathbb{T}_\approx$.
+
+Specifically, for any fixed $\lambda$ we obtain an approximate theory by selecting from each axiom family the particular axiom corresponding to $\lambda$. Similarly, from each of the two protocol families we select the protocol corresponding to $\lambda$, which gives us two concrete protocols to equate approximately. We recall that an approximate equality judgement is tagged by a pair of parameters $k \in \nat$ and $l(t_1,\ldots,t_{|\Sigma_\type|}) : \nat^{|\Sigma_\type|} \to \nat$, where $|\Sigma_\type|$ is the number of type constants declared in our ambient signature $\Sigma$. Letting $\lambda \in \nat$ vary thus gives us two functions $k_\lambda : \nat \to \nat$ and $l_\lambda : \nat^{|\Sigma_\type|+1} \to \nat$, and we require that these be bounded by polynomials in the appropriate number of variables.
+
+\begin{figure*}
+\begin{mathpar}
+\fbox{$\big\{\Delta^1_\lambda \vdash P^1_\lambda \approx Q^1_\lambda : I^1_\lambda \to O^1_\lambda\big\}_{\lambda \in \nat}, \ldots, \big\{\Delta^n_\lambda \vdash P^n_\lambda \approx Q^n_\lambda : I^n_\lambda \to O^n_\lambda\big\}_{\lambda \in \nat} \; \mathlarger{\mathlarger{\mathlarger{\Rightarrow}}} \; \big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$}\\
+\inferrule{\forall \lambda, \Delta^1_\lambda \vdash P^1_\lambda \approx
+    Q^1_\lambda : I^1_\lambda \to O^1_\lambda, \ldots, \Delta^n_\lambda \vdash
+    P^n_\lambda \approx Q^n_\lambda : I^n_\lambda \to O^n_\lambda \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta_\lambda \vdash
+    \approxeq{P_\lambda}{Q_\lambda}{I_\lambda}{O_\lambda}{k_\lambda}{l_\lambda}
+    \\ k_\lambda = \mathsf{O}(\poly(\lambda)) \\ l_\lambda = \mathsf{O}\big(\poly(\lambda,t_1,\ldots,t_{|\Sigma_\type|})\big)}{\big\{\Delta^1_\lambda \vdash P^1_\lambda \approx Q^1_\lambda : I^1_\lambda \to O^1_\lambda\big\}_{\lambda \in \nat}, \ldots, \big\{\Delta^n_\lambda \vdash P^n_\lambda \approx Q^n_\lambda : I^n_\lambda \to O^n_\lambda\big\}_{\lambda \in \nat} \; \mathlarger{\mathlarger{\Rightarrow}} \; \big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}}
+\end{mathpar}
+\caption{Asymptotic equality for \ipdl protocol families.}
+\label{fig:protocols_equality_asympto}
+\end{figure*}
+
+Whenever we want to make the underlying exact theory explicit, we write the asymptotic equality judgement as $\mathbb{T}_=; \, \mathbb{T}_\approx \; \mathlarger{\mathlarger{\Rightarrow}} \; \big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$.

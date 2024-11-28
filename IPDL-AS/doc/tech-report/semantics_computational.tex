@@ -1,0 +1,144 @@
+When using Turing Machines to compute (probabilistic) functions, we only consider (probabilistic) Turing Machines that have a finite runtime $N \in \nat$; \emph{i.e.}, for every input in the domain, after $N$ (probabilistic) transitions the TM ends up in a configuration where no further transitions are possible. That is, the TM has either reached an accepting state or it has halted after reading a symbol for which no transition is possible in the current state.
+
+Intuitively, a family of interpretations is PPT (probabilistic polynomial-time) if it assigns polynomial lengths to type symbols $\type$, and PPT-computable functions to function symbols $\func$ and distribution symbols $\dist$. A small caveat is that a random distribution on a subset $S \subseteq \{0,1\}^n$ of bitstrings is in general computable by a probabilistic Turing Machine only up to a small error $\varepsilon$, which is the probability that the TM does not end up in an accepting state. In effect, the TM computes a distribution $\mu$ on $S \cup \{\bot\}$ with $\mu(\bot) = \varepsilon$. To relate $\mu$ to our original distribution on $S$, we introduce the following:
+
+\begin{definition}[Approximating distributions]
+Let $S \subseteq \{0,1\}^n$ be a subset of bitstrings of a fixed length. We say that a distribution $\mu_1$ on $S \cup \{\bot\}$ \emph{approximates} a distribution $\mu_2$ on $S$ with error $0 \leq \varepsilon \leq 1$ if there are distributions $\eta_1, \eta_2$ on $S$ such that $\mu_1 = (1 - \varepsilon) \eta_1 + \varepsilon 1[\bot]$ and $\mu_2 = (1 - \varepsilon) \eta_1 + \varepsilon \eta_2$.
+\end{definition}
+
+\noindent We recall that a function $\varepsilon : \nat \to \rat_{\geq 0}$ is negligible if it is eventually smaller than the inverse of any polynomial: \emph{for any $n \in \nat$, there exists $N \in \nat$ such that for all $\lambda \geq N$ we have $\varepsilon(\lambda) \leq \frac{1}{\lambda^n}$}.
+
+\begin{definition}[PPT family of interpretations]\label{def:ppt-interpretation}
+Let $\Sigma$ be an \ipdl signature. A family $\big\{\int{-}_\lambda\big\}_{\lambda \in \nat}$ of interpretations for $\Sigma$ is \emph{probabilistic polynomial-time (PPT)} if there is a polynomial $p(\lambda)$, a negligible function $\eta(\lambda)$, and a natural number $N \in \nat$ such that the following holds:
+\begin{itemize}
+\item For all type symbols $\type$, $|\type|_\lambda \leq p(\lambda)$ if $\lambda \geq N$.
+
+\item For all function symbols $\func : \sigma \to \tau$, the function $\int{\func}_\lambda$ from bitstrings $\int{\sigma}_\lambda$ to bitstrings $\int{\tau}_\lambda$ is computable by a deterministic Turing Machine $\TM_\lambda$ with symbols $\mathsf{0}, \mathsf{1}$. Both the number of states and the runtime of $\TM_\lambda$ are $\leq p(\lambda)$ if $\lambda \geq N$.
+
+\item For all distribution symbols $\dist : \sigma \twoheadrightarrow \tau$, the function $\int{\dist}_\lambda$ from bitstrings $\int{\sigma}_\lambda$ to distributions on bitstrings $\int{\tau}_\lambda$ is computable up to an error $\eta(\lambda)$ by a probabilistic Turing Machine $\TM_\lambda$ with symbols $\mathsf{0}, \mathsf{1}$. Specifically, for every $v \in \int{\sigma}_\lambda$, the distribution $\TM_\lambda(v)$ on $\int{\tau}_\lambda \cup \{\bot\}$ approximates $\int{\dist}_\lambda(v)$ with error $\leq \eta(\lambda)$. Both the number of states and the runtime of $\TM_\lambda$ are $\leq p(\lambda)$ if $\lambda \geq N$.
+\end{itemize}
+\end{definition}
+
+To seamlessly account for the possible renaming of channel names, a distinguisher for protocols of type $\Delta \vdash I \to O$ is allowed to operate in a larger context $\Delta'$ that subsumes the original context $\Delta$ via an embedding $\phi : \Delta'\to \Delta$. In this larger context, we specify the adversarial input channels $I'$ that the distinguisher will query for a value, and the adversarial output channels $O'$ that the distinguisher will assign values to. The adversarial inputs $I'$ will be a subset of the protocol outputs $O$, appropriately translated along $\phi$. Dually, the protocol inputs $I$, appropriately translated along $\phi$, will be a subset of the adversarial outputs $O'$. In the interaction between the adversary and the protocol, every query for a value of a channel $o \in I'$ will extract the value of the channel $o \in \phi^\star(O)$ as computed by the the protocol, and pass it on to the distinguisher. Conversely, an input on channel $i \in \phi^\star(I)$ to the protocol occurs after the distinguisher computes the value of the channel $i \in O'$.
+
+Since our distinguishers will be resource-bounded, we need to bind the number of interactions or \emph{rounds} between the distinguisher and the protocol. In each round, the adversary examines its internal state to determine the type of interaction to perform next, and steps to a new state. This transition function is a partial probabilistic function of type $\St \rightharpoonup \big(\{\bot\} \cup I' \cup O'\big) \times \St$. That is, for any internal state $s$ the adversary probabilistically decides among: \emph{1)} no interaction, coupled with stepping to a new state $s'$; \emph{2)} querying a channel $o \in I'$, coupled with stepping to a new state $s'$; \emph{3)} an assignment to a channel $i \in O'$, coupled with stepping to a new state $s'$; or \emph{4)} halting, in which case the game between the distinguisher and the protocol ends without a decision Boolean. We use this last option to capture probabilistic computations that only succeed up to a negligible error.
+
+If a distinguisher chooses to query the channel $o \in I'$ and receives a value $v$ as a response to the query, it will update its internal state according to an input assignment function of type $\int{\tau} \times \St \to \St$, where $\tau$ is the type of the channel $o$ in $\Delta'$. That is, for any value $v \in \int{\tau}$ and any state $s$, the distinguisher steps to a new state $s'$ that records the value $v$ as a result of the query. If a distinguisher chooses a value assignment to a channel $i \in O'$, the value $v$ -- if any -- is determined by an output valuation function of type $\St \to \int{\tau} \cup \{\bot\}$, where $\tau$ is the type of the channel $i$ in $\Delta'$. After completing the designated number of rounds, the distinguisher converts its internal state to a final decision Boolean according to a function of type $\St \to \{0,1\}$.
+
+To bind the complexity of the aforementioned operations, we implement them as Turing Machines. For convenience, we allow TMs with multiple tapes. As is standard, in the initial configuration all tapes except the first are fully blank. The internal state of the distinguisher is typically encoded as a bitstring, containing \emph{e.g.}, register values together with the sequence of instructions to be executed, if we view the distinguisher as an essentially arbitrary probabilistic program. For our purposes, it will be convenient to allow additional symbols besides $0$, $1$ on our TM tapes: when justifying the \textsc{comp-cong-left} rule of the approximate fragment of \textsc{ipdl}, we will suitably compose the distinguisher with the common context $Q$, which is an \ipdl protocol. The protocol $Q$ thus becomes integrated into the new distinguisher's code. Instead of encoding \ipdl protocols as bitstrings, we will suitably enrich our baseline set of symbols so that we can faithfully capture \ipdl code.
+
+\begin{definition}[Distinguishers]\label{def:disting}
+Fix an \ipdl signature $\Sigma$ and an interpretation $\int{-}$ for $\Sigma$. A \emph{distinguisher} $\Adv$ for protocols of type $\Delta \vdash I \to O$ is a tuple $\big(\Delta', I', O', \phi, \#_\round, \#_\tape, \Symb, \St, s_\star, \Step, \big\{\In_o\big\}_{o \, \in \, I'}, \big\{\Out_i\big\}_{i \, \in \, O'}, \Dec\big)$, where
+
+\begin{itemize}
+\item $\Delta'$ is a channel context;
+
+\item $I' \subseteq \Delta'$ is a set of channels that the adversary can query for a value;
+
+\item $O' \subseteq \Delta'$ is a set of channels to which the adversary can assign a value;
+
+\item $\phi : \Delta' \to \Delta$ is an embedding of $\Delta$ into $\Delta'$;
+
+\item $\#_\round \geq 1$ is the number of rounds the adversary will perform;
+
+\item $\#_\tape \geq 1$ is the number of TM tapes at our disposal;
+
+\item $\Symb$ is a finite set of additional symbols that will be used to encode the distinguisher's internal state;
+
+\item $\St \subseteq \big(\{0,1\} \, \bigsqcup \, \Symb\big)^k$ is a set of strings of a fixed length $k \geq 1$ consisting of symbols drawn from the disjoint union of the sets $\{0,1\}$ and $\Symb$;
+
+\item $s_\star \in \St$ is the initial state;
+
+\item $\Step$ is a probabilistic TM that computes a partial function $\St \rightharpoonup \big(\{\bot\} \cup I' \cup O'\big) \times \St$, with $\#_\tape$-many tapes and using symbols from the set $\{0,1\} \, \bigsqcup \ \{\bot\} \, \bigsqcup \ (I' \cup O') \, \bigsqcup \, \Symb$,
+
+\item each $\In_o$ with $o : \tau \in \Delta$ is a deterministic TM that computes a function $\St \times \int{\tau} \to \St$, with $\#_\tape$-many tapes and using symbols from the set $\{0,1\} \, \bigsqcup \, \Symb$,
+
+\item each $\Out_{i}$ with $i : \tau \in \Delta$ is a deterministic TM that computes a function $\St \to \int{\tau} \cup \{\bot\}$, with $\#_\tape$-many tapes and using symbols from the set $\{0,1\} \, \bigsqcup \ \{\bot\} \, \bigsqcup \, \Symb$,
+
+\item $\Dec$ is a deterministic TM that computes a function $\St \to \{0,1\}$, with $\#_\tape$-many tapes and using symbols from the set $\{0,1\} \, \bigsqcup \, \Symb$.
+\end{itemize}
+We furthermore require that
+\begin{itemize}
+\item $I' \subseteq \phi^\star(O)$, and
+\item $\phi^\star(I) \subseteq O'$,
+\item $\phi^\star(O) \cap O' = \emptyset$.
+\end{itemize}
+\end{definition}
+
+\noindent The probabilistic Turing Machine $\Step$ that computes the transition function can terminate in a non-accepting state with probability $> 0$. We will be interested in families of distinguishers where this \emph{error} as a function of the security parameter is negligible.
+
+\begin{definition}[Distinguisher error]
+Fix a distinguisher $\Adv$ as in Definition \ref{def:disting}. We say that $\Adv$ \emph{has error up to} $\varepsilon \in \rat_{\geq 0}$, written $\err(\Adv) \leq \varepsilon$, if for any state $s \in \St$ the transition function $\Step(s)$ is undefined with probability $\leq \varepsilon$. In other words, when $\Step$ is run with the initial tape contents $s$, it halts in a non-accepting state with probability $\leq \varepsilon$.
+\end{definition}
+
+\noindent To ensure that a distinguisher does not have access to computationally expensive functions such as the discrete logarithm, we need to impose a bound on its computational resources. We will be interested in families of distinguishers where the bound as the function of the security parameter is polynomial.
+
+\begin{definition}[Resource-bounded distinguishers]
+Fix a distinguisher $\Adv$ as in Definition \ref{def:disting}. We say that $\Adv$ \emph{is bounded by} $K \in \nat$, written $|\Adv| \leq K$, if:
+\begin{itemize}
+\item $\#_\round$, $\#_\tape \leq K$;
+\item $|I'| \leq K$ and for each $o \in I'$ with $o : \tau \in \Delta'$, we have $|\tau| \leq K$,
+\item $|O'| \leq K$ and for each $i \in O'$ with $i : \tau \in \Delta'$, we have $|\tau| \leq K$,
+\item $|\Symb| \leq K$;
+\item the length $k$ of a state $s \in \St$ is $\leq K$;
+\item the number of states of each TM $\Step, \In_o, \Out_i, \Dec$ is $\leq K$;
+\item the runtime of each TM $\Step, \In_o, \Out_i, \Dec$ is $\leq K$.
+\end{itemize}
+\end{definition}
+
+\noindent We note that instead of having a separate Turing Machine $\In_o$ for each channel $o \in I'$ we could have required a single Turing Machine that performs the computation across all channels in $I'$, and analogously for $\Out_i$. However, this is unnecessary as the number of channels in $I'$ and $O'$ is $\mathsf{O(poly(\lambda))}$, and the current formulation is more convenient for our purposes. We can now formally define the interaction between a distinguisher $\Adv$ and a protocol $P$.
+
+\begin{definition}[Interaction]
+Fix an \ipdl signature $\Sigma$ and an interpretation $\int{-}$ for $\Sigma$. Let $\Adv$ be a distinguisher for protocols of type $\Delta \vdash I \to O$ and let $\Delta \vdash P : I \to O$. We define $\interaction{\Adv}{P}{\int{-}}$ to be the probability sub-distribution on Booleans induced by the algorithm in Figure~\ref{fig:interaction}.
+\end{definition}
+
+\begin{figure}
+\fbox{% 
+\begin{minipage}{0.9 \textwidth}
+\begin{center}
+Algorithm $\interaction{\Adv}{P}{\int{-}}$:
+\end{center}
+\hrule
+\begin{align*}
+& s \coloneqq s_\star \\
+& P \coloneqq \phi^\star(P) \\
+& \mathsf{for \ } \#_\round \ \mathsf{rounds} \\
+& \ \ \ \ P' \leftarrow \eval{P} \\
+& \ \ \ \ (q, s') \leftarrow \Step(s) \\
+& \ \ \ \ \mathsf{if} \ q = \bot \ \mathsf{then} \\
+& \ \ \ \ \ \ \ \ s := s' \\
+& \ \ \ \ \ \ \ \ P := P' \\
+& \ \ \ \ \mathsf{else \ if} \ q = i \in O' \ \mathsf{then} \\
+& \ \ \ \ \ \ \ \ \mathsf{if} \ \Out_i(s') = v \ \textit{for some $v$} \ \mathsf{then} \\
+& \ \ \ \ \ \ \ \ \ \ \ \ s := s' \\
+& \ \ \ \ \ \ \ \ \ \ \ \ P \coloneqq P'[\read{i} := \val{v}] \\
+& \ \ \ \ \ \ \ \ \mathsf{else} \\
+& \ \ \ \ \ \ \ \ \ \ \ \ s := s' \\
+& \ \ \ \ \ \ \ \ \ \ \ \ P := P' \\
+& \ \ \ \ \mathsf{else \ if} \ q = o \in I' \ \mathsf{then} \\
+& \ \ \ \ \ \ \ \ \mathsf{if} \ (\assign{o}{v}) \in P' \ \textit{for some $v$} \ \mathsf{then} \\
+& \ \ \ \ \ \ \ \ \ \ \ \ s \coloneqq \In_o(v,s') \\
+& \ \ \ \ \ \ \ \ \ \ \ \ P := P' \\
+& \ \ \ \ \ \ \ \ \mathsf{else} \\ 
+& \ \ \ \ \ \ \ \ \ \ \ \ s := s' \\
+& \ \ \ \ \ \ \ \ \ \ \ \ P := P' \\
+& \mathsf{return} \ \Dec(s)
+\end{align*}%
+\end{minipage}
+}
+\caption{Interaction of an \ipdl protocol $\Delta \vdash P : I \to O$ with a distinguisher $\Adv$.}
+\label{fig:interaction}
+\end{figure}
+
+In Figure~\ref{fig:interaction}, the distinguisher interacts with the protocol through the specified number of rounds. The algorithm maintains a state variable $s$ and a protocol variable $P$, which we respectively initialize to the initial state $s_\star$ and the original protocol $P$, appropriately embedded in $\Delta'$. In each round, the protocol $P$ probabilistically evolves to a new protocol $P'$. Independently, the distinguisher probabilistically computes the type of interaction $q \in \{\bot\} \cup I' \cup O'$ together with a new state $s'$ according to $\Step(s)$. If $q = \bot$, in which case no interaction takes place, the state and the protocol are updated to $s'$ and $P'$. If $q = i$ for some $i \in O'$, we compute $\Out_i(s')$ to see if in the distinguisher's current state $s'$ the channel $i$ carries a value $v$. If this is the case, we update the state to $s'$ while computing a new protocol $P'[\read{i} := \val{v}]$. Otherwise we update the state and the protocol to $s'$ and $P'$. Finally, if $q = o$ for some $o \in I'$, we examine the protocol $P'$ to see if the output channel $o$ carries a value $v$. If this is the case, we compute a new distinguisher state $\In_o(v,s')$, while updating the protocol to $P'$. Otherwise we update the state and the protocol to $s'$ and $P'$. After completing the prescribed number of rounds, we obtain a decision Boolean $\Dec(s)$ based on the distinguisher's current state.
+
+\emph{Note}: Strictly speaking, the interaction $\interaction{\Adv}{P}{\int{-}}$ is only a \emph{sub}-distribution on Booleans, since $\Step(s)$ may halt without a result. Since the probability of this happening will be negligible, this technical point is inessential. We are now ready to give the definition of computational indistinguishability.
+
+\begin{definition}[Computational Indistinguishability]\label{def:comp_indist}
+Let $\Sigma$ be an \ipdl signature and consider a family $\big\{\int{-}_\lambda\big\}_{\lambda \in \nat}$ of interpretations for $\Sigma$. Let $\big\{\Delta_\lambda \vdash P_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$ and $\big\{\Delta_\lambda \vdash Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$ be two protocol families with identical typing judgments. We say that $\{P_\lambda\}$ and $\{Q_\lambda\}$ are \emph{indistinguishable} under $\big\{\int{-}_\lambda\big\}$, written
+\[\big\{\int{-}_\lambda\big\}_{\lambda \in \nat} \; \mathlarger{\mathlarger{\vDash}} \; \big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}\]
+if for any polynomial $p(\lambda)$ and negligible function $\eta(\lambda)$, there exists a negligible function $\varepsilon(\lambda)$ with a natural number $N \in \nat$ such that for any $\lambda \geq N$ and any distinguisher $\Adv$ for protocols of type $\Delta_\lambda \vdash I_\lambda \to O_\lambda$ with respect to the interpretation $\int{-}_\lambda$, such that $|\Adv| \leq p(\lambda)$ and $\err(\Adv) \leq \eta(\lambda)$, we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P_\lambda}{\int{-}_\lambda} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q_\lambda}{\int{-}_\lambda} = 1\big]\Big| \leq \varepsilon(\lambda).\]
+\end{definition}
+
+\noindent Instead of comparing the probabilities that the decision Boolean is $1$, we could have likewise used $0$: the probability $\mathsf{Pr}[b = 0]$ that the decision Boolean $b$ is $0$ is only negligibly different from $1 - \mathsf{Pr}[b = 1]$, since the probability that the game ends without a decision Boolean is negligible. This follows from the fact that the error is negligible and the number of rounds is $\mathsf{O(poly(\lambda))}$.

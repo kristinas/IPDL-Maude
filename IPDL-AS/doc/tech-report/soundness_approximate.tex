@@ -1,0 +1,801 @@
+We will say that the underlying exact \ipdl theory $\mathbb{T}_=$ is sound with respect to an interpretation $\int{-}$ if each of its constituent theories $\mathbb{T}_\mathsf{exp}, \mathbb{T}_\mathsf{dist}, \mathbb{T}_\mathsf{prot}$ is sound with respect to $\int{-}$. We will use the judgement $\int{-} \vDash \mathbb{T}_=$ to denote this. We now define what it means for an asymptotic theory to be sound with respect to a family of interpretations.
+
+\begin{definition}
+Fix an \ipdl signature $\Sigma$. An approximate axiom family $\big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$ is \emph{sound} with respect to a family of interpretations $\big\{\int{-}_\lambda\big\}_{\lambda \in \nat}$ if $\big\{\int{-}_\lambda\big\}_{\lambda \in \nat} \; \mathlarger{\mathlarger{\vDash}} \; \big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$.
+\end{definition}
+
+\noindent The asymptotic \ipdl theory $\mathbb{T}_\approx$ is said to be sound if each of its axioms is sound, and we will utilize the judgement $\big\{\int{-}_\lambda\big\}_{\lambda \in \nat} \vDash \mathbb{T}_\approx$ to denote this. Our goal in this section is to prove that this implies overall soundness:
+
+\begin{theorem}[Soundness of asymptotic equality of protocols]\label{thm:main}
+Assume
+\begin{itemize}
+\item an \ipdl signature $\Sigma$ with type symbols $\type_1,\ldots,\type_{|\Sigma_\mathsf{t}|}$,
+
+\item two protocol families $\big\{\Delta_\lambda \vdash P_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$ and $\big\{\Delta_\lambda \vdash Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$ with identical typing judgments,
+
+\item a PPT family of interpretations $\big\{\int{-}_\lambda\big\}_{\lambda \in \nat}$,
+
+\item a strict \ipdl theory $\mathbb{T}_=$ such that for each $\lambda \in \nat$, we have $\int{-}_\lambda \vDash \mathbb{T}_=$, and
+
+\item an asymptotic \ipdl theory $\mathbb{T}_\approx$ such that $\big\{\int{-}_\lambda\big\}_{\lambda \in \nat} \vDash \mathbb{T}_\approx$.
+\end{itemize}
+Then
+\[ \mathbb{T}_=; \, \mathbb{T}_\approx \; \mathlarger{\mathlarger{\Rightarrow}} \; \big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}
+\]  
+implies
+\[\big\{\int{-}_\lambda\big\}_{\lambda \in \nat} \; \mathlarger{\mathlarger{\vDash}} \; \big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}.\]
+\end{theorem}
+
+We begin by restructuring our proofs of approximate equality so that all invocations of the rule \textsc{embed} are carried out first, followed by applications of the rule \textsc{input-unused}, which are in turn followed by invocations of the rule \textsc{cong-comp-left}, and finally by applications of the rule \textsc{cong-new}. Crucially, a sequence of applications of the \textsc{cong-comp-left} rule with common contexts $Q_1, \ldots, Q_n$ can be collapsed into a single application with the common context $Q_1  \; || \; \ldots \; || \; Q_n$. An analogous observation holds for a sequence of applications of the \textsc{embed} rule with embeddings $\phi_1, \ldots, \phi_n$, which can be combined into a single application with the embedding $\phi_n \circ \ldots \circ \phi_1$. The new layered form of our approximate judgements is shown in Figures \ref{fig:protocols_lcongruence_approx} and \ref{fig:protocols_lequality_approx}.
+
+\begin{figure*}
+\begin{mathpar}
+\fbox{$\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{0}$}\\
+\inferrule*[right=axiom]{\Delta \vdash P \approx Q : I \to O \ \axiom}{\Delta \vdash \lapproxcong{P}{Q}{I}{O}{0}{0}}\\
+\fbox{$\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{1}$}\\
+\inferrule*[right=subsume]{\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{0}}{\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{1}}\and
+\inferrule*[right=embed]{\phi : \Delta_1 \to \Delta_2 \\ \Delta_2 \vdash \lapproxcong{P}{Q}{I}{O}{l}{0}}{\Delta_1 \vdash \lapproxcong{\phi^\star(P)}{\phi^\star(Q)}{\phi^\star(I)}{\phi^\star(O)}{l}{1}}\\
+\fbox{$\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{2}$}\\
+\inferrule*[right=subsume]{\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{1}}{\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{2}}\and
+\inferrule*[right=input-unused]{i \notin I \cup O \\ \Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{2}}{\Delta \vdash \lapproxcong{P}{Q}{I \cup \{i\}}{O}{l}{2}}\\
+\fbox{$\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{3}$}\\
+\inferrule*[right=subsume]{\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{2}}{\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{3}}\and
+\inferrule*[right=cong-comp-left]{\Delta \vdash \lapproxcong{P}{P'}{I \cup O_2}{O_1}{l}{2} \\ \Delta \vdash Q : I \cup O_1 \to O_2}{\Delta \vdash \lapproxcong{\Par{P}{Q}}{\Par{P'}{Q}}{I}{O_1 \cup O_2}{l + \tmnorm{Q} + 3}{3}}\\
+\fbox{$\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{4}$}\\
+\inferrule*[right=subsume]{\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{3}}{\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{4}}\and
+\inferrule*[right=cong-new]{\Delta, o : \tau \vdash \lapproxcong{P}{P'}{I}{O \cup \{o\}}{l}{4}}{\Delta \vdash \lapproxcong{\big(\new{o}{\tau}{P}\big)}{\big(\new{o}{\tau}{P'}\big)}{I}{O}{l}{4}}\\
+\fbox{$\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{5}$}\\
+\inferrule*[right=strict-subsume]{\Delta \vdash P = P' : I \to O \\ \Delta \vdash \lapproxcong{P'}{Q'}{I}{O}{l}{4} \\ \Delta \vdash Q' = Q : I \to O}{\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{5}}
+\end{mathpar}
+\caption{Layered approximate congruence for \ipdl protocols.}
+\label{fig:protocols_lcongruence_approx}
+\end{figure*}
+
+\begin{figure*}
+\begin{mathpar}
+\fbox{$\Delta \vdash \lapproxeq{P}{Q}{I}{O}{k}{l}{5}$}\\
+\inferrule*[right=strict]{\Delta \vdash P = Q : I \to O}{\Delta \vdash \lapproxeq{P}{Q}{I}{O}{0}{0}{5}}\and
+\inferrule*[right=approx-cong]{\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{5}}{\Delta \vdash \lapproxeq{P}{Q}{I}{O}{1}{l}{5}}\and
+\inferrule*[right=sym]{\Delta \vdash \lapproxeq{P_1}{P_2}{I}{O}{k}{l}{5}}{\Delta \vdash \lapproxeq{P_2}{P_1}{I}{O}{k}{l}{5}}\and
+\inferrule*[right=trans]{\Delta \vdash \lapproxeq{P_1}{P_2}{I}{O}{k_1}{l_1}{5} \\ \Delta \vdash \lapproxeq{P_2}{P_3}{I}{O}{k_2}{l_2}{5}}{\Delta \vdash \lapproxeq{P_1}{P_3}{I}{O}{k_1 + k_2}{\max(l_1, l_2)}{5}}
+\end{mathpar}
+\caption{Layered approximate equality for \ipdl protocols.}
+\label{fig:protocols_lequality_approx}
+\end{figure*}
+
+\begin{lemma}\label{lem:lapproxeq}
+For any protocols $\Delta \vdash P : I \to O$ and $\Delta \vdash Q : I \to O$ we have $\Delta \vdash \approxeq{P}{Q}{I}{O}{k}{l}$ if and only if $\Delta \vdash \lapproxeq{P}{Q}{I}{O}{k}{l}{5}$.
+\end{lemma}
+
+\begin{proof}[Sketch]
+For the right-to-left direction, $\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{4}$ clearly implies $\Delta \vdash \approxcong{P}{Q}{I}{O}{l}$. Thus we have that $\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{5}$ implies $\Delta \vdash \approxeq{P}{Q}{I}{O}{1}{l}$. Hence $\Delta \vdash \lapproxeq{P}{Q}{I}{O}{k}{l}{5}$ implies $\Delta \vdash \approxeq{P}{Q}{I}{O}{k}{l}$, as desired.
+
+For the left-to-right direction, we first show that $\Delta \vdash \approxcong{P}{Q}{I}{O}{l}$ implies $\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{5}$ by induction on the former derivation. That $\Delta \vdash \approxeq{P}{Q}{I}{O}{k}{l}$ implies $\Delta \vdash \lapproxeq{P}{Q}{I}{O}{k}{l}{5}$ now follows immediately.
+\end{proof}
+
+We can now prove a soundness theorem for approximate equality. Roughly speaking, if $P$ is approximately equal to $Q$, then the advantage that an adversary $\Adv$ has in distinguishing $P$ and $Q$ is a reasonable combination of the distinguishing advantages against each approximate axiom by an adversary whose computational resources are only slightly larger than those of the original adversary $\Adv$. We start by proving that strict equality of protocols implies perfect indistinguishability against any adversary (not just a resource-bounded one). 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{lemma}[Soundness of approximate equality of protocols: Perfect indistinguishability]\label{lem:soundness_approximate_perfect}
+For any \ipdl signature $\Sigma$, interpretation $\int{-}$ for $\Sigma$, strict \ipdl theory $\mathbb{T}_=$ such that $\int{-} \vDash \mathbb{T}_=$, derivation $\mathbb{T}_=; \, \Delta \vdash P = Q : I \to O$, and distinguisher $\Adv$ for protocols of type $\Delta \vdash I \to O$ under the interpretation $\int{-}$, we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| = 0.\]
+\end{lemma}
+
+\begin{proof}
+Fix a distinguisher $\Adv$ as in Definition \ref{def:disting}. By assumption, we have a proof $\Delta \vdash P = Q : I \to O$, which means we also have a proof that $\Delta' \vdash \phi^\star(P) = \phi^\star(Q) : \phi^\star(I) \to \phi^\star(O)$. The soundness theorem for strict equality of protocols applied to this proof gives us a bisimulation $\sim$ such that $1[\phi^\star(P)] \sim 1[\phi^\star(Q)]$. Now let $\sim_\adv$ be a binary relation on sub-distributions on pairs where the first element is a distinguisher state and the second is a protocol of type $\Delta \vdash I \to O$, defined as follows:
+\begin{itemize}
+\item $(s,\eta) \sim_\adv (s,\varepsilon)$ if $s \in \St$ and $\eta \sim \varepsilon$, where we use a distribution in place of a protocol to indicate the obvious lifting to sub-distributions on pairs of the the aforementioned form, and
+\item $1[\bot] \sim_\adv 1[\bot]$, where $\bot$ indicates that the security game between the distinguisher and the protocol halted without a decision Boolean.
+\end{itemize}
+Let $\mathcal{L}_{\sim_\adv}$ be the closure of $\sim_\adv$ under joint convex combinations. Explicitly, $\mathcal{L}_{\sim_\adv}$ is defined by
+\[\Big(\sum_i c_i \, \eta_i\Big) \; \mathcal{L}_{\sim_\adv} \; \Big(\sum_i c_i \, \varepsilon_i\Big)\]
+for coefficients $c_i > 0$ with $\sum_i c_i = 1$ and distributions $\eta_i \sim_\adv \varepsilon_i$. We now establish a loop invariant for the algorithm in Figure~\ref{fig:interaction}. Before starting the first round, the initial distributions are suitably related: by assumption, we have $1[\phi^\star(P)] \sim 1[\phi^\star(Q)]$, which means that
+\[1\big[(s_\star,\phi^\star(P))\big] \; \mathcal{L}_{\sim_\adv} \; 1\big[(s_\star,\phi^\star(Q))\big]\]
+as the two distributions are already related under $\sim_\adv$. Now assume that we have two sub-distributions related by $\mathcal{L}_{\sim_\adv}$. We prove that performing a single round yields sub-distributions that are again related by $\mathcal{L}_{\sim_\adv}$. It suffices to show this for the case $(s,\eta) \sim_\adv (s,\varepsilon)$, where $s \in \St$ and $\eta \sim \varepsilon$. We first compute the distributions $\eta' \coloneqq \eval{\eta}$ and $\varepsilon' \coloneqq \eval{\varepsilon}$. By definition of $\sim$ we have $\eta' \sim \varepsilon'$. Independently, we probabilistically compute the type of interaction to perform together with a new distinguisher state $s'$. If no interaction has been chosen, the resulting distributions are $(s',\eta')$ and $(s',\varepsilon')$. We have
+\[(s',\eta') \; \mathcal{L}_{\sim_\adv} \; (s',\varepsilon')\]
+as desired, as the two distributions are already related under $\sim_\adv$. If the interaction is an input on channel $i$, we compute $\Out_i(s')$ to see if in the distinguisher's current state $s'$ the channel $i$ carries a value. If this is not the case, the resulting distributions are $(s',\eta')$ and $(s',\varepsilon')$. Here we again have $(s',\eta') \; \mathcal{L}_{\sim_\adv} \; (s',\varepsilon')$, as desired. On the other hand, if the channel $i$ carries a value $v$, the resulting distributions are $\big(s',\eta'[\read{i} := \val{v}]\big)$ and $\big(s',\varepsilon'[\read{i} := \val{v}]\big)$. Now because $\eta' \sim \varepsilon'$, by definition of $\sim$ we have $\eta'[\read{i} := \val{v}] \sim \varepsilon'[\read{i} := \val{v}]$. Thus we have
+\[\big(s',\eta'[\read{i} := \val{v}]\big) \; \mathcal{L}_{\sim_\adv} \; \big(s',\varepsilon'[\read{i} := \val{v}]\big)\]
+as desired, as the two distributions are already related under $\sim_\adv$. Finally, if the interaction is a query for an output channel $o$, we recall that the valuation property of the bisimulation $\sim$ allows us to jointly partition the distributions $\eta' \sim \varepsilon'$ into a joint convex combination \[\eta' = \sum_i c_i \, \eta'_i \; \sim \, \sum_i c_i \, \varepsilon'_i = \varepsilon'\]
+with $c_i > 0$ and $\sum_i c_i = 1$ such that
+\begin{itemize}
+\item the respective components $\eta'_i \sim \varepsilon'_i$ are again related, and
+\item $\valueat{\eta'_i}{o} = v_\bot = \valueat{\varepsilon'_i}{o}$ for the same $v_\bot \in \{\bot\} \cup \int{\tau}$ where $o : \tau$ in $\Delta'$.
+\end{itemize}
+Therefore, it suffices to consider the respective components $\eta'_i \sim \varepsilon'_i$ with the same $v_\bot$. If $v_\bot$ is $\bot$, then the resulting distributions are $(s',\eta'_i)$ and $(s',\varepsilon'_i)$. Here we again have $(s',\eta'_i) \; \mathcal{L}_{\sim_\adv} \; (s',\varepsilon'_i)$, as desired. On the other hand, if $v_\bot$ is a value $v$, then the resulting distributions are $\big(\In_o(v,s'),\eta'_i\big)$ and $\big(\In_o(v,s'),\varepsilon'_i\big)$. Thus we have
+\[\big(\In_o(v,s'),\eta'_i\big) \; \mathcal{L}_{\sim_\adv} \; \big(\In_o(v,s'),\varepsilon'_i\big)\]
+as desired, as the two distributions are already related under $\sim_\adv$. This proves that after completing the required number of rounds, we end up with two sub-distributions related by $\mathcal{L}_{\sim_\adv}$. It is now easy to see that they induce the same sub-distribution on decision Booleans. It suffices to prove this for the case $(s,\eta) \sim_\adv (s,\varepsilon)$, where $s \in \St$ and $\eta \sim \varepsilon$. But the state $s$ is the same for both distributions, so the resulting distribution on decision Booleans is $1[\Dec(s)]$. This finishes the proof.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+We now establish soundness of approximate congruence of protocols as a sequence of lemmas, one for each level in Figure \ref{fig:protocols_lcongruence_approx}. We note that at levels $0$ -- $2$, the length $l$ of the derivation does not factor into the final distinguishing advantage because it is always $0$ by construction. If we wish to make the ambient strict theory $\mathbb{T}_=$ and the ambient approximate theory with axioms $\Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n$ explicit, we write the approximate congruence judgement as
+\[\mathbb{T}_=; \, \Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{i}\]
+for each level $i = 0,\ldots,5$, and the approximate equality judgement as
+\[\mathbb{T}_=; \, \Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta \vdash \lapproxeq{P}{Q}{I}{O}{k}{l}{5}.\]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{lemma}[Soundness of approximate congruence of protocols: Level 0]\label{lem:soundness_congruence_approximate_0}
+For any \ipdl signature $\Sigma$, interpretation $\int{-}$ for $\Sigma$, strict \ipdl theory $\mathbb{T}_=$ such that $\int{-} \vDash \mathbb{T}_=$, and any
+\begin{itemize}
+\item approximate \ipdl theory with axioms $\Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n$,
+
+\item derivation $\mathbb{T}_=; \, \Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{0}$,
+
+\item distinguisher $\Adv$ for protocols of type $\Delta \vdash I \to O$ under the interpretation $\int{-}$ for which there exist $K_\adv \in \nat$ and $\eta_\adv \in \rat_{\geq 0}$ such that $|\Adv| \leq K_\adv$ and $\err(\Adv) \leq \eta_\adv$,
+
+\item bounds $\varepsilon^1,\ldots,\varepsilon^n \in \rat_{\geq 0}$ with the property that for any distinguisher $\Adv^i$ for protocols of type $\Delta^i \vdash I^i \to O^i$ with respect to the interpretation $\int{-}$ such that $|\Adv^i| \leq K_\adv$ and $\err(\Adv^i) \leq \eta_\adv$, we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv^i}{P^i}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv^i}{Q^i}{\int{-}} = 1\big]\Big| \leq \varepsilon^i,\]
+\end{itemize}
+we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| \leq \max(\varepsilon^1,\ldots,\varepsilon^n).\]
+\end{lemma}
+
+\begin{proof}
+We proceed by induction on the derivation of $\cong_0$. The \textsc{axiom} rule is clear.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{lemma}[Soundness of approximate congruence of protocols: Level 1]\label{lem:soundness_cogruence_approximate_1}
+For any \ipdl signature $\Sigma$, interpretation $\int{-}$ for $\Sigma$, strict \ipdl theory $\mathbb{T}_=$ such that $\int{-} \vDash \mathbb{T}_=$, and any
+\begin{itemize}
+\item approximate \ipdl theory with axioms $\Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n$,
+
+\item derivation $\mathbb{T}_=; \, \Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{1}$,
+
+\item distinguisher $\Adv$ for protocols of type $\Delta \vdash I \to O$ under the interpretation $\int{-}$ for which there exist $K_\adv \in \nat$ and $\eta_\adv \in \rat_{\geq 0}$ such that $|\Adv| \leq K_\adv$ and $\err(\Adv) \leq \eta_\adv$,
+
+\item bounds $\varepsilon^1,\ldots,\varepsilon^n \in \rat_{\geq 0}$ with the property that for any distinguisher $\Adv^i$ for protocols of type $\Delta^i \vdash I^i \to O^i$ with respect to the interpretation $\int{-}$ such that $|\Adv^i| \leq K_\adv$ and $\err(\Adv^i) \leq \eta_\adv$, we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv^i}{P^i}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv^i}{Q^i}{\int{-}} = 1\big]\Big| \leq \varepsilon^i,\]
+\end{itemize}
+we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| \leq \max(\varepsilon^1,\ldots,\varepsilon^n).\]
+\end{lemma}
+
+\begin{proof}
+We proceed by induction on the derivation of $\cong_1$. The \textsc{subsume} rule follows immediately from the preceding lemma. In the case of the \textsc{embed} rule, let $\Adv \coloneqq \big(\Delta', I', O', \phi', \#_\round, \#_\tape, \Symb, \St, s_\star, \Step, \big\{\In_o\big\}_{o \, \in \, I'}, \big\{\Out_i\big\}_{i \, \in \, O'}, \Dec\big)$ be the original adversary for protocols of type $\Delta_1 \vdash \phi^\star(I) \to \phi^\star(O)$. Let
+\[\Adv_\mathcal{R} \coloneqq \big(\Delta', I', O', \phi \circ \phi', \#_\round, \#_\tape, \Symb, \St, s_\star, \Step, \big\{\In_o\big\}_{o \, \in \, I'}, \big\{\Out_i\big\}_{i \, \in \, O'}, \Dec\big)\]
+be the new adversary for protocols of type $\Delta_2 \vdash I \to O$. Clearly, $|\Adv_\mathcal{R}| \leq K_\adv$ and $\err(\Adv_\mathcal{R}) \leq \eta_\adv$, and
+\begin{align*}
+& \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P}{\int{-}} = 1\big] = \mathsf{Pr}\big[\interaction{\Adv}{\phi^\star(P)}{\int{-}} = 1\big] \\
+& \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{Q}{\int{-}} = 1\big] = \mathsf{Pr}\big[\interaction{\Adv}{\phi^\star(Q)}{\int{-}} = 1\big]
+\end{align*}
+To finish the proof, we invoke the preceding lemma with the premise $\Delta_2 \vdash \lapproxcong{P}{Q}{I}{O}{l}{0}$ and the new adversary $\Adv_\mathcal{R}$.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{lemma}[Soundness of approximate congruence of protocols: Level 2]\label{lem:soundness_congruence_approximate_2}
+For any \ipdl signature $\Sigma$, interpretation $\int{-}$ for $\Sigma$, strict \ipdl theory $\mathbb{T}_=$ such that $\int{-} \vDash \mathbb{T}_=$, and any
+\begin{itemize}
+\item approximate \ipdl theory with axioms $\Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n$,
+
+\item derivation $\mathbb{T}_=; \, \Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{2}$,
+
+\item distinguisher $\Adv$ for protocols of type $\Delta \vdash I \to O$ under the interpretation $\int{-}$ for which there exist $K_\adv \in \nat$ and $\eta_\adv \in \rat_{\geq 0}$ such that $|\Adv| \leq K_\adv$ and $\err(\Adv) \leq \eta_\adv$,
+
+\item bounds $\varepsilon^1,\ldots,\varepsilon^n \in \rat_{\geq 0}$ with the property that for any distinguisher $\Adv^i$ for protocols of type $\Delta^i \vdash I^i \to O^i$ with respect to the interpretation $\int{-}$ such that $|\Adv^i| \leq K_\adv$ and $\err(\Adv^i) \leq \eta_\adv$, we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv^i}{P^i}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv^i}{Q^i}{\int{-}} = 1\big]\Big| \leq \varepsilon^i,\]
+\end{itemize}
+we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| \leq \max(\varepsilon^1,\ldots,\varepsilon^n).\]
+\end{lemma}
+
+\begin{proof}
+We proceed by induction on the derivation of $\cong_2$. The \textsc{subsume} rule follows immediately from the preceding lemma. For the \textsc{input-unused} rule, let $\Adv \coloneqq \big(\Delta', I', O', \phi, \#_\round, \#_\tape, \Symb, \St, s_\star, \Step, \big\{\In_o\big\}_{o \, \in \, I'}, \big\{\Out_i\big\}_{i \, \in \, O'}, \Dec\big)$ be the original adversary for protocols of type $\Delta \vdash I \cup \{i\} \to O$. Then $\Adv_\mathcal{R} \coloneqq \Adv$ is also an adversary for protocols of type $\Delta \vdash I \to O$, and we have
+\begin{align*}
+& \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P}{\int{-}} = 1\big] = \mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] \\
+& \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{Q}{\int{-}} = 1\big] = \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]
+\end{align*}
+To finish the proof, we appeal to the inductive hypothesis for the premise $\Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{2}$ and the adversary $\Adv_\mathcal{R}$.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent To prove soundness of the approximate \textsc{comp-cong-left} rule, we need the following crucial lemma, the proof of which we defer to the end of this section.
+
+\begin{lemma}[Absorption]\label{lem:absorption}
+There exists a polynomial $\mathcal{P}(x,y,z) \geq y$ such that for any
+\begin{itemize}
+\item \ipdl signature $\Sigma$ with type symbols $\type_1,\ldots,\type_{|\Sigma_\mathsf{t}|}$,
+
+\item interpretation $\int{-}$ for $\Sigma$ for which there exist $K_\sem \in \nat$ and $\eta_\sem \in \rat_{\geq 0}$ such that
+\begin{itemize}
+\item for all type symbols $\type$, $|\type| \leq K_\sem$,
+
+\item for all function symbols $\func$, $\int{\func}$ is computable by a deterministic TM with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$, and
+
+\item for all distribution symbols $\dist$, $\int{\dist}$ is computable up to error $\eta_\sem$ by a probabilistic TM with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$,
+\end{itemize}
+
+\item distinguisher $\Adv$ for protocols of type $\Delta \vdash I \to O_1 \cup O_2$ under the interpretation $\int{-}$ for which there exist $K_\adv \in \nat$ and $\eta_\adv \in \rat_{\geq 0}$ such that $|\Adv| \leq K_\adv$ and $\err(\Adv) \leq \eta_\adv$,
+
+\item protocol $\Delta \vdash Q : I \cup O_1 \to O_2$,
+\end{itemize}
+we have a new distinguisher $\Adv_\mathcal{R}$ for protocols of type $\Delta \vdash I \cup O_2 \to O_1$ with
+\[|\Adv_\mathcal{R}| \leq \mathcal{P}\big(K_\sem,K_\adv,\tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|)\big)\]
+and $\err(\Adv_\mathcal{R}) \leq \max(\eta_\sem,\eta_\adv)$ such that for any protocol $\Delta \vdash P : I \cup O_2 \to O_1$ we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{\Par{P}{Q}}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P}{\int{-}} = 1\big]\Big| \leq \tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) * \eta_\sem.\]
+\end{lemma}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{lemma}[Soundness of approximate equality of protocols: Level 3]\label{lem:soundness_congruence_approximate_3}
+For any
+\begin{itemize}
+\item \ipdl signature $\Sigma$ with type symbols $\type_1,\ldots,\type_{|\Sigma_\mathsf{t}|}$,
+
+\item interpretation $\int{-}$ for $\Sigma$ for which there exist $K_\sem \in \nat$ and $\eta_\sem \in \rat_{\geq 0}$ such that
+\begin{itemize}
+\item for all type symbols $\type$, $|\type| \leq K_\sem$,
+
+\item for all function symbols $\func$, $\int{\func}$ is computable by a deterministic TM with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$, and
+
+\item for all distribution symbols $\dist$, $\int{\dist}$ is computable up to error $\eta_\sem$ by a probabilistic TM with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$,
+\end{itemize}
+
+\item strict \ipdl theory $\mathbb{T}_=$ such that $\int{-} \vDash \mathbb{T}_=$,
+
+\item approximate \ipdl theory with axioms $\Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n$,
+
+\item derivation \[\mathbb{T}_=; \, \Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{3},\]%
+
+\item distinguisher $\Adv$ for protocols of type $\Delta \vdash I \to O$ under the interpretation $\int{-}$ for which there exist $K_\adv \in \nat$ and $\eta_\adv \in \rat_{\geq 0}$ such that $|\Adv| \leq K_\adv$ and $\err(\Adv) \leq \eta_\adv$,
+
+\item bound $K_\length \in \nat$ such that $l(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) \leq K_\length$, and
+
+\item bounds $\varepsilon^1,\ldots,\varepsilon^n \in \rat_{\geq 0}$ with the property that for any distinguisher $\Adv^i$ for protocols of type $\Delta^i \vdash I^i \to O^i$ with respect to the interpretation $\int{-}$ such that $|\Adv^i| \leq \mathcal{P}(K_\sem,K_\adv,K_\length)$ and $\err(\Adv^i) \leq \max(\eta_\sem,\eta_\adv)$, we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv^i}{P^i}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv^i}{Q^i}{\int{-}} = 1\big]\Big| \leq \varepsilon^i,\]
+\end{itemize}
+we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| \leq \max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem.\]
+\end{lemma}
+
+\begin{proof}
+We proceed by induction on the derivation of $\cong_3$. The \textsc{subsume} rule follows from Lemma \ref{lem:soundness_congruence_approximate_2} instantiated with $K_\adv \coloneqq \mathcal{P}(K_\sem,K_\adv,K_\length)$ and $\eta_\adv \coloneqq \max(\eta_\sem,\eta_\adv)$. We can do this because
+\begin{align*}
+& |\Adv| \leq K_\adv \leq \mathcal{P}(K_\sem,K_\adv,K_\length), \\
+& \err(\Adv) \leq \eta_\adv \leq \max(\eta_\sem,\eta_\adv).
+\end{align*}
+Then we have
+\begin{align*}
+\Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| & \leq \max(\varepsilon^1,\ldots,\varepsilon^n) \leq \max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem,
+\end{align*}
+where the first inequality is the bound we got from Lemma \ref{lem:soundness_congruence_approximate_2}.
+
+For the \textsc{cong-comp-left} rule, we appeal to the absorption lemma to give us a new adversary $\Adv_\mathcal{R}$ for protocols of type $\Delta \vdash I \cup O_2 \to O_1$ with $|\Adv_\mathcal{R}| \leq \mathcal{P}\big(K_\sem,K_\adv,\tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|)\big)$ and $\err(\Adv_\mathcal{R}) \leq \max(\eta_\sem,\eta_\adv)$ such that
+\begin{align*}
+& \Big|\mathsf{Pr}\big[\interaction{\Adv}{\Par{P}{Q}}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P}{\int{-}} = 1\big]\Big| \leq \tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) * \eta_\sem, \\
+& \Big|\mathsf{Pr}\big[\interaction{\Adv}{\Par{P'}{Q}}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P'}{\int{-}} = 1\big]\Big| \leq \tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) * \eta_\sem.
+\end{align*}
+We can now appeal to Lemma \ref{lem:soundness_congruence_approximate_2} for the premise $\Delta \vdash \lapproxeq{P}{P'}{I \cup O_2}{O_1}{k}{l}{2}$ and the adversary $\Adv_\mathcal{R}$, instantiated with $K_\adv \coloneqq \mathcal{P}(K_\sem,K_\adv,K_\length)$ and $\eta_\adv \coloneqq \max(\eta_\sem,\eta_\adv)$.
+We can do this because
+\[|\Adv_\mathcal{R}| \leq \mathcal{P}\big(K_\sem,K_\adv,\tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|)\big) \leq \mathcal{P}(K_\sem,K_\adv,K_\length),\]
+where the second inequality follows from the assumption
+\[\tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) + 3 \leq K_\length.\]
+We recall that $l$ does not appear in the above because it comes from level 2, and is thus necessarily $0$. Lemma \ref{lem:soundness_congruence_approximate_2} gives us the bound
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P'}{\int{-}} = 1\big]\Big| \leq \max(\varepsilon^1,\ldots,\varepsilon^n).\]
+Combining the three bounds
+\begin{align*}
+& \Big|\mathsf{Pr}\big[\interaction{\Adv}{\Par{P}{Q}}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P}{\int{-}} = 1\big]\Big| \leq \tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) * \eta_\sem, \\
+& \Big|\mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P'}{\int{-}} = 1\big]\Big| \leq \max(\varepsilon^1,\ldots,\varepsilon^n), \\
+& \Big|\mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P'}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{\Par{P'}{Q}}{\int{-}} = 1\big]\Big| \leq \tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) * \eta_\sem
+\end{align*}
+yields the following:
+\begin{align*}
+\Big|\mathsf{Pr}\big[\interaction{\Adv}{\Par{P}{Q}}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{\Par{P'}{Q}}{\int{-}} = 1\big]\Big| & \leq \max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * \tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) * \eta_\sem \\ & \leq \max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem.
+\end{align*}
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{lemma}[Soundness of approximate congruence of protocols: Level 4]\label{lem:soundness_congruence_approximate_4}
+For any
+\begin{itemize}
+\item \ipdl signature $\Sigma$ with type symbols $\type_1,\ldots,\type_{|\Sigma_\mathsf{t}|}$,
+
+\item interpretation $\int{-}$ for $\Sigma$ for which there exist $K_\sem \in \nat$ and $\eta_\sem \in \rat_{\geq 0}$ such that
+\begin{itemize}
+\item for all type symbols $\type$, $|\type| \leq K_\sem$,
+
+\item for all function symbols $\func$, $\int{\func}$ is computable by a deterministic Turing Machine with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$, and
+
+\item for all distribution symbols $\dist$, $\int{\dist}_\lambda$ is computable up to an error $\eta_\sem$ by a probabilistic Turing Machine with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$,
+\end{itemize}
+
+\item strict \ipdl theory $\mathbb{T}_=$ such that $\int{-} \vDash \mathbb{T}_=$,
+
+\item approximate \ipdl theory with axioms $\Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n$,
+
+\item derivation \[\mathbb{T}_=; \, \Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{4},\]%
+
+\item distinguisher $\Adv$ for protocols of type $\Delta \vdash I \to O$ under the interpretation $\int{-}$ for which there exist $K_\adv \in \nat$ and $\eta_\adv \in \rat_{\geq 0}$ such that $|\Adv| \leq K_\adv$ and $\err(\Adv) \leq \eta_\adv$,
+
+\item bound $K_\length \in \nat$ such that $l(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) \leq K_\length$, and
+
+\item bounds $\varepsilon^1,\ldots,\varepsilon^n \in \rat_{\geq 0}$ with the property that for any distinguisher $\Adv^i$ for protocols of type $\Delta^i \vdash I^i \to O^i$ with respect to the interpretation $\int{-}$ such that $|\Adv^i| \leq \mathcal{P}(K_\sem,K_\adv,K_\length)$ and $\err(\Adv^i) \leq \max(\eta_\sem,\eta_\adv)$, we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv^i}{P^i}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv^i}{Q^i}{\int{-}} = 1\big]\Big| \leq \varepsilon^i,\]
+\end{itemize}
+we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| \leq \max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem.\]
+\end{lemma}
+
+\begin{proof}
+We proceed by induction on the derivation of $\cong_4$. The \textsc{subsume} rule follows immediately from the preceding lemma. To prove the \textsc{cong-new} rule, let $\Adv \coloneqq \big(\Delta', I', O', \phi, \#_\round, \#_\tape, \Symb, \St, s_\star, \Step, \big\{\In_o\big\}_{o \, \in \, I'}, \big\{\Out_i\big\}_{i \, \in \, O'}, \Dec\big)$ be the original adversary for protocols of type $\Delta \vdash I \to O$. We define a new adversary $\Adv_\mathcal{R}$ for protocols of type $\Delta, o : \tau \vdash I \to O \cup \{o\}$ as follows:
+\[\Adv_\mathcal{R} \coloneqq \big(\Delta'_\mathcal{R}, I'_\mathcal{R}, O'_\mathcal{R}, \phi_\mathcal{R}, \#_\round, \#_\tape, \Symb, \St, s_\star, \Step^\mathcal{R}, \big\{\In^\mathcal{R}_o\big\}_{o \, \in \, I'_\mathcal{R}}, \big\{\Out^\mathcal{R}_i\big\}_{i \, \in \, O'_\mathcal{R}}, \Dec\big).\]
+In the above definition, we have the following, where we recall that each channel name stands for a de Bruijn index:
+\begin{itemize}
+\item $\Delta'_\mathcal{R} \coloneqq \Delta', o:\tau$ is the channel context $\Delta'$ extended with the type $\tau$,
+\item $I'_\mathcal{R}$ is the set $\{o + 1 \, | \, o \in I'\}$ of de Bruijn indices in $I'$ increased by $1$,
+\item $O'_\mathcal{R}$ is the set $\{i + 1 \, | \, i \in O'\}$ of de Bruijn indices in $O'$ increased by $1$,
+\item $\phi_\mathcal{R} \coloneqq \phi \times \mathsf{id}_\tau$ from the context $\Delta',o:\tau$ to the context $\Delta,o:\tau$ is the extended channel embedding,
+\item each $\In^\mathcal{R}_{o+1}$ is the Turing Machine $\In_o$ corresponding to the original index $o \in I'$,
+\item each $\Out^\mathcal{R}_{i+1}$ is the Turing Machine $\Out_i$ corresponding to the original index $i \in O'$,
+\item $\Step^\mathcal{R}$ is the Turing Machine $\Step$ with each index $o \in I'$ and $i \in O'$ renamed to $o+1$ and $i+1$, respectively.
+\end{itemize}
+Since all we did was rename channel indices, it is easy to see that we have
+\begin{align*}
+& \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P}{\int{-}} = 1\big] = \mathsf{Pr}\big[\interaction{\Adv}{\big(\new{o}{\tau}{P}\big)}{\int{-}} = 1\big] \\
+& \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{Q}{\int{-}} = 1\big] = \mathsf{Pr}\big[\interaction{\Adv}{\new{o}{\tau}{Q}}{\int{-}} = 1\big]
+\end{align*}
+In particular, the new adversary $\Adv_\mathcal{R}$ will never query for the newly exposed channel $o:\tau$, since this channel is hidden from the original adversary's view. To finish the proof, we appeal to the inductive hypothesis for the premise $\Delta, o : \tau \vdash \lapproxcong{P}{P'}{I}{O \cup \{o\}}{l}{4}$ and the adversary $\Adv_\mathcal{R}$.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{lemma}[Soundness of approximate congruence of protocols: Level 5]\label{lem:soundness_congruence_approximate_5}
+For any
+\begin{itemize}
+\item \ipdl signature $\Sigma$ with type symbols $\type_1,\ldots,\type_{|\Sigma_\mathsf{t}|}$,
+
+\item interpretation $\int{-}$ for $\Sigma$ for which there exist $K_\sem \in \nat$ and $\eta_\sem \in \rat_{\geq 0}$ such that
+\begin{itemize}
+\item for all type symbols $\type$, $|\type| \leq K_\sem$,
+
+\item for all function symbols $\func$, $\int{\func}$ is computable by a deterministic Turing Machine with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$, and
+
+\item for all distribution symbols $\dist$, $\int{\dist}_\lambda$ is computable up to an error $\eta_\sem$ by a probabilistic Turing Machine with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$,
+\end{itemize}
+
+\item strict \ipdl theory $\mathbb{T}_=$ such that $\int{-} \vDash \mathbb{T}_=$,
+
+\item approximate \ipdl theory with axioms $\Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n$,
+
+\item derivation \[\mathbb{T}_=; \, \Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta \vdash \lapproxcong{P}{Q}{I}{O}{l}{5},\]%
+
+\item distinguisher $\Adv$ for protocols of type $\Delta \vdash I \to O$ under the interpretation $\int{-}$ for which there exist $K_\adv \in \nat$ and $\eta_\adv \in \rat_{\geq 0}$ such that $|\Adv| \leq K_\adv$ and $\err(\Adv) \leq \eta_\adv$,
+
+\item bound $K_\length \in \nat$ such that $l(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) \leq K_\length$, and
+
+\item bounds $\varepsilon^1,\ldots,\varepsilon^n \in \rat_{\geq 0}$ with the property that for any distinguisher $\Adv^i$ for protocols of type $\Delta^i \vdash I^i \to O^i$ with respect to the interpretation $\int{-}$ such that $|\Adv^i| \leq \mathcal{P}(K_\sem,K_\adv,K_\length)$ and $\err(\Adv^i) \leq \max(\eta_\sem,\eta_\adv)$, we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv^i}{P^i}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv^i}{Q^i}{\int{-}} = 1\big]\Big| \leq \varepsilon^i,\]
+\end{itemize}
+we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| \leq \max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem.\]
+\end{lemma}
+
+\begin{proof}
+We proceed by induction on the derivation of $\cong_5$. To prove the \textsc{strict-subsume} rule, we invoke the preceding lemma with the premise $\Delta \vdash \lapproxcong{P'}{Q'}{I}{O}{l}{4}$ to give us the bound
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P'}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q'}{\int{-}} = 1\big]\Big| \leq \max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem.\]
+Invoking Lemma \ref{lem:soundness_approximate_perfect} on the two premises $\Delta \vdash P = P' : I \to O$ and $\Delta \vdash Q' = Q : I \to O$ gives us the two respective bounds
+\begin{align*}
+& \Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{P'}{\int{-}} = 1\big]\Big| = 0, \\
+& \Big|\mathsf{Pr}\big[\interaction{\Adv}{Q'}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| = 0.
+\end{align*}
+Combining the three bounds
+\begin{align*}
+& \Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{P'}{\int{-}} = 1\big]\Big| = 0, \\
+&\Big|\mathsf{Pr}\big[\interaction{\Adv}{P'}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q'}{\int{-}} = 1\big]\Big| \leq \max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem, \\
+& \Big|\mathsf{Pr}\big[\interaction{\Adv}{Q'}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| = 0
+\end{align*}
+yields the following:
+\begin{align*}
+& \Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| \leq \max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem.
+\end{align*}
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{lemma}[Soundness of approximate equality of protocols]\label{lem:soundness_equality_approximate}
+For any
+\begin{itemize}
+\item \ipdl signature $\Sigma$ with type symbols $\type_1,\ldots,\type_{|\Sigma_\mathsf{t}|}$,
+
+\item interpretation $\int{-}$ for $\Sigma$ for which there exist $K_\sem \in \nat$ and $\eta_\sem \in \rat_{\geq 0}$ such that
+\begin{itemize}
+\item for all type symbols $\type$, $|\type| \leq K_\sem$,
+
+\item for all function symbols $\func$, $\int{\func}$ is computable by a deterministic Turing Machine with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$, and
+
+\item for all distribution symbols $\dist$, $\int{\dist}_\lambda$ is computable up to an error $\eta_\sem$ by a probabilistic Turing Machine with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$,
+\end{itemize}
+
+\item strict \ipdl theory $\mathbb{T}_=$ such that $\int{-} \vDash \mathbb{T}_=$,
+
+\item approximate \ipdl theory with axioms $\Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n$,
+
+\item derivation \[\mathbb{T}_=; \, \Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta \vdash \lapproxeq{P}{Q}{I}{O}{k}{l}{5},\]%
+
+\item distinguisher $\Adv$ for protocols of type $\Delta \vdash I \to O$ under the interpretation $\int{-}$ for which there exist $K_\adv \in \nat$ and $\eta_\adv \in \rat_{\geq 0}$ such that $|\Adv| \leq K_\adv$ and $\err(\Adv) \leq \eta_\adv$,
+
+\item bound $K_\length \in \nat$ such that $l(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) \leq K_\length$, and
+
+\item bounds $\varepsilon^1,\ldots,\varepsilon^n \in \rat_{\geq 0}$ with the property that for any distinguisher $\Adv^i$ for protocols of type $\Delta^i \vdash I^i \to O^i$ with respect to the interpretation $\int{-}$ such that $|\Adv^i| \leq \mathcal{P}(K_\sem,K_\adv,K_\length)$ and $\err(\Adv^i) \leq \max(\eta_\sem,\eta_\adv)$, we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv^i}{P^i}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv^i}{Q^i}{\int{-}} = 1\big]\Big| \leq \varepsilon^i,\]
+\end{itemize}
+we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| \leq k * \big(\max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem\big).\]
+\end{lemma}
+
+\begin{proof}
+We proceed by induction on the derivation of $\approx_5$. The \textsc{strict} rule follows immediately from Lemma \ref{lem:soundness_approximate_perfect}. The \textsc{approx-cong} rule follows immediately from Lemma \ref{lem:soundness_equality_approximate}. The \textsc{sym} rule follows easily from the inductive hypothesis for the premise $\Delta \vdash \lapproxeq{P_1}{P_2}{I}{O}{k}{l}{5}$. For the \textsc{trans} rule, we use the inductive hypotheses for the two premises $\Delta \vdash \lapproxeq{P_1}{P_2}{I}{O}{k_1}{l_1}{5}$ and $\Delta \vdash \lapproxeq{P_2}{P_3}{I}{O}{k_2}{l_2}{5}$, both invoked with $K_\length$. We can do this because
+\begin{align*}
+& l_1(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) \leq \max\big(l_1(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|), l_2(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|)\big) \leq K_\length, \\
+& l_2(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) \leq \max\big(l_1(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|), l_2(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|)\big) \leq K_\length.
+\end{align*}
+This gives us the two bounds
+\begin{align*}
+& \Big|\mathsf{Pr}\big[\interaction{\Adv}{P_1}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{P_2}{\int{-}} = 1\big]\Big| \leq k_1 * \big(\max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem\big),\\
+& \Big|\mathsf{Pr}\big[\interaction{\Adv}{P_2}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{P_3}{\int{-}} = 1\big]\Big| \leq k_2 * \big(\max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem\big).
+\end{align*}
+Combining these yields the following:
+\begin{align*}
+& \Big|\mathsf{Pr}\big[\interaction{\Adv}{P_1}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{P_3}{\int{-}} = 1\big]\Big| \leq (k_1 + k_2) * \big(\max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem\big).
+\end{align*}
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{corollary}[Soundness of approximate equality of protocols]\label{lem:soundness_approximate}
+For any
+\begin{itemize}
+\item \ipdl signature $\Sigma$ with type symbols $\type_1,\ldots,\type_{|\Sigma_\mathsf{t}|}$,
+
+\item interpretation $\int{-}$ for $\Sigma$ for which there exist $K_\sem \in \nat$ and $\eta_\sem \in \rat_{\geq 0}$ such that
+\begin{itemize}
+\item for all type symbols $\type$, $|\type| \leq K_\sem$,
+
+\item for all function symbols $\func$, $\int{\func}$ is computable by a deterministic Turing Machine with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$, and
+
+\item for all distribution symbols $\dist$, $\int{\dist}_\lambda$ is computable up to an error $\eta_\sem$ by a probabilistic Turing Machine with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$,
+\end{itemize}
+
+\item strict \ipdl theory $\mathbb{T}_=$ such that $\int{-} \vDash \mathbb{T}_=$,
+
+\item approximate \ipdl theory with axioms $\Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n$,
+
+\item derivation \[\mathbb{T}_=; \, \Delta^1 \vdash P^1 \approx Q^1 : I^1 \to O^1, \ldots, \Delta^n \vdash P^n \approx Q^n : I^n \to O^n \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta \vdash \approxeq{P}{Q}{I}{O}{k}{l},\]%
+
+\item distinguisher $\Adv$ for protocols of type $\Delta \vdash I \to O$ under the interpretation $\int{-}$ for which there exist $K_\adv \in \nat$ and $\eta_\adv \in \rat_{\geq 0}$ such that $|\Adv| \leq K_\adv$ and $\err(\Adv) \leq \eta_\adv$,
+
+\item bound $K_\length \in \nat$ such that $l(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) \leq K_\length$, and
+
+\item bounds $\varepsilon^1,\ldots,\varepsilon^n \in \rat_{\geq 0}$ with the property that for any distinguisher $\Adv^i$ for protocols of type $\Delta^i \vdash I^i \to O^i$ with respect to the interpretation $\int{-}$ such that $|\Adv^i| \leq \mathcal{P}(K_\sem,K_\adv,K_\length)$ and $\err(\Adv^i) \leq \max(\eta_\sem,\eta_\adv)$, we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv^i}{P^i}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv^i}{Q^i}{\int{-}} = 1\big]\Big| \leq \varepsilon^i,\]
+\end{itemize}
+we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q}{\int{-}} = 1\big]\Big| \leq k * \big(\max(\varepsilon^1,\ldots,\varepsilon^n) + 2 * K_\length * \eta_\sem\big).\]
+\end{corollary}
+
+\begin{proof}
+Follows immediately from Lemmas \ref{lem:lapproxeq} and \ref{lem:soundness_equality_approximate}.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent We are now ready to prove our main soundness theorem.
+
+\begin{theorem}[Soundness of asymptotic equality of protocols]
+Assume
+\begin{itemize}
+\item an \ipdl signature $\Sigma$ with type symbols $\type_1,\ldots,\type_{|\Sigma_\mathsf{t}|}$,
+
+\item two protocol families $\big\{\Delta_\lambda \vdash P_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$ and $\big\{\Delta_\lambda \vdash Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}$ with identical typing judgments,
+
+\item a PPT family of interpretations $\big\{\int{-}_\lambda\big\}_{\lambda \in \nat}$,
+
+\item a strict \ipdl theory $\mathbb{T}_=$ such that for each $\lambda \in \nat$, we have $\int{-}_\lambda \vDash \mathbb{T}_=$, and
+
+\item an asymptotic \ipdl theory $\mathbb{T}_\approx$ such that $\big\{\int{-}_\lambda\big\}_{\lambda \in \nat} \vDash \mathbb{T}_\approx$.
+\end{itemize}
+Then
+\[ \mathbb{T}_=; \, \mathbb{T}_\approx \; \mathlarger{\mathlarger{\Rightarrow}} \; \big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}
+\]  
+implies
+\[\big\{\int{-}_\lambda\big\}_{\lambda \in \nat} \; \mathlarger{\mathlarger{\vDash}} \; \big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}.\]
+\end{theorem}
+
+\begin{proof}
+Let $\big\{\Delta^1_\lambda \vdash P^1_\lambda \approx Q^1_\lambda : I^1_\lambda \to O^1_\lambda\big\}_{\lambda \in \nat}, \ldots, \big\{\Delta^n_\lambda \vdash P^n_\lambda \approx Q^n_\lambda : I^n_\lambda \to O^n_\lambda\big\}_{\lambda \in \nat}$ be the axioms comprising the theory $\mathbb{T}_\approx$. The top-level asymptotic equality judgement
+\[ \mathbb{T}_=; \, \mathbb{T}_\approx \; \mathlarger{\mathlarger{\Rightarrow}} \; \big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat}
+\]
+gives us functions $k = \mathsf{O}(\poly(\lambda))$ and $l = \mathsf{O}\big(\poly(\lambda,t_1,\ldots,t_{|\Sigma_\type|})\big)$ such that
+
+\[\mathbb{T}_=; \, \Delta^1_\lambda \vdash P^1_\lambda \approx Q^1_\lambda : I^1_\lambda \to O^1_\lambda, \ldots, \Delta^n_\lambda \vdash P^n_\lambda \approx Q^n_\lambda : I^n_\lambda \to O^n_\lambda \; \mathlarger{\mathlarger{\Rightarrow}} \; \Delta_\lambda \vdash \approxeq{P_\lambda}{Q_\lambda}{I_\lambda}{O_\lambda}{k(\lambda)}{l(\lambda)} \tag{$\star$}\]%
+
+\noindent In particular, there exists a polynomial $p_\width(\lambda)$ with an index $N_\width \in \nat$ such that $k(\lambda) \leq p_\width(\lambda)$ if $\lambda \geq N_\width$, and a polynomial $p_\length(\lambda,t_1,\ldots,t_{|\Sigma_\type|})$ with an index $N_\length \in \nat$ such that $l(\lambda,t_1,\ldots,t_{|\Sigma_\type|}) \leq p_\length(\lambda,t_1,\ldots,t_{|\Sigma_\type|})$ if $\lambda \geq N_\length$ and $t_i \geq N_\length$. Since the family $\big\{\int{-}_\lambda\big\}_{\lambda \in \nat}$ of interpretations is PPT, we have a polynomial $K_\sem(\lambda)$, a negligible function $\eta_\sem(\lambda)$, and a natural number $N_\sem \in \nat$ such that:
+
+\begin{itemize}
+\item[]
+\begin{itemize}
+\item \emph{for all type symbols $\type$, $|\type|_\lambda \leq K_\sem(\lambda)$ if $\lambda \geq N_\sem$,}
+
+\item \emph{for all function symbols $\func$, $\int{\func}_\lambda$ is computable by a deterministic Turing Machine $\TM_\lambda$ with symbols $\mathsf{0}, \mathsf{1}$, and both the number of states and the runtime of $\TM_\lambda$ are $\leq K_\sem(\lambda)$ if $\lambda \geq N_\sem$, and}
+
+\item \emph{for all distribution symbols $\dist$, $\int{\dist}_\lambda$ is computable up to an error $\eta_\sem(\lambda)$ by a probabilistic Turing Machine $\TM_\lambda$ with symbols $\mathsf{0}, \mathsf{1}$, and both the number of states and the runtime of $\TM_\lambda$ are $\leq K_\sem(\lambda)$ if $\lambda \geq N_\sem$.}
+\end{itemize}
+\end{itemize}
+
+\noindent To prove
+\[\big\{\int{-}_\lambda\big\}_{\lambda \in \nat} \; \mathlarger{\mathlarger{\vDash}} \; \big\{\Delta_\lambda \vdash P_\lambda \approx Q_\lambda : I_\lambda \to O_\lambda\big\}_{\lambda \in \nat},\]
+we fix a polynomial $K_\adv(\lambda)$ and a negligible function $\eta_\adv(\lambda)$. Since $\mathbb{T}_\approx$ is sound under the family of interpretations $\big\{\int{-}_\lambda\big\}_{\lambda \in \nat}$, we have the computational indistinguishability assumption
+\[\big\{\int{-}_\lambda\big\}_{\lambda \in \nat} \; \mathlarger{\mathlarger{\vDash}} \; \big\{\Delta^i_\lambda \vdash P^i_\lambda \approx Q^i_\lambda : I^i_\lambda \to O^i_\lambda\big\}_{\lambda \in \nat}.\]
+Define
+\[ K_\length(\lambda) \coloneqq p_\length\big(\lambda,K_\sem(\lambda) + N_\length,\ldots,K_\sem(\lambda) + N_\length\big),\]
+and apply the computational indistinguishability assumption to the polynomial $\mathcal{P}\big(K_\sem(\lambda),K_\adv(\lambda),K_\length(\lambda)\big)$ and the negligible function $\max\big(\eta_\sem(\lambda),\eta_\adv(\lambda)\big)$. We get a negligible function $\varepsilon^i(\lambda)$ with a natural number $N^i \in \nat$ such that for any $\lambda \geq N^i$ and any distinguisher $\Adv^i$ for protocols of type $\Delta^i_\lambda \vdash I^i_\lambda \to O^i_\lambda$ under the interpretation $\int{-}_\lambda$ such that $|\Adv^i| \leq \mathcal{P}\big(K_\sem(\lambda),K_\adv(\lambda),K_\length(\lambda)\big)$ and $\err(\Adv^i) \leq \max\big(\eta_\sem(\lambda),\eta_\adv(\lambda)\big)$, we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P^i_\lambda}{\int{-}_\lambda} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q^i_\lambda}{\int{-}_\lambda} = 1\big]\Big| \leq \varepsilon^i(\lambda).\]%
+
+\noindent We can now define our desired negligible function as
+\[\varepsilon(\lambda) \coloneqq k(\lambda) * \big(\max(\varepsilon^1(\lambda),\ldots,\varepsilon^n(\lambda)) + 2 * K_\length(\lambda) * \eta_\sem(\lambda)\big).\]
+The negligibility of $\varepsilon(\lambda)$ follows easily: if $\lambda \geq N_\width$ then
+\[\varepsilon(\lambda) \leq p_\width(\lambda) * \big(\max(\varepsilon^1(\lambda),\ldots,\varepsilon^n(\lambda)) + 2 * K_\length(\lambda) * \eta_\sem(\lambda)\big),\]
+so it suffices to show that this latter function is negligible. But this is immediate from the negligibility of each $\varepsilon^i(\lambda)$, the negligibility of $\eta_\sem(\lambda)$, and the fact that $p_\width(\lambda)$ and $K_\length(\lambda)$ are polynomials. Define
+\[N \coloneqq \max\big(N_\length,N_\sem,N^1,\ldots,N^n\big).\]
+Assume $\lambda \geq N$ and take any distinguisher $\Adv$ for protocols of type $\Delta_\lambda \vdash I_\lambda \to O_\lambda$ under the interpretation $\int{-}_\lambda$, such that $|\Adv| \leq K_\adv(\lambda)$ and $\err(\Adv) \leq \eta_\adv(\lambda)$. We aim to show that
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{P_\lambda}{\int{-}_\lambda} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv}{Q_\lambda}{\int{-}_\lambda} = 1\big]\Big| \leq k(\lambda) * \big(\max(\varepsilon^1(\lambda),\ldots,\varepsilon^n(\lambda)) + 2 * K_\length(\lambda) * \eta_\sem(\lambda)\big).\]
+But this is precisely the conclusion of Lemma \ref{lem:soundness_approximate} applied to the derivation $(\star)$. It thus suffices to prove the hypotheses of Lemma \ref{lem:soundness_approximate}. Among these, the only non-trivial assumption is
+\[l\big(\lambda,|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|\big) \leq K_\length(\lambda).\]
+We show this via the following sequence of inequalities:
+\begin{align*}
+l\big(\lambda,|\type_1|_\lambda,\ldots,|\type_{|\Sigma_\mathsf{t}|}|_\lambda\big) & \leq
+l\big(\lambda,K_\sem(\lambda),\ldots,K_\sem(\lambda)\big) \\ & \leq
+l\big(\lambda,K_\sem(\lambda) + N_\length,\ldots,K_\sem(\lambda) + N_\length\big) \\ & \leq
+p_\length\big(\lambda,K_\sem(\lambda) + N_\length,\ldots,K_\sem(\lambda) + N_\length\big) \\ & = K_\length.
+\end{align*}
+The first inequality follows from the fact that the function $l(\lambda) : \nat^{|\Sigma_\type|} \to \nat$ is monotonically increasing in each argument and $|\type_i|_\lambda \leq K_\sem(\lambda)$ by assumption since $\lambda \geq N_\sem$. The second inequality is again monotonicity of $l(\lambda)$, and the third follows from the definition of $p_\length$ since $\lambda \geq N_\length$ and $K_\sem(\lambda) + N_\length \geq N_\length$.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\noindent The remainder of this section is devoted to the proof of the absorption lemma that we promised earlier.
+
+\begin{lemma}[Absorption]
+There exists a polynomial $\mathcal{P}(x,y,z) \geq y$ such that for any
+\begin{itemize}
+\item \ipdl signature $\Sigma$ with type symbols $\type_1,\ldots,\type_{|\Sigma_\mathsf{t}|}$,
+
+\item interpretation $\int{-}$ for $\Sigma$ for which there exist $K_\sem \in \nat$ and $\eta_\sem \in \rat_{\geq 0}$ such that
+\begin{itemize}
+\item for all type symbols $\type$, $|\type| \leq K_\sem$,
+
+\item for all function symbols $\func$, $\int{\func}$ is computable by a deterministic TM with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$, and
+
+\item for all distribution symbols $\dist$, $\int{\dist}$ is computable up to error $\eta_\sem$ by a probabilistic TM with symbols $\mathsf{0}, \mathsf{1}$ such that the number of states and the runtime are $\leq K_\sem$,
+\end{itemize}
+
+\item distinguisher $\Adv$ for protocols of type $\Delta \vdash I \to O_1 \cup O_2$ under the interpretation $\int{-}$ for which there exist $K_\adv \in \nat$ and $\eta_\adv \in \rat_{\geq 0}$ such that $|\Adv| \leq K_\adv$ and $\err(\Adv) \leq \eta_\adv$,
+
+\item protocol $\Delta \vdash Q : I \cup O_1 \to O_2$,
+\end{itemize}
+we have a new distinguisher $\Adv_\mathcal{R}$ for protocols of type $\Delta \vdash I \cup O_2 \to O_1$ with
+\[|\Adv_\mathcal{R}| \leq \mathcal{P}\big(K_\sem,K_\adv,\tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|)\big)\]
+and $\err(\Adv_\mathcal{R}) \leq \max(\eta_\sem,\eta_\adv)$ such that for any protocol $\Delta \vdash P : I \cup O_2 \to O_1$ we have
+\[\Big|\mathsf{Pr}\big[\interaction{\Adv}{\Par{P}{Q}}{\int{-}} = 1\big] - \mathsf{Pr}\big[\interaction{\Adv_\mathcal{R}}{P}{\int{-}} = 1\big]\Big| \leq \tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|) * \eta_\sem.\]
+\end{lemma}
+
+\noindent To encode \ipdl protocols on a Turing Machine tape, we will make use of the following sets of symbols:
+\begin{itemize}
+\item \textsf{Punc} with symbols \textsf{``$\langle$''}, \textsf{``$\rangle$''}, \textsf{``(''}, \textsf{``)''}, \textsf{``$\{$''}, \textsf{``$\}$''}, \textsf{``[''}, \textsf{`]''}, \textsf{``$\_$''}, \textsf{``:''}, \textsf{``$\cdot$''}, \textsf{``;''}, \textsf{``$\to$''}, \textsf{``$\twoheadrightarrow$''}, \textsf{``$\leftarrow$''}, \textsf{``$\times$''}, \textsf{``$\coloneqq$''}, \textsf{``$\|$''},
+\item \textsf{KeyWords} with symbols \textsf{``var''}, \textsf{``$\checkmark$''}, \textsf{``true''}, \textsf{``false''}, \textsf{``app''}, \textsf{``fst''}, \textsf{``snd''}, \textsf{``of''}, \textsf{``val''}, \textsf{``ret''}, \textsf{``samp''}, \textsf{``read''}, \textsf{``input-to-query''}, \textsf{``input-queried''}, \textsf{``input-not-to-query''}, \textsf{``if''}, \textsf{``then''}, \textsf{``else''}, \textsf{``0''}, \textsf{``new''}, \textsf{``in''}, \textsf{``wen''}.
+\end{itemize}
+
+\noindent We will also need a finite set of de Bruijn indices in lieu of channel and variable names. To derive an upper bound on how many indices we will need, we statically count the maximum depth of variable and channel declarations, giving us a \emph{variable-index bound} and a \emph{channel-index bound}, respectively. The variable-index bound for reactions is invariant under substitutions, embeddings, and input assignment.
+\begin{align*}
+\bnorm{\val{v}} & \coloneqq 0 \\
+\bnorm{\ret{e}} & \coloneqq 0 \\
+\bnorm{\samp{\dist}{e}} & \coloneqq 0 \\
+\bnorm{\read{c}} & \coloneqq 0 \\
+\bnorm{\ifte{e}{R_1}{R_2}} & \coloneqq \max(\bnorm{R_1}, \bnorm{R_2}) \\
+\bnorm{x \leftarrow R; \ S} & \coloneqq \max(\bnorm{R}, \bnorm{S} + 1)
+\end{align*}
+The variable-index bound for protocols is invariant under embeddings and input assignment.
+\begin{align*}
+\bnorm{\zero} & \coloneqq 0 \\
+\bnorm{\assign{o}{v}} & \coloneqq 0 \\
+\bnorm{\assign{o}{R}} & \coloneqq \bnorm{R} \\
+\bnorm{\Par{P}{Q}} & \coloneqq \max(\bnorm{P}, \bnorm{Q}) \\
+\bnorm{\new{c}{\tau}{P}} & \coloneqq \bnorm{P}
+\end{align*}
+Likewise, the channel-index bound for protocols is invariant under embeddings and input assignment.
+\begin{align*}
+\nnorm{\zero} & \coloneqq 0 \\
+\nnorm{\assign{o}{v}} & \coloneqq 0 \\
+\nnorm{\assign{o}{R}} & \coloneqq 0 \\
+\nnorm{\Par{P}{Q}} & \coloneqq \max(\nnorm{P}, \nnorm{Q}) \\
+\nnorm{\new{c}{\tau}{P}} & \coloneqq \nnorm{P} + 1
+\end{align*}
+To avoid an infinite loop, an adversary executing the absorbed protocol will need to keep track of which channels have already been queried for a value. We store this information inside the protocol in the form of an annotation: for each channel read $\Read{c}{\tau}$, we denote whether the channel $c$ has already been queried for a value, if applicable:
+
+\begin{syntax}
+  \category[Query Annotations]{a}
+	  \alternative{\textsf{input-to-query}}
+		\alternative{\textsf{input-queried}}
+		\alternative{\textsf{input-not-to-query}}
+
+  \category[Query-Annotated Reactions]{R, S}
+    \alternative{\ldots}
+    \alternative{\QAnnRead{c}{\tau}{a}}
+    \alternative{\ldots}
+
+	\category[Query-Annotated Protocols]{P, Q}
+	  \alternative{\ldots}	
+	  \alternative{\assign{o}{R}}
+	  \alternative{\ldots}
+\end{syntax}
+
+\noindent By erasing the annotations from a query-annotated reaction or protocol, we obtain the underlying (valued) \ipdl construct.
+
+Given an ambient interpretation $\int{-}$ for the \ipdl signature $\Sigma$, we now show how to encode \ipdl constructs as a sequence of symbols on a Turing Machine tape. For types, the encoding $\tmenc{\tau}$ consists of the symbol \textsf{``$\cdot$''} repeated $|\tau|$-many times. For expressions, we have the encoding below, where + denotes string concatenation. We recall that each variable name is represented as a de Bruijn index, and is in particular a natural number.
+\begin{align*}
+\tmenc{v} & \coloneqq v \\
+\tmenc{\Var{x}{\tau}} & \coloneqq \textsf{``(''} + \textsf{``var''} + x + \textsf{``:''} + \tmenc{\tau} + \textsf{``)''} \\
+\tmenc{\checkmark} & \coloneqq \textsf{``(''} + \textsf{``$\checkmark$''} + \textsf{``)''} \\
+\tmenc{\true} & \coloneqq \textsf{``(''} + \textsf{``true''} + \textsf{``)''} \\
+\tmenc{\false} & \coloneqq \textsf{``(''} + \textsf{``false''} + \textsf{``)''} \\
+\tmenc{\App{\func}{\sigma}{\tau}{e}} & \coloneqq \textsf{``(''} + \textsf{``app''} + \tmenc{\sigma} + \textsf{``$\to$''} + \tmenc{\tau} + \func + \tmenc{e} + \textsf{``)''}\\
+\tmenc{(e_1, e_2)} & \coloneqq \tmenc{e_1} + \tmenc{e_2} \\
+\tmenc{\fst_{\sigma \times \tau} \ e} & \coloneqq \textsf{``(''} + \textsf{``fst''} + \tmenc{\sigma} + \textsf{``$\times$''} + \tmenc{\tau} + \textsf{``of''} + \tmenc{e} + \textsf{)''} \\
+\tmenc{\snd_{\sigma \times \tau} \ e} & \coloneqq \textsf{``(''} + \textsf{``snd''} + \tmenc{\sigma} + \textsf{``$\times$''} + \tmenc{\tau} + \textsf{``of''} + \tmenc{e} + \textsf{)''} \\
+\end{align*}
+The encoding $\tmenc{a}$ of an annotation $a = \textsf{input-to-query}, \textsf{input-queried},$ or $\textsf{input-not-to-query}$ is the single symbol \textsf{``input-to-query''}, \textsf{``input-queried''}, or \textsf{``input-not-to-query''}, respectively. For reactions, we have the following encoding, where we recall that each channel name is represented as a de Bruijn index, and is in particular a natural number.
+\begin{align*}
+\tmenc{\val{v}} & \coloneqq \textsf{``$\langle$''} + \textsf{``val''} + v + \textsf{``$\rangle$''} \\
+\tmenc{\ret{e}} & \coloneqq \textsf{``(''} + \textsf{``ret''} + \tmenc{e} + \textsf{``)''} \\
+\tmenc{\Samp{\dist}{\sigma}{\tau}{e}} & \coloneqq \textsf{``(''} + \textsf{``samp''} + \tmenc{\sigma} + \textsf{``$\twoheadrightarrow$''} + \tmenc{\tau} + \dist + \tmenc{e} + \textsf{``)''} \\
+\tmenc{\QAnnRead{c}{\tau}{a}} & \coloneqq \textsf{``(''} + \textsf{``read''} + \tmenc{a} + c + \textsf{``:''} + \tmenc{\tau} + \textsf{``)''} \\
+\tmenc{\ifte{e}{R_1}{R_2}} & \coloneqq \textsf{``(''} + \textsf{``if''} + \tmenc{e} + \textsf{``then''} + \tmenc{R_1} + \textsf{``else''} + \tmenc{R_2} + \textsf{``)''} \\
+\tmenc{x : \sigma \leftarrow R; \ S} & \coloneqq \textsf{``$\{$''} + \textsf{``$\_$''} + \textsf{``:''} + \tmenc{\sigma} + \textsf{``$\leftarrow$''} + \tmenc{R} + \textsf{``;''} + \tmenc{S} + \textsf{``$\}$''}
+\end{align*}
+Finally, for protocols we have the encoding below.
+\begin{align*}
+\tmenc{\zero} & \coloneqq \textsf{``0''} \\
+\tmenc{\assign{o}{v}} & \coloneqq \textsf{``[''} + o + \textsf{``$\coloneqq$''} + v + \textsf{``]''} \\
+\tmenc{\assign{o}{R}} & \coloneqq \textsf{``(''} + o + \textsf{``$\coloneqq$''} + \textsf{``react''} + \tmenc{R} + \textsf{``)''} \\
+\tmenc{\Par{P}{Q}} & \coloneqq \textsf{``(''} + \tmenc{P} + \textsf{``$\|$''} + \tmenc{Q} + \textsf{``)''} \\
+\tmenc{\new{c}{\tau}{P}} & \coloneqq \textsf{``new''} + \textsf{``$\_$''} + \textsf{``:''} + \tmenc{\tau} + \textsf{``in''} + \tmenc{P} + \textsf{``wen''}
+\end{align*}
+To avoid having to shift the tape contents when executing \ipdl protocols on a Turing Machine tape, we will make use of the white-space symbol \textsf{`` ''}, which we consider as distinct from the symbol \emph{blank}. The former will be used as a placeholder so that our protocol encoding remains at a constant length throughout the execution. For this reason, we extend our notion of encoding to allow extra white-spaces around the encoding of a valued expression $e$ or a query-annotated reaction $R$ occurring inside a query-annotated protocol $P$.
+
+Given a query-annotated \ipdl construct, its \emph{query bound} $\qnorm{-}$ is the number of occurrences of the annotation \textsf{input-to-query} inside the construct. Furthermore, given a channel set $C$, we define $\QAnn{R}{C}$ and $\QAnn{P}{C}$ to be the query-annotated version of $R$ and $P$ that annotates every $\mathsf{read}$ from a channel in $C$ with the annotation \textsf{input-to-query} and every $\mathsf{read}$ from a channel not in $C$ with the annotation \textsf{input-not-to-query}. Additionally, given a channel set $C$, we define the minimal set $\MinQIn{R}{C} \subseteq C$ of query inputs to the reaction $R$ as follows:
+\begin{align*}
+\MinQIn{\val{v}}{C} & \coloneqq \emptyset \\
+\MinQIn{\ret{e}}{C} & \coloneqq \emptyset \\
+\MinQIn{\samp{\dist}{e}}{C} & \coloneqq \emptyset \\
+\MinQIn{\read{c}}{C} & \coloneqq \{c\} \text{ if } c \in C \\
+\MinQIn{\read{i}}{C} & \coloneqq \{\emptyset\} \text{ if } i \notin C \\
+\MinQIn{\ifte{e}{R_1}{R_2}}{C} & \coloneqq \MinQIn{R_1}{C} \, \bigcup \, \MinQIn{R_2}{C} \\
+\MinQIn{x \leftarrow R; \ S}{C} & \coloneqq \MinQIn{R}{C} \, \bigcup \, \MinQIn{S}{C}
+\end{align*}
+Similarly, given a channel set $C$, we define the minimal set $\MinQIn{P}{C} \subseteq C$ of query inputs to the protocol $P$ as follows:
+\begin{align*}
+\MinQIn{\zero}{C} & \coloneqq \emptyset \\
+\MinQIn{\assign{o}{v}}{C} & \coloneqq \emptyset \\
+\MinQIn{\assign{o}{R}}{C} & \coloneqq \MinQIn{R}{C} \\
+\MinQIn{\Par{P}{Q}}{C} & \coloneqq \MinQIn{P}{C} \, \bigcup \, \MinQIn{Q}{C} \\
+\MinQIn{\new{c}{\tau}{P}}{C} & \coloneqq \MinQIn{P}{C}
+\end{align*}
+
+\noindent The typing of query-annotated \ipdl constructs has the form $\Delta; \ \Gamma \vdash R : I \to \tau \query C$ and $\Delta \vdash P : I \to O \query C$, where $C \subseteq I$ is the set of \emph{query inputs}. For reactions, reading from a query input must be annotated with either \textsf{input-to-query} or \textsf{input-queried}, and reading from any other channel must carry the annotation \textsf{input-not-to-query}.
+\begin{mathpar}
+\inferrule*{c : \tau \in \Delta \\ c \in C \\ a \in \{\textsf{input-to-query}, \textsf{input-queried}\}}{\Delta; \ \Gamma \vdash \QAnnRead{c}{\tau}{a} : I \to \tau \query C} \\ \and
+\inferrule*{i : \tau \in \Delta \\ i \in I \, \setminus \, C \\ a \in \{\textsf{input-not-to-query}\}}{\Delta; \ \Gamma \vdash \QAnnRead{i}{\tau}{a} : I \to \tau \query C}\and
+\end{mathpar}
+
+\noindent For protocols, the interesting rules are shown below, where we propagate the set of query inputs throughout.
+\begin{mathpar}
+\inferrule*{o \notin I \\ o : \tau \in \Delta \\ \Delta; \ \cdot \vdash R : I \cup \{o\} \to \tau \query C}{\Delta \vdash \big(\assign{o}{R}\big) : I \to \{o\} \query C}\and
+\inferrule*{\Delta \vdash P : I \cup O_2 \to O_1 \query C \\ \Delta \vdash Q : I \cup O_1 \to O_2 \query C}{\Delta \vdash \Par{P}{Q} : I \to O_1 \cup O_2 \query C} \\ \and
+\inferrule*{\Delta, o : \tau \vdash P : I \to O \cup \{o\} \query C}{\Delta \vdash \big(\new{o}{\tau}{P}\big) : I \to O \query C}
+\end{mathpar}
+
+\begin{proof}
+Let $O_1^\textsf{min} = \MinQIn{Q}{O_1}$ be the minimal set of query inputs to $Q$ from among $O_1$. In other words, $O_1^\textsf{min}$ contains precisely those channels of $O_1$ that $Q$ reads from. Then $\Delta \vdash \QAnn{Q}{O_1} : I \cup O_1^\textsf{min} \to Q_2 \query O_1^\textsf{min}$. The reason for replacing $O_1$ with $O_1^\textsf{min}$ is that we do not have a bound on the size of the former. The size of the latter is bounded by the query bound $\qnorm{Q}$, and this is in turn bounded by $\tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|)$. Let \textsf{ProtEncSymb} be the disjoint union of the sets
+\begin{itemize}
+\item $\{\textsf{`` ''}\}$,
+\item \textsf{Punc},
+\item \textsf{KeyWords},
+\item \emph{the set $\Sigma_\func$ of function symbols declared in $\Sigma$},
+\item \emph{the set $\Sigma_\dist$ of distribution symbols declared in $\Sigma$},
+\item $\big\{n \; | \; 0 \leq n < \bnorm{Q}\big\}$,
+\item $\big\{n \; | \; 0 \leq n < \nnorm{Q}\big\} \, \bigcup \, \big\{m + n \; | \; m \in \phi^\star(I \cup O_1^\textsf{min} \cup O_2) \textit{ and } 0 \leq n \leq \nnorm{Q}\big\}$.
+\end{itemize}
+Let $\Adv \coloneqq \big(\Delta', I', O', \phi, \#_\round, \#_\tape, \Symb, \St, s_\star, \Step, \big\{\In_o\big\}_{o \, \in \, I'}, \big\{\Out_i\big\}_{i \, \in \, O'}, \Dec\big)$ be the adversary for protocols of type $\Delta \vdash I \to O_1 \cup O_2$. We define a new adversary $\Adv_\mathcal{R}$ for protocols of type $\Delta \vdash I \cup O_2 \to O_1$ as follows:
+\[\Adv_\mathcal{R} \coloneqq \big(\Delta', I'_\mathcal{R}, O'_\mathcal{R}, \phi, \#_\round^\mathcal{R}, \#_\tape^\mathcal{R}, \Symb^\mathcal{R}, \St^\mathcal{R}, s^\mathcal{R}_\star, \Step^\mathcal{R}, \big\{\In^\mathcal{R}_o\big\}_{o \, \in \, I'_\mathcal{R}}, \big\{\Out^\mathcal{R}_i\big\}_{i \, \in \, O'_\mathcal{R}}, \Dec^\mathcal{R}\big),\]
+where
+\begin{itemize}
+\item $I'_\mathcal{R} \coloneqq (I' \, \setminus \, \phi^\star(O_2)) \cup (\phi^\star(O_1^\textsf{min}) \, \setminus \, I')$;
+
+\item $O'_\mathcal{R} \coloneqq O' \cup \phi^\star(O_2)$;
+
+\item $\#_\round^\mathcal{R} \coloneqq \#_\round * \tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|)^2 + \#_\round$;
+
+\item $\#_\tape^\mathcal{R} \coloneqq \#_\tape + 1$;
+
+\item $\Symb^\mathcal{R} \coloneqq \textsf{ProtEncSymb} \, \bigsqcup \ \{\textsf{``$\rightleftharpoons$''}, \textsf{``$\#$''}\} \, \bigsqcup \, \textsf{Symb}$;
+
+\item $\St^\mathcal{R} \coloneqq \big\{\textsf{``(''} + b + s_\mathsf{prot} + \textsf{``$\rightleftharpoons$''} + s_\mathsf{adv} + \textsf{``)''}\big\}$ \emph{contains strings of the specified form, where $b \in \{0,1\}$, $s_\mathsf{adv} \in \St$ is a distinguisher state, and $s_\mathsf{prot}$ is a string of length $\tmnorm{Q}(|\type_1|,\ldots,|\type_{|\Sigma_\mathsf{t}|}|)$ with symbols drawn from} \textsf{ProtEncSymb}, \emph{that encodes a protocol $\phi^\star(Q')$, where} $\Delta \vdash Q' : I \cup O_1^\textsf{min} \to O_2 \query O_1^\textsf{min}$ \emph{is such that $\bnorm{Q'} \leq \bnorm{Q}$ and $\nnorm{Q'} \leq \nnorm{Q}$};
+
+\item $s^\mathcal{R}_\star \coloneqq \textsf{``(''} + \textsf{``$1$''} + \tmenc{\phi^\star(\QAnn{Q}{O_1})} + \textsf{``$\rightleftharpoons$''} + s_\star + \textsf{``)''}$;
+
+\item $\Dec^\mathcal{R}$ \emph{processes a state of the form} $\textsf{``(''} + b + s_\mathsf{prot} + \textsf{``$\rightleftharpoons$''} + s_\mathsf{adv} + \textsf{``)''}$ \emph{by applying $\Dec$ to $s_\mathsf{adv}$};
+
+\item $\Out_i^\mathcal{R}$ \emph{for $i \in O'$ processes a state of the form} $\textsf{``(''} + b + s_\mathsf{prot} + \textsf{``$\rightleftharpoons$''} + s_\mathsf{adv} + \textsf{``)''}$ \emph{by applying $\Out_i$ to $s_\mathsf{adv}$};
+
+\item $\Out_{o_2}^\mathcal{R}$ \emph{for $o_2 \in \phi^\star(O_2)$ processes a state of the form} $\textsf{``(''} + b + s_\mathsf{prot} + \textsf{``$\rightleftharpoons$''} + s_\mathsf{adv} + \textsf{``)''}$ \emph{by traversing through $s_\mathsf{prot}$ to locate the assignment to channel} $o_2$. \emph{If $o_2$ is assigned a value $v$, it returns $v$; otherwise it returns $\bot$};
+
+\item $\In_{o_1}^\mathcal{R}$ \emph{for $o_1 \in I' \, \setminus \, \phi^\star(O_2) \, \setminus \, \phi^\star(O_1^\mathsf{min})$ processes a state of the form} $\textsf{``(''} + 0 + s_\mathsf{prot} + \textsf{``$\rightleftharpoons$''} + s_\mathsf{adv} + \textsf{``)''}$ \emph{by applying $\In_{o_1}$ to $s_\mathsf{adv}$};
+
+\item $\In_{o_1}^\mathcal{R}$ \emph{for $o_1 \in I' \, \setminus \, \phi^\star(O_2) \, \setminus \, \phi^\star(O_1^\mathsf{min})$ leaves a state of the form} $\textsf{``(''} + 1 + s_\mathsf{prot} + \textsf{``$\rightleftharpoons$''} + s_\mathsf{adv} + \textsf{``)''}$ \emph{unchanged};
+
+\item $\In_{o_1}^\mathcal{R}$ \emph{for $o_1 \in \phi^\star(O_1^\mathsf{min}) \, \setminus \, I'$ leaves a state of the form} $\textsf{``(''} + 0 + s_\mathsf{prot} + \textsf{``$\rightleftharpoons$''} + s_\mathsf{adv} + \textsf{``)''}$ \emph{unchanged};
+
+\item $\In_{o_1}^\mathcal{R}$ \emph{for $o_1 \in \phi^\star(O_1^\mathsf{min}) \, \setminus \, I'$ processes a state of the form} $\textsf{``(''} + 1 + s_\mathsf{prot} + \textsf{``$\rightleftharpoons$''} + s_\mathsf{adv} + \textsf{``)''}$ \emph{by traversing through $s_\mathsf{prot}$ and replacing every $\mathsf{read}$ from the channel $o_1$ by the assigned input value $v$};
+
+\item $\In_{o_1}^\mathcal{R}$ \emph{for $o_1 \in I' \, \setminus \, \phi^\star(O_2) \cap \phi^\star(O_1^\mathsf{min})$ processes a state of the form} $\textsf{``(''} + 0 + s_\mathsf{prot} + \textsf{``$\rightleftharpoons$''} + s_\mathsf{adv} + \textsf{``)''}$ \emph{by applying $\In_{o_1}$ to $s_\mathsf{adv}$};
+
+\item $\In_{o_1}^\mathcal{R}$ \emph{for $o_1 \in I' \, \setminus \, \phi^\star(O_2) \cap \phi^\star(O_1^\mathsf{min})$ processes a state of the form} $\textsf{``(''} + 1 + s_\mathsf{prot} + \textsf{``$\rightleftharpoons$''} + s_\mathsf{adv} + \textsf{``)''}$ \emph{by traversing through $s_\mathsf{prot}$ and replacing every $\mathsf{read}$ from the channel $o_1$ by the assigned input value $v$};
+
+\end{itemize}
+
+%P(x,y,z) >= y (assumption)
+
+%P(x,y,z) >= y + z (bound for I')
+
+%P(x,y,z) >= y + z (bound for O')
+
+%P(x,y,z) >= yz^2 (bound for #_round)
+
+%P(x,y,z) >= y + 1 (bound for #_tape)
+
+%P(x,y,z) >= 2z^2 + yz + 2y + 4z + |\Sigma_f| + |\Sigma_d| + |Punc| + |KeyWords| + 3
+
+%P(x,y,z) >= y + z + 4 (bound for St)
+
+%P(x,y,z) >= 3y + z + 7 (bound for Dec, runtime)
+%P(x,y,z) >= y + 7 (bound for Dec, states)
+
+%P(x,y,z) >= 5y + z + 9 (bound for Out if i in O', runtime)
+%P(x,y,z) >= y + 9 (bound for Out if i in O', states)
+
+%P(x,y,z) >= y + 2z + 6 (bound for Out if i in \phi^\star(O_2), runtime)
+%P(x,y,z) >= 2z + 13 (bound for Out if i in \phi^\star(O_2), states)
+
+%P(x,y,z) >= 7y + 2z + 12 (bound for In if o_1 in (I' \setminus \phi^\star(O_2) \setminus \phi^\star(O_1^min)), runtime)
+%P(x,y,z) >= y + 9 (bound for In if o_1 in (I' \setminus \phi^\star(O_2) \setminus \phi^\star(O_1^min)), states)
+
+%P(x,y,z) >= 2z^2 + 2y + 10z + 13 (bound for In if o_1 in (\phi^\star(O_1^min) \setminus I'), runtime)
+%P(x,y,z) >= 5z + 24 (bound for In if o_1 in (\phi^\star(O_1^min) \setminus I'), states)
+
+%P(x,y,z) >= 2z^2 + 7y + 10z + 13 (bound for In if o_1 in (I' \setminus \phi^\star(O_2) \cap \phi^\star(O_1^min)), runtime)
+%P(x,y,z) >= y + 5z + 29 (bound for In if o_1 in (I' \setminus \phi^\star(O_2) \cap \phi^\star(O_1^min)), states)
+
+%P(x,y,z) >= 2 + max(z + 1 + max(3 + z, 6 + z, 6 + z, 6 + z, 5 + x + 3z, 3 + 3z, 3 + 3z, 3 + 2z, 5 + x + 3z, 3 + 3z, ...), ...) (bound for Step, runtime)
+%P(x,y,z) >= 2 + 20 + 4 + 3 + 3 + 3 + (6 + |\Sigma_f|x) + 9 + 9 + 3 + (6 + |\Sigma_d|x) + 15 + ... (bound for Step, states)
+
+%Resulting bound: P(x,y,z) := yz^2 + 2z^2 + 5y + 7z + const
+\end{proof}
