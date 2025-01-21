@@ -1,0 +1,2826 @@
+\documentclass{article}
+
+\usepackage{hyperref}
+\usepackage{listings}
+\lstset{
+    literate={~} {$\sim$}{1}
+}
+
+\usepackage{ amssymb }
+
+\title{Soundess of Derived Rules}
+\author{Kristina Sojakova \and Mihai Codescu}
+\date{}
+
+\begin{document}
+\maketitle\footnote{This project is funded through NGI Zero Core (\url{https://nlnet.nl/core}), a fund established by NLnet (\url{https://nlnet.nl}) with financial support from the European Commission's Next Generation Internet (\url{https://ngi.eu}) program. Learn more at the NLnet project page (\url{https://nlnet.nl/project/IPDL-II}).}
+
+\section{Core Rules}
+
+\subsection{Expressions}
+
+The typing predicate is
+\begin{lstlisting}
+ op typeOf 
+  : Signature TypeContext IPDLExpression  
+  -> IPDLType .
+\end{lstlisting}
+
+\noindent and the configuration has the form
+
+\begin{lstlisting}
+ op expConfig 
+  : Signature TypeContext IPDLType IPDLExpression 
+  -> ExpConfig [ctor] .
+\end{lstlisting}
+
+\noindent which means that the expression equality judgement
+$$\Gamma \vDash e_1 = e_2 : T$$
+translates to
+\begin{lstlisting}
+ expConfig(Sigma, Gamma, T, e1)
+ =>
+ expConfig(Sigma, Gamma, T, e2) 
+\end{lstlisting}
+
+Equality rules are below. 
+ REFL, TRANS hold by the properties of rewriting in Maude.
+ AXIOM is not needed as a rule, because we already write an axiom as
+\begin{lstlisting}
+ expConfig(Sigma, Gamma, T, e1)
+ =>
+ expConfig(Sigma, Gamma, T, e2) 
+\end{lstlisting} 
+
+\begin{itemize}
+\item[SYM]: \begin{lstlisting}
+ crl [exp-sym] :
+ expConfig(Sigma, Gamma, T, e2)
+ =>
+ expConfig(Sigma, Gamma, T, e1)
+ if 
+ expConfig(Sigma, Gamma, T, e1)
+ =>
+ expConfig(Sigma, Gamma, T, e2)
+ /\ typeOf(Sigma, Gamma, e1) == T .  
+\end{lstlisting}
+
+\item[SUBST] :
+\begin{lstlisting}
+ crl [exp-subst] :
+ expConfig(Sigma, Gamma1, T, e1')
+ => 
+ expConfig(Sigma, Gamma1, T, applySubst(e2, theta))
+ if 
+ expConfig(Sigma, Gamma2, T, e1)
+ => 
+ expConfig(Sigma, Gamma2, T, e2)
+ /\ 
+ typeOf(Sigma, Gamma2, e1) == T
+ /\
+ e1' == applySubst(e1, theta^)
+\end{lstlisting}
+
+\item[APP-CONG]: 
+\begin{lstlisting} 
+ crl[app-cong] :
+ expConfig(Sigma (f : T1 -> T2), Gamma, T2, ap f e1)
+ => 
+ expConfig(Sigma (f : T1 -> T2), Gamma, T2, ap f e2)
+ if 
+ expConfig(Sigma (f : T1 -> T2), Gamma, T1, e1)
+ => 
+ expConfig(Sigma (f : T1 -> T2), Gamma, T1, e2) .
+\end{lstlisting}
+\item[PAIR-CONG]:
+ \begin{lstlisting}
+ crl [pair-cong] :
+ expConfig(Sigma, Gamma, T1 * T2, pair(M1, M2))
+ => 
+ expConfig(Sigma, Gamma, T1 * T2, pair(M3, M4))
+ if 
+ expConfig(Sigma, Gamma, T1, M1)
+ => 
+ expConfig(Sigma, Gamma, T1, M3)
+ /\ 
+ expConfig(Sigma, Gamma, T2, M2)
+ => 
+ expConfig(Sigma, Gamma, T2, M4)
+ .
+ \end{lstlisting}
+\item[FST-CONG]:
+ \begin{lstlisting}
+ crl [fst-cong] :
+ expConfig(Sigma, Gamma, T1, fst(T1, T2, M1))
+ => 
+ expConfig(Sigma, Gamma, T1, fst(T1, T2, M2)) 
+ if
+ expConfig(Sigma, Gamma, T1 * T2, M1)
+ => 
+ expConfig(Sigma, Gamma, T1 * T2, M2)
+ .
+\end{lstlisting} 
+\item[SND-CONG]:
+ \begin{lstlisting} 
+ crl [snd-cong] :
+ expConfig(Sigma, Gamma, T2, snd(T1, T2, M1))
+ => 
+ expConfig(Sigma, Gamma, T2, snd(T1, T2, M2)) 
+ if
+ expConfig(Sigma, Gamma, T1 * T2, M1)
+ => 
+ expConfig(Sigma, Gamma, T1 * T2, M2)
+ .
+ \end{lstlisting}
+\item[UNIT-EXT]:
+\begin{lstlisting}
+ crl [unit-ext] : 
+ expConfig(Sigma, Gamma, unit, M1)
+ =>
+ expConfig(Sigma, Gamma, unit, ())
+ if typeOf(Sigma, Gamma, M1) == unit .
+\end{lstlisting} 
+\item[FST-PAIR]:
+\begin{lstlisting}
+ crl [fst-pair] :
+ expConfig(Sigma, Gamma, T1 * T2, fst pair(M1, M2))
+ =>
+ expConfig(Sigma, Gamma, T1, M1) 
+ if typeOf(Sigma, Gamma, M1) == T1 
+ /\ typeOf(Sigma, Gamma, M2) == T2
+  .
+\end{lstlisting}
+\item[SND-PAIR]:
+\begin{lstlisting}
+ crl [snd-pair] :
+ expConfig(Sigma, Gamma, T1 * T2, snd pair(M1, M2))
+ =>
+ expConfig(Sigma, Gamma, T2, M2) 
+  if typeOf(Sigma, Gamma, M1) == T1 
+ /\ typeOf(Sigma, Gamma, M2) == T2
+  .
+\end{lstlisting}
+\item[PAIR-EXT]:
+\begin{lstlisting}
+ crl [pair-ext] :
+ expConfig(Sigma, Gamma, T1 * T2, pair(fst M, snd M))
+ =>
+ expConfig(Sigma, Gamma, T1 * T2, M) 
+ if typeOf(Sigma, Gamma, M) == T1 * T2 
+  .
+\end{lstlisting}
+\end{itemize}
+
+Comments:
+\begin{itemize}
+\item if we do not annotate the projections with their types, we would have to write
+\begin{lstlisting}
+ crl [fst-cong] :
+ expConfig(Sigma, Gamma, T1, fst(M1))
+ => 
+ expConfig(Sigma, Gamma, T1, fst(M2)) 
+ if
+ expConfig(Sigma, Gamma, T1 * T2, M1)
+ => 
+ expConfig(Sigma, Gamma, T1 * T2, M2) 
+ [nonexec]
+ .
+\end{lstlisting}
+\noindent and specify a type for T2 when applying the rule, which is
+inconvenient.
+\end{itemize}
+
+\subsection{Reactions}
+
+The typing predicate is
+\begin{lstlisting}
+  op typeOf 
+  : Signature ChannelContext TypeContext 
+    Set{CNameBound} Set{BoolTerm} Reaction 
+  -> IPDLType 
+\end{lstlisting}
+\noindent where the first set argument is the set of inputs 
+and the second set argument is the set of assumptions on indices,
+for families of protocols, and hypotheses of the type $N + 1$ is honest.
+
+The configuration has the form
+\begin{lstlisting}
+op rConfig 
+ : Signature ChannelContext TypeContext
+   Reaction Set{CNameBound} Set{BoolTerm} 
+   IPDLType 
+ -> ReactionConfig [ctor] .
+\end{lstlisting}
+
+\noindent which means that the reaction equality judgement
+$$\Delta ; \Gamma \vDash R_1 = R_2 : I \rightarrow T$$
+translates to
+\begin{lstlisting}
+ rConfig(Sigma, Delta, Gamma, R1, I, A, T)
+ =>
+ rConfig(Sigma, Delta, Gamma, R2, I, A, T) 
+\end{lstlisting}
+\noindent where $A$ is the set of assumptions (new argument).
+
+Equality rules are below. Again,
+ REFL, TRANS, SUBST hold by the properties of rewriting in Maude and
+ AXIOM is not needed as a rule. 
+ To avoid name clashes, these rules have their names in 
+ lowercaps.
+ 
+\begin{itemize} 
+\item[SYM]:
+\begin{lstlisting}
+
+ crl [sym] : 
+ rConfig(Sigma, Delta, Gamma, R2, I, A, T) 
+ => 
+ rConfig(Sigma, Delta, Gamma, R1, I, A, T)
+ if rConfig(Sigma, Delta, Gamma, R1, I, A, T) 
+    =>
+   rConfig(Sigma, Delta, Gamma, R2, I, A, T)
+ [nonexec] .
+ \end{lstlisting} 
+ 
+\item[INPUT-UNUSED] :
+\begin{lstlisting}
+ 
+ crl [input-unused] :
+ rConfig(Sigma, Delta, Gamma, R1, (I, chn c), A, T)
+ =>
+ rConfig(Sigma, Delta, Gamma, R2, (I, chn c), A, T)
+ if
+ rConfig(Sigma, Delta, Gamma, R1, I, A, T) 
+ =>
+ rConfig(Sigma, Delta, Gamma, R1, I, A, T) .
+\end{lstlisting} 
+ 
+\item[EMBED]:
+\begin{lstlisting}
+ 
+ crl [embed] :   
+  rConfig(Sigma, Delta1, Gamma, R1', I', A, T)
+  =>
+  rConfig(Sigma, Delta1, Gamma, 
+          embedReaction(R2, phi), 
+          I', A, T)
+  if
+  rConfig(Sigma, Delta2, Gamma, R1, I, A, T)
+  =>
+  rConfig(Sigma, Delta2, Gamma, R2, I, A, T)
+  /\
+  I' == embedIO(I, phi) 
+  /\
+  R1' == embedReaction(R1, phi)
+  [nonexec]
+  .
+  \end{lstlisting}
+  \noindent where 
+  \texttt{phi : Delta1 -> Delta2} is an embedding,  
+  \texttt{embedIO(I, phi)} stands for $\phi^*(I)$ and
+  \texttt{embedReaction(R, phi)} stands for $\phi^*(R)$.
+\item[CONG-RET]:
+\begin{lstlisting} 
+
+ crl [cong-ret] : 
+ rConfig(Sigma, Delta, Gamma, return M1, I, A, T) 
+ => 
+ rConfig(Sigma, Delta, Gamma, return M2, I, A, T)
+ if
+ expConfig(Sigma, Gamma, T, M1) 
+ => 
+ expConfig(Sigma, Gamma, T, M2) 
+ .       
+ 
+  \end{lstlisting} 
+\item[CONG-SAMP]:
+\begin{lstlisting}
+ 
+  crl [cong-samp] :
+  rConfig(Sigma (d : T1 ->> T2), Delta, Gamma,  
+          samp (d < M1 >), I, A, T) 
+  => 
+  rConfig(Sigma (d : T1 ->> T2), Delta, Gamma, 
+          samp (d < M2 >), I, A, T) 
+  if 
+  expConfig(Sigma (d : T1 ->> T2), Gamma, T1, M1) 
+  => 
+  expConfig(Sigma (d : T1 ->> T2), Gamma, T1, M2) 
+  . 
+  
+   \end{lstlisting} 
+\item[CONG-IF]:
+\begin{lstlisting} 
+ 
+  crl [cong-if] : 
+  rConfig(Sigma, Delta, Gamma,   
+          if M1 then R1 else R2, I, A, T)
+  => 
+  rConfig(Sigma, Delta, Gamma, 
+          if M2 then R3 else R4, I, A, T)
+  if
+  rConfig(Sigma, Delta, Gamma, R1, I, A, T) 
+  => 
+  rConfig(Sigma, Delta, Gamma, R3, I, A, T)
+  /\
+  rConfig(Sigma, Delta, Gamma, R2, I, A, T) 
+  => 
+  rConfig(Sigma, Delta, Gamma, R4, I, A, T) 
+  /\
+  expConfig(Sigma, Gamma, bool, M1)
+  => 
+  expConfig(Sigma, Gamma, bool, M2) .   
+  
+  \end{lstlisting} 
+\item[CONG-BIND]:
+\begin{lstlisting}             
+          
+ crl [cong-bind] :
+     rConfig(Sigma, Delta, Gamma, 
+             x : T1 <- R1 ; R2, 
+             I , A, T2) 
+     => 
+     rConfig(Sigma, Delta, Gamma, 
+             x : T1 <- R3 ; R4, 
+             I, A, T2) 
+     if
+     rConfig(Sigma, Delta, Gamma, R1, I, A, T1)  
+     => 
+     rConfig(Sigma, Delta, Gamma, R3, I, A, T1) 
+     /\
+     rConfig(Sigma, Delta, Gamma (x : T1), 
+             R2, I, A, T2)
+     => 
+     rConfig(Sigma, Delta, Gamma (x : T1), 
+             R4, I, A, T2) .
+     .
+ \end{lstlisting} 
+\item[SAMP-PURE]:
+\begin{lstlisting}
+ crl [samp-pure] : 
+     rConfig(Sigma, Delta, Gamma, 
+             x : T1 <- samp D ; R, 
+             I, A, T2)
+     => 
+     rConfig(Sigma, Delta, Gamma,  
+             R, 
+             I, A, T2)
+ if typeOf(Sigma, Gamma, D) == T1 
+ /\ typeOf(Sigma, Delta, Gamma, I, A, R) == T2 
+ . 
+  \end{lstlisting} 
+\item[READ-DET]:
+\begin{lstlisting}
+
+ crl [read-det] : 
+     rConfig(Sigma, Delta, Gamma, 
+                    x : T1 <- read i ; 
+                    y : T1 <- read i ; 
+                    R , I, A, T2) 
+     => 
+     rConfig(Sigma, Delta, Gamma, 
+                    x : T1 <- read i ; 
+                    (R [y / x]), I, A, T2)
+ if  isElemB(i, I, A)  
+ /\ elem (chn i) T1 Delta A
+ /\  typeOf(Sigma, Delta, Gamma (x : T1) (y : T1), 
+            I, A, R) == T2 
+ .
+ 
+  \end{lstlisting}
+  
+ \noindent where 
+ \texttt{isElemB(i, I, A)} checks that \texttt{i} is in \texttt{I}
+  and 
+ \texttt{elem (chn i) T1 Delta A} checks that 
+ \texttt{(i : T1)} is in \texttt{Delta}.
+ Both methods take into account that \texttt{i} may appear in 
+ \texttt{I} and \texttt{Delta} as a part of a family.  
+\item[IF-LEFT]:
+\begin{lstlisting}
+                             
+ crl [if-left] : 
+     rConfig(Sigma, Delta, Gamma, 
+             if True then R1 else R2, I, A, T) 
+     =>  
+     rConfig(Sigma, Delta, Gamma, R1, I, A, T)
+ if
+     typeOf(Sigma, Delta, Gamma, I, A, R1) == T
+     /\
+     typeOf(Sigma, Delta, Gamma, I, A, R2) == T 
+ .
+  \end{lstlisting} 
+\item[IF-RIGHT]:
+\begin{lstlisting}
+
+ crl [if-right] : 
+     rConfig(Sigma, Delta, Gamma, 
+             if False then R1 else R2, I, A, T) 
+     =>  
+     rConfig(Sigma, Delta, Gamma, R2, I, A, T)
+ if
+     typeOf(Sigma, Delta, Gamma, I, A, R1) == T 
+     /\
+     typeOf(Sigma, Delta, Gamma, I, A, R2) ==  T 
+ . 
+
+ \end{lstlisting} 
+\item[IF-EXT]:
+We would write the rule as
+\begin{lstlisting}
+  crl [if-ext] : 
+     rConfig(Sigma, Delta, Gamma, R [b / M], I, A, T)
+     => 
+     rConfig(Sigma, Delta, Gamma, 
+       if M then (R [b / True]) else (R [b / False]), 
+       I, A, T)
+     if
+     typeOf(Sigma, Gamma, M) == bool
+     /\
+     typeOf(Sigma, Delta, Gamma (b : bool), 
+            I, A, R) == T . 
+\end{lstlisting}            
+\noindent but Maude cannot handle these kind of rules.
+What we can write is a version where \texttt{M} is a variable:
+\begin{lstlisting}
+   crl [if-intro-ext] :
+     rConfig(Sigma, Delta, Gamma (q : bool), 
+             R, I, A, T) 
+     => 
+     rConfig(Sigma, Delta, Gamma (q : bool),
+             if q then (R[q / True]) 
+                  else (R[q / False]), I, A, T) 
+   if typeOf(Sigma, Delta, Gamma (q : bool), 
+             I, A, R) == T                   
+  .  
+ \end{lstlisting} 
+\noindent When we apply the rule we might need to mention which \texttt{q} 
+should be used, as there could be more than one in  \texttt{Gamma}. 
+We would not be able to write the rule in the reverse direction, but we
+can use this rule under a \texttt{sym}.
+\item[RET-BIND]:
+\begin{lstlisting}           
+
+ crl [ret-bind] : 
+     rConfig(Sigma, Delta, Gamma, 
+             x : T1 <- return M ; R , I , A, T2) 
+     => 
+     rConfig(Sigma, Delta, Gamma, 
+             R [x / M], I, A, T2) 
+     if
+     typeOf(Sigma, Gamma, M) == T1
+     /\
+     typeOf(Sigma, Delta, Gamma (x : T1),  
+            I, A, R) == T2 .
+
+ \end{lstlisting} 
+\item[BIND-RET]:
+\begin{lstlisting}            
+
+ crl [bind-ret] : 
+     rConfig(Sigma, Delta, Gamma, 
+             x : T <- R ; return x, I , A, T) 
+     => 
+     rConfig(Sigma, Delta, Gamma, R, I, A, T)
+     if 
+     typeOf(Sigma, Delta, Gamma, I, A, R) == T . 
+
+ \end{lstlisting} 
+\item[BIND-BIND]:
+\begin{lstlisting}     
+
+ crl [bind-bind] : 
+     rConfig(Sigma, Delta, Gamma, 
+            x2 : T2 <- (x1 : T1 <- R1 ; 
+                        R2) ; 
+                       R3, I, A, T3)
+     => 
+     rConfig(Sigma, Delta, Gamma, 
+            x1 : T1 <- R1 ; 
+                       (x2 : T2 <- R2 ; 
+                        R3), I, A, T3)
+ if
+     typeOf(Sigma, Delta, Gamma, I, A, R1) == T1
+     /\
+     typeOf(Sigma, Delta, Gamma (x1 : T1), 
+            I, A, R2) == T2
+     /\ 
+     typeOf(Sigma, Delta, Gamma (x2 : T2), 
+            I, A, R3) == T3 
+ .              
+
+ \end{lstlisting} 
+\item[EXCH]:
+\begin{lstlisting}
+
+ crl [exchange] : 
+     rConfig(Sigma, Delta, Gamma, 
+             x1 : T1 <- R1 ; 
+             x2 : T2 <- R2 ; 
+             R, I, A, T3)
+     => 
+     rConfig(Sigma, Delta, Gamma, 
+             x2 : T2 <- R2 ; 
+             x1 : T1 <- R1 ; 
+             R, I, A, T3)
+ if
+     typeOf(Sigma, Delta, Gamma, I, A, R1) == T1
+     /\
+     typeOf(Sigma, Delta, Gamma, I, A, R2) == T2
+     /\
+     typeOf(Sigma, Delta, Gamma (x1 : T1) (x2 : T2), 
+            I, A, R) == T3 
+ .
+
+\end{lstlisting} 
+\end{itemize}
+
+\subsection{Protocols}
+
+The typing predicate is
+\begin{lstlisting}
+  op typeOf 
+   : Signature ChannelContext 
+     Set{CNameBound} Set{BoolTerm} Protocol 
+   -> Bool 
+\end{lstlisting}
+\noindent where the first set argument is the set of inputs 
+and the second set argument is the set of assumptions on indices.
+
+The configuration has the form
+\begin{lstlisting}
+ op pConfig 
+  : Signature ChannelContext Protocol 
+    Set{CNameBound} Set{CNameBound} Set{BoolTerm} -> 
+    ProtocolConfig [ctor] .
+\end{lstlisting}
+
+\noindent which means that the protocol equality judgement
+$$\Delta \vDash P_1 = P_2 : I \rightarrow O$$
+translates to
+\begin{lstlisting}
+ pConfig(Sigma, Delta, P1, I, O, A)
+ =>
+ pConfig(Sigma, Delta, P2, I, O, A) 
+\end{lstlisting}
+\noindent where $A$ is the set of assumptions (new argument).
+
+Equality rules are below. Again,
+ REFL, TRANS, SUBST hold by the properties of rewriting in Maude and
+ AXIOM is not needed as a rule. Moreover COMP-ASSOC and COMP-COMM are not needed,
+ as we have defined the parallel composition as a commutative and associative 
+ operator. This also means that having both a -LEFT and a -RIGHT version for 
+ ABSORB, FOLD-IF and CONG-COMP is not needed, and we should keep just one.
+ 
+\begin{itemize}
+\item[SYM]:
+ \begin{lstlisting}
+ crl [SYM] :
+     pConfig(Sigma, Delta2, P2, I, O2, A) 
+     => 
+     pConfig(Sigma, Delta1, P1, I, O1, A)
+     if
+     pConfig(Sigma, Delta1, P1, I, O1, A)
+     => 
+     pConfig(Sigma, Delta2, P2, I, O2, A) 
+     /\ Delta1 equiv Delta2 
+     /\ O1 equiv O2     
+     [nonexec] .
+     
+  \end{lstlisting}
+  \noindent where the \texttt{equiv} relations hold if the arguments
+  are equal modulo splitting. Splitting of families of protocols means
+  that e.g. the family
+  \texttt{F[< X < Y < N + 2 ]}
+  is equivalent with
+   \texttt{F[< X < Y < N + 1 ]}
+   and 
+    \texttt{F[< X < Y = N + 1 ]}. 
+  
+\item[INPUT-UNUSED] :
+ \begin{lstlisting}
+  crl [INPUT-UNUSED] :
+   pConfig(Sigma, Delta, P1, (I, chn c), O, A)
+   =>
+   pConfig(Sigma, Delta, P2, (I, chn c), O, A)
+   if
+   pConfig(Sigma, Delta, P1, I, O, A)
+   =>
+   pConfig(Sigma, Delta, P2, I, O, A) .
+ \end{lstlisting}  
+  
+\item[CONG-REACT]:
+\begin{lstlisting}    
+     
+ crl [CONG-REACT] : 
+     pConfig(Sigma, Delta, cn ::= R, I, bn, A) 
+     =>
+     pConfig(Sigma, Delta, cn ::= R', I, bn, A)
+     if
+     rConfig(Sigma, Delta, emptyTypeContext, R, 
+             (I, chn cn), A, 
+             typeInCtx(chn cn, A, Delta))
+     =>
+     rConfig(Sigma, Delta, emptyTypeContext, R', 
+             (I, chn cn), A, T) 
+     /\ T == typeInCtx(chn cn, A, Delta)
+     /\ not (isElemB(chn cn, I, A))
+     .
+  \end{lstlisting} 
+  \noindent where \texttt{typeInCtx(chn cn, A, Delta)} gives us the 
+  the type of \texttt{cn} in \texttt{Delta}, possibly by looking at the 
+  family that \texttt{cn} is a member of, and
+  we also test that \texttt{chn cn} is not an input channel or member of
+  an input family.
+\item[CONG-COMP-LEFT]:
+\begin{lstlisting}    
+
+ crl [CONG-COMP-LEFT] :
+     pConfig(Sigma, Delta1, P1 || Q, I, O, A) 
+     => 
+     pConfig(Sigma, Delta2, P2 || Q, I,  
+             union(getOutputs(P2), getOutputs(Q)), A)
+     if
+     pConfig(Sigma, Delta1, P1, 
+             union(I, getOutputs(Q)), 
+             getOutputs(P1), A)
+     => 
+     pConfig(Sigma, Delta2, P2, I1, O2, A)
+     /\ O2 == getOutputs(P2) 
+     /\ I1 == union(I, getOutputs(Q))
+     /\ typeOf(Sigma, Delta2, 
+               union(I, getOutputs(P2)), 
+               A, Q)
+     /\ Delta1 equiv Delta2
+     /\ O equiv 
+        (union(getOutputs(P2), getOutputs(Q)))
+ .
+ \end{lstlisting} 
+ \noindent where we must allow splitting and 
+ \texttt{getOutputs(P)} gives us the outputs of the protocol \texttt{P}. 
+ Note that Maude won't let us write \texttt{getOutputs(P2)} after the 
+ \texttt{=>} sign. If we were to do that, it would look for an exact 
+ syntactic match and it would fail.
+\item[CONG-COMP-RIGHT]:
+\begin{lstlisting}
+  crl [CONG-COMP-RIGHT] :
+     pConfig(Sigma, Delta1, Q || P1, 
+             I, O, A) 
+     => 
+     pConfig(Sigma, Delta2, Q || P2, 
+             I, 
+             union(getOutputs(P2), getOutputs(Q)), 
+             A)
+     if
+     pConfig(Sigma, Delta1, P1, 
+             union(I, getOutputs(Q)), 
+             getOutputs(P1), A)
+     => 
+     pConfig(Sigma, Delta2, P2, I1, O2, A)
+     /\ typeOf(Sigma, Delta1, 
+              union(I, getOutputs(P1)), A, Q) 
+     /\ I1 == union(I, getOutputs(Q))    
+     /\ O2 == getOutputs(P1)      
+     /\ O == union(getOutputs(P1), getOutputs(Q)).
+   
+    \end{lstlisting} 
+\item[CONG-NEW]:
+\begin{lstlisting}
+   
+ crl [CONG-NEW] : 
+     pConfig(Sigma, Delta1, 
+             new cn : T in P1, I, O1, A)
+     => 
+     pConfig(Sigma, 
+             removeEntry ((chn cn) :: T) Delta2, 
+             new cn : T in P2, I, getOutputs(P2), A)
+     if
+     pConfig(Sigma, ((chn cn) :: T) Delta1,  
+             P1, I, insert(chn cn, O1), A)
+     => 
+     pConfig(Sigma, Delta2,  P2, I, O2, A) 
+     /\ O2 == insert(chn cn, getOutputs(P2))
+     /\ Delta2 equiv (((chn cn) :: T) Delta1)
+     /\ insert(chn cn, O1) equiv O2
+     .
+    \end{lstlisting} 
+   \noindent where \texttt{removeEntry} deletes a channel from a 
+   channel context. 
+\item[NEW-EXCH]:
+\begin{lstlisting}   
+    
+  
+  crl [NEW-EXCH] :
+     pConfig(Sigma, Delta, 
+              new cn1 : T1 in 
+                new cn2 : T2 in P, I, O, A) 
+     => 
+     pConfig(Sigma, Delta, 
+               new cn2 : T2 in 
+                new cn1 : T1 in P, I, O, A)
+     if
+     typeOf(Sigma, Delta (chn cn1 :: T1) 
+                         (chn cn2 :: T2), 
+            I, A, P) /\
+     getOutputs(P) == insert(chn cn1, 
+                             insert(chn cn2, O)) .
+                             
+     \end{lstlisting} 
+\item[COMP-NEW]:
+\begin{lstlisting}                             
+
+ crl [COMP-NEW] :
+     pConfig(Sigma, Delta, 
+             P || (new cn : T in Q), I, O, A)
+     =>  
+     pConfig(Sigma, Delta, 
+             new cn : T in (P || Q), I, O, A)
+     if
+     typeOf(Sigma, Delta (chn cn :: T), 
+            union(I, getOutputs(P)), A, Q)
+     /\
+     typeOf(Sigma, Delta, 
+            union(I ,(getOutputs(Q) \ (chn cn))), 
+            A, P) 
+ .
+ 
+     \end{lstlisting} 
+\item[ABSORB-LEFT]:
+\begin{lstlisting} 
+
+  crl [ABSORB-LEFT] : 
+     pConfig(Sigma, Delta, P1 || P2, I, O, A) =>
+     pConfig(Sigma, Delta, P1, I, O, A) 
+     if
+     typeOf(Sigma, Delta, I, A, P1) 
+     /\
+     typeOf(Sigma, Delta, union(I, O), A, P2) 
+     /\
+     getOutputs(P1) == O
+     /\ 
+     getOutputs(P2) == empty
+     .
+      \end{lstlisting} 
+\item[ABSORB-RIGHT]:
+\begin{lstlisting}            
+ 
+ crl [ABSORB-RIGHT] : 
+     pConfig(Sigma, Delta, P1 || P2, I, O, A) =>
+     pConfig(Sigma, Delta, P2, I, O, A) 
+     if
+     typeOf(Sigma, Delta, I, A, P2) 
+     /\
+     typeOf(Sigma, Delta, union(I, O), A, P1) 
+     /\
+     getOutputs(P2) == O
+     /\ 
+     getOutputs(P1) == empty 
+ .
+ 
+     \end{lstlisting} 
+     
+%\noindent In the rule for families I have replaced the type checking of \texttt{P1} with a syntactic condition that \texttt{P1} doesn't read 
+%from P2, so that we don't run type checking for large protocols unnecessarily often. I think I should do the same here.     
+\item[DIVERGE]:
+\begin{lstlisting}  
+ 
+ crl [DIVERGE] :
+     pConfig(Sigma, Delta, 
+             cn ::= x : T <- read cn ; R, 
+             I, chn cn, A)
+     =>
+     pConfig(Sigma, Delta, 
+             cn ::= read cn, I, chn cn, A)
+     if
+     typeOf(Sigma, Delta, emptyTypeContext, 
+            insert(chn cn, I), A, R)
+     == 
+     typeInCtx(chn cn, A, Delta)
+     /\ occurs (chn cn) Delta A
+      .
+
+     \end{lstlisting} 
+\item[FOLD-IF-RIGHT]:
+\begin{lstlisting}  
+
+ crl [FOLD-IF-RIGHT] :
+     pConfig(Sigma, Delta,
+             new cn1 : T in 
+              ((cn2 ::= b : bool <- R ;
+                        if b then S1 
+                             else read cn1)
+                ||
+                (cn1 ::= S2)
+               )
+            ,I, O, A)
+     => 
+     pConfig(Sigma, Delta,
+             cn2 ::= b : bool <- R ;
+                   if b then S1 else S2
+             , I, O, A)
+     if
+     typeOf(Sigma, Delta, emptyTypeContext, 
+            I, A, R) 
+     == 
+     bool
+     /\
+     typeOf(Sigma, Delta, emptyTypeContext, 
+            insert(chn cn2, I), A, S1) 
+     == 
+     T
+     /\
+     typeOf(Sigma, Delta, emptyTypeContext, 
+            insert(chn cn2, I), A, S2) == T
+     /\
+     O == chn cn2 
+     /\
+     elem (chn cn2) T Delta A .
+
+     \end{lstlisting} 
+\item[FOLD-IF-LEFT]:
+\begin{lstlisting}  
+    
+  crl [FOLD-IF-LEFT] :
+     pConfig(Sigma, Delta,
+             new cn2 : T in 
+               ((cn1 ::= b : bool <- R ;
+                         if b then read cn2 
+                              else S2)
+                 ||
+                 (cn2 ::= S1))
+            ,I, O, A)
+     => 
+     pConfig(Sigma, Delta,
+             cn1 ::= b : bool <- R ;
+                   if b then S1 else S2
+             , I, O, A)
+     if
+     typeOf(Sigma, Delta, emptyTypeContext,   
+            I, A, R) 
+     == 
+     bool
+     /\
+     typeOf(Sigma, Delta, emptyTypeContext,
+            insert(chn cn1, I), A, S1) == T
+     /\
+     typeOf(Sigma, Delta, emptyTypeContext, 
+            insert(chn cn1, I), A, S2) == T
+     /\
+     O == chn cn1 
+     /\
+     elem (chn cn1) T Delta A .
+     
+ 
+     \end{lstlisting} 
+\item[FOLD-BIND]:
+\begin{lstlisting}      
+
+  crl [FOLD-BIND] :
+     pConfig(Sigma, Delta, 
+             new c : T in 
+               ((o ::= x : T <- read c ; S)
+                ||
+                (c ::= R)),
+             I, O, A)
+     =>
+     pConfig(Sigma, Delta,
+             o ::= x : T <- R ; S,
+             I, O, A)
+    if 
+       typeOf(Sigma, Delta, x : T,
+              (I, chn c), 
+              A, S) 
+       == 
+       typeInCtx(chn o, A, Delta)             
+    /\ typeOf(Sigma, Delta, emptyTypeContext,
+              I, A, R)
+       == 
+       T          
+    /\ O == chn o .
+   
+  
+     \end{lstlisting} 
+\item[SUBSUME]:
+\begin{lstlisting}    
+    
+ crl [SUBSUME] :
+    pConfig(Sigma, Delta, 
+            (cn1 ::= x0 : T0 <- read i ; R1) || 
+            (cn2 ::= x0 : T0 <- read i ;
+                     x1 : T1 <- read cn1 ; 
+                     R2) 
+           , I, O, A)
+    => 
+    pConfig(Sigma, Delta,
+            (cn1 ::= x0 : T0 <- read i ; R1) || 
+            (cn2 ::= x1 : T1 <- read cn1 ; R2)  
+           , I, O, A)
+   if typeOf(Sigma, Delta, x1 : T1, 
+             insert(chn cn1, insert(chn cn2, I)), 
+             A, R2) == 
+      typeInCtx(chn cn2, A, Delta) 
+   /\ O == insert(chn cn1, insert(chn cn2, empty)) 
+   /\ elem (chn cn1) T1 Delta A . 
+   
+   
+     \end{lstlisting} 
+  \noindent This rule is actually derivable.   
+\item[DROP]:
+\begin{lstlisting}  
+   
+ crl [DROP] : 
+   pConfig(Sigma, Delta,
+           (cn1 ::= R1) || 
+           (cn2 ::= x1 : T1 <- read cn1 ; R2)
+          ,I, O, A)
+   => 
+   pConfig(Sigma, Delta,
+           (cn1 ::= R1) || (cn2 ::= R2)
+          ,I, O, A)
+   if rConfig(Sigma, Delta, emptyTypeContext, 
+              x1 : T1 <- R1 ; R2
+             , insert(chn cn1, insert(chn cn2, I)), 
+             A, typeInCtx(chn cn2, A, Delta)) 
+      => 
+      rConfig(Sigma, Delta, emptyTypeContext, 
+              R2
+             ,I', A, T2) /\
+      T2 == typeInCtx(chn cn2, A, Delta) /\    
+      I' == insert(chn cn1, insert(chn cn2, I)) /\
+      O == insert(chn cn1, insert(chn cn2, empty)) /\
+      typeOf(Sigma, Delta, emptyTypeContext, 
+             insert(chn cn1, insert(chn cn2, I)), 
+             A, R2) 
+      == 
+      typeInCtx(chn cn2, A, Delta) /\ 
+      elem (chn cn1) T1 Delta A
+      [nonexec] .
+      
+      
+     \end{lstlisting} 
+\item[SUBST]:
+\begin{lstlisting}  
+  
+   crl [SUBST] : 
+     pConfig(Sigma, Delta,
+             (cn1 ::= R1) 
+             || 
+             (cn2 ::= x1 : T1 <- read cn1 ; 
+                      R2),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta,
+             (cn1 ::= R1) 
+             || 
+             (cn2 ::= x1 : T1 <- R1 ; R2),
+             I, O, A) 
+     if
+     rConfig(Sigma, Delta, emptyTypeContext,
+             x1 : T1 <- R1 ; 
+             x2 : T1 <- R1 ; 
+             return pair(x1, x2),
+             insert(chn cn1, insert(chn cn2, I)), A, 
+             T1 * T1 )
+     => 
+     rConfig(Sigma, Delta, emptyTypeContext,
+             x1 : T1 <- R1 ;  return pair(x1, x1),
+             I', A, T1 * T1 ) /\      
+     O == insert(chn cn1, chn cn2) /\ 
+     I' == insert(chn cn1, insert(chn cn2, I)) /\
+     elem (chn cn1) T1 Delta A
+     [nonexec] .
+   \end{lstlisting}
+\end{itemize}
+
+\section{Derived Rules}
+
+\subsection{Plain Protocols}
+
+Here we only have derived rules at the reaction level.
+The rule names should be changed.
+
+\begin{itemize}
+
+\item[SAME-REACTION-IF]
+\begin{lstlisting}
+   crl [same-reaction-if] : 
+     rConfig(Sigma, Delta, Gamma, 
+             if M then R else R, 
+             I, A, T)
+     => 
+     rConfig(Sigma, Delta, Gamma, 
+             R, I, A, T) 
+  if typeOf(Sigma, Delta, Gamma, 
+            I, A, R) == T  
+  /\ typeOf(Sigma, Gamma, M) == bool 
+  . 
+   \end{lstlisting} 
+   
+Proof:
+Assume x : bool is a variable that doesn't occur in R. Then
+\begin{lstlisting}
+ 
+ R 
+ = (by def. of _[_/_]) 
+ R [x / M] 
+ => (by if-ext)
+ if M then R[x/True] else R[x/False]
+ = (by def. of _[_/_] )
+ if M then R else R 
+ 
+\end{lstlisting}   
+   
+\item[CONG-BRANCH-REFL]:
+\begin{lstlisting}  
+  crl [cong-branch-refl] : 
+     rConfig(Sigma, Delta, Gamma, 
+             if M then R1 else R2, I, A, T)
+     => 
+     rConfig(Sigma, Delta, Gamma, 
+             if M then R3 else R4, I, A, T)
+     if
+     typeOf(Sigma, Gamma, M) == bool 
+     /\
+     rConfig(Sigma, Delta, Gamma, R1, I, A, T) => 
+     rConfig(Sigma, Delta, Gamma, R3, I, A, T)
+     /\
+     rConfig(Sigma, Delta, Gamma, R2, I, A, T) => 
+     rConfig(Sigma, Delta, Gamma, R4, I, A, T) . 
+  
+    \end{lstlisting}
+    This holds immediately by \texttt{CONG-IF} and taking the 
+    rewrite for \texttt{M} as the one that leaves it as it is.
+    I added this rule when I did not have expression equality
+    and I think we could still leave it for convenience.
+
+\item[IF-OVER-BIND]:
+\begin{lstlisting}  
+ 
+ crl [if-over-bind] : 
+    rConfig(Sigma, Delta, Gamma, 
+             x : T1 <- if M then R1 else R2 ; 
+             R , I, A, T) 
+    =>
+    rConfig(Sigma, Delta, Gamma, 
+             if M then (x : T1 <- R1 ; R) 
+                  else (x : T1 <- R2 ; R) , 
+            I, A, T) 
+ if typeOf(Sigma, Delta, Gamma, 
+           I, A, R1) == T1  /\
+    typeOf(Sigma, Delta, Gamma, 
+           I, A, R2) == T1  /\
+    typeOf(Sigma, Delta, Gamma (x : T1), 
+           I, A, R) == T /\
+    typeOf(Sigma, Gamma, M) == bool
+   .
+   
+\end{lstlisting} 
+
+Proof:
+\begin{lstlisting}
+ x : T1 <- if M then R1 else R2 ; 
+ R 
+ => (by if-ext)
+ if M 
+  then x : T1 <- if True then R1 
+                         else R2 ; 
+       R
+  else x : T1 <- if False then R1 
+                         else R2 ; 
+       R     
+ => (by cong-branch-refl{
+         cong-bind{if-left, idle}, 
+         cong-bind{if-right, idle}
+        })
+ if M then x : T1 <- R1 ; R
+      else x : T1 <- R2 ; R
+\end{lstlisting}   
+  
+\item[BIND-OVER-IF]:
+\begin{lstlisting}    
+      
+ crl [bind-over-if] : 
+     rConfig(Sigma, Delta, Gamma, 
+       if M then (x : T1 <- R1 ; R) 
+            else (x : T1 <- R1 ; S), 
+       I, A, T)
+     =>        
+     rConfig(Sigma, Delta, Gamma, 
+        x : T1 <- R1 ; 
+        if M then R else S, I, A, T)
+ if
+     typeOf(Sigma, Delta, Gamma, 
+           I, A, R1) == T1 /\
+     typeOf(Sigma, Delta, Gamma (x : T1), 
+            I, A, R) == T /\
+     typeOf(Sigma, Delta, Gamma (x : T1), 
+            I, A, S) == T /\
+     typeOf(Sigma, Gamma, M) == bool 
+ .
+ 
+\end{lstlisting}  
+
+Proof:
+\begin{lstlisting}
+ x : T1 <- R1 ;
+ if M then R else S
+ => (by if-ext)
+ if M 
+  then x : T1 <- R1 ; 
+       if True then R else S
+  else x : T1 <- R1 ; 
+       if False then R else S
+ => (by cong-branch-refl{
+          cong-bind{idle, if-left}, 
+          cong-bind{idle, if-right}
+        })
+ if M then x : T1 <- R1 ; R
+      else x : T1 <- R1 ; S
+\end{lstlisting} 
+
+
+\item[IF-OVER-BIND-SAME]:
+\begin{lstlisting}  
+           
+ crl [if-over-bind-same] :
+    rConfig(Sigma, Delta, Gamma, 
+     x : T1 <- if M then R1 else R2 ; 
+     if M then R3 else R4, 
+     I, A, T)
+    =>
+    rConfig(Sigma, Delta, Gamma, 
+    if M then (x : T1 <- R1 ; R3) 
+         else (x : T1 <- R2 ; R4) , 
+    I, A, T)                   
+ if typeOf(Sigma, Delta, Gamma, 
+           I, A, R1) 
+    == T1  /\
+    typeOf(Sigma, Delta, Gamma, 
+           I, A, R2) 
+    == T1  /\
+    typeOf(Sigma, Delta, Gamma (x : T1), 
+           I, A, R3) 
+    == T /\
+    typeOf(Sigma, Delta, Gamma (x : T1), 
+           I, A, R4) 
+    == T /\
+    typeOf(Sigma, Gamma, M) == bool 
+ .
+
+\end{lstlisting}  
+
+Proof:
+
+ \begin{lstlisting}
+  x : T1 <- if M then R1 else R2 ; 
+  if M then R3 else R4
+  => (by if-ext)
+  if M then 
+    x : T1 <- if True then R1 else R2 ; 
+    if True then R3 else R4
+  else
+    x : T1 <- if False then R1 else R2 ; 
+     if False then R3 else R4
+ => (by cong-branch-refl{
+          cong-bind{if-left, if-left}, 
+          cong-bind{if-right, if-right}
+        })
+  if M then 
+     x : T1 <- R1 ; R3
+       else
+     x : T1 <- R2 ; R4       
+ \end{lstlisting}
+
+\item[IF-OVER-BIND-SAME-2]:
+\begin{lstlisting}                    
+ crl [if-over-bind-same-2] :
+     rConfig(Sigma, Delta, Gamma, 
+      x : T1 <- 
+       if M1 
+        then if M2 then R1 else R2
+        else if M2 then R3 else R4 ;
+      if M1 
+         then if M2 then S1 else S2
+         else if M2 then S3 else S4,
+      I, A, T)
+    => 
+    rConfig(Sigma, Delta, Gamma, 
+      if M1 
+        then if M2 then (x : T1 <- R1 ; S1) 
+                   else (x : T1 <- R2 ; S2)
+        else if M2 then (x : T1 <- R3 ; S3) 
+                   else (x : T1 <- R4 ; S4),          
+      I, A, T) 
+   if typeOf(Sigma, Gamma, M1) == bool
+   /\ typeOf(Sigma, Gamma, M2) == bool 
+   /\ typeOf(Sigma, Delta, Gamma, 
+             I, A, R1) == T1
+   /\ typeOf(Sigma, Delta, Gamma, 
+             I, A, R2) == T1
+   /\ typeOf(Sigma, Delta, Gamma, 
+             I, A, R3) == T1     
+   /\ typeOf(Sigma, Delta, Gamma, 
+             I, A, R4) == T1  
+   /\ typeOf(Sigma, Delta, Gamma (x : T1), 
+             I, A, S1) == T                                
+   /\ typeOf(Sigma, Delta, Gamma (x : T1), 
+             I, A, S2) == T
+   /\ typeOf(Sigma, Delta, Gamma (x : T1), 
+             I, A, S3) == T
+   /\ typeOf(Sigma, Delta, Gamma (x : T1), 
+             I, A, S4) == T 
+  .                                                  
+
+\end{lstlisting}    
+  
+Proof:
+
+\begin{lstlisting}
+ x : T1 <- 
+   if M1 
+    then if M2 then R1 else R2
+    else if M2 then R3 else R4 ;
+ if M1 
+    then if M2 then S1 else S2
+    else if M2 then S3 else S4
+ => (by if-ext for M2)
+ if M2 
+ then  
+  x : T1 <- 
+   if M1 
+    then if True then R1 else R2
+    else if True then R3 else R4 ;
+ if M1 
+    then if True then S1 else S2
+    else if True then S3 else S4
+ else
+ x : T1 <- 
+   if M1 
+    then if False then R1 else R2
+    else if False then R3 else R4 ;
+ if M1 
+    then if False then S1 else S2
+    else if False then S3 else S4
+ => (by if-left, 
+        if-right 
+     under the right congruence rules)
+ if M2 then
+  x : T1 <- if M1 then R1 else R3 ;
+  if M1 then S1 else S3
+ else
+  x : T1 <- if M1 then R2 else R4 ;
+  if M1 then S2 else S4
+ => (by if-ext for M1)
+ if M1 
+ then    
+ if M2 then
+  x : T1 <- if True then R1 else R3 ;
+  if True then S1 else S3
+ else
+  x : T1 <- if True then R2 else R4 ;
+  if True then S2 else S4
+ else
+ if M2 then
+  x : T1 <- if False then R1 else R3 ;
+  if False then S1 else S3
+ else
+  x : T1 <- if False then R2 else R4 ;
+  if False then S2 else S4 
+ => (by if-left, 
+        if-right 
+     under the right congruence rules)
+ if M1 
+        then if M2 then (x : T1 <- R1 ; S1) 
+                   else (x : T1 <- R2 ; S2)
+        else if M2 then (x : T1 <- R3 ; S3) 
+                   else (x : T1 <- R4 ; S4)               
+\end{lstlisting}  
+  
+\item[ALPHA]:
+\begin{lstlisting}  
+ 
+ var vx vy : Qid . 
+        
+ crl [alpha] :
+     rConfig(Sigma, Delta, Gamma, 
+             vx : T1 <- R1 ; R2 , 
+             I, A, T2 )
+     =>
+     rConfig(Sigma, Delta, Gamma, 
+              vy : T1 <- R1 ; 
+              (R2 [vx / vy]), 
+              I, A, T2)
+ if typeOf(Sigma, Delta, Gamma, 
+           I, A, R1) == T1 /\
+    typeOf(Sigma, Delta, Gamma (vx : T1), 
+           I, A, R2) == T2 [nonexec] .
+
+\end{lstlisting} 
+
+Follows by \texttt{sym\{bind-ret\} then bind-bind then ret-bind}:
+\begin{lstlisting}
+load ../src/strategies
+mod ALPHA-SOUND is
+ including APPROX-EQUALITY . 
+ 
+ *** constants without definitions
+ *** will be interpreted as any value of that type 
+ 
+ op Sigma : -> Signature .
+ op Delta : -> ChannelContext .
+ op Gamma : -> TypeContext .
+ ops vx vy : -> Qid .
+ ops R1 R2 : -> Reaction .
+ op I : -> Set{CNameBound} .
+ op A : -> Set{BoolTerm} .
+ ops T1 T2 : -> Type .
+ 
+ ***  I need this because I want
+ ***  R2 to typecheck if the type context
+ ***  has more than Gamma and (vx : T1)
+ var Gamma' : TypeContext .
+ 
+ *** assumptions 
+ eq typeOf(Sigma, Delta, Gamma, I, A, R1) = T1 .
+ eq typeOf(Sigma, Delta, 
+           Gamma (vx : T1) Gamma', 
+           I, A, R2) = T2 .
+ 
+endm
+
+srew [1] 
+ rConfig(Sigma, Delta, Gamma, 
+         vx : T1 <- R1 ; R2,
+         I, A, T2)
+ using sym[R1:Reaction <- 
+            vx : T1 <- (vy : T1 <- R1 ; 
+                        return vy) ; 
+                        R2
+          ]
+       {cong-bind{bind-ret, idle}}  
+     ; bind-bind  
+     ; cong-bind{idle, ret-bind}         
+ . 
+ 
+ *** we get
+ *** result ReactionConfig: 
+ *** rConfig(Sigma, Delta, Gamma, 
+ ***         vy : T1 <- R1 ; (R2[vx / vy]), 
+ ***         I, A, T2)
+ 
+\end{lstlisting}   
+  
+%\item[SAMP-FREE]:
+%\begin{lstlisting} 
+%               
+% crl [samp-free] : 
+%     rConfig(Sigma, Delta, emptyTypeContext,
+%             x1 : T1 <- R1 ; 
+%             x2 : T1 <- R1 ; 
+%             return pair(x1, x2),
+%             I, A, T1 * T1)
+%     => 
+%     rConfig(Sigma, Delta, emptyTypeContext,
+%             x1 : T1 <- R1 ;  
+%             return pair(x1, x1),
+%             I, A, T1 * T1)
+% if isSampFree(R1) 
+% /\ typeOf(Sigma, Delta, emptyTypeContext,
+%          I, A, R1) == T1
+%     .
+%     
+%     *** check recursively whether samp occurs
+% op isSampFree : Reaction -> Bool .
+% eq isSampFree(return M) = true .
+% eq isSampFree(samp D) = false .
+% eq isSampFree(read c) = true .
+% eq isSampFree(if M then R1 else R2) = 
+%    isSampFree(R1) and isSampFree(R2) .
+% eq isSampFree(i : T <- R1 ; R2) = 
+%    isSampFree(R1) and isSampFree(R2) .
+% eq isSampFree(nf(BL, R)) = isSampFree(R) .
+% eq isSampFree(preNF(BL, R)) = isSampFree(R) .  
+% 
+% 
+%\end{lstlisting}    
+  
+\item[SAMP-OVER-IF]:
+\begin{lstlisting}    
+     
+ crl [samp-over-if] :
+    rConfig(Sigma, Delta, Gamma, 
+            x : T1 <- samp D ; 
+            if M then R1 else R2, 
+            I, A, T) 
+    => 
+    rConfig(Sigma, Delta, Gamma, 
+            if M then x : T1 <- samp D ; 
+                      R1
+                 else x : T1 <- samp D ; 
+                      R2, 
+            I, A, T)
+ if typeOf(Sigma, Delta, Gamma (x : T1), 
+           I, A, R1) == T
+ /\ typeOf(Sigma, Delta, Gamma (x : T1), 
+           I, A, R2) == T          
+ /\ typeOf(Sigma, Gamma, D) == T1                       
+    . 
+\end{lstlisting}
+
+Proof:
+
+\begin{lstlisting}
+ x : T1 <- samp D ; 
+ if M then R1 else R2
+ => (by if-ext)
+ if M then 
+   x : T1 <- samp D ; 
+   if True then R1 else R2
+ else
+  x : T1 <- samp D ; 
+  if False then R1 else R2
+ => (by cong-branch-refl{
+         cong-bind{idle, if-left}, 
+         cong-bind{idle, if-right}
+        })
+ if M then x : T1 <- samp D ; 
+                      R1
+      else x : T1 <- samp D ; 
+                      R2  
+\end{lstlisting}
+
+\end{itemize}
+
+\section{Normal Forms}
+
+\subsection{Reactions}
+
+We introduce normal forms of reactions to avoid the use of the rule EXCH and
+CONG-BIND. 
+The main idea is that instead of writing 
+\begin{lstlisting}
+
+x1 : T1 <- read C1 ; 
+...
+xN : TN <- read CN ;
+R
+
+\end{lstlisting}
+
+\noindent we turn the binds into a commutative list
+ \begin{lstlisting}
+nf(
+(x1 : T1 <- read C1)
+...
+(xN : TN <- read CN) ,
+R
+)
+\end{lstlisting}
+\noindent and thus we can select any of them to apply reaction equality rules.
+The reaction \verb+R+ is bind free. We can relax this restriction and also the one that all binds read from channels, and then we obtain a pre-normal form instead. 
+
+The normal form of a reaction can be computed with a function \verb+computeNF+, and we can also
+assume a selection among the reactions that are equivalent modulo their normal
+form that allows us to pick a certain order for the list of binds.
+This amounts to using a rule
+\begin{lstlisting}
+crl[select-plain]:
+rConfig(Sigma, Delta, Gamma,
+        nf(BRL, R), I, A, T)
+=> 
+rConfig(Sigma, Delta, Gamma,
+        R', I, A, T)        
+if computeNF(R') == nf(BRL, R)
+[nonexec]        
+\end{lstlisting}
+\noindent in one direction and 
+\begin{lstlisting}
+rl[compute-nf]:
+rConfig(Sigma, Delta, Gamma,
+        R, I, A, T)
+=> 
+rConfig(Sigma, Delta, Gamma,
+        computeNF(R), I, A, T)        
+\end{lstlisting}
+\noindent in the other. These rules are sound by definition.
+
+\begin{itemize}
+ 
+\item[alpha-nf]:
+\begin{lstlisting}
+ crl [alpha-nf] : 
+    rConfig(Sigma, Delta, Gamma, 
+            nf((vx : T1 <- R1) BRL,
+               R2
+              ),
+            I, A, T2    
+           )
+     => 
+     rConfig(Sigma, Delta, Gamma, 
+            nf((vy : T1 <- R1) BRL,
+               R2 [vx / vy] 
+              ),
+            I, A, T2    
+           )   
+ if typeOf(Sigma, Delta, Gamma, 
+           I, A, R1) == T1 /\
+    typeOf(Sigma, Delta, 
+           addDeclarations BRL (Gamma (vx : T1)), 
+           I, A, R2) == T2          
+      [nonexec]        
+ .
+ \end{lstlisting}
+ 
+ We start with \verb+nf((vx : T1 <- R1) BRL, R2)+.
+we can turn this into a plain reaction \verb+R'+
+ by selecting the order of binds where
+\verb+vx+ comes last. We can then define a Maude strategy 
+\begin{lstlisting}
+strat S @ ReactionConfig .
+sd S := 
+ alpha[vy:Qid <- vy] 
+ or-else 
+ cong-bind{idle, S}
+.
+ \end{lstlisting}
+By applying it recursively, we leave all binds in \verb+BRL+ unchanged. When we reach
+\verb+vx : T1 <- R1 ; R2+
+we notice that the conditions of the ALPHA rule hold and we can do the renaming
+\verb+vy : T1 <- R1 ; R2[vx / vy]+.
+The result of applying \verb+S+ to \verb+R'+ 
+is then a reaction \verb+R''+ that starts with the binds in \verb+BRL+ 
+and ends with \verb+vy : T1 <- R1 ; R2[vx / vy]+.
+The normal form of \verb+R''+ is precisely 
+\verb+nf((vy : T1 <- R1) BRL, R2[vx / vy])+.
+ 
+\item[cong-nf]:
+\begin{lstlisting} 
+ 
+ crl [cong-nf] :
+     rConfig(Sigma, Delta, Gamma, 
+              nf(BRL , R1), I, A, T)
+     => 
+     rConfig(Sigma, Delta, Gamma, 
+              nf(BRL , R2), I, A, T)
+     if 
+     rConfig(Sigma, Delta, 
+             addDeclarations BRL Gamma, 
+             R1, I, A, T) 
+     => 
+     rConfig(Sigma, Delta, Gamma', 
+              R2, I, A, T) 
+     /\  Gamma' == addDeclarations BRL Gamma .    
+  \end{lstlisting} 
+  
+We start with \verb+nf(BRL, R1)+ and by assumption we know that
+\begin{lstlisting} 
+rConfig(Sigma, Delta, 
+             addDeclarations BRL Gamma, 
+             R1, I, A, T) 
+     => 
+     rConfig(Sigma, Delta, Gamma', 
+              R2, I, A, T) 
+  \end{lstlisting}              
+by a rewrite that we call \verb+rew+.              
+We can turn \verb+nf(BRL, R1)+ into a plain reaction \verb+R'+ 
+by selecting any order of binds. 
+We then define a Maude strategy 
+\begin{lstlisting} 
+strat S @ ReactionConfig .
+sd S := 
+ cong-bind{idle, rew}
+ or-else
+ cong-bind{idle, S}
+.
+  \end{lstlisting}
+By applying it recursively, we leave all binds in \verb+BRL+ 
+unchanged and when we reach
+\verb+R1+ we can rewrite it to \verb+R2+ using \verb+rew+,
+as \verb+cong-bind+ adds all declarations in \verb+BRL+ to
+\verb+Gamma+ by repeated application. 
+The result of applying \verb+S+ to \verb+R'+ is a reaction 
+\verb+R''+ that starts with the binds in \verb+BRL+
+and ends with \verb+R2+.
+The normal form of \verb+R''+ is precisely 
+\verb+nf(BRL, R2)+.  
+ 
+\item[read-det-pre]:
+\begin{lstlisting}     
+     
+ crl [read-det-pre] :
+     rConfig(Sigma, Delta, Gamma, 
+               preNF( (x : T1 <- read i)  
+                      (y : T1 <- read i) BL , 
+                      R ), 
+            I, A, T2) 
+     =>
+     rConfig(Sigma, Delta, Gamma, 
+               preNF( (x : T1 <- read i) BL , 
+                      R [y / x] ), 
+             I, A, T2) 
+ if isElemB(i, I, A)  /\ 
+    elem (toBound i) T1 Delta A /\
+    typeOf(Sigma, Delta, 
+           addDeclarations BL 
+             (Gamma (x : T1) (y : T1)), 
+           I, A, R) 
+    == T2 .
+   \end{lstlisting} 
+   
+We start with the reaction
+\begin{lstlisting} 
+ preNF( (x : T1 <- read i)(y : T1 <- read i) BL , R )
+\end{lstlisting} 
+and select its plain reaction equivalent \verb+R'+ 
+that starts with the binds in BL
+and ends with
+ \begin{lstlisting}
+   x : T1 <- read i ; 
+   y : T1 <- read i ; 
+   R
+ \end{lstlisting} 
+
+We then define a Maude strategy 
+\begin{lstlisting} 
+strat S @ ReactionConfig .
+sd S := 
+ cong-bind{idle, read-det-pre}
+ or-else
+ cong-bind{idle, S}
+.
+  \end{lstlisting}
+By applying it recursively, we leave all binds in \verb+BL+ 
+unchanged until we reach
+the left-hand side of the rule \verb+read-det+.
+This rule has the 
+same conditions as \verb+read-det-pre+, and we know these hold by assumption,
+since the declarations in \verb+BL+ are added to \verb+Gamma+ by repeatedly applying \verb+cong-bind+.
+We can apply \verb+read-det+ to get
+ \begin{lstlisting}
+   x : T1 <- read i ;  
+   (R[y / x])
+ \end{lstlisting}
+The result of applying the strategy to  \verb+R'+ is then 
+a reaction \verb+R''+ that starts with the binds in BL
+and ends with
+ \begin{lstlisting}
+   x : T1 <- read i ;  
+   (R[y / x])
+ \end{lstlisting}
+ Its pre-normal form is precisely 
+ \begin{lstlisting}
+ preNF( (x : T1 <- read i) BL , 
+                      R [y / x] )
+ \end{lstlisting}
+ and we obtain it by calling \verb+computeNF(R'')+ and applying
+ \verb+nf2Pre+ to the result if needed.
+ 
+\item[read-det-nf]:
+\begin{lstlisting}
+  crl [read-det-nf] :
+     rConfig(Sigma, Delta, Gamma, 
+               nf( (x : T1 <- read i) 
+                   (y : T1 <- read i) BRL , 
+                   R), 
+             I, A, T2) 
+     =>
+     rConfig(Sigma, Delta, Gamma, 
+               nf( (x : T1 <- read i) BRL , 
+                    R [y / x]), 
+             I, A, T2) 
+ if isElemB(i, I, A)  /\ 
+    elem (toBound i) T1 Delta A /\
+    typeOf(Sigma, Delta, 
+           addDeclarations BRL 
+            (Gamma (x : T1) (y : T1)), 
+           I, A, R) 
+    == T2 . 
+   \end{lstlisting} 
+   
+ Same proof as above, only use \verb+read-det+ in the strategy and
+ turn the final plain reaction to a normal form instead of a 
+ pre-normal form.  
+ 
+\item[bind-ret-pre]:
+\begin{lstlisting}
+                
+ crl [bind-ret-pre] : 
+     rConfig(Sigma, Delta, Gamma, 
+               preNF( (x : T1 <~ R1) BL , 
+                      return x ), 
+             I, A, T1) 
+     =>
+     rConfig(Sigma, Delta, Gamma, 
+               preNF( BL , R1 ), 
+             I, A, T1) 
+ if typeOf(Sigma, Delta, Gamma, 
+           I, A, R1) 
+    == T1 .  
+  
+     \end{lstlisting} 
+     
+We start with 
+\begin{lstlisting}
+preNF( (x : T1 <~ R1) BL , 
+       return x )           
+\end{lstlisting}        
+We can turn it into a plain reaction \verb+R'+ by selecting the order of binds
+that starts with \verb+BL+ and ends with \verb+x : T1 <- R1+ . 
+We then define a Maude strategy 
+\begin{lstlisting}
+strat S @ ReactionConfig .
+sd S := 
+ cong-bind{idle, bind-ret}
+ or-else
+ cong-bind{idle, S}
+.
+     \end{lstlisting}
+By applying it recursively, we leave all binds in \verb+BL+ unchanged and 
+when we reach
+\verb+x : T <- R1 ; return x+ we rewrite it to \verb+R1+ 
+using \verb+bind-ret+.
+The result of applying \verb+S+ to \verb+R'+ is a reaction \verb+R''+ 
+that starts with the binds in \verb+BL+ 
+and ends with \verb+R1+.
+The normal form of \verb+R''+ is precisely 
+\verb+preNF(BL, R1)+.     
+ 
+\item[read2Binds]:
+\begin{lstlisting}       
+ crl [read2Binds] : 
+    rConfig(Sigma, Delta, Gamma, 
+             preNF(BL (x : T1 <~ read i), 
+                   R ), 
+           I, A, T) 
+    =>
+    rConfig(Sigma, Delta, Gamma, 
+             preNF(BL (x : T1 <- read i), 
+                   R ), 
+            I, A, T) 
+    if isElemB(i, I, A) and 
+       elem (chn i) T1 Delta A .
+    \end{lstlisting} 
+    
+ Both reactions have the same plain forms.   
+ 
+\item[pre2Nf]:
+\begin{lstlisting}  
+ crl [pre2Nf] : preNF(BRL, R ) => nf(BRL, R) 
+ if R : BindFreeReaction . 
+    \end{lstlisting} 
+    
+ Both reactions have the same plain forms.  
+ The condition that \verb+R+ should be bind free and
+ the requirement that \verb+BRL+ is a list of read binds
+ ensures that the normal form is well-formed.
+ 
+\item[nf2Pre]:
+\begin{lstlisting}
+ rl [nf2Pre] : nf(BRL, R) => preNF(BRL, R) .
+     \end{lstlisting} 
+ 
+ Both reactions have the same plain forms. 
+ 
+\item[merge-pre]:
+\begin{lstlisting}
+ crl [merge-pre] :
+     rConfig(Sigma, Delta, Gamma, 
+             preNF(BL (x : T1 <~ R1) , 
+                   R2 ), 
+             I, A, T2)
+     =>
+     rConfig(Sigma, Delta, Gamma, 
+              preNF(BL , 
+                    x : T1 <- R1 ; R2 ), 
+             I, A, T2) 
+   if typeOf(Sigma, Delta, Gamma, 
+             I, A, R1) 
+      == T1
+   /\ typeOf(Sigma, Delta, 
+             addDeclarations BL (Gamma (x : T1)), 
+             I, A, R2) 
+      == T2 .
+       \end{lstlisting} 
+       
+ Both reactions have the same plain forms.      
+  
+\item[bind2R-pre-reverse]:
+\begin{lstlisting}  .    
+ crl [bind2R-pre-reverse] :
+     rConfig(Sigma, Delta, Gamma, 
+             preNF(BL , 
+                   x : T1 <- read i ; R2 ), 
+             I, A, T2)
+     =>
+     rConfig(Sigma, Delta, Gamma, 
+             preNF(BL (x : T1 <- read i) , 
+                   R2 ),
+             I, A, T2) 
+ if isElemB(i, I, A)  
+ /\ elem (chn i) T1 Delta A 
+ /\ typeOf(Sigma, Delta, 
+           addDeclarations BL (Gamma (x : T1)), 
+           I, A, R2) 
+    == T2 .  
+          \end{lstlisting} 
+          
+  Follows by the previous rule and symmetry.        
+ 
+\item[ret-bind-pre]:
+\begin{lstlisting}  .  
+ crl [ret-bind-pre] :
+     rConfig(Sigma, Delta, Gamma, 
+              preNF((x : T1 <~ (return M)) BL, 
+                    R ), 
+             I, A, T2) 
+     =>
+     rConfig(Sigma, Delta, Gamma, 
+             preNF(BL, 
+                   R [x / M] ), 
+             I, A, T2) 
+ if typeOf(Sigma, Gamma, M) == T1 
+ /\ typeOf(Sigma, Delta, 
+           addDeclarations BL (Gamma (x : T1)), 
+           I, A, R) 
+    == T2 
+          \end{lstlisting} 
+ 
+
+ Start with 
+  \begin{lstlisting}
+ preNF((x : T1 <~ (return M)) BL, R )
+ \end{lstlisting} 
+ \noindent and select its 
+ plain form that starts with the binds in BL and ends with \verb+x : T1 <- return M ; R+.
+We then define a Maude strategy 
+\begin{lstlisting}
+strat S @ ReactionConfig .
+sd S := 
+ cong-bind{idle, ret-bind}
+ or-else
+ cong-bind{idle, S}
+.
+     \end{lstlisting}
+By applying it recursively, we leave all binds in \verb+BL+ unchanged and 
+when we reach
+\verb+x : T <- return M ; R+ we rewrite it to \verb+R[x / M]+ 
+using \verb+ret-bind+. 
+The normal form of the resulting reaction is \verb+preNF(BL, R [x / M] )+, possibly applying \verb+nf2Pre+ if BL has only
+read binds and \verb+R [x / M]+ is bind free.
+ 
+\item[bind-bind-pre]:
+\begin{lstlisting}  . 
+ crl [bind-bind-pre] :
+     rConfig(Sigma, Delta, Gamma, 
+              preNF((x2 : T2 <~ nf(BRL, R2)) BL, 
+                     R1), 
+            I, A, T1)
+     =>  
+     rConfig(Sigma, Delta, Gamma, 
+              preNF(BRL (x2 : T2 <~ R2) BL, 
+                    R1), 
+             I, A, T1) 
+ if typeOf(Sigma, Delta, 
+            addDeclarations BRL Gamma, 
+           I, A, R2) 
+    == T2
+ /\ typeOf(Sigma, Delta, 
+           addDeclarations BL (Gamma (x2 : T2)), 
+           I, A, R1) 
+    == T1 .  
+          \end{lstlisting} 
+          
+We start with \begin{lstlisting}
+ preNF( (x2 : T2 <~ nf(BRL, R2)) BL, R1)
+ \end{lstlisting} \noindent and 
+select the plain representation \verb+P+ that starts with the binds in BL and ends with
+\verb+ x2 : T2 <- R' ; R1+ where \verb+R'+ is any plain representation of \verb+nf(BRL, R2)+.
+We define two Maude strategies. The first one will extract the binds in \verb+BRL+ from the inner reaction and lift them to the outer level:
+\begin{lstlisting}
+ start S1 @ ReactionConfig .
+ sd S1 :=
+  bind-bind 
+  or-else 
+  cong-bind{idle, S1}
+.  
+\end{lstlisting}
+\noindent while the other will leave unchanged the outer binds:
+\begin{lstlisting}
+strat S2 @ ReactionConfig .
+sd S2 := 
+ S1
+ or-else
+ cong-bind{idle, S2}
+.
+     \end{lstlisting}
+When applying \verb+S2+ to \verb+P+ we obtain a reaction \verb+P'+
+that has first the binds in \verb+BL+, then the ones in \verb+BRL+, and finally
+\verb+x2 : T2 <- R2 ; R1+. The pre-normal form of \verb+P'+ is
+\begin{lstlisting}
+ preNF(BRL (x2 : T2 <~ R2) BL, R1)
+\end{lstlisting}
+ 
+\item[bind-bind-pre-pre]:
+\begin{lstlisting}  .
+  crl [bind-bind-pre-pre] :
+     rConfig(Sigma, Delta, Gamma, 
+              preNF((x2 : T2 <~ preNF(BRL, R2)) BL, 
+                    R1), 
+             I, A, T1)
+     =>  
+     rConfig(Sigma, Delta, Gamma, 
+              preNF(BRL (x2 : T2 <~ R2) BL, 
+                    R1), 
+             I, A, T1) 
+ if typeOf(Sigma, Delta, 
+            addDeclarations BRL Gamma,
+            I, A, R2) 
+    == T2
+ /\ typeOf(Sigma, Delta, 
+            addDeclarations BL (Gamma (x2 : T2)), 
+            I, A, R1) 
+    == T1 . 
+\end{lstlisting}
+\end{itemize}
+
+The proof is similar to the one above, namely the same strategies are used, and the only thing that changes is that we start with an inner pre-normal form.
+
+\subsection{Protocols}
+
+We introduce normal forms of protocols to avoid the use of the rule NEW-EXCH. 
+The main idea is that instead of writing 
+\begin{lstlisting}
+
+new cn1 : T1 in 
+new cn2 : T2 in
+...
+new cnN : TN in
+P
+
+\end{lstlisting}
+
+\noindent we turn the hidden channels into a commutative list
+ \begin{lstlisting}
+newNF(
+< C1 : T1 >
+...
+< CN : TN > ,
+P
+)
+\end{lstlisting}
+\noindent and thus we can select any of them to apply protocol equality rules.
+
+The normal form of a protocol can be computed 
+with a function \verb+new2NF+, and we can also
+assume a selection among the protocols that are equivalent modulo their normal
+form that allows us to pick a certain order for the list of hidden channels.
+This amounts to using a rule
+\begin{lstlisting}
+ crl [select-plain] :
+     pConfig(Sigma, Delta, 
+             newNF(ltq, P1), 
+             I, O, A)
+     =>
+     pConfig(Sigma, Delta, 
+              P, 
+             I, O, A) 
+ if new2NF(P) ==  newNF(ltq, P1)           
+ .
+\end{lstlisting}
+\noindent in one direction, that chooses the plain form of a protocol in normal form given by the alphabetical order of names of hidden channels, and 
+\begin{lstlisting}  
+ rl [sugar-newNF] :
+    pConfig(Sigma, Delta,  
+             P, 
+             I, O, A)
+    => 
+    pConfig(Sigma, Delta, 
+             new2NF(P), 
+             I, O, A) 
+ . 
+ \end{lstlisting}
+\noindent in the other. These rules are sound by definition.
+
+\begin{itemize}
+
+\item[delete-empty-newNF]
+ \begin{lstlisting}
+ rl [delete-empty-newNF] :
+     pConfig(Sigma, Delta, 
+             newNF(emptyTypedCNameList, P), 
+             I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+              P, 
+             I, O, A) 
+ . 
+  \end{lstlisting}
+  
+  The empty list of hidden channels doesn't add anything to the normal form
+  of \verb+P+, so both \verb+P+ and \verb+newNF(emptyTypedCNameList, P)+ have
+  the same plain representations.
+
+\item[CONG-NEW-NF]
+ \begin{lstlisting}
+ 
+ crl [CONG-NEW-NF] : 
+    pConfig(Sigma, Delta1, 
+             newNF(ltq, P1), 
+            I, O1, A) 
+    => 
+    pConfig(Sigma, 
+             diff 
+              Delta2 
+              (addChannels ltq emptyChannelCtx), 
+            newNF(ltq, P2), 
+            I, O2 \ (chansInList ltq), A)
+    if
+    pConfig(Sigma, addChannels ltq Delta1, 
+             P1, 
+             I, union(chansInList ltq, O1), A)
+    =>
+    pConfig(Sigma, Delta2, 
+             P2, 
+            I, O2, A) 
+    /\ *** the channels in ltq have not changed
+    diff 
+     (addChannels ltq emptyChannelCtx) 
+     Delta2 
+    == emptyChannelCtx
+    /\
+    O2 == getOutputs(P2)
+    /\ 
+    (addChannels ltq Delta1) equiv Delta2 
+    /\ 
+    O2 equiv (chansInList ltq, O1)
+  .
+ \end{lstlisting}
+ 
+ Let \verb+rew+ be the rewrite in the condition of the rule. 
+ We start with the protocol \verb+newNF(ltq, P1)+ and select any 
+ plain representation of it \verb+Q1+.
+ We define the following Maude strategy:
+ \begin{lstlisting}
+  strat S @ ProtocolConfig .
+  sd S :=
+     rew
+     or-else CONG-NEW{S}
+  .
+ \end{lstlisting}
+ The strategy adds arbitrarily many hidden channels to the current context
+ and then applies \verb+rew+. The result of applying \verb+S+ to \verb+Q1+
+ is a protocol \verb+Q2+ that has the same hidden channels as \verb+Q1+ followed
+ by \verb+P2+. By taking its normal form we obtain precisely 
+ \verb+newNF(ltq, P2)+.
+
+\item[absorb-new-nf]
+ \begin{lstlisting}
+ crl [absorb-new-nf] :
+     pConfig(Sigma, Delta, 
+              newNF(< c : T > ltq, 
+                    P || (c ::= R)
+              ), 
+             I, O, A) 
+     => 
+     pConfig(Sigma, Delta, 
+              newNF(ltq, P), 
+             I, O, A) 
+ if typeOf(Sigma, 
+            addChannels ltq 
+              (Delta (chn c :: T)), 
+            emptyTypeContext, 
+            (chn c, (I, getOutputs(P))), 
+            A, R) 
+    == T 
+ /\ typeOf(Sigma, addChannels ltq Delta, 
+          I, A, P)       
+ /\ getOutputs(newNF2New(newNF(ltq, P))) 
+    == O .
+    \end{lstlisting}
+
+We start with 
+\verb+newNF(< c : T > ltq, P || (c ::= R))+  
+and let $Q1$ be its plain representation that starts with
+the hidden channels in \verb+ltq+ then with the hidden channel \verb+c+ and
+the protocol \verb+P || (c ::= R)+.
+We define the following Maude strategy:
+\begin{lstlisting}
+strat S @ ProtocolConfig .
+sd S := 
+ (COMP-NEW-2 ; ABSORB-LEFT)
+ or-else
+ CONG-NEW{S}
+.
+\end{lstlisting}
+
+ The strategy adds arbitrarily many hidden channels to the current context
+ and then applies \verb+COMP-NEW-2+ to turn
+ \verb+new c : T in (P || c ::= R)+ into
+ \verb+P || (new c : T in c ::= R)+. The assumptions of 
+ \verb+absorb-new-nf+ ensure that\verb+P+ type checks in the absence of
+ \verb+c+ from the channel context and that 
+ \verb+new c : T in c ::= R+ type checks with the outputs of \verb+P+
+ as inputs, so we can apply \verb+ABSORB-LEFT+ to eliminate
+ \verb+new c : T in c ::= R+. The result of applying 
+ \verb+S+ to \verb+Q1+ is a protocol \verb+Q2+ that starts with 
+ the hidden channels in \verb+ltq+ and ends with \verb+P+.
+ The normal form of \verb+Q1+ is precisely \verb+newNF(ltq, P)+.
+ 
+\item[fold-bind-new-nf]
+ \begin{lstlisting}
+           
+  crl [fold-bind-new-nf] :
+    pConfig(Sigma, Delta, 
+             newNF(< c : T > ltq, 
+                   P || 
+                   ( c ::= R ) || 
+                   ( o ::= nf((x : T <- read c) BRL, 
+                              S) 
+                   )
+                  ),
+            I, O, A)
+    => 
+    pConfig(Sigma, Delta, 
+             newNF(ltq, 
+                   P || 
+                   (o ::= preNF((x : T <~ R) BRL, 
+                                S))
+                   ),
+            I, O, A) 
+    if typeOf(Sigma, 
+              addChannels ltq 
+                 ( Delta ( (chn c):: T) ) , 
+                emptyTypeContext, 
+              (chn o, 
+                (chn c, (I, getOutputs(P)) ) 
+              ), 
+              A, R) 
+       == T 
+    /\ typeOf(Sigma, addChannels ltq Delta, 
+              addDeclarations 
+                ((x : T <- read c) BRL) 
+                emptyTypeContext,
+              (chn o, 
+                (I, getOutputs(P)) ), A, S
+       ) 
+       == 
+       typeInCtx(chn o, A, addChannels ltq Delta)   
+    /\ typeOf(Sigma, addChannels ltq Delta, 
+          (I, chn o), A, P)     
+  .
+    \end{lstlisting}
+    
+We start with 
+ \begin{lstlisting}  
+newNF(< c : T > ltq, 
+      P || ( c ::= R ) || 
+     ( o ::= nf((x : T <- read c) BRL, S) )
+)    
+ \end{lstlisting}
+\noindent and we select the plain representation \verb+Q1+ that starts with the
+hidden channels in \verb+ltq+ and ends with 
+\begin{lstlisting}
+new c : T in  
+  P || 
+  ( c ::= R ) || 
+  ( o ::= nf((x : T <- read c) BRL, S) )
+\end{lstlisting}
+
+We define the following Maude strategy
+\begin{lstlisting}
+strat S @ ProtocolConfig . 
+sd S := 
+ COMP-NEW-2 ; CONG-COMP-RIGHT{FOLD-BIND}
+ or-else
+ CONG-NEW{S}
+.
+\end{lstlisting}
+The strategy \verb+S+ leaves the hidden channels in \verb+ltq+ unchanged,
+then the rule \verb+COMP-NEW-2+ rewrites
+\begin{lstlisting}
+new c : T in  
+    P || 
+    ( c ::= R ) || 
+    ( o ::= nf((x : T <- read c) BRL, S) )
+\end{lstlisting}
+to
+\begin{lstlisting} 
+  P || new c : T in 
+         ( c ::= R ) || 
+         ( o ::= nf((x : T <- read c) BRL, S) )
+\end{lstlisting} 
+\noindent Then \verb+CONG-COMP-RIGHT{FOLD-BIND}+ leaves P unchanged (by \verb+CONG-COMP-RIGHT+) and rewrites
+\begin{lstlisting}
+ new c : T in 
+   ( c ::= R ) || 
+   ( o ::= nf((x : T <- read c) BRL, S)
+\end{lstlisting}
+to
+\begin{lstlisting} 
+ o ::= preNF((x : T <~ R) BRL, S)
+\end{lstlisting} (by \verb+FOLD-BIND+).
+The result of applying \verb+S+ to \verb+Q1+ is then a protocol \verb+Q2+ that 
+starts with the hidden channels in \verb+ltq+ and ends with
+\begin{lstlisting} 
+ P || (o ::= preNF((x : T <~ R) BRL, S))
+ \end{lstlisting}. The normal form of 
+\verb+Q2+ is the protocol in the right hand side of the rule \verb+fold-bind-new-nf+.
+
+ 
+\item[fold-bind-new-nf-0]
+ \begin{lstlisting}  
+  
+  crl [fold-bind-new-nf-0] :
+    pConfig(Sigma, Delta, 
+             newNF(< c : T > ltq, 
+                   (c ::= R) || 
+                   (o ::= nf((x : T <- read c) BRL, 
+                             S))
+                  ),
+            I, O, A)
+    => 
+    pConfig(Sigma, Delta, 
+             newNF(ltq, 
+                    (o ::= preNF((x : T <~ R) BRL, 
+                                 S))
+                  ),
+            I, O, A) 
+    if typeOf(Sigma, 
+              addChannels ltq 
+                (Delta ((chn c):: T)), 
+              emptyTypeContext, 
+             (chn o, (chn c, I )), 
+             A, R) 
+        == T  /\ typeOf(Sigma, addChannels ltq Delta, 
+              addDeclarations 
+                ((x : T <- read c) BRL) 
+                emptyTypeContext,
+              (chn o, I), A, S
+       ) 
+       == 
+       typeInCtx(chn o, A, addChannels ltq Delta) 
+       .
+       
+    \end{lstlisting}
+    
+   The proof is similar to the one above, the only difference is that
+   the strategy \verb+S+ doesn't apply \verb+CONG-COMP-RIGHT+ anymore:´
+\begin{lstlisting}
+strat S @ ProtocolConfig . 
+sd S := 
+ COMP-NEW-2 ; FOLD-BIND
+ or-else
+ CONG-NEW{S}
+.
+\end{lstlisting}  
+
+\item[fold-bind-new-prenf]
+ \begin{lstlisting}       
+            
+  crl [fold-bind-new-prenf] :
+    pConfig(Sigma, Delta, 
+             newNF(< c : T > ltq,
+                   P || 
+                   (c ::= R) || 
+                   (o ::= preNF((x : T <- read c) 
+                                BRL, 
+                                 S))
+                   ),
+            I, O, A)
+    => 
+    pConfig(Sigma, Delta, 
+             newNF(ltq, 
+                   P || 
+                   (o ::= preNF((x : T <~ R) BRL, 
+                                S))
+                  ),
+            I, O, A) 
+ if typeOf(Sigma, 
+           addChannels ltq 
+             (Delta ((chn c) :: T)), 
+             emptyTypeContext, 
+             (chn o, (chn c, 
+               union(I, getOutputs(P)))), 
+             A, R) 
+    == T .        
+                \end{lstlisting}
+                
+   The proof is the same as for \verb+fold-bind-new-nf+.             
+
+\item[COMP-NEW-newNF]
+ \begin{lstlisting}  
+            
+ crl [COMP-NEW-newNF] :
+     pConfig(Sigma, Delta, 
+              P || newNF(ltq, Q), 
+            I, O, A)
+     =>   
+     pConfig(Sigma, Delta, 
+              newNF(ltq, P || Q), 
+             I, O, A)
+ if typeOf(Sigma, 
+             addChannels ltq Delta, 
+             union(I, getOutputs(P)), 
+             A, Q)
+ /\ typeOf(Sigma, Delta, 
+           union(I, getOutputs(newNF(ltq, Q))), 
+            A, P) .
+   \end{lstlisting}
+   
+  Start with \verb+ newNF(ltq, P || Q)+ and consider
+  the plain representation \verb+Q1+ that starts with any order of the
+  hidden channels in \verb+ltq+ and ends with \verb+P || Q+.
+  
+  We define the following Maude strategies
+  \begin{lstlisting}
+  strat S @ ProtocolConfig.
+  sd S := 
+     COMP-NEW
+     or-else 
+     CONG-NEW{S}
+  \end{lstlisting}
+  By applying \verb+S!+ to \verb+Q1+ (using the \verb+!+ strategy operator
+   that applies a strategy as many times as possible), we obtain
+   the protocol \verb+P || Q2+, where \verb+Q2+ starts with the hidden channels
+   in \verb+ltq+ and ends with \verb+Q+. The normal form of \verb+Q2+ is
+   \verb+newNF(ltq, Q)+, so we can plug it next to \verb+P+ using
+   \verb+CONG-COMP-RIGHT+ to obtain \verb+P || newNF(ltq, Q)+.
+   The proof is completed by applying the \verb+SYM+ rule to the proof above. 
+    
+
+\item[COMP-NEW-newNF-inside-new]
+ \begin{lstlisting} 
+ 
+ crl [COMP-NEW-newNF-inside-new] : 
+     pConfig(Sigma, Delta, 
+              newNF(ltq1, 
+                     P || newNF(ltq, Q)), 
+            I, O, A)
+     =>   
+     pConfig(Sigma, Delta, 
+               newNF(ltq1 ltq, 
+                      P || Q), 
+             I, O, A)
+ if typeOf(Sigma, addChannels ltq Delta, 
+            (I, getOutputs(P)), 
+            A, Q)
+ /\ typeOf(Sigma, Delta, 
+            ( I, getOutputs(newNF(ltq, QL)) ), 
+           A, P) .
+   \end{lstlisting}
+   
+   The proof is similar to the one above, but we restrict the number 
+   of applications of \verb+S+ to the length of \verb+ltq+, then using
+   \verb+CONG-NEW+ for the hidden channels in \verb+ltq1+.
+
+\item[DROP-nf]
+ \begin{lstlisting}
+   crl [DROP-nf] :
+    pConfig(Sigma, Delta,
+            (cn1 ::= nf(emptyBRList, samp Dist)) || 
+            (cn2 ::= nf( (x : T1 <- read cn1) BRL , 
+                         R2) ),
+            I, O, A) 
+    =>           
+     pConfig(Sigma, Delta,
+            (cn1 ::= nf(emptyBRList, samp Dist)) || 
+            (cn2 ::= nf( BRL , R2) ),
+            I, O, A) 
+    if 
+     typeOf(Sigma, Delta, 
+             addDeclarations BRL (x : T1), 
+             (chn cn1, (chn cn2, I)), 
+             A, R2) 
+     == 
+     typeInCtx(chn cn2, A, Delta)
+     /\
+     elem (chn cn1) T1 Delta A .  
+       \end{lstlisting}
+
+ We start with 
+ \begin{lstlisting}
+  (cn1 ::= nf(emptyBRList, samp Dist)) || 
+  (cn2 ::= nf( (x : T1 <- read cn1) BRL , R2) )
+ \end{lstlisting} 
+ \noindent and we replace the reactions assigned to the 
+ channels with \verb+samp Dist+ and the reaction that starts
+ with the binds in \verb+x : T1 <- read cn1+ and ends with 
+ the binds in \verb+BRL+ followed by \verb+R2+ (we call this reaction
+ \verb+R'+), respectively.
+ Working in reverse: by the rule \verb+samp-pure+,
+ we can rewrite the reaction \verb+ x : T1 <- samp Dist ; R' +  
+ to \verb+R'+. Thus, by the rule \verb+DROP+, we can rewrite the 
+ protocol 
+ \begin{lstlisting}
+ cn1 ::= samp Dist || cn2 ::= x : T1 <- read cn1 ; R'
+ \end{lstlisting}
+ to \verb+cn1 ::= samp Dist || cn2 ::= R'+. The proof ends by replacing
+ the reactions assigned to the channels \verb+cn1+ and \verb+cn2+ with 
+ their normal forms.
+ 
+ 
+\item[DROP-pre-nf]
+ \begin{lstlisting} 
+                   
+crl [DROP-pre-nf] :
+  pConfig(Sigma, Delta,
+          (cn1 ::= samp Dist) || 
+          (cn2 ::= preNF( (x : T1 <- read cn1) BRL , 
+                           R2) ),
+         I, O, A) 
+  =>           
+ pConfig(Sigma, Delta,
+         (cn1 ::= samp Dist) || 
+         (cn2 ::= preNF( BRL , R2) ),
+         I, O, A) 
+ if typeOf(Sigma, Delta, 
+           addDeclarations BRL (x : T1), 
+           (chn cn1, (chn cn2, I)), A, R2) 
+    == 
+    typeInCtx(chn cn2, A, Delta)
+ /\ elem (chn cn1) T1 Delta A .   
+       \end{lstlisting}
+       
+ The proof is identical to the one above, except
+ we turn the reactions to their pre-normal form at the end.      
+
+\item[DROP-SUBSUME-channels]
+ \begin{lstlisting} 
+        
+    crl [DROP-SUBSUME-channels] :
+    pConfig(Sigma, Delta,
+            (cn1 ::= nf(BRL, samp Dist)) || 
+            (cn2 ::= nf( (x : T1 <- read cn1) BRL' , 
+                         R2) ),
+            I, O, A) 
+    =>           
+     pConfig(Sigma, Delta,
+            (cn1 ::= nf(BRL, samp Dist)) || 
+            (cn2 ::= nf(BRL BRL' , R2) ),
+            I, O, A) 
+    if 
+     typeOf(Sigma, Delta, 
+             addDeclarations BRL' (x : T1), 
+             (chn cn1, (chn cn2, I)), 
+             A, R2) 
+     == 
+     typeInCtx(chn cn2, A, Delta)
+     /\
+     elem (chn cn1) T1 Delta A .  
+       \end{lstlisting}
+ The proof is similar to the one of \verb+DROP-nf+ but before
+ using the \verb+DROP+ rule we apply the reverse of the 
+ \verb+SUBSUME+ rule to duplicate the binds in \verb+BRL+ in 
+ the reaction assigned to the channel \verb+cn2+. Each time a bind
+ is added, we use the \verb+EXCH+ rule to move the read from \verb+cn1+
+ in front. 
+
+\item[DROP-SUBSUME-channels-pre]
+ \begin{lstlisting}
+
+ crl [DROP-SUBSUME-channels-pre] :
+ pConfig(Sigma, Delta,
+         (cn1 ::= nf(BRL, samp Dist)) || 
+         (cn2 ::= preNF( (x : T1 <- read cn1) BRL' , 
+                          R2) ),
+         I, O, A) 
+ =>           
+ pConfig(Sigma, Delta,
+         (cn1 ::= nf(BRL, samp Dist)) || 
+         (cn2 ::= preNF(BRL BRL' , R2) ),
+         I, O, A) 
+ if typeOf(Sigma, Delta,  
+           addDeclarations BRL' (x : T1), 
+           (chn cn1, (chn cn2, I)), A, R2) 
+    == 
+    typeInCtx(chn cn2, A, Delta)
+ /\ elem (chn cn1) T1 Delta A . 
+       \end{lstlisting}
+
+ The proof is identical to the previous one, except at the end we
+ compute the pre-normal form.
+
+\item[SUBST-nf]
+ \begin{lstlisting}           
+  crl [SUBST-nf] : 
+     pConfig(Sigma, Delta,
+             (cn1 ::= R1) || 
+             (cn2 ::= nf( (x1 : T1 <- read cn1) 
+                          BRL , 
+                          R2) ),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta,
+             (cn1 ::= R1) || 
+             (cn2 ::= preNF( (x1 : T1 <~ R1)
+                             BRL , 
+                             R2)),
+             I, O, A) 
+     if isSampFree(R1) /\
+        O == insert(chn cn1, chn cn2) /\ 
+     typeOf(Sigma, Delta, emptyTypeContext, 
+             (chn cn1,  (chn cn2, I)), A, R1) 
+     == T1 /\
+     typeOf(Sigma, Delta, 
+            addDeclarations BRL (x1 : T1), 
+             (chn cn1,  (chn cn2, I)), A, R2) 
+     == typeInCtx(chn cn2, A, Delta)
+     /\
+     elem (chn cn1) T1 Delta A . 
+       \end{lstlisting}
+       
+ We start by showing that if a reaction is samp-free, the 
+ condition 
+ \begin{lstlisting}
+ rConfig(Sigma, Delta, emptyTypeContext,
+             x1 : T1 <- R1 ; 
+             x2 : T1 <- R1 ; 
+             return pair(x1, x2),
+             insert(chn cn1, insert(chn cn2, I)), A, 
+             T1 * T1 )
+     => 
+     rConfig(Sigma, Delta, emptyTypeContext,
+             x1 : T1 <- R1 ;  return pair(x1, x1),
+             I', A, T1 * T1 )
+ \end{lstlisting}
+ \noindent from the assumptions of the rule \verb+SUBST+
+ holds.
+ To do that we will prove a stronger statement, namely that 
+ if a reaction is samp-free, then 
+ \begin{lstlisting}
+ rConfig(Sigma, Delta, emptyTypeContext,
+             x1 : T1 <- R1 ; 
+             x2 : T1 <- R1 ; 
+             S(x1, x2),
+             insert(chn cn1, insert(chn cn2, I)), A, 
+             T1 * T1 )
+     => 
+     rConfig(Sigma, Delta, emptyTypeContext,
+             x1 : T1 <- R1 ; S(x, x),
+             I', A, T1 * T1 )
+ \end{lstlisting}
+ \noindent
+ holds for any reaction \verb+S(x, y)+.
+ 
+ We proceed by structural induction.
+
+ Case \verb+R1 = return M+:
+ we start with
+ \begin{lstlisting}
+ x1 : T1 <- return M ; 
+ x2 : T1 <- return M ; 
+ S(x1, x2)
+ \end{lstlisting}
+ By applying \verb+ret-bind+ two times, we get \verb+S(M, M)+, and this
+ is also what we get by applying \verb+ret-bind+ to \verb+x1 : T1 <- return M ;  S(x1, x1)+.
+ Case \verb+R = read c+:
+ we start with 
+  \begin{lstlisting}
+ x1 : T1 <- read c ; 
+ x2 : T1 <- read c ; 
+ S(x1, x2)
+ \end{lstlisting}
+ \noindent and we can apply \verb+read-det+ to obtain
+   \begin{lstlisting}
+ x1 : T1 <- read c ; 
+ S(x1, x1)
+ \end{lstlisting}
+ 
+ Case \verb+ R = if M then R1 else R2+, with \verb+R1, R2+ samp-free:
+ we start with 
+   \begin{lstlisting}
+ x1 : T1 <- if M then R1 else R2 ; 
+ x2 : T1 <- if M then R1 else R2 ; 
+ S(x1, x2)
+ \end{lstlisting} 
+ and we notice that we can write it as
+   \begin{lstlisting}
+  if M then 
+      x1 : T1 <- R1 ;
+      x2 : T1 <- R1 ; 
+      S(x1, x2)  
+       else
+      x1 : T1 <- R2 ;
+      x2 : T1 <- R2 ; 
+      S(x1, x2) 
+ \end{lstlisting}
+ by applying to this latter reaction two times the derived rule 
+ \verb+if-over-bind-same+ followed by \verb+same-reaction-if+.
+ We can now use the inductive hypothesis for \verb+R1+ and \verb+R2+ to get
+   \begin{lstlisting}
+  if M then 
+      x1 : T1 <- R1 ;
+      S(x1, x1)  
+       else
+      x1 : T1 <- R2 ; 
+      S(x1, x1) 
+ \end{lstlisting}
+ But this is also what we get if we apply \verb+if-over-bind+ to
+ the right hand side reaction
+    \begin{lstlisting}
+  x1 : T1 <- if M then R1 else R2 ;
+  S(x1, x1)  
+   \end{lstlisting}
+
+ 
+ Case \verb+R = (a : t <- R1) ; R2(a)+, with \verb+R1, R2(a)+ samp-free:
+ 
+
+We start with
+  \begin{lstlisting}
+   x : T <-  a : t <- R1 ; R2(a) ;
+   y : T <-  a : t <- R1 ; R2(a) ;
+   S(x, y)
+  \end{lstlisting}
+
+By bind-bind and exchange we get
+
+  \begin{lstlisting}
+   a : t <- R1 ; 
+   a : t <- R1 ; 
+   x : T <-  R2(a) ;
+   y : T <-  R2(a) ;
+   S(x, y)
+  \end{lstlisting}
+
+By the induction hypothesis for \verb+R2(a)+
+
+  \begin{lstlisting}
+   a : t <- R1 ; 
+   a : t <- R1 ; 
+   x : T <-  R2(a) ;
+   S(x, x)
+  \end{lstlisting}
+  
+By the induction hypothesis for \verb+R1+
+
+ \begin{lstlisting}
+   a : t <- R1 ; 
+   x : T <-  R2(a) ;
+   S(x, x)
+  \end{lstlisting})
+
+which is what we get from the right hand side as well by 
+applying \verb+bind-bind+.
+ 
+ We now proceed to showing that \verb+SUBST-nf+ is sound. 
+ We start with 
+    \begin{lstlisting}
+   (cn1 ::= R1) || 
+             (cn2 ::= nf( (x1 : T1 <- read cn1) 
+                          BRL , 
+                          R2) )
+   \end{lstlisting}
+   and we can choose the plain form of 
+   the reaction assigned to \verb+cn2+ that starts with
+   \verb+x1 : T1 <- read cn1+ and ends with the 
+   binds in \verb+BRL+ followed by \verb+R2+. Let \verb+Q+ denote this last
+   fragment.
+   Since \verb+R1+ is samp-free, we know that the assumptions of
+   the \verb+SUBST+ rule hold, using the first statement we proved, 
+   and we get 
+       \begin{lstlisting}
+   (cn1 ::= R1) || 
+             (cn2 ::= x1 : T1 <- R1 ; Q )
+   \end{lstlisting}                   
+   \noindent The normal form of
+   \verb+x1 : T1 <- R1 ; Q+
+   is precisely
+   \begin{lstlisting}
+    preNF( (x1 : T1 <~ R1) BRL , R2)
+   \end{lstlisting} .
+
+\item[SUBST-nf-read]
+ \begin{lstlisting} 
+  
+  crl [SUBST-nf-read] : 
+     pConfig(Sigma, Delta,
+             (cn1 ::= nf((x2 : T1 <- read cn), 
+                         return x2)) || 
+             (cn2 ::= nf( (x1 : T1 <- read cn1) 
+                          BRL , 
+                          R2) ),
+             I, O, A)  
+     => 
+     pConfig(Sigma, Delta,
+             (cn1 ::= nf((x2 : T1 <- read cn), 
+                         return x2)) || 
+             (cn2 ::= nf((x2 : T1 <- read cn) 
+                         BRL , 
+                         R2 [x1 / x2])),
+             I, O, A) 
+     if
+     isElemB(cn, I, A) /\
+     O ==  (chn cn1, chn cn2) /\ 
+     typeOf(Sigma, Delta, 
+            addDeclarations BRL (x1 : T1), 
+              (chn cn1,  (chn cn2, I)), A, R2) 
+     == 
+     typeInCtx(chn cn2, A, Delta)
+             /\
+     elem (chn cn1) T1 Delta A 
+             /\
+     elem (chn cn) T1 Delta A           
+     .   
+
+\end{lstlisting}  
+
+ Follows immediately from soundness of \verb+SUBST-nf+, for the particular
+ case of \verb+R1 = read cn+ and applying the substitution strategy.
+
+\item[subst-diverge]
+ \begin{lstlisting}     
+  crl [subst-diverge] : 
+    pConfig(Sigma, Delta, 
+              (cn1 ::= nf(x1 : T1 <- read cn1, 
+                          return x1))
+              || 
+              (cn2 ::= nf( (x2 : T1 <- read cn1) 
+                           BRL , 
+                           R2)),
+              I, O, A)    
+    =>
+    pConfig(Sigma, Delta, 
+              (cn1 ::= nf(x1 : T1 <- read cn1, 
+                          return x1))
+              || 
+              (cn2 ::= nf(x3 : T2 <- read cn2, 
+                          return x3)),
+              I, O, A) 
+   if        
+    O == (chn cn1, chn cn2)
+    /\
+    elem (chn cn1) T1 Delta A
+    /\
+    elem (chn cn2) T2 Delta A
+    /\
+    typeOf(Sigma, Delta, 
+           addDeclarations BRL (x2 : T1), 
+           (chn cn1,  (chn cn2, I)), A, R2) 
+     == 
+     typeInCtx(chn cn2, A, Delta)   
+           [nonexec] 
+  .      
+       \end{lstlisting}     
+  
+   Follows immediately from soundness of \verb+SUBST-nf+ for the particular
+ case of \verb+R1 = read cn1+, followed by application of the 
+ \verb+DIVERGE+ rule.
+
+\item[moveReadInnerNf]
+ \begin{lstlisting}     
+  crl [moveReadInnerNf] :
+    pConfig(Sigma, Delta,
+             cn1 ::= nf((x : T <- read cn2) 
+                        BRL , 
+                        R1) ,
+             I, O, A)  
+     => 
+       pConfig(Sigma, Delta,
+             cn1 ::= preNF(BRL , 
+                           x : T <- read cn2 ; 
+                           R1) ,
+             I, O, A)    
+  if elem (chn cn2) T Delta A 
+  /\ typeOf(Sigma, Delta, 
+            addDeclarations BRL (x : T), 
+            (chn cn1, I), A, R1)
+  == typeInCtx(chn cn1, A, Delta) .  
+    \end{lstlisting}
+    
+  The two protocols have the same plain forms.  
+
+\item[moveReadInnerPreNf]
+ \begin{lstlisting} 
+  
+    crl [moveReadInnerPreNf] :
+    pConfig(Sigma, Delta,
+             cn1 ::= preNF((x : T <- read cn2) 
+                           BRL , 
+                           R1) ,
+             I, O, A)  
+     => 
+       pConfig(Sigma, Delta,
+             cn1 ::= preNF(BRL , 
+                           x : T <- read cn2 ; 
+                           R1) ,
+             I, O, A)  
+    if elem (chn cn2) T Delta A 
+    /\ typeOf(Sigma, Delta, 
+               addDeclarations BRL (x : T), 
+             (chn cn1, I), A, R1) 
+       == typeInCtx(chn cn1, A, Delta) .
+       \end{lstlisting}
+       
+    The two protocols have the same plain forms.  
+
+\end{itemize}
+
+%Note: fold-bind-new, comp-new-nf-left, comp-new-nf-right not used!
+%Note: lift-inner-new-nf can be replaced by comp-new-newNF
+%Note: moveBindInPre/Nf can be done with moveReadInnerPreNf/Nf
+%Note: drop-nf should always use nf(nil, samp Dist)
+%Note: bind-red-2-pre renamed to bind-ret-pre
+
+
+\end{document}
