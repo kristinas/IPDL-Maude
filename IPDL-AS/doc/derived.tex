@@ -1,6 +1,5 @@
 \documentclass{article}
 
-\usepackage{hyperref}
 \usepackage{listings}
 \lstset{
     literate={~} {$\sim$}{1}
@@ -9,11 +8,11 @@
 \usepackage{ amssymb }
 
 \title{Soundess of Derived Rules}
-\author{Kristina Sojakova \and Mihai Codescu}
+\author{ }
 \date{}
 
 \begin{document}
-\maketitle\footnote{This project is funded through NGI Zero Core (\url{https://nlnet.nl/core}), a fund established by NLnet (\url{https://nlnet.nl}) with financial support from the European Commission's Next Generation Internet (\url{https://ngi.eu}) program. Learn more at the NLnet project page (\url{https://nlnet.nl/project/IPDL-II}).}
+\maketitle
 
 \section{Core Rules}
 
@@ -1628,9 +1627,7 @@ The normal form of \verb+R''+ is precisely
    \end{lstlisting} 
    
 We start with the reaction
-\begin{lstlisting} 
- preNF( (x : T1 <- read i)(y : T1 <- read i) BL , R )
-\end{lstlisting} 
+\verb+ preNF( (x : T1 <- read i)(y : T1 <- read i) BL , R )+   
 and select its plain reaction equivalent \verb+R'+ 
 that starts with the binds in BL
 and ends with
@@ -1865,7 +1862,8 @@ By applying it recursively, we leave all binds in \verb+BL+ unchanged and
 when we reach
 \verb+x : T <- return M ; R+ we rewrite it to \verb+R[x / M]+ 
 using \verb+ret-bind+. 
-The normal form of the resulting reaction is \verb+preNF(BL, R [x / M] )+, possibly applying \verb+nf2Pre+ if BL has only
+The normal form of the resulting reaction is precisely
+\verb+preNF(BL, R [x / M] )+, possibly applying \verb+nf2Pre+ if BL has only
 read binds and \verb+R [x / M]+ is bind free.
  
 \item[bind-bind-pre]:
@@ -2114,13 +2112,13 @@ sd S :=
 \end{lstlisting}
 
  The strategy adds arbitrarily many hidden channels to the current context
- and then applies \verb+COMP-NEW-2+ to turn
+ and then applies \verb+COMP-NEW-2+ to turn the protocol
  \verb+new c : T in (P || c ::= R)+ into
- \verb+P || (new c : T in c ::= R)+. The assumptions of 
- \verb+absorb-new-nf+ ensure that\verb+P+ type checks in the absence of
+ \verb+P || (new c : T in c ::= R)+. The assumptions of the
+ rule \verb+absorb-new-nf+ ensure that\verb+P+ type checks in the absence of
  \verb+c+ from the channel context and that 
  \verb+new c : T in c ::= R+ type checks with the outputs of \verb+P+
- as inputs, so we can apply \verb+ABSORB-LEFT+ to eliminate
+ as inputs, so we can apply the \verb+ABSORB-LEFT+ rule to eliminate
  \verb+new c : T in c ::= R+. The result of applying 
  \verb+S+ to \verb+Q1+ is a protocol \verb+Q2+ that starts with 
  the hidden channels in \verb+ltq+ and ends with \verb+P+.
@@ -2179,12 +2177,7 @@ newNF(< c : T > ltq,
  \end{lstlisting}
 \noindent and we select the plain representation \verb+Q1+ that starts with the
 hidden channels in \verb+ltq+ and ends with 
-\begin{lstlisting}
-new c : T in  
-  P || 
-  ( c ::= R ) || 
-  ( o ::= nf((x : T <- read c) BRL, S) )
-\end{lstlisting}
+\verb+new c : T in  P || ( c ::= R ) || ( o ::= nf((x : T <- read c) BRL, S) )+.
 
 We define the following Maude strategy
 \begin{lstlisting}
@@ -2197,33 +2190,16 @@ sd S :=
 \end{lstlisting}
 The strategy \verb+S+ leaves the hidden channels in \verb+ltq+ unchanged,
 then the rule \verb+COMP-NEW-2+ rewrites
-\begin{lstlisting}
-new c : T in  
-    P || 
-    ( c ::= R ) || 
-    ( o ::= nf((x : T <- read c) BRL, S) )
-\end{lstlisting}
+\verb+new c : T in  P || ( c ::= R ) || ( o ::= nf((x : T <- read c) BRL, S) )+
 to
-\begin{lstlisting} 
-  P || new c : T in 
-         ( c ::= R ) || 
-         ( o ::= nf((x : T <- read c) BRL, S) )
-\end{lstlisting} 
-\noindent Then \verb+CONG-COMP-RIGHT{FOLD-BIND}+ leaves P unchanged (by \verb+CONG-COMP-RIGHT+) and rewrites
-\begin{lstlisting}
- new c : T in 
-   ( c ::= R ) || 
-   ( o ::= nf((x : T <- read c) BRL, S)
-\end{lstlisting}
+\verb+  P || new c : T in ( c ::= R ) || ( o ::= nf((x : T <- read c) BRL, S) )+ 
+. Then \verb+CONG-COMP-RIGHT{FOLD-BIND}+ leaves P unchanged (by \verb+CONG-COMP-RIGHT+) and rewrites
+\verb+new c : T in ( c ::= R ) || ( o ::= nf((x : T <- read c) BRL, S)+
 to
-\begin{lstlisting} 
- o ::= preNF((x : T <~ R) BRL, S)
-\end{lstlisting} (by \verb+FOLD-BIND+).
+\verb+ o ::= preNF((x : T <~ R) BRL, S)+ (by \verb+FOLD-BIND+).
 The result of applying \verb+S+ to \verb+Q1+ is then a protocol \verb+Q2+ that 
 starts with the hidden channels in \verb+ltq+ and ends with
-\begin{lstlisting} 
- P || (o ::= preNF((x : T <~ R) BRL, S))
- \end{lstlisting}. The normal form of 
+\verb+ P || (o ::= preNF((x : T <~ R) BRL, S)) +. The normal form of 
 \verb+Q2+ is the protocol in the right hand side of the rule \verb+fold-bind-new-nf+.
 
  
@@ -2410,10 +2386,7 @@ sd S :=
  Working in reverse: by the rule \verb+samp-pure+,
  we can rewrite the reaction \verb+ x : T1 <- samp Dist ; R' +  
  to \verb+R'+. Thus, by the rule \verb+DROP+, we can rewrite the 
- protocol 
- \begin{lstlisting}
- cn1 ::= samp Dist || cn2 ::= x : T1 <- read cn1 ; R'
- \end{lstlisting}
+ protocol \verb+cn1 ::= samp Dist || cn2 ::= x : T1 <- read cn1 ; R'+
  to \verb+cn1 ::= samp Dist || cn2 ::= R'+. The proof ends by replacing
  the reactions assigned to the channels \verb+cn1+ and \verb+cn2+ with 
  their normal forms.
@@ -2725,8 +2698,8 @@ applying \verb+bind-bind+.
 
 \end{lstlisting}  
 
- Follows immediately from soundness of \verb+SUBST-nf+, for the particular
- case of \verb+R1 = read cn+ and applying the substitution strategy.
+ Follows immediately from soundness of \verb+SUBST-nf+ (particular
+ case \verb+R1 = read cn+) and applying the substitution strategy.
 
 \item[subst-diverge]
  \begin{lstlisting}     
@@ -2763,8 +2736,8 @@ applying \verb+bind-bind+.
   .      
        \end{lstlisting}     
   
-   Follows immediately from soundness of \verb+SUBST-nf+ for the particular
- case of \verb+R1 = read cn1+, followed by application of the 
+   Follows immediately from soundness of \verb+SUBST-nf+ (particular
+ case \verb+R1 = read cn1+) followed by application of the 
  \verb+DIVERGE+ rule.
 
 \item[moveReadInnerNf]
@@ -2815,6 +2788,914 @@ applying \verb+bind-bind+.
     The two protocols have the same plain forms.  
 
 \end{itemize}
+
+\section{Families of protocols}
+
+Families of protocols provide abbreviations for
+parallel compositions of channel assignments.
+The simplest case is that we can write the parallel composition
+\begin{lstlisting}
+ C[0] ::= R || ... || C[K - 1] ::= R
+\end{lstlisting}
+\noindent where \texttt{K} is a natural number and \texttt{R} is a reaction
+as 
+\begin{lstlisting}
+ family C[< K] indices: i bounds: < K ::= R
+\end{lstlisting}
+\noindent with the convention that if \texttt{K = 0}, the parallel composition
+reduces to the empty protocol. We store the bounds in the name of the family to allow storing in a channel context or in a set of inputs or outputs two or more families with the same name but with different bounds.
+
+The condition that all channels are assigned the same reaction is of course too
+restrictive. We could require instead that they all have the same shape, e.g.
+each channel \texttt{C[i]} reads from another channel \texttt{D[i]}, 
+and in such a case we would have the parallel composition
+\begin{lstlisting}
+ C[0] ::= read D[0] || ... || C[K - 1] ::= read D[K - 1]
+\end{lstlisting}
+\noindent that we abbreviate as 
+\begin{lstlisting}
+ family C[< K] indices: i bounds: < K ::= read D[i]
+\end{lstlisting} 
+\noindent
+
+We may also group in a family channels that don't share the shape 
+of the reaction they are assigned, using branching. In the most extreme case,
+this amounts to writing
+\begin{lstlisting}
+ C[0] ::= R0 || ... || C[K - 1] ::= R(K - 1)
+\end{lstlisting}
+as
+\begin{lstlisting}
+ family C[< K] indices: i bounds: < K ::=
+  (when i = 0 --> R0) 
+  ;;
+  ...
+  ;;
+  (when i = K - 1 --> R(K - 1))
+\end{lstlisting} 
+Most often we will still group channels with similar functionality e.g. we will
+write
+\begin{lstlisting}
+ family LeakC[< K] indices: i bounds: < K ::=
+  (when isSemiHonest(i) --> read C[i]) 
+  ;;
+  (when isHonest(i) --> read LeakC[i])
+\end{lstlisting} 
+\noindent to capture the situation that a semi-honest party leaks the value of its corresponding input channel \texttt{C[i]} while a honest party diverges.
+
+A branch condition may be
+\begin{itemize}
+\item testing that an index is equal or less than(or equal) with some chosen value, which we write \texttt{i = X}, \texttt{i < X}, \texttt{ i <= X};
+\item testing that some predication holds for an index, which we write 
+\texttt{P(i)};
+\item negation, conjunction or disjunction of branch conditions;
+\end{itemize}
+\noindent extended with the special condition \texttt{otherwise} which may occur last in a branching and is assumed to hold for an index when all other conditions do not.
+
+The assumption is that for each index of a family, exactly one branch condition holds, and thus the family is completely and not ambiguously defined.
+
+Furthermore we allow families with two or three indices and two more types of bounds: 
+\begin{itemize}
+\item \texttt{= N}, meaning that the value of the index corresponding to the bound will always be \texttt{N}, so the family 
+\begin{lstlisting}
+family C[= N < K] indices: i, j bounds: = N < K ::= ...
+\end{lstlisting}
+will consist of the channels \texttt{C[N, 0]}, $\ldots$ \texttt{C[N, K - 1]};
+\item \texttt{dependent I}, which must occur on the last index of a family, and allows us to abbreviate the composition of the channels 
+\texttt{C[0, 0]} $\ldots$ \texttt{C[0, I(0)]},
+\texttt{C[1, 0]} $\ldots$ \texttt{C[1, I(1)]}, 
+$\ldots$
+\texttt{C[K - 1, 0]} $\ldots$ \texttt{C[K - 1, I(K - 1)]}
+\end{itemize}
+\noindent where we assume that the bound of the first index is \texttt{< K} and
+\texttt{I : Nat -> Nat} is a function.
+
+The rules will use the abstract syntax for families, so the keywords \texttt{indices:} and \texttt{bounds:} will not appear in them.
+
+In the soundness proofs below, we apply soundness of the 
+\texttt{CONG-COMP-RIGHT} rule without making it explicit.
+
+\subsection{Syntactic transformation rules}
+
+These rules are only used to change the representation of a family, without impacting on its semantics.
+
+\begin{itemize}
+
+\item[remove-1-branch]
+\begin{lstlisting}
+crl [remove-1-branch] :
+pConfig(Sigma, Delta, 
+        family (F[blist]) nlist blist 
+          ::= when bt --> R, 
+        I, O, A)
+=> 
+pConfig(Sigma, Delta, P, 
+        family (F[blist]) nlist blist ::= R, 
+        I, O, A)
+if addAssumptions A nlist blist |= bt with empty . 
+\end{lstlisting}
+
+Because the condition \texttt{bt} holds for every index, 
+(and we check this by adding the index assumptions for the family
+\texttt{F[blist]} to the current set of index assumptions
+\texttt{A}),
+both families
+expand to the same composition of protocols of the form 
+\texttt{F[tlist] ::= R[nlist / tlist]} where
+\texttt{tlist} is a list of terms of the same length as \texttt{nlist}
+that are within the corresponding bounds.
+
+\item[remove-1-branch]
+\begin{lstlisting}
+rl [remove-1-branch-otherwise] :
+pConfig(Sigma, Delta, 
+        family (F[blist]) nlist blist 
+          ::= otherwise --> R, 
+        I, O, A)
+=> 
+pConfig(Sigma, Delta, P, 
+        family (F[blist]) nlist blist ::= R, 
+        I, O, A)
+. 
+\end{lstlisting}
+
+Since the condition \texttt{otherwise} holds for every index, both families
+expand to the same composition of protocols of the form 
+\texttt{F[tlist] ::= R[nlist / tlist]} where
+\texttt{tlist} is a list of terms of the same length as \texttt{nlist}
+that are within the corresponding bounds.
+
+\item[fixed-1st-index-2]
+\begin{lstlisting}
+rl [fix-index] : 
+ pConfig(Sigma, Delta, 
+  family (fns[(= nt) bd]) 
+         (nt1 nt2) 
+         ((= nt) bd) ::= R, 
+          I, O, A)
+  =>
+  pConfig(Sigma, Delta, 
+  family (fns[(= nt) bd]) 
+         (nt1 nt2) 
+         ((= nt) bd) ::= 
+          R[nt1 / nt], 
+          I, O, A)
+  .
+\end{lstlisting}
+
+This rule states that if the first index of a family is bounded by
+\texttt{= nt}, we can equivalently write \texttt{nt} for each
+occurence of the corresponding index \texttt{nt1} in the reaction
+assigned to the family. The equivalence is straightforward, as both families 
+will expand to the same composition of channels, because by expansion
+the index variable \texttt{nt1} will be replaced with \texttt{nt}.
+
+Soundness for the similar rules for the second argument and for the case of 
+families with three indices follows by similar reasoning.
+
+\item[alpha-family-two-top]
+\begin{lstlisting}
+ rl [alpha-family-two-top] : 
+   pConfig(Sigma, Delta, 
+           family (fns[bd1 bd2]) 
+            ( q1 q2 ) 
+            (bd1 bd2) ::= R, I, O, A)
+   => 
+   pConfig(Sigma, Delta,
+            family (fns[bd1 bd2]) 
+            ( q3 q4 ) 
+            (bd1 bd2) ::= 
+            R[q1 / q3, q2 / q4],
+            I, O, A)
+ [nonexec]
+ .
+\end{lstlisting}
+
+The rule is not executable because the new names for the indices must be
+specified. Soundness follows again from the two families expanding to the
+same composition of channels, as index variables get replaced with values
+from the same ranges.
+
+Similar rules for families with one index and three indices are 
+omitted here.
+
+\item[alpha-family-two-nf]
+\begin{lstlisting}
+ rl [alpha-family-two-nf] : 
+   pConfig(Sigma, Delta, 
+           newNF(ltq 
+           {(fns[bd1 bd2]) 
+             (q1 q2) : T
+           },  
+           P || family (fns[bd1 bd2]) 
+            ( q1 q2 ) 
+            (bd1 bd2) ::= R
+            ), I, O, A)
+   => 
+   pConfig(Sigma, Delta,
+           newNF(ltq 
+            {(fns[bd1 bd2]) 
+            (q3 q4) : T
+            },  
+           P ||  family (fns[bd1 bd2]) 
+            ( q3 q4 ) 
+            (bd1 bd2) ::= 
+            R[q1 / q3, q2 / q4]),
+            I, O, A)
+ [nonexec]
+ .
+\end{lstlisting}
+
+The rule is similar and its soundness holds for the same argument as above. 
+We only illustrate how the families are represented in a 
+\texttt{newNF}.
+
+\item[all-same-cases]
+
+\begin{lstlisting}
+ crl [all-same-cases] :
+   pConfig(Sigma, Delta, 
+           family (F[blist]) nlist blist ::= 
+           ((whenCond1 --> R) ;; whenList), 
+           I, O, A)
+   =>         
+   pConfig(Sigma, Delta, 
+           family (F[blist]) nlist blist ::= R,   
+            I, O, A) 
+   if allSameReaction whenList R .
+\end{lstlisting}
+
+\noindent where the method \texttt{allSameReaction} checks that on each branch in \texttt{whenList} we have the reaction \texttt{R}.
+
+Soundness holds because on the left hand side when making the expansion we will
+get the same reaction regardless of which of the branch
+conditions of the family is true, so we expand to
+\texttt{F[tlist] ::= R[nlist / tlist]}, for every
+list of terms \texttt{tlist} that are in bounds,
+which is also what we get when
+making the expansion of the family on the right hand side.
+
+\item[neg-to-otherwise]
+\begin{lstlisting}
+ rl [neg-to-otherwise] :
+ pConfig(Sigma, Delta, 
+            family (fns[blist]) nlist blist ::= 
+              (when bt --> R1)
+              ;;
+              (when (neg bt) --> R2), I, O, A) 
+ =>
+ pConfig(Sigma, Delta, 
+            family (fns[blist]) nlist blist ::= 
+              (when bt --> R1)
+              ;;
+              (otherwise --> R2), I, O, A)    
+ .  
+\end{lstlisting}
+
+Soundness follows immediately from the semantics of \texttt{otherwise}
+and of negation: for a list of terms \texttt{tlist} that are within
+the bounds \texttt{blist} such that \texttt{bt[nlist / blist]} does not hold,
+in both cases we get \texttt{fns[tlist] ::= R2[nlist / blist]}.
+The reversed rule is also sound with the same argument.
+
+\item[split]
+
+\begin{lstlisting}
+rl [SPLIT-family-2] : 
+  pConfig(Sigma, 
+          Delta (fam (fns[(< (nt + 2)) bd2]) :: T), 
+     family (fns[(< (nt + 2)) bd2]) 
+            (q1 q2) 
+            ((< (nt + 2)) bd2) ::= R, 
+     I, fam (fns[(< (nt + 2)) bd2]), A)
+  => 
+  pConfig(Sigma, 
+          Delta (fam (fns[(< (nt + 1)) bd2]) :: T), 
+     (family (fns[(< (nt + 1)) bd2]) 
+            (q1 q2) 
+            ((< (nt + 1)) bd2) ::= R)
+     ||
+     (family (fns[(= (nt + 1)) bd2]) 
+            (q1 q2) 
+            ((= (nt + 1)) bd2) ::= R[q1 / (nt + 1)]), 
+     I, 
+     (fam (fns[(< (nt + 1)) bd2]) , 
+      fam (fns[(= (nt + 1)) bd2]) ), A)
+ . 
+\end{lstlisting}
+
+Splitting allows us to divide a family on an index with bound \texttt{< nt + 2}
+into two fragments: a family whose bound for that index is up to \texttt{nt + 1} and a family whose bound for that index is \texttt{= nt + 1}. Soundness holds 
+because both the family before and after splitting expands to the same composition on channels: assuming the second bound to be \texttt{< B},
+on the left hand side we get
+\texttt{C[0, 0]} $\ldots$ \texttt{C[0, B - 1]},
+\texttt{C[1, 0]} $\ldots$ \texttt{C[1, B - 1]}, 
+$\ldots$
+\texttt{C[N, 0]} $\ldots$ \texttt{C[N, B - 1]},
+\texttt{C[N + 1, 0]} $\ldots$ \texttt{C[N + 1, B - 1]}
+and on the right hand side we get 
+\texttt{C[0, 0]} $\ldots$ \texttt{C[0, B - 1]},
+\texttt{C[1, 0]} $\ldots$ \texttt{C[1, B - 1]}, 
+$\ldots$
+\texttt{C[N, 0]} $\ldots$ \texttt{C[N, B - 1]} for the first family
+and 
+\texttt{C[N + 1, 0]} $\ldots$ \texttt{C[N + 1, B - 1]} for the second one.
+
+We allow splitting on the second index as well, and also on the first and
+second index of a family with three indices, the soundness of those rules
+holds with similar arguments. Moreover, the reversed rule is also sound.
+
+\end{itemize}
+
+\subsection{Structural rules}
+
+\begin{itemize}
+\item[CONG-NEWFAMILY]
+
+\begin{lstlisting}
+ crl [CONG-NEWFAMILY] : 
+     pConfig(Sigma, Delta1, 
+     newfamily (fns[blist]) nlist blist : T in P1, 
+     I, O1, A)
+     =>  
+     pConfig(Sigma, Delta2, 
+     newfamily (fns[blist]) nlist blist : T in P2, 
+             I, O2 \ (fam (fns[blist])), A)
+     if 
+     pConfig(Sigma, 
+     Delta1 ((fam (fns[blist])) :: T), 
+     P1, 
+     I, insert(fam (fns[blist]), O1), A)
+     =>
+     pConfig(Sigma, 
+     Delta2 ((fam (fns[blist])) :: T), 
+     P2, 
+     I, O2, A)
+     .
+\end{lstlisting}
+
+Families can be hidden, just like channels are, with the semantics that
+all channels in a family are hidden. Soundness of the rule holds by
+applying soundness of the \texttt{CONG-NEW} rule for each of the channels
+in the family. We allow the channel context and the set of outputs to change because the rewrite transforming \texttt{P1} into \texttt{P2} may involve
+splitting.
+
+\item[CONG-FAMILY]
+
+\begin{lstlisting}
+ crl [CONG-FAMILY] : 
+     pConfig(Sigma, Delta, 
+     family (fns[blist]) nlist blist ::= R, 
+     I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+     family (fns[blist]) nlist blist ::= R', 
+     I, O, A)
+     if 
+     rConfig(Sigma, Delta, emptyTypeContext, 
+     R, 
+     (fam (fns[blist]), I), 
+     A, typeInCtx(fam (fns[blist]), A, Delta))
+     =>
+     rConfig(Sigma, Delta, emptyTypeContext, 
+     R', 
+     I', A, T) 
+     /\ I' == (fam (fns[blist]), I)  
+     /\ T == typeInCtx(fam (fns[blist]), A, Delta)
+     .
+\end{lstlisting}
+ 
+ Soundness follows from the soundness of \texttt{CONG-REACT} for 
+ each channel in the family.
+ 
+ \item[CONG-WHENLIST]
+ 
+  \begin{lstlisting}
+  crl [CONG-FAMILY-WHENLIST] : 
+     pConfig(Sigma, Delta, 
+       family (fns[blist]) nlist blist ::= 
+        (whenList1 ;; (when bt --> R1) ;; whenList2), 
+        I, O, A)
+     => 
+     pConfig(Sigma, Delta, 
+       family (fns[blist]) nlist blist ::= 
+        (whenList1 ;; (when bt --> R2) ;; whenList2), 
+        I, O, A) 
+     if 
+     rConfig(Sigma, Delta, emptyTypeContext, 
+     R1, 
+     (fam (fns[blist]), I), 
+     addAssumptions (bt, A) nlist blist, 
+     typeOf(Sigma, Delta, emptyTypeContext, I, 
+            addAssumptions (bt, A) nlist blist, R1))
+     =>  
+     rConfig(Sigma, Delta, emptyTypeContext, 
+     R2, 
+     I', A', T)
+     /\
+     A' == addAssumptions (bt, A) nlist blist 
+     /\
+     I' == (fam (fns[blist]), I)
+     /\
+     T ==  typeOf(Sigma, Delta, emptyTypeContext, I, 
+             addAssumptions (bt, A) nlist blist, R1)
+     .   
+  \end{lstlisting}
+  
+  Soundness follows from soundness of \texttt{CONG-REACT} for the
+  channels  \texttt{fns[tlist]} in the family such that
+  \texttt{bt[nlist / tlist]} holds.
+  
+  \item[absorb-new-nf-family]
+  
+  \begin{lstlisting}
+  crl [absorb-new-nf-family] : 
+     pConfig(
+      Sigma, Delta, 
+      newNF({(fns[blist]) nlist : T} ltq, 
+      P || (family (fns[blist]) nlist blist ::= R)), 
+      I, O, A) 
+     => 
+     pConfig(
+      Sigma, Delta, 
+      newNF(ltq, P), 
+      I, O, A) 
+ if 
+     typeOf(Sigma, 
+          addChannels ({(fns[blist]) nlist : T} ltq) Delta, 
+          (fam (fns[blist]), I, getOutputs(P)), 
+          A, 
+          family (fns[blist]) nlist blist ::= R
+          )
+     /\ 
+      not readsFrom P (fam (fns[blist]))
+     /\ 
+     getOutputs(newNF(ltq, P)) == O        
+ .
+  \end{lstlisting}
+  
+  The rule states that we can absorb a hidden family if we don't read from it 
+  in the protocol \texttt{P}. Soundness amounts to applying the sound rule
+  \texttt{absorb-new-nf} for each channel in the family, taking
+  into account that a channels in \texttt{fns[blist]} may read from other 
+  channels from \texttt{fns[blist]}, and then that channel must be
+  absorbed before those it reads from.
+  
+  \item[DROP-SUBSUME-families-gen]
+  
+  \begin{lstlisting}
+  crl [DROP-SUBSUME-families-gen] :
+    pConfig(Sigma, Delta,
+            (family (f1[blist1]) nlist1 blist1 ::= 
+              nf(BRL, samp Dist)
+            ) || 
+            (family (f2[blist2]) nlist2 blist2 ::= 
+              nf( (x : T1 <- read (f1[tlist])) BRL' , 
+                  R2
+                ) 
+            ),
+            I, O, A) 
+    =>           
+     pConfig(Sigma, Delta,
+            (family (f1[blist1]) nlist1 blist1 ::= 
+              nf(BRL, samp Dist)) || 
+            (family (f2[blist2]) nlist2 blist2 ::= 
+              nf(BRL BRL' , R2) ),
+            I, O, A) 
+    if typeOf(Sigma, Delta, 
+             addDeclarations BRL' (x : T1), 
+             (fam (f2[blist2]), fam (f1[blist1]), I), 
+             A, R2) 
+     == 
+     typeInCtx(fam (f2[blist2]), A, Delta)
+     /\
+     elem (fam (f1[blist1])) T1 Delta A
+    .
+  \end{lstlisting}
+  
+  Soundness of the rule follows by repeated applications of the
+  derived rule \texttt{DROP-SUBSUME-channels}, that we have proven sound.
+  Similar rules for dropping the read of a channel into a family and of 
+  a channel from a family into another channel are sound with similar
+  arguments.
+  
+  \item[subst-families-gen]
+
+\begin{lstlisting}
+crl [subst-families-gen] :
+     pConfig(Sigma, Delta, 
+             (family (F2[blist2]) nlist2 blist2 ::= R2)
+              || 
+             (family (F1[blist1]) nlist1 blist1 ::=
+               nf((x : T <- read (F2[tlist]) ) BRL, 
+                  R1
+                 )
+             ),
+             I, O, A
+     )
+     => 
+     pConfig(Sigma, Delta, 
+             (family (F2[blist2]) nlist2 blist2 ::= R2)
+              || 
+             (family (F1[blist1]) nlist1 blist1 ::=
+               preNF((x : T <~ R2[nlist / tlist]) BRL, 
+                  R1
+                 )
+             ),
+             I, O, A
+     )
+     if isSampFree(R2) /\
+        O == (fam (F1[blist1]), fam (F2[blist2])) /\ 
+     typeOf(Sigma, Delta, emptyTypeContext, 
+            (fam (F1[blist1]), fam (F2[blist2]), I), 
+            A, R2) == T /\
+     typeOf(Sigma, Delta, 
+            addDeclarations BRL (x1 : T1), 
+            (fam (F1[blist1]), fam (F2[blist2]), I), 
+            A, R2) == 
+            typeInCtx(fam (F1[blist]), A, Delta)
+     /\
+     elem (toBound cn1) T1 Delta A 
+     . 
+\end{lstlisting}
+
+Soundness follows by repeated applications of the
+\texttt{subst-nf} rule, that we have proven sound.
+Similar rules for substituting the read of a channel into a family
+and the read of a channel from a family into a channel are sound
+with similar arguments.
+
+\item[subst-families-gen]
+
+\begin{lstlisting}
+ crl [subst-diverge-family] : 
+    pConfig(Sigma, Delta, 
+       (family (F1[blist]) nlist blist ::= 
+          nf(x1 : T1 <- read (F1[nlist]), return x1)
+       ) || 
+       (family (F2[blist2]) nlist2 blist2 ::= 
+          nf( (x2 : T1 <- read (F1[nlist'])) BRL , R2)
+       ),
+       I, O, A)    
+    =>
+    pConfig(Sigma, Delta, 
+       (family (F1[blist]) nlist blist ::= 
+         nf(x1 : T1 <- read (F1[nlist]), return x1))
+       || 
+      (family (F2[blist2]) nlist2 blist2 ::= 
+        nf(x3 : typeInCtx( fam (F2[blist2]), A, Delta) <- 
+           read (F2[nlist2]), 
+          return x3)),
+       I, O, A) 
+   if O == (fam (F1[blist]), fam (F2[blist2]))
+   /\ elem (fam (F1[blist]))  T1 Delta A
+   /\ elem ( fam (F2[blist2])) T2 Delta A
+   /\ typeOf(Sigma, Delta, 
+        addDeclarations BRL (x2 : T1), 
+        (fam (F1[blist]), fam (F2[blist2]), I), 
+        A, R2) 
+     == 
+     typeInCtx( fam (F2[blist2]), A, Delta)    
+           [nonexec]
+  . 
+\end{lstlisting}
+
+Soundness follows
+from repeated applications of 
+the soundness of the derived rule \texttt{subst-diverge},
+that we have proven sound.
+
+\item[subst-diverge-join-cases]
+
+\begin{lstlisting}
+ crl [subst-diverge-join-cases] : 
+   pConfig(Sigma, Delta, 
+  (family (F1[blist1]) nlist1 blist1 ::= 
+ (when bt1 --> 
+   nf((x1 : T1 <- read (F2[tlist])) BRL, R1)
+ )
+ ;;
+ (when bt2 --> 
+   nf((x2 : T2 <- read (F1[nlist1])), 
+    return x2 )
+ )
+  )
+  || 
+  (family (F2[blist2]) nlist2 blist2 ::= 
+ (when bt3 --> R2)
+ ;;
+ (when bt4 --> 
+   nf((x3 : T1 <- read (F2[nlist2])),
+   return x3)
+ )
+  ),
+  I, O, A
+   )
+   => 
+   pConfig(Sigma, Delta,
+   (family (F1[blist1]) nlist1 blist1 ::= 
+ (when (bt1 conj bt3) --> R)
+ ;;
+ (when (bt2 disj bt4)--> 
+   nf((x2 : T2 <- read (F1[nlist1])),
+   return x2))
+  )
+  || 
+  (family (F2[blist2]) nlist2 blist2 ::= 
+ (when bt3 --> R2)
+ ;;
+ (when bt4 --> 
+   nf((x3 : T1 <- read (F2[nlist2])),
+   return x3))
+  )
+  , I, O, A)  
+   if pConfig(Sigma, Delta, 
+   (family (F1[blist1]) nlist1 blist1 ::= 
+     nf((x1 : T1 <- read (F2[tlist])) BRL, 
+        R1)
+   )
+   ||
+   (family (F2[blist2]) nlist2 blist2 ::= R2),
+   I, O, (bt1, bt3, A))
+  => 
+  pConfig(Sigma, Delta, 
+  (family (F1[blist1]) nlist1 blist1 ::= R)
+   ||
+  (family (F2[blist2]) nlist2 blist2 ::= R2), 
+  I, O, A') 
+  /\
+  A' == (bt1, bt3, A)   
+  .
+\end{lstlisting}
+
+Soundness follows by case analysis on the possible combinations of channels:
+\begin{itemize}
+\item if both \texttt{bt1} and \texttt{bt3} hold,
+we can apply the rewrite in the assumption of the rule and that is assumed 
+sound;
+\item if \texttt{bt4} holds, we can apply the sound rule \texttt{subst-diverge}
+\item if \texttt{bt2} holds, we already diverge.
+\end{itemize}
+
+\item[fold-bind-families]
+
+\begin{lstlisting}
+ crl [fold-bind-families] :
+   pConfig(Sigma, Delta,
+   newNF({ (F1[blist1]) nlist1 : T } ltq, 
+        P || 
+        (family (F1[blist1]) nlist1 blist1 ::= R1) || 
+        (family (F2[blist2]) nlist2 blist2 ::= 
+            nf((x : T <- read (F1[nlist1])) BRL, R2)
+        )                
+        ), I, O, A)
+   =>  
+   pConfig(Sigma, Delta,    
+   newNF(ltq, 
+        P ||
+        (family (F2[blist2]) nlist2 blist2 ::= 
+            preNF((x : T <~ R1) BRL, R2)
+        )                
+        ), I, O, A)  
+  if typeOf(Sigma, Delta, 
+        addDeclarations BRL (x : T), 
+        (fam (F1[blist1]), fam (F2[blist2]), I), 
+        A, R2) 
+     == 
+     typeInCtx( fam (F2[blist2]), A, Delta)             
+ /\ typeOf(Sigma, Delta, 
+        emptyTypeContext, 
+        (fam (F1[blist1]), fam (F2[blist2]), I), 
+        A, R1) 
+     ==  
+     T
+ /\ typeOf(Sigma, addChannels ltq Delta,
+     ( I , fam (F2[blist2] ), A, P)       
+  .
+\end{lstlisting}
+
+Soundness holds by repeatedly applying the derived rule
+\texttt{fold-bind-new-nf} that we have proven sound, possibly 
+removing first the channels from the family \texttt{F1} that read
+from other channels in the same family.
+
+%\item[select-branch-family]
+%
+%\begin{lstlisting}
+%crl [select-branch-family] :  
+% pConfig(Sigma, Delta, 
+%               P || 
+%               (family (fns[blist]) nlist blist ::= 
+%                whenList1 ;;
+%                (when bt --> R1) ;;
+%                whenList2),
+%                I, O, A)
+% =>
+% pConfig(Sigma, Delta, 
+%               P || 
+%               (family (fns[blist]) nlist blist ::= 
+%                whenList1 ;;
+%                (when bt --> R2) ;;
+%                whenList2),
+%                I, O, A)
+% if 
+%  pConfig(Sigma, Delta, 
+%   P || (family (fns[blist]) nlist blist ::= R1), 
+%   I, O, (A, bt)) 
+%  =>
+%  pConfig(Sigma, Delta, 
+%   P || (family (fns[blist])nlist blist ::= R2), 
+%   I, O, A')
+%  /\
+%  A' == (A, bt)
+% .  
+%\end{lstlisting}
+%
+%The rule allows us to rewrite the reaction on a branch of a family.
+%
+%\item[select-case-family]
+%\begin{lstlisting}
+%crl [select-case-family-r] :
+%       pConfig(Sigma, Delta, 
+%        (family (fns1[blist1]) nlist1 blist1 ::= 
+%          whenList1 ;; 
+%          (when bt --> R1) ;; 
+%          whenList2)
+%         || P,
+%         I, O, A)
+%       =>       
+%       pConfig(Sigma, Delta, 
+%         (family (fns1[blist1]) nlist1 blist1 ::= 
+%           whenList1 ;; 
+%           (when bt --> R1) ;; 
+%           whenList2)
+%           || P',
+%           I, O, A)
+%      if 
+%       addAssumptions A nlist1 blist1 |= bt 
+%        with empty
+%      /\
+%         pConfig(Sigma, Delta, 
+%               (family (fns1[blist1]) 
+%                  nlist1 blist1 ::= R1)
+%               ||
+%               P,
+%               I, O, (A, bt))
+%       =>       
+%       pConfig(Sigma, Delta, 
+%               (family (fns1[blist1]) 
+%                  nlist1 blist1 ::= R1)
+%               ||
+%               P',
+%               I, O, A') 
+%      /\
+%      A' == (A, bt)              
+%    .
+%\end{lstlisting}
+%
+%This rule allows us to use a branch of a family in doing a rewrite outside the
+%family, assuming that the condition of that branch already holds.
+%
+%\item[case-distinction]
+%\begin{lstlisting}
+%     crl [case-distinction] :
+%     pConfig (Sigma, Delta, 
+%               P || 
+%               family (fns[blist]) nlist blist ::= 
+%               ((when bt --> R1) ;; whenList),
+%               I, O, A)
+%     => 
+%     pConfig(Sigma, Delta, 
+%              P || 
+%              family (fns[blist]) nlist blist ::= 
+%              ((when bt --> R2) ;; whenList'),
+%               I, O, A) 
+%     if 
+%     pConfig(Sigma, Delta, 
+%             P || 
+%             family (fns[blist]) nlist blist ::= R1, 
+%             (fam (fns[blist]), I), O, (A, bt))
+%     =>
+%     pConfig(Sigma, Delta, 
+%             P || 
+%             family (fns[blist]) nlist blist ::= R2, 
+%             I', O, A')
+%     /\
+%     A' == (A, bt)
+%     /\ 
+%     I' == (fam (fns[blist]), I)
+%     /\
+%     pConfig (Sigma, Delta, 
+%               P || 
+%               family (fns[blist]) 
+%                 nlist blist ::= whenList,
+%               I, O, (neg bt, A)) 
+%     =>
+%     pConfig(Sigma, Delta, 
+%              P || 
+%              family (fns[blist]) 
+%                nlist blist ::= whenList',
+%               I, O, A'')
+%     /\
+%     A'' == (neg bt, A) 
+%     . 
+%
+%     crl [case-distinction-end] :
+%     pConfig (Sigma, Delta, 
+%               P || 
+%               family (fns[blist]) nlist blist ::= 
+%                (whenCond --> R1),
+%               I, O, A)
+%     => 
+%     pConfig(Sigma, Delta, 
+%              P || 
+%              family (fns[blist]) nlist blist ::= 
+%               (whenCond --> R2),
+%               I, O, A) 
+%     if 
+%     pConfig(Sigma, Delta, 
+%       P || family (fns[blist]) nlist blist ::= R1, 
+%       (fam (fns[blist]), I), O, 
+%       (whenCondToBoolTerm whenCond, A)) 
+%     =>
+%     pConfig(Sigma, Delta, 
+%       P || family (fns[blist]) nlist blist ::= R2, 
+%       I', O, A')            
+%     /\
+%     I' == (fam (fns[blist]), I)
+%     /\ 
+%     A' == (whenCondToBoolTerm whenCond, A) 
+%     .  
+%\end{lstlisting}
+%
+%The rule loops through the branches of a family and rewrites the 
+%assigned reactions. Soundness follows by repeated applications of
+%the rule \texttt{select-branch-family} on the first branch, 
+%and we have proven that rule sound.
+
+\item[induction]
+
+\begin{lstlisting}
+crl [induction] : 
+ pConfig (Sigma, Delta (fam (F[< N]) :: T), 
+               P || 
+               (family (F[< N]) i < N ::= R1),
+               I, (O, fam (F[< N])), A)
+ =>                
+ pConfig (Sigma, Delta (fam (F[< N]) :: T), 
+               P || 
+               (family (F[< N]) i < N ::= R2),
+               I, (O, fam (F[< N])), A)
+ if pConfig (Sigma, 
+     Delta (fam (F[< B]) :: T) (chn (F[B]) :: T), 
+     P || 
+     (family (F[< B]) i < B ::= R2) ||
+     (F[B] ::= R1),
+               I, (O, fam (F[< B]), chn F[B] ), 
+               (A, B < N))
+    =>            
+    pConfig (Sigma, 
+     Delta (fam (F[< B]) :: T) (chn (F[B]) :: T), 
+     P || 
+     (family (F[< B]) i < B ::= R2) ||
+     (F[B] ::= R1),
+               I, O', A') /\ 
+      O' == (O, fam (F[< B]), chn F[B] ) /\ 
+      A' == (A, B < N) [nonexec] .
+\end{lstlisting}
+
+The induction rule allows us to the reaction \texttt{R1} assigned
+to a family to another reaction \texttt{R2} if for an arbitrary but chosen
+\texttt{B < N}, assuming that we have already rewritten the reaction 
+assigned to the channels
+$\texttt{F[0]}, \ldots, \texttt{F[B - 1]}$ to 
+\texttt{R2}, then we can also do the same for \texttt{F[B]}.
+
+The soundness of the rule is done by induction on the bound of the family 
+\texttt{F}. If \texttt{N = 0}, the family expands to the empty protocol and
+the property holds.
+Otherwise, we show by induction on \texttt{i}  that
+\texttt{F[k] ::= R2} for $k <= i$ .
+If \texttt{i = 1}, by assumption we know that
+\texttt{P || F[0] ::= R1} rewrites to \texttt{P || F[0] ::= R2}, so the property
+holds. Assume the property holds for \texttt{j} and we want 
+to show it for \texttt{j + 1}. 
+By induction hypothesis we know that 
+\texttt{family (F[< B]) i < B ::= R2}
+and 
+by rule's assumption, for 
+\texttt{B = j}, we have that
+\texttt{P || (family (F[< B]) i < B ::= R2) || (F[B] ::= R1)}
+rewrites to
+\texttt{P || (family (F[< B]) i < B ::= R2) || (F[B] ::= R2)},
+so we obtain 
+\texttt{family F[< B + 1] i < B + 1 ::= R2}, which is what we wanted. 
+
+The general formulation of the rule allowing us to work with multiple indices
+and with branching is sound using a similar but more complex argument.
+
+\end{itemize}
+
 
 %Note: fold-bind-new, comp-new-nf-left, comp-new-nf-right not used!
 %Note: lift-inner-new-nf can be replaced by comp-new-newNF
