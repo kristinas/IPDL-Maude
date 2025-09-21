@@ -564,4 +564,4 @@ merge cases for fam Opened[bound N + 2]
 restructure idealPlusSim
 
 check-proof idealPlusSim
-current-protocol
+quit

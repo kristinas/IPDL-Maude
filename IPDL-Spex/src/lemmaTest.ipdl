@@ -1,0 +1,38 @@
+lang IPDL
+
+channel context delta = 
+ input in : bool ; 
+ output o1 : bool ;
+ output o2 : bool ;
+ output o3 : bool 
+.
+
+protocol P1 = 
+ (o1 ::= return True)
+ ||
+ (o2 ::= i : bool <- read in ; return i)
+ ||
+ (o3 ::= o2 : bool <- read o2 ; return o2)
+. 
+
+protocol P2 = 
+ (o1 ::= return True)
+ ||
+ (o2 ::= i : bool <- read in ; return i)
+ ||
+ (o3 ::= i : bool <- read in ; return i)
+. 
+
+lemma L = P1 => P2 : 
+  subst chn o2 into chn o3 
+.
+
+start with P1 over delta 
+
+use lemma L run then
+sym from P1 (
+    use lemma L trust
+)
+
+current-protocol
+quit

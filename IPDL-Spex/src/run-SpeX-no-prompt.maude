@@ -17,5 +17,10 @@ set show stats off .
 set show advisories off .
 popd
 load SpeX.maude
+
+  set trace on .
+  set trace select on .
+  trace select pointwiseMax__ .
+
 erew in SPEX/INTERPRETER/NO-PROMPT : start SpeX .
 quit

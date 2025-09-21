@@ -1,0 +1,5148 @@
+		     \||||||||||||||||||/
+		   --- Welcome to Maude ---
+		     /||||||||||||||||||\
+	     Maude 3.5 built: Sep 25 2024 12:00:00
+	     Copyright 1997-2024 SRI International
+		   Sat Apr 12 09:33:55 2025
+==========================================
+reduce in MYTEST : buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (
+    fam ('F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0) >>= {'using`branch_of_`(_`) [
+  {'when_ [
+    {'_=_ [
+      {{''i.Qid : 'Qid} : 'CId},
+      {{''0.Qid : 'Qid} : 'Nat}
+    ] : 'BoolTerm}
+  ] : 'WhenCond},
+  {'family_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'RuleTarget},
+  {'subst_into_ [
+    {'fam_ [
+      {'_`[_`] [
+        {{''F.Qid : 'Qid} : 'CName},
+        {'bound_ [
+          {{''N.Qid : 'Qid} : 'CId}
+        ] : 'Bound}
+      ] : 'BasicFamilyName}
+    ] : 'CNameBound},
+    {'chn_ [
+      {{''C.Qid : 'Qid} : 'CName}
+    ] : 'CNameBound}
+  ] : 'StrictProof}
+] : 'StrictProof} .
+*********** equation
+eq env:Env >>= {'using`branch_of_`(_`) [
+  I:ATerm,
+  I1:ATerm,
+  I2:ATerm
+] : 'StrictProof} = srewPConfig addStratDecls env:Env {'using`branch_of_`(_`) [
+  I:ATerm,
+  I1:ATerm,
+  I2:ATerm
+] : 'StrictProof} generatedStrategyCall env:Env .
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[bound
+    qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0) >>= {'using`branch_of_`(_`) [
+  {'when_ [
+    {'_=_ [
+      {{''i.Qid : 'Qid} : 'CId},
+      {{''0.Qid : 'Qid} : 'Nat}
+    ] : 'BoolTerm}
+  ] : 'WhenCond},
+  {'family_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'RuleTarget},
+  {'subst_into_ [
+    {'fam_ [
+      {'_`[_`] [
+        {{''F.Qid : 'Qid} : 'CName},
+        {'bound_ [
+          {{''N.Qid : 'Qid} : 'CId}
+        ] : 'Bound}
+      ] : 'BasicFamilyName}
+    ] : 'CNameBound},
+    {'chn_ [
+      {{''C.Qid : 'Qid} : 'CName}
+    ] : 'CNameBound}
+  ] : 'StrictProof}
+] : 'StrictProof}
+--->
+srewPConfig addStratDecls buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), (fam ('F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0) {'using`branch_of_`(_`) [
+  {'when_ [
+    {'_=_ [
+      {{''i.Qid : 'Qid} : 'CId},
+      {{''0.Qid : 'Qid} : 'Nat}
+    ] : 'BoolTerm}
+  ] : 'WhenCond},
+  {'family_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'RuleTarget},
+  {'subst_into_ [
+    {'fam_ [
+      {'_`[_`] [
+        {{''F.Qid : 'Qid} : 'CName},
+        {'bound_ [
+          {{''N.Qid : 'Qid} : 'CId}
+        ] : 'Bound}
+      ] : 'BasicFamilyName}
+    ] : 'CNameBound},
+    {'chn_ [
+      {{''C.Qid : 'Qid} : 'CName}
+    ] : 'CNameBound}
+  ] : 'StrictProof}
+] : 'StrictProof} generatedStrategyCall (buildEnv aConfig(pConfig(typesOf (
+    'bool ; 'nat ; 'unit), (fam ('F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0))
+*********** equation
+eq addStratDecls env:Env ({'using`branch_of_`(_`) [
+  I:ATerm,
+  I1:ATerm,
+  I2:ATerm
+] : 'StrictProof},
+atl:ATermList) = addStratDecls setModule env:Env addGenDecl env:Env getModule
+    env:Env {'using`branch_of_`(_`) [
+  I:ATerm,
+  I1:ATerm,
+  I2:ATerm
+] : 'StrictProof} (I2:ATerm,
+atl:ATermList) .
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+atl:ATermList --> (empty).ATermList
+addStratDecls buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam (
+    'F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0) {'using`branch_of_`(_`) [
+  {'when_ [
+    {'_=_ [
+      {{''i.Qid : 'Qid} : 'CId},
+      {{''0.Qid : 'Qid} : 'Nat}
+    ] : 'BoolTerm}
+  ] : 'WhenCond},
+  {'family_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'RuleTarget},
+  {'subst_into_ [
+    {'fam_ [
+      {'_`[_`] [
+        {{''F.Qid : 'Qid} : 'CName},
+        {'bound_ [
+          {{''N.Qid : 'Qid} : 'CId}
+        ] : 'Bound}
+      ] : 'BasicFamilyName}
+    ] : 'CNameBound},
+    {'chn_ [
+      {{''C.Qid : 'Qid} : 'CName}
+    ] : 'CNameBound}
+  ] : 'StrictProof}
+] : 'StrictProof}
+--->
+addStratDecls setModule buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), (fam ('F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0) addGenDecl buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), (fam ('F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0) getModule (buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), (fam ('F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)) {'using`branch_of_`(_`) [
+  {'when_ [
+    {'_=_ [
+      {{''i.Qid : 'Qid} : 'CId},
+      {{''0.Qid : 'Qid} : 'Nat}
+    ] : 'BoolTerm}
+  ] : 'WhenCond},
+  {'family_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'RuleTarget},
+  {'subst_into_ [
+    {'fam_ [
+      {'_`[_`] [
+        {{''F.Qid : 'Qid} : 'CName},
+        {'bound_ [
+          {{''N.Qid : 'Qid} : 'CId}
+        ] : 'Bound}
+      ] : 'BasicFamilyName}
+    ] : 'CNameBound},
+    {'chn_ [
+      {{''C.Qid : 'Qid} : 'CName}
+    ] : 'CNameBound}
+  ] : 'StrictProof}
+] : 'StrictProof} ({'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof},
+empty)
+*********** equation
+eq getModule (buildEnv PCL1:List{ApproxEqConfig} deltaMap:Map{Qid,PairSetIO}
+    protMap:Map{Qid,Protocol} embMap:Map{Qid,IPDLEmbedding} m:Module TCS:Set{
+    TypeContextElem} QIS:QidSet PS:TypeContext crtConf:ApproxEqConfig) =
+    m:Module .
+PCL1:List{ApproxEqConfig} --> aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (
+    fam ('F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+deltaMap:Map{Qid,PairSetIO} --> 'Delta |-> emptyChannelCtx pairSetIO (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool
+protMap:Map{Qid,Protocol} --> 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+)
+embMap:Map{Qid,IPDLEmbedding} --> (empty).Map{Qid,IPDLEmbedding}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+TCS:Set{TypeContextElem} --> (empty).Set{TypeContextElem}
+QIS:QidSet --> (none).EmptyQidSet
+PS:TypeContext --> 'N : typeName 'nat
+crtConf:ApproxEqConfig --> aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit),
+    emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0, length 0)
+getModule (buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0))
+--->
+smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+*********** trial #1
+ceq addGenDecl env:Env smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  SDEFS:StratDefSet
+endsm {'using`branch_of_`(_`) [
+  I:ATerm,
+  I1:ATerm,
+  I2:ATerm
+] : 'StrictProof} = smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  strat q : nil @ 'ProtocolConfig [none] .
+  SDEFS:StratDefSet
+  sd q[[empty]] := 'select-case-family-p[
+    'fns1:NameWithScripts <- upTerm(ns:Qid) ; 
+    'blist1:List`{Bounds`} <- upTerm(blist:List{Bounds}) ; 
+    'bt:BoolTerm <- upTerm(bt:BoolTerm)]{aStrat:Strategy} [none] .
+endsm if m:Module := smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  SDEFS:StratDefSet
+endsm /\ when bt:BoolTerm := read-whenCond(IPDL, I:ATerm) /\ group (ns:Qid[
+    blist:List{Bounds}]) := read-ruleTarget(IPDL, I1:ATerm) /\ i:Int :=
+    getMaxUsedNumber m:Module /\ q := if i:Int == -1 then qid('gn_0) else qid(
+    'gn_ qid(i:Int + 1)) fi /\ sNatPair aStrat:Strategy y:Nat := proof2Strategy
+    read-proof(IPDL, env:Env, I2:ATerm) i:Int + 2 .
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+SDCLS:StratDeclSet --> (none).StratDeclSet
+SDEFS:StratDefSet --> (none).StratDefSet
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+m:Module --> (unbound)
+bt:BoolTerm --> (unbound)
+ns:Qid --> (unbound)
+blist:List{Bounds} --> (unbound)
+i:Int --> (unbound)
+q --> (unbound)
+aStrat:Strategy --> (unbound)
+y:Nat --> (unbound)
+*********** solving condition fragment
+m:Module := smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  SDEFS:StratDefSet
+endsm
+*********** success for condition fragment
+m:Module := smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  SDEFS:StratDefSet
+endsm
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+SDCLS:StratDeclSet --> (none).StratDeclSet
+SDEFS:StratDefSet --> (none).StratDefSet
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+bt:BoolTerm --> (unbound)
+ns:Qid --> (unbound)
+blist:List{Bounds} --> (unbound)
+i:Int --> (unbound)
+q --> (unbound)
+aStrat:Strategy --> (unbound)
+y:Nat --> (unbound)
+*********** solving condition fragment
+when bt:BoolTerm := read-whenCond(IPDL, I:ATerm)
+*********** equation
+eq read-whenCond(L:IPDL, {'when_ [
+  I:ATerm
+] : 'WhenCond}) = when read-boolTerm(L:IPDL, I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {'_=_ [
+  {{''i.Qid : 'Qid} : 'CId},
+  {{''0.Qid : 'Qid} : 'Nat}
+] : 'BoolTerm}
+read-whenCond(IPDL, {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond})
+--->
+when read-boolTerm(IPDL, {'_=_ [
+  {{''i.Qid : 'Qid} : 'CId},
+  {{''0.Qid : 'Qid} : 'Nat}
+] : 'BoolTerm})
+*********** equation
+eq read-boolTerm(L:IPDL, {'_=_ [
+  I1:ATerm,
+  I2:ATerm
+] : 'BoolTerm}) = read-natTerm(L:IPDL, I1:ATerm) =T= read-natTerm(L:IPDL,
+    I2:ATerm) .
+L:IPDL --> IPDL
+I1:ATerm --> {{''i.Qid : 'Qid} : 'CId}
+I2:ATerm --> {{''0.Qid : 'Qid} : 'Nat}
+read-boolTerm(IPDL, {'_=_ [
+  {{''i.Qid : 'Qid} : 'CId},
+  {{''0.Qid : 'Qid} : 'Nat}
+] : 'BoolTerm})
+--->
+read-natTerm(IPDL, {{''i.Qid : 'Qid} : 'CId}) =T= read-natTerm(IPDL, {{''0.Qid
+    : 'Qid} : 'Nat})
+*********** equation
+eq read-natTerm(L:IPDL, {I:ATerm : 'CId}) = qidAsTerm read-qid(I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {''i.Qid : 'Qid}
+read-natTerm(IPDL, {{''i.Qid : 'Qid} : 'CId})
+--->
+qidAsTerm read-qid({''i.Qid : 'Qid})
+*********** equation
+eq read-qid(@T:ATerm) = read-qid(plain-term(@T:ATerm)) .
+@T:ATerm --> {''i.Qid : 'Qid}
+read-qid({''i.Qid : 'Qid})
+--->
+read-qid(plain-term({''i.Qid : 'Qid}))
+*********** equation
+eq plain-term({TQ:TermQid : X:Qid}) = TQ:TermQid .
+TQ:TermQid --> ''i.Qid
+X:Qid --> 'Qid
+plain-term({''i.Qid : 'Qid})
+--->
+''i.Qid
+*********** equation
+eq read-qid(T:Term) = downTerm(T:Term, undef-read) .
+T:Term --> ''i.Qid
+read-qid(''i.Qid)
+--->
+downTerm(''i.Qid, (undef-read).ModuleExpression)
+*********** equation
+(built-in equation for symbol downTerm)
+downTerm(''i.Qid, (undef-read).ModuleExpression)
+--->
+'i
+*********** equation
+eq read-natTerm(L:IPDL, {I:ATerm : 'Nat}) = natAsTerm rat(string(read-qid(
+    I:ATerm)), 10) .
+L:IPDL --> IPDL
+I:ATerm --> {''0.Qid : 'Qid}
+read-natTerm(IPDL, {{''0.Qid : 'Qid} : 'Nat})
+--->
+natAsTerm rat(string(read-qid({''0.Qid : 'Qid})), 10)
+*********** equation
+eq read-qid(@T:ATerm) = read-qid(plain-term(@T:ATerm)) .
+@T:ATerm --> {''0.Qid : 'Qid}
+read-qid({''0.Qid : 'Qid})
+--->
+read-qid(plain-term({''0.Qid : 'Qid}))
+*********** equation
+eq plain-term({TQ:TermQid : X:Qid}) = TQ:TermQid .
+TQ:TermQid --> ''0.Qid
+X:Qid --> 'Qid
+plain-term({''0.Qid : 'Qid})
+--->
+''0.Qid
+*********** equation
+eq read-qid(T:Term) = downTerm(T:Term, undef-read) .
+T:Term --> ''0.Qid
+read-qid(''0.Qid)
+--->
+downTerm(''0.Qid, (undef-read).ModuleExpression)
+*********** equation
+(built-in equation for symbol downTerm)
+downTerm(''0.Qid, (undef-read).ModuleExpression)
+--->
+'0
+*********** equation
+(built-in equation for symbol string)
+string('0)
+--->
+"0"
+*********** equation
+(built-in equation for symbol rat)
+rat("0", 10)
+--->
+0
+*********** success for condition fragment
+when bt:BoolTerm := read-whenCond(IPDL, I:ATerm)
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+SDCLS:StratDeclSet --> (none).StratDeclSet
+SDEFS:StratDefSet --> (none).StratDefSet
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+ns:Qid --> (unbound)
+blist:List{Bounds} --> (unbound)
+i:Int --> (unbound)
+q --> (unbound)
+aStrat:Strategy --> (unbound)
+y:Nat --> (unbound)
+*********** solving condition fragment
+group (ns:Qid[blist:List{Bounds}]) := read-ruleTarget(IPDL, I1:ATerm)
+*********** equation
+eq read-ruleTarget(L:IPDL, {'family_ [
+  I:ATerm
+] : 'RuleTarget}) = family read-familyName(L:IPDL, I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName}
+read-ruleTarget(IPDL, {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget})
+--->
+family read-familyName(IPDL, {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName})
+*********** trial #2
+ceq read-familyName(L:IPDL, I:ATerm) = read-basicFamilyName(L:IPDL, I:ATerm) if
+    I:ATerm :: 'BasicFamilyName = true .
+L:IPDL --> IPDL
+I:ATerm --> {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName}
+*********** solving condition fragment
+I:ATerm :: 'BasicFamilyName = true
+*********** equation
+eq {@T:ATerm : X:Qid} :: (X:Qid ; XS:QidSet) = true .
+@T:ATerm --> '_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+]
+X:Qid --> 'BasicFamilyName
+XS:QidSet --> (none).EmptyQidSet
+{'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName} :: 'BasicFamilyName
+--->
+true
+*********** success for condition fragment
+I:ATerm :: 'BasicFamilyName = true
+L:IPDL --> IPDL
+I:ATerm --> {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName}
+*********** success #2
+*********** equation
+ceq read-familyName(L:IPDL, I:ATerm) = read-basicFamilyName(L:IPDL, I:ATerm) if
+    I:ATerm :: 'BasicFamilyName = true .
+L:IPDL --> IPDL
+I:ATerm --> {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName}
+read-familyName(IPDL, {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName})
+--->
+read-basicFamilyName(IPDL, {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName})
+*********** equation
+eq read-basicFamilyName(L:IPDL, {'_`[_`] [
+  I1:ATerm,
+  I2:ATerm
+] : 'BasicFamilyName}) = read-qid(I1:ATerm)[read-bounds(L:IPDL, I2:ATerm)] .
+L:IPDL --> IPDL
+I1:ATerm --> {{''F.Qid : 'Qid} : 'CName}
+I2:ATerm --> {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound}
+read-basicFamilyName(IPDL, {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName})
+--->
+read-qid({{''F.Qid : 'Qid} : 'CName})[read-bounds(IPDL, {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound})]
+*********** equation
+eq read-qid(@T:ATerm) = read-qid(plain-term(@T:ATerm)) .
+@T:ATerm --> {{''F.Qid : 'Qid} : 'CName}
+read-qid({{''F.Qid : 'Qid} : 'CName})
+--->
+read-qid(plain-term({{''F.Qid : 'Qid} : 'CName}))
+*********** equation
+eq plain-term({@T:ATerm : X:Qid}) = plain-term(@T:ATerm) .
+@T:ATerm --> {''F.Qid : 'Qid}
+X:Qid --> 'CName
+plain-term({{''F.Qid : 'Qid} : 'CName})
+--->
+plain-term({''F.Qid : 'Qid})
+*********** equation
+eq plain-term({TQ:TermQid : X:Qid}) = TQ:TermQid .
+TQ:TermQid --> ''F.Qid
+X:Qid --> 'Qid
+plain-term({''F.Qid : 'Qid})
+--->
+''F.Qid
+*********** equation
+eq read-qid(T:Term) = downTerm(T:Term, undef-read) .
+T:Term --> ''F.Qid
+read-qid(''F.Qid)
+--->
+downTerm(''F.Qid, (undef-read).ModuleExpression)
+*********** equation
+(built-in equation for symbol downTerm)
+downTerm(''F.Qid, (undef-read).ModuleExpression)
+--->
+'F
+*********** equation
+eq read-bounds(L:IPDL, {I:ATerm : 'Bound}) = read-bound(L:IPDL, {I:ATerm :
+    'Bound}) .
+L:IPDL --> IPDL
+I:ATerm --> 'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+]
+read-bounds(IPDL, {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound})
+--->
+read-bound(IPDL, {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound})
+*********** equation
+eq read-bound(L:IPDL, {'bound_ [
+  I:ATerm
+] : 'Bound}) = bound read-natTerm(L:IPDL, I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {{''N.Qid : 'Qid} : 'CId}
+read-bound(IPDL, {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound})
+--->
+bound read-natTerm(IPDL, {{''N.Qid : 'Qid} : 'CId})
+*********** equation
+eq read-natTerm(L:IPDL, {I:ATerm : 'CId}) = qidAsTerm read-qid(I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {''N.Qid : 'Qid}
+read-natTerm(IPDL, {{''N.Qid : 'Qid} : 'CId})
+--->
+qidAsTerm read-qid({''N.Qid : 'Qid})
+*********** equation
+eq read-qid(@T:ATerm) = read-qid(plain-term(@T:ATerm)) .
+@T:ATerm --> {''N.Qid : 'Qid}
+read-qid({''N.Qid : 'Qid})
+--->
+read-qid(plain-term({''N.Qid : 'Qid}))
+*********** equation
+eq plain-term({TQ:TermQid : X:Qid}) = TQ:TermQid .
+TQ:TermQid --> ''N.Qid
+X:Qid --> 'Qid
+plain-term({''N.Qid : 'Qid})
+--->
+''N.Qid
+*********** equation
+eq read-qid(T:Term) = downTerm(T:Term, undef-read) .
+T:Term --> ''N.Qid
+read-qid(''N.Qid)
+--->
+downTerm(''N.Qid, (undef-read).ModuleExpression)
+*********** equation
+(built-in equation for symbol downTerm)
+downTerm(''N.Qid, (undef-read).ModuleExpression)
+--->
+'N
+*********** failure for condition fragment
+group (ns:Qid[blist:List{Bounds}]) := read-ruleTarget(IPDL, I1:ATerm)
+*********** re-solving condition fragment
+when bt:BoolTerm := read-whenCond(IPDL, I:ATerm)
+*********** failure for condition fragment
+when bt:BoolTerm := read-whenCond(IPDL, I:ATerm)
+*********** re-solving condition fragment
+m:Module := smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  SDEFS:StratDefSet
+endsm
+*********** failure for condition fragment
+m:Module := smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  SDEFS:StratDefSet
+endsm
+*********** failure #1
+*********** trial #3
+ceq addGenDecl env:Env smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  SDEFS:StratDefSet
+endsm {'using`branch_of_`(_`) [
+  I:ATerm,
+  I1:ATerm,
+  I2:ATerm
+] : 'StrictProof} = smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  strat q : nil @ 'ProtocolConfig [none] .
+  SDEFS:StratDefSet
+  sd q[[empty]] := 'select-case-family-r[
+    'fns1:NameWithScripts <- upTerm(ns:Qid) ; 
+    'blist1:List`{Bounds`} <- upTerm(blist:List{Bounds}) ; 
+    'bt:BoolTerm <- upTerm(bt:BoolTerm)]{aStrat:Strategy} [none] .
+endsm if m:Module := smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  SDEFS:StratDefSet
+endsm /\ when bt:BoolTerm := read-whenCond(IPDL, I:ATerm) /\ family (ns:Qid[
+    blist:List{Bounds}]) := read-ruleTarget(IPDL, I1:ATerm) /\ i:Int :=
+    getMaxUsedNumber m:Module /\ q := if i:Int == -1 then qid('gn_0) else qid(
+    'gn_ qid(i:Int + 1)) fi /\ sNatPair aStrat:Strategy y:Nat := proof2Strategy
+    read-proof(IPDL, env:Env, I2:ATerm) i:Int + 2 .
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+SDCLS:StratDeclSet --> (none).StratDeclSet
+SDEFS:StratDefSet --> (none).StratDefSet
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+m:Module --> (unbound)
+bt:BoolTerm --> (unbound)
+ns:Qid --> (unbound)
+blist:List{Bounds} --> (unbound)
+i:Int --> (unbound)
+q --> (unbound)
+aStrat:Strategy --> (unbound)
+y:Nat --> (unbound)
+*********** solving condition fragment
+m:Module := smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  SDEFS:StratDefSet
+endsm
+*********** success for condition fragment
+m:Module := smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  SDEFS:StratDefSet
+endsm
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+SDCLS:StratDeclSet --> (none).StratDeclSet
+SDEFS:StratDefSet --> (none).StratDefSet
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+bt:BoolTerm --> (unbound)
+ns:Qid --> (unbound)
+blist:List{Bounds} --> (unbound)
+i:Int --> (unbound)
+q --> (unbound)
+aStrat:Strategy --> (unbound)
+y:Nat --> (unbound)
+*********** solving condition fragment
+when bt:BoolTerm := read-whenCond(IPDL, I:ATerm)
+*********** equation
+eq read-whenCond(L:IPDL, {'when_ [
+  I:ATerm
+] : 'WhenCond}) = when read-boolTerm(L:IPDL, I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {'_=_ [
+  {{''i.Qid : 'Qid} : 'CId},
+  {{''0.Qid : 'Qid} : 'Nat}
+] : 'BoolTerm}
+read-whenCond(IPDL, {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond})
+--->
+when read-boolTerm(IPDL, {'_=_ [
+  {{''i.Qid : 'Qid} : 'CId},
+  {{''0.Qid : 'Qid} : 'Nat}
+] : 'BoolTerm})
+*********** equation
+eq read-boolTerm(L:IPDL, {'_=_ [
+  I1:ATerm,
+  I2:ATerm
+] : 'BoolTerm}) = read-natTerm(L:IPDL, I1:ATerm) =T= read-natTerm(L:IPDL,
+    I2:ATerm) .
+L:IPDL --> IPDL
+I1:ATerm --> {{''i.Qid : 'Qid} : 'CId}
+I2:ATerm --> {{''0.Qid : 'Qid} : 'Nat}
+read-boolTerm(IPDL, {'_=_ [
+  {{''i.Qid : 'Qid} : 'CId},
+  {{''0.Qid : 'Qid} : 'Nat}
+] : 'BoolTerm})
+--->
+read-natTerm(IPDL, {{''i.Qid : 'Qid} : 'CId}) =T= read-natTerm(IPDL, {{''0.Qid
+    : 'Qid} : 'Nat})
+*********** equation
+eq read-natTerm(L:IPDL, {I:ATerm : 'CId}) = qidAsTerm read-qid(I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {''i.Qid : 'Qid}
+read-natTerm(IPDL, {{''i.Qid : 'Qid} : 'CId})
+--->
+qidAsTerm read-qid({''i.Qid : 'Qid})
+*********** equation
+eq read-qid(@T:ATerm) = read-qid(plain-term(@T:ATerm)) .
+@T:ATerm --> {''i.Qid : 'Qid}
+read-qid({''i.Qid : 'Qid})
+--->
+read-qid(plain-term({''i.Qid : 'Qid}))
+*********** equation
+eq plain-term({TQ:TermQid : X:Qid}) = TQ:TermQid .
+TQ:TermQid --> ''i.Qid
+X:Qid --> 'Qid
+plain-term({''i.Qid : 'Qid})
+--->
+''i.Qid
+*********** equation
+eq read-qid(T:Term) = downTerm(T:Term, undef-read) .
+T:Term --> ''i.Qid
+read-qid(''i.Qid)
+--->
+downTerm(''i.Qid, (undef-read).ModuleExpression)
+*********** equation
+(built-in equation for symbol downTerm)
+downTerm(''i.Qid, (undef-read).ModuleExpression)
+--->
+'i
+*********** equation
+eq read-natTerm(L:IPDL, {I:ATerm : 'Nat}) = natAsTerm rat(string(read-qid(
+    I:ATerm)), 10) .
+L:IPDL --> IPDL
+I:ATerm --> {''0.Qid : 'Qid}
+read-natTerm(IPDL, {{''0.Qid : 'Qid} : 'Nat})
+--->
+natAsTerm rat(string(read-qid({''0.Qid : 'Qid})), 10)
+*********** equation
+eq read-qid(@T:ATerm) = read-qid(plain-term(@T:ATerm)) .
+@T:ATerm --> {''0.Qid : 'Qid}
+read-qid({''0.Qid : 'Qid})
+--->
+read-qid(plain-term({''0.Qid : 'Qid}))
+*********** equation
+eq plain-term({TQ:TermQid : X:Qid}) = TQ:TermQid .
+TQ:TermQid --> ''0.Qid
+X:Qid --> 'Qid
+plain-term({''0.Qid : 'Qid})
+--->
+''0.Qid
+*********** equation
+eq read-qid(T:Term) = downTerm(T:Term, undef-read) .
+T:Term --> ''0.Qid
+read-qid(''0.Qid)
+--->
+downTerm(''0.Qid, (undef-read).ModuleExpression)
+*********** equation
+(built-in equation for symbol downTerm)
+downTerm(''0.Qid, (undef-read).ModuleExpression)
+--->
+'0
+*********** equation
+(built-in equation for symbol string)
+string('0)
+--->
+"0"
+*********** equation
+(built-in equation for symbol rat)
+rat("0", 10)
+--->
+0
+*********** success for condition fragment
+when bt:BoolTerm := read-whenCond(IPDL, I:ATerm)
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+SDCLS:StratDeclSet --> (none).StratDeclSet
+SDEFS:StratDefSet --> (none).StratDefSet
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+ns:Qid --> (unbound)
+blist:List{Bounds} --> (unbound)
+i:Int --> (unbound)
+q --> (unbound)
+aStrat:Strategy --> (unbound)
+y:Nat --> (unbound)
+*********** solving condition fragment
+family (ns:Qid[blist:List{Bounds}]) := read-ruleTarget(IPDL, I1:ATerm)
+*********** equation
+eq read-ruleTarget(L:IPDL, {'family_ [
+  I:ATerm
+] : 'RuleTarget}) = family read-familyName(L:IPDL, I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName}
+read-ruleTarget(IPDL, {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget})
+--->
+family read-familyName(IPDL, {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName})
+*********** trial #4
+ceq read-familyName(L:IPDL, I:ATerm) = read-basicFamilyName(L:IPDL, I:ATerm) if
+    I:ATerm :: 'BasicFamilyName = true .
+L:IPDL --> IPDL
+I:ATerm --> {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName}
+*********** solving condition fragment
+I:ATerm :: 'BasicFamilyName = true
+*********** equation
+eq {@T:ATerm : X:Qid} :: (X:Qid ; XS:QidSet) = true .
+@T:ATerm --> '_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+]
+X:Qid --> 'BasicFamilyName
+XS:QidSet --> (none).EmptyQidSet
+{'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName} :: 'BasicFamilyName
+--->
+true
+*********** success for condition fragment
+I:ATerm :: 'BasicFamilyName = true
+L:IPDL --> IPDL
+I:ATerm --> {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName}
+*********** success #4
+*********** equation
+ceq read-familyName(L:IPDL, I:ATerm) = read-basicFamilyName(L:IPDL, I:ATerm) if
+    I:ATerm :: 'BasicFamilyName = true .
+L:IPDL --> IPDL
+I:ATerm --> {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName}
+read-familyName(IPDL, {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName})
+--->
+read-basicFamilyName(IPDL, {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName})
+*********** equation
+eq read-basicFamilyName(L:IPDL, {'_`[_`] [
+  I1:ATerm,
+  I2:ATerm
+] : 'BasicFamilyName}) = read-qid(I1:ATerm)[read-bounds(L:IPDL, I2:ATerm)] .
+L:IPDL --> IPDL
+I1:ATerm --> {{''F.Qid : 'Qid} : 'CName}
+I2:ATerm --> {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound}
+read-basicFamilyName(IPDL, {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName})
+--->
+read-qid({{''F.Qid : 'Qid} : 'CName})[read-bounds(IPDL, {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound})]
+*********** equation
+eq read-qid(@T:ATerm) = read-qid(plain-term(@T:ATerm)) .
+@T:ATerm --> {{''F.Qid : 'Qid} : 'CName}
+read-qid({{''F.Qid : 'Qid} : 'CName})
+--->
+read-qid(plain-term({{''F.Qid : 'Qid} : 'CName}))
+*********** equation
+eq plain-term({@T:ATerm : X:Qid}) = plain-term(@T:ATerm) .
+@T:ATerm --> {''F.Qid : 'Qid}
+X:Qid --> 'CName
+plain-term({{''F.Qid : 'Qid} : 'CName})
+--->
+plain-term({''F.Qid : 'Qid})
+*********** equation
+eq plain-term({TQ:TermQid : X:Qid}) = TQ:TermQid .
+TQ:TermQid --> ''F.Qid
+X:Qid --> 'Qid
+plain-term({''F.Qid : 'Qid})
+--->
+''F.Qid
+*********** equation
+eq read-qid(T:Term) = downTerm(T:Term, undef-read) .
+T:Term --> ''F.Qid
+read-qid(''F.Qid)
+--->
+downTerm(''F.Qid, (undef-read).ModuleExpression)
+*********** equation
+(built-in equation for symbol downTerm)
+downTerm(''F.Qid, (undef-read).ModuleExpression)
+--->
+'F
+*********** equation
+eq read-bounds(L:IPDL, {I:ATerm : 'Bound}) = read-bound(L:IPDL, {I:ATerm :
+    'Bound}) .
+L:IPDL --> IPDL
+I:ATerm --> 'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+]
+read-bounds(IPDL, {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound})
+--->
+read-bound(IPDL, {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound})
+*********** equation
+eq read-bound(L:IPDL, {'bound_ [
+  I:ATerm
+] : 'Bound}) = bound read-natTerm(L:IPDL, I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {{''N.Qid : 'Qid} : 'CId}
+read-bound(IPDL, {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound})
+--->
+bound read-natTerm(IPDL, {{''N.Qid : 'Qid} : 'CId})
+*********** equation
+eq read-natTerm(L:IPDL, {I:ATerm : 'CId}) = qidAsTerm read-qid(I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {''N.Qid : 'Qid}
+read-natTerm(IPDL, {{''N.Qid : 'Qid} : 'CId})
+--->
+qidAsTerm read-qid({''N.Qid : 'Qid})
+*********** equation
+eq read-qid(@T:ATerm) = read-qid(plain-term(@T:ATerm)) .
+@T:ATerm --> {''N.Qid : 'Qid}
+read-qid({''N.Qid : 'Qid})
+--->
+read-qid(plain-term({''N.Qid : 'Qid}))
+*********** equation
+eq plain-term({TQ:TermQid : X:Qid}) = TQ:TermQid .
+TQ:TermQid --> ''N.Qid
+X:Qid --> 'Qid
+plain-term({''N.Qid : 'Qid})
+--->
+''N.Qid
+*********** equation
+eq read-qid(T:Term) = downTerm(T:Term, undef-read) .
+T:Term --> ''N.Qid
+read-qid(''N.Qid)
+--->
+downTerm(''N.Qid, (undef-read).ModuleExpression)
+*********** equation
+(built-in equation for symbol downTerm)
+downTerm(''N.Qid, (undef-read).ModuleExpression)
+--->
+'N
+*********** success for condition fragment
+family (ns:Qid[blist:List{Bounds}]) := read-ruleTarget(IPDL, I1:ATerm)
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+SDCLS:StratDeclSet --> (none).StratDeclSet
+SDEFS:StratDefSet --> (none).StratDefSet
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+ns:Qid --> 'F
+blist:List{Bounds} --> bound qidAsTerm 'N
+i:Int --> (unbound)
+q --> (unbound)
+aStrat:Strategy --> (unbound)
+y:Nat --> (unbound)
+*********** solving condition fragment
+i:Int := getMaxUsedNumber m:Module
+*********** equation
+eq getMaxUsedNumber m:Module = maxSet declsToInts getStrats(m:Module) .
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+getMaxUsedNumber smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+--->
+maxSet declsToInts getStrats(smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm)
+*********** equation
+eq getStrats(smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  STDS:StratDeclSet
+  STDFS:StratDefSet
+endsm) = STDS:StratDeclSet .
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+STDS:StratDeclSet --> (none).StratDeclSet
+STDFS:StratDefSet --> (none).StratDefSet
+getStrats(smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm)
+--->
+(none).StratDeclSet
+*********** equation
+eq declsToInts SDCLS:StratDeclSet = declsToIntsAux SDCLS:StratDeclSet empty .
+SDCLS:StratDeclSet --> (none).StratDeclSet
+declsToInts none
+--->
+declsToIntsAux none empty
+*********** equation
+eq declsToIntsAux none ISet:Set{Int} = ISet:Set{Int} .
+ISet:Set{Int} --> (empty).Set{Int}
+declsToIntsAux none empty
+--->
+(empty).Set{Int}
+*********** equation
+eq maxSet ISet:Set{Int} = maxSetAux(ISet:Set{Int}, -1) .
+ISet:Set{Int} --> (empty).Set{Int}
+maxSet empty
+--->
+maxSetAux(empty, -1)
+*********** equation
+eq maxSetAux(empty, i:Int) = i:Int .
+i:Int --> -1
+maxSetAux(empty, -1)
+--->
+-1
+*********** success for condition fragment
+i:Int := getMaxUsedNumber m:Module
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+SDCLS:StratDeclSet --> (none).StratDeclSet
+SDEFS:StratDefSet --> (none).StratDefSet
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+ns:Qid --> 'F
+blist:List{Bounds} --> bound qidAsTerm 'N
+i:Int --> -1
+q --> (unbound)
+aStrat:Strategy --> (unbound)
+y:Nat --> (unbound)
+*********** solving condition fragment
+q := if i:Int == -1 then qid('gn_0) else qid('gn_ qid(i:Int + 1)) fi
+*********** equation
+(built-in equation for symbol _==_)
+-1 == -1
+--->
+true
+*********** equation
+(built-in equation for symbol if_then_else_fi)
+if true then qid('gn_0) else qid('gn_ qid(-1 + 1)) fi
+--->
+qid('gn_0)
+*********** equation
+eq qid(QIL:QidList) = qid(string(QIL:QidList)) .
+QIL:QidList --> 'gn_0
+qid('gn_0)
+--->
+qid(string('gn_0))
+*********** equation
+(built-in equation for symbol string)
+string('gn_0)
+--->
+"gn_0"
+*********** equation
+(built-in equation for symbol qid)
+qid("gn_0")
+--->
+'gn_0
+*********** success for condition fragment
+q := if i:Int == -1 then qid('gn_0) else qid('gn_ qid(i:Int + 1)) fi
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+SDCLS:StratDeclSet --> (none).StratDeclSet
+SDEFS:StratDefSet --> (none).StratDefSet
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+ns:Qid --> 'F
+blist:List{Bounds} --> bound qidAsTerm 'N
+i:Int --> -1
+q --> 'gn_0
+aStrat:Strategy --> (unbound)
+y:Nat --> (unbound)
+*********** solving condition fragment
+sNatPair aStrat:Strategy y:Nat := proof2Strategy read-proof(IPDL, env:Env,
+    I2:ATerm) i:Int + 2
+*********** equation
+eq read-proof(L:IPDL, env:Env, {'subst_into_ [
+  I1:ATerm,
+  I2:ATerm
+] : 'StrictProof}) = Proof[L:IPDL]{subst read-cNameBound(L:IPDL, I1:ATerm) into
+    read-cNameBound(L:IPDL, I2:ATerm)} .
+L:IPDL --> IPDL
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+I1:ATerm --> {'fam_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'CNameBound}
+I2:ATerm --> {'chn_ [
+  {{''C.Qid : 'Qid} : 'CName}
+] : 'CNameBound}
+read-proof(IPDL, buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam
+    ('F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0), {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof})
+--->
+Proof[IPDL]{subst read-cNameBound(IPDL, {'fam_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'CNameBound}) into read-cNameBound(IPDL, {'chn_ [
+  {{''C.Qid : 'Qid} : 'CName}
+] : 'CNameBound})}
+*********** equation
+eq read-cNameBound(L:IPDL, {'fam_ [
+  I:ATerm
+] : 'CNameBound}) = fam read-familyName(L:IPDL, I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName}
+read-cNameBound(IPDL, {'fam_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'CNameBound})
+--->
+fam read-familyName(IPDL, {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName})
+*********** trial #5
+ceq read-familyName(L:IPDL, I:ATerm) = read-basicFamilyName(L:IPDL, I:ATerm) if
+    I:ATerm :: 'BasicFamilyName = true .
+L:IPDL --> IPDL
+I:ATerm --> {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName}
+*********** solving condition fragment
+I:ATerm :: 'BasicFamilyName = true
+*********** equation
+eq {@T:ATerm : X:Qid} :: (X:Qid ; XS:QidSet) = true .
+@T:ATerm --> '_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+]
+X:Qid --> 'BasicFamilyName
+XS:QidSet --> (none).EmptyQidSet
+{'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName} :: 'BasicFamilyName
+--->
+true
+*********** success for condition fragment
+I:ATerm :: 'BasicFamilyName = true
+L:IPDL --> IPDL
+I:ATerm --> {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName}
+*********** success #5
+*********** equation
+ceq read-familyName(L:IPDL, I:ATerm) = read-basicFamilyName(L:IPDL, I:ATerm) if
+    I:ATerm :: 'BasicFamilyName = true .
+L:IPDL --> IPDL
+I:ATerm --> {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName}
+read-familyName(IPDL, {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName})
+--->
+read-basicFamilyName(IPDL, {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName})
+*********** equation
+eq read-basicFamilyName(L:IPDL, {'_`[_`] [
+  I1:ATerm,
+  I2:ATerm
+] : 'BasicFamilyName}) = read-qid(I1:ATerm)[read-bounds(L:IPDL, I2:ATerm)] .
+L:IPDL --> IPDL
+I1:ATerm --> {{''F.Qid : 'Qid} : 'CName}
+I2:ATerm --> {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound}
+read-basicFamilyName(IPDL, {'_`[_`] [
+  {{''F.Qid : 'Qid} : 'CName},
+  {'bound_ [
+    {{''N.Qid : 'Qid} : 'CId}
+  ] : 'Bound}
+] : 'BasicFamilyName})
+--->
+read-qid({{''F.Qid : 'Qid} : 'CName})[read-bounds(IPDL, {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound})]
+*********** equation
+eq read-qid(@T:ATerm) = read-qid(plain-term(@T:ATerm)) .
+@T:ATerm --> {{''F.Qid : 'Qid} : 'CName}
+read-qid({{''F.Qid : 'Qid} : 'CName})
+--->
+read-qid(plain-term({{''F.Qid : 'Qid} : 'CName}))
+*********** equation
+eq plain-term({@T:ATerm : X:Qid}) = plain-term(@T:ATerm) .
+@T:ATerm --> {''F.Qid : 'Qid}
+X:Qid --> 'CName
+plain-term({{''F.Qid : 'Qid} : 'CName})
+--->
+plain-term({''F.Qid : 'Qid})
+*********** equation
+eq plain-term({TQ:TermQid : X:Qid}) = TQ:TermQid .
+TQ:TermQid --> ''F.Qid
+X:Qid --> 'Qid
+plain-term({''F.Qid : 'Qid})
+--->
+''F.Qid
+*********** equation
+eq read-qid(T:Term) = downTerm(T:Term, undef-read) .
+T:Term --> ''F.Qid
+read-qid(''F.Qid)
+--->
+downTerm(''F.Qid, (undef-read).ModuleExpression)
+*********** equation
+(built-in equation for symbol downTerm)
+downTerm(''F.Qid, (undef-read).ModuleExpression)
+--->
+'F
+*********** equation
+eq read-bounds(L:IPDL, {I:ATerm : 'Bound}) = read-bound(L:IPDL, {I:ATerm :
+    'Bound}) .
+L:IPDL --> IPDL
+I:ATerm --> 'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+]
+read-bounds(IPDL, {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound})
+--->
+read-bound(IPDL, {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound})
+*********** equation
+eq read-bound(L:IPDL, {'bound_ [
+  I:ATerm
+] : 'Bound}) = bound read-natTerm(L:IPDL, I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {{''N.Qid : 'Qid} : 'CId}
+read-bound(IPDL, {'bound_ [
+  {{''N.Qid : 'Qid} : 'CId}
+] : 'Bound})
+--->
+bound read-natTerm(IPDL, {{''N.Qid : 'Qid} : 'CId})
+*********** equation
+eq read-natTerm(L:IPDL, {I:ATerm : 'CId}) = qidAsTerm read-qid(I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {''N.Qid : 'Qid}
+read-natTerm(IPDL, {{''N.Qid : 'Qid} : 'CId})
+--->
+qidAsTerm read-qid({''N.Qid : 'Qid})
+*********** equation
+eq read-qid(@T:ATerm) = read-qid(plain-term(@T:ATerm)) .
+@T:ATerm --> {''N.Qid : 'Qid}
+read-qid({''N.Qid : 'Qid})
+--->
+read-qid(plain-term({''N.Qid : 'Qid}))
+*********** equation
+eq plain-term({TQ:TermQid : X:Qid}) = TQ:TermQid .
+TQ:TermQid --> ''N.Qid
+X:Qid --> 'Qid
+plain-term({''N.Qid : 'Qid})
+--->
+''N.Qid
+*********** equation
+eq read-qid(T:Term) = downTerm(T:Term, undef-read) .
+T:Term --> ''N.Qid
+read-qid(''N.Qid)
+--->
+downTerm(''N.Qid, (undef-read).ModuleExpression)
+*********** equation
+(built-in equation for symbol downTerm)
+downTerm(''N.Qid, (undef-read).ModuleExpression)
+--->
+'N
+*********** equation
+eq read-cNameBound(L:IPDL, {'chn_ [
+  I:ATerm
+] : 'CNameBound}) = chn read-cNameIndex(L:IPDL, I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {{''C.Qid : 'Qid} : 'CName}
+read-cNameBound(IPDL, {'chn_ [
+  {{''C.Qid : 'Qid} : 'CName}
+] : 'CNameBound})
+--->
+chn read-cNameIndex(IPDL, {{''C.Qid : 'Qid} : 'CName})
+*********** equation
+eq read-cNameIndex(L:IPDL, {I:ATerm : 'CName}) = read-qid(I:ATerm) .
+L:IPDL --> IPDL
+I:ATerm --> {''C.Qid : 'Qid}
+read-cNameIndex(IPDL, {{''C.Qid : 'Qid} : 'CName})
+--->
+read-qid({''C.Qid : 'Qid})
+*********** equation
+eq read-qid(@T:ATerm) = read-qid(plain-term(@T:ATerm)) .
+@T:ATerm --> {''C.Qid : 'Qid}
+read-qid({''C.Qid : 'Qid})
+--->
+read-qid(plain-term({''C.Qid : 'Qid}))
+*********** equation
+eq plain-term({TQ:TermQid : X:Qid}) = TQ:TermQid .
+TQ:TermQid --> ''C.Qid
+X:Qid --> 'Qid
+plain-term({''C.Qid : 'Qid})
+--->
+''C.Qid
+*********** equation
+eq read-qid(T:Term) = downTerm(T:Term, undef-read) .
+T:Term --> ''C.Qid
+read-qid(''C.Qid)
+--->
+downTerm(''C.Qid, (undef-read).ModuleExpression)
+*********** equation
+(built-in equation for symbol downTerm)
+downTerm(''C.Qid, (undef-read).ModuleExpression)
+--->
+'C
+*********** equation
+(built-in equation for symbol _+_)
+2 + -1
+--->
+1
+*********** equation
+eq proof2Strategy aProof:Proof{IPDL} x:Nat = sNatPair proofStep2Strategy(
+    aProof:Proof{IPDL}) x:Nat [owise] .
+aProof:Proof{IPDL} --> Proof[IPDL]{subst fam ('F[bound qidAsTerm 'N]) into chn
+    'C}
+x:Nat --> 1
+proof2Strategy Proof[IPDL]{subst fam ('F[bound qidAsTerm 'N]) into chn 'C} 1
+--->
+sNatPair proofStep2Strategy(Proof[IPDL]{subst fam ('F[bound qidAsTerm 'N]) into
+    chn 'C}) 1
+*********** equation
+eq proofStep2Strategy(Proof[IPDL]{subst cnb1:CNameBound into cnb2:CNameBound})
+    = 'subst[[upTerm(cnb1:CNameBound), upTerm(cnb2:CNameBound)]] .
+cnb1:CNameBound --> fam ('F[bound qidAsTerm 'N])
+cnb2:CNameBound --> chn 'C
+proofStep2Strategy(Proof[IPDL]{subst fam ('F[bound qidAsTerm 'N]) into chn 'C})
+--->
+'subst[[upTerm(fam ('F[bound qidAsTerm 'N])), upTerm(chn 'C)]]
+*********** equation
+(built-in equation for symbol upTerm)
+upTerm(fam ('F[bound qidAsTerm 'N]))
+--->
+'fam_['_`[_`][''F.Sort, 'bound_['qidAsTerm_[''N.Sort]]]]
+*********** equation
+(built-in equation for symbol upTerm)
+upTerm(chn 'C)
+--->
+'chn_[''C.Sort]
+*********** success for condition fragment
+sNatPair aStrat:Strategy y:Nat := proof2Strategy read-proof(IPDL, env:Env,
+    I2:ATerm) i:Int + 2
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+SDCLS:StratDeclSet --> (none).StratDeclSet
+SDEFS:StratDefSet --> (none).StratDefSet
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+ns:Qid --> 'F
+blist:List{Bounds} --> bound qidAsTerm 'N
+i:Int --> -1
+q --> 'gn_0
+aStrat:Strategy --> 'subst[['fam_['_`[_`][''F.Sort, 'bound_['qidAsTerm_[
+    ''N.Sort]]]], 'chn_[''C.Sort]]]
+y:Nat --> 1
+*********** success #3
+*********** equation
+ceq addGenDecl env:Env smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  SDEFS:StratDefSet
+endsm {'using`branch_of_`(_`) [
+  I:ATerm,
+  I1:ATerm,
+  I2:ATerm
+] : 'StrictProof} = smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  strat q : nil @ 'ProtocolConfig [none] .
+  SDEFS:StratDefSet
+  sd q[[empty]] := 'select-case-family-r[
+    'fns1:NameWithScripts <- upTerm(ns:Qid) ; 
+    'blist1:List`{Bounds`} <- upTerm(blist:List{Bounds}) ; 
+    'bt:BoolTerm <- upTerm(bt:BoolTerm)]{aStrat:Strategy} [none] .
+endsm if m:Module := smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  SDCLS:StratDeclSet
+  SDEFS:StratDefSet
+endsm /\ when bt:BoolTerm := read-whenCond(IPDL, I:ATerm) /\ family (ns:Qid[
+    blist:List{Bounds}]) := read-ruleTarget(IPDL, I1:ATerm) /\ i:Int :=
+    getMaxUsedNumber m:Module /\ q := if i:Int == -1 then qid('gn_0) else qid(
+    'gn_ qid(i:Int + 1)) fi /\ sNatPair aStrat:Strategy y:Nat := proof2Strategy
+    read-proof(IPDL, env:Env, I2:ATerm) i:Int + 2 .
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+SDCLS:StratDeclSet --> (none).StratDeclSet
+SDEFS:StratDefSet --> (none).StratDefSet
+I:ATerm --> {'when_ [
+  {'_=_ [
+    {{''i.Qid : 'Qid} : 'CId},
+    {{''0.Qid : 'Qid} : 'Nat}
+  ] : 'BoolTerm}
+] : 'WhenCond}
+I1:ATerm --> {'family_ [
+  {'_`[_`] [
+    {{''F.Qid : 'Qid} : 'CName},
+    {'bound_ [
+      {{''N.Qid : 'Qid} : 'CId}
+    ] : 'Bound}
+  ] : 'BasicFamilyName}
+] : 'RuleTarget}
+I2:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+ns:Qid --> 'F
+blist:List{Bounds} --> bound qidAsTerm 'N
+i:Int --> -1
+q --> 'gn_0
+aStrat:Strategy --> 'subst[['fam_['_`[_`][''F.Sort, 'bound_['qidAsTerm_[
+    ''N.Sort]]]], 'chn_[''C.Sort]]]
+y:Nat --> 1
+addGenDecl buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0) smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm {'using`branch_of_`(_`) [
+  {'when_ [
+    {'_=_ [
+      {{''i.Qid : 'Qid} : 'CId},
+      {{''0.Qid : 'Qid} : 'Nat}
+    ] : 'BoolTerm}
+  ] : 'WhenCond},
+  {'family_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'RuleTarget},
+  {'subst_into_ [
+    {'fam_ [
+      {'_`[_`] [
+        {{''F.Qid : 'Qid} : 'CName},
+        {'bound_ [
+          {{''N.Qid : 'Qid} : 'CId}
+        ] : 'Bound}
+      ] : 'BasicFamilyName}
+    ] : 'CNameBound},
+    {'chn_ [
+      {{''C.Qid : 'Qid} : 'CName}
+    ] : 'CNameBound}
+  ] : 'StrictProof}
+] : 'StrictProof}
+--->
+smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  none
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'fns1:NameWithScripts <- upTerm('F) ; 
+    'blist1:List`{Bounds`} <- upTerm(bound qidAsTerm 'N) ; 
+    'bt:BoolTerm <- upTerm(natAsTerm 0 =T= qidAsTerm 'i)]{'subst[['fam_[
+    '_`[_`][''F.Sort, 'bound_['qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [
+    none] .
+endsm
+*********** equation
+(built-in equation for symbol upTerm)
+upTerm('F)
+--->
+''F.Sort
+*********** equation
+(built-in equation for symbol upTerm)
+upTerm(bound qidAsTerm 'N)
+--->
+'bound_['qidAsTerm_[''N.Sort]]
+*********** equation
+(built-in equation for symbol upTerm)
+upTerm(natAsTerm 0 =T= qidAsTerm 'i)
+--->
+'_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]]
+*********** equation
+eq setModule buildEnv PCL1:List{ApproxEqConfig} deltaMap:Map{Qid,PairSetIO}
+    protMap:Map{Qid,Protocol} embMap:Map{Qid,IPDLEmbedding} m:Module TCS:Set{
+    TypeContextElem} QIS:QidSet PS:TypeContext crtConf:ApproxEqConfig m':Module
+    = buildEnv PCL1:List{ApproxEqConfig} deltaMap:Map{Qid,PairSetIO}
+    protMap:Map{Qid,Protocol} embMap:Map{Qid,IPDLEmbedding} m':Module TCS:Set{
+    TypeContextElem} QIS:QidSet PS:TypeContext crtConf:ApproxEqConfig .
+PCL1:List{ApproxEqConfig} --> aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (
+    fam ('F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+deltaMap:Map{Qid,PairSetIO} --> 'Delta |-> emptyChannelCtx pairSetIO (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool
+protMap:Map{Qid,Protocol} --> 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+)
+embMap:Map{Qid,IPDLEmbedding} --> (empty).Map{Qid,IPDLEmbedding}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+TCS:Set{TypeContextElem} --> (empty).Set{TypeContextElem}
+QIS:QidSet --> (none).EmptyQidSet
+PS:TypeContext --> 'N : typeName 'nat
+crtConf:ApproxEqConfig --> aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit),
+    emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0, length 0)
+m':Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm
+setModule buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0) smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm
+--->
+buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[bound
+    qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+*********** equation
+eq addStratDecls env:Env (I:ATerm,
+atl:ATermList) = addStratDecls env:Env atl:ATermList [owise] .
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+I:ATerm --> {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+atl:ATermList --> (empty).ATermList
+addStratDecls buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam (
+    'F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0) {'subst_into_ [
+  {'fam_ [
+    {'_`[_`] [
+      {{''F.Qid : 'Qid} : 'CName},
+      {'bound_ [
+        {{''N.Qid : 'Qid} : 'CId}
+      ] : 'Bound}
+    ] : 'BasicFamilyName}
+  ] : 'CNameBound},
+  {'chn_ [
+    {{''C.Qid : 'Qid} : 'CName}
+  ] : 'CNameBound}
+] : 'StrictProof}
+--->
+addStratDecls buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam (
+    'F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0) empty
+*********** equation
+eq [asdEnd] : addStratDecls env:Env empty = env:Env .
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+addStratDecls buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam (
+    'F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0) empty
+--->
+buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[bound
+    qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+*********** trial #6
+ceq generatedStrategyCall env:Env = q[[empty]] if q := qid('gn_ qid(1 +
+    getMaxUsedNumber getModule env:Env)) .
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+q --> (unbound)
+*********** solving condition fragment
+q := qid('gn_ qid(1 + getMaxUsedNumber getModule env:Env))
+*********** equation
+eq getModule (buildEnv PCL1:List{ApproxEqConfig} deltaMap:Map{Qid,PairSetIO}
+    protMap:Map{Qid,Protocol} embMap:Map{Qid,IPDLEmbedding} m:Module TCS:Set{
+    TypeContextElem} QIS:QidSet PS:TypeContext crtConf:ApproxEqConfig) =
+    m:Module .
+PCL1:List{ApproxEqConfig} --> aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (
+    fam ('F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+deltaMap:Map{Qid,PairSetIO} --> 'Delta |-> emptyChannelCtx pairSetIO (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool
+protMap:Map{Qid,Protocol} --> 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+)
+embMap:Map{Qid,IPDLEmbedding} --> (empty).Map{Qid,IPDLEmbedding}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+TCS:Set{TypeContextElem} --> (empty).Set{TypeContextElem}
+QIS:QidSet --> (none).EmptyQidSet
+PS:TypeContext --> 'N : typeName 'nat
+crtConf:ApproxEqConfig --> aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit),
+    emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0, length 0)
+getModule (buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0))
+--->
+smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+*********** equation
+eq getMaxUsedNumber m:Module = maxSet declsToInts getStrats(m:Module) .
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+getMaxUsedNumber smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm
+--->
+maxSet declsToInts getStrats(smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm)
+*********** equation
+eq getStrats(smod H:Header is
+  IL:ImportList
+  sorts SS:SortSet .
+  SSDS:SubsortDeclSet
+  OPDS:OpDeclSet
+  MAS:MembAxSet
+  EQS:EquationSet
+  RLS:RuleSet
+  STDS:StratDeclSet
+  STDFS:StratDefSet
+endsm) = STDS:StratDeclSet .
+H:Header --> 'TEST
+IL:ImportList --> protecting 'STRATS .
+SS:SortSet --> (none).EmptyQidSet
+SSDS:SubsortDeclSet --> (none).SubsortDeclSet
+OPDS:OpDeclSet --> (none).OpDeclSet
+MAS:MembAxSet --> (none).MembAxSet
+EQS:EquationSet --> (none).EquationSet
+RLS:RuleSet --> (none).RuleSet
+STDS:StratDeclSet --> (none).StratDeclSet
+STDFS:StratDefSet --> (none).StratDefSet
+getStrats(smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm)
+--->
+(none).StratDeclSet
+*********** equation
+eq declsToInts SDCLS:StratDeclSet = declsToIntsAux SDCLS:StratDeclSet empty .
+SDCLS:StratDeclSet --> (none).StratDeclSet
+declsToInts none
+--->
+declsToIntsAux none empty
+*********** equation
+eq declsToIntsAux none ISet:Set{Int} = ISet:Set{Int} .
+ISet:Set{Int} --> (empty).Set{Int}
+declsToIntsAux none empty
+--->
+(empty).Set{Int}
+*********** equation
+eq maxSet ISet:Set{Int} = maxSetAux(ISet:Set{Int}, -1) .
+ISet:Set{Int} --> (empty).Set{Int}
+maxSet empty
+--->
+maxSetAux(empty, -1)
+*********** equation
+eq maxSetAux(empty, i:Int) = i:Int .
+i:Int --> -1
+maxSetAux(empty, -1)
+--->
+-1
+*********** equation
+(built-in equation for symbol _+_)
+1 + -1
+--->
+0
+*********** equation
+eq qid(N:Nat) = qid(string(N:Nat, 10)) .
+N:Nat --> 0
+qid(0)
+--->
+qid(string(0, 10))
+*********** equation
+(built-in equation for symbol string)
+string(0, 10)
+--->
+"0"
+*********** equation
+(built-in equation for symbol qid)
+qid("0")
+--->
+'0
+*********** equation
+eq qid(QIL:QidList) = qid(string(QIL:QidList)) .
+QIL:QidList --> 'gn_ '0
+qid('gn_ '0)
+--->
+qid(string('gn_ '0))
+*********** equation
+eq string(QI:Qid QIL:QidList) = string(QI:Qid) + string(QIL:QidList) .
+QI:Qid --> 'gn_
+QIL:QidList --> '0
+string('gn_ '0)
+--->
+string('gn_) + string('0)
+*********** equation
+(built-in equation for symbol string)
+string('gn_)
+--->
+"gn_"
+*********** equation
+(built-in equation for symbol string)
+string('0)
+--->
+"0"
+*********** equation
+(built-in equation for symbol _+_)
+"gn_" + "0"
+--->
+"gn_0"
+*********** equation
+(built-in equation for symbol qid)
+qid("gn_0")
+--->
+'gn_0
+*********** success for condition fragment
+q := qid('gn_ qid(1 + getMaxUsedNumber getModule env:Env))
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+q --> 'gn_0
+*********** success #6
+*********** equation
+ceq generatedStrategyCall env:Env = q[[empty]] if q := qid('gn_ qid(1 +
+    getMaxUsedNumber getModule env:Env)) .
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+q --> 'gn_0
+generatedStrategyCall (buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit),
+    (fam ('F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  none
+  none
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0))
+--->
+'gn_0[[empty]]
+*********** trial #7
+ceq [srewPConfig] : srewPConfig env:Env aStrat:Strategy = setPConfig env:Env
+    downTerm(Tm:Term, eConfig) if {Tm:Term, TP:Type} := metaSrewrite(getModule
+    env:Env, upTerm(getPConfig env:Env), aStrat:Strategy, breadthFirst, 0) .
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+aStrat:Strategy --> 'gn_0[[empty]]
+Tm:Term --> (unbound)
+TP:Type --> (unbound)
+*********** solving condition fragment
+{Tm:Term, TP:Type} := metaSrewrite(getModule env:Env, upTerm(getPConfig
+    env:Env), aStrat:Strategy, breadthFirst, 0)
+*********** equation
+eq getModule (buildEnv PCL1:List{ApproxEqConfig} deltaMap:Map{Qid,PairSetIO}
+    protMap:Map{Qid,Protocol} embMap:Map{Qid,IPDLEmbedding} m:Module TCS:Set{
+    TypeContextElem} QIS:QidSet PS:TypeContext crtConf:ApproxEqConfig) =
+    m:Module .
+PCL1:List{ApproxEqConfig} --> aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (
+    fam ('F[bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+deltaMap:Map{Qid,PairSetIO} --> 'Delta |-> emptyChannelCtx pairSetIO (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool
+protMap:Map{Qid,Protocol} --> 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+)
+embMap:Map{Qid,IPDLEmbedding} --> (empty).Map{Qid,IPDLEmbedding}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm
+TCS:Set{TypeContextElem} --> (empty).Set{TypeContextElem}
+QIS:QidSet --> (none).EmptyQidSet
+PS:TypeContext --> 'N : typeName 'nat
+crtConf:ApproxEqConfig --> aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit),
+    emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0, length 0)
+getModule (buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0))
+--->
+smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm
+*********** equation
+eq getPConfig (buildEnv aConfig(pConf, w:Width, l:Length) PCL1:List{
+    ApproxEqConfig} deltaMap:Map{Qid,PairSetIO} protMap:Map{Qid,Protocol}
+    embMap:Map{Qid,IPDLEmbedding} m:Module TCS:Set{TypeContextElem} QIS:QidSet
+    PS:TypeContext crtConf:ApproxEqConfig) = pConf .
+pConf --> pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[bound qidAsTerm 'N])
+    :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty)
+w:Width --> width 0
+l:Length --> length 0
+PCL1:List{ApproxEqConfig} --> (nil).List{ApproxEqConfig}
+deltaMap:Map{Qid,PairSetIO} --> 'Delta |-> emptyChannelCtx pairSetIO (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool
+protMap:Map{Qid,Protocol} --> 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+)
+embMap:Map{Qid,IPDLEmbedding} --> (empty).Map{Qid,IPDLEmbedding}
+m:Module --> smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm
+TCS:Set{TypeContextElem} --> (empty).Set{TypeContextElem}
+QIS:QidSet --> (none).EmptyQidSet
+PS:TypeContext --> 'N : typeName 'nat
+crtConf:ApproxEqConfig --> aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit),
+    emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0, length 0)
+getPConfig (buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0))
+--->
+pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty)
+*********** equation
+(built-in equation for symbol upTerm)
+upTerm(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty))
+--->
+'pConfig['typesOf_['_;_[''bool.Sort, ''nat.Sort, ''unit.Sort]], '__['_::_[
+    'fam_['_`[_`][''F.Sort, 'bound_['qidAsTerm_[''N.Sort]]]], 'typeName_[
+    ''bool.Sort]], '_::_['chn_[''C.Sort], 'typeName_[''bool.Sort]]], '_||_[
+    '_::=_[''C.Sort, 'nf['_:_<-_[''f.Sort, 'typeName_[''bool.Sort], 'read_[
+    '_`[_`][''F.Sort, 'natAsTerm_['0.Zero]]]], 'return_[''f.Sort]]],
+    'family___::=_['_`[_`][''F.Sort, 'bound_['qidAsTerm_[''N.Sort]]],
+    'qidAsTerm_[''i.Sort], 'bound_['qidAsTerm_[''N.Sort]], '_;;_['_-->_['when_[
+    '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]]], 'nf[
+    'emptyBRList.BRList, 'return_['False.IPDLExpression]]], '_-->_['when_[
+    'neg_['_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]]]], 'nf[
+    'emptyBRList.BRList, 'return_['True.IPDLExpression]]]]]],
+    'empty.Set`{CNameBound`}, '_`,_['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]], 'empty.Set`{BoolTerm`}]
+*********** strategy call
+sd gn_0 := select-case-family-r[blist1:List{Bounds} <- bound qidAsTerm 'N,
+    bt:BoolTerm <- natAsTerm 0 =T= qidAsTerm 'i, fns1:NameWithScripts <- 'F]{
+    subst(fam ('F[bound qidAsTerm 'N]), chn 'C)} .
+empty substitution
+*********** equation
+eq addAssumptions A:Set{BoolTerm} qidAsTerm ind1:Qid bound nt1:NatTerm =
+    insert(qidAsTerm ind1:Qid <T nt1:NatTerm, A:Set{BoolTerm}) .
+A:Set{BoolTerm} --> (empty).Set{BoolTerm}
+ind1:Qid --> 'i
+nt1:NatTerm --> qidAsTerm 'N
+addAssumptions empty qidAsTerm 'i bound qidAsTerm 'N
+--->
+insert(qidAsTerm 'i <T qidAsTerm 'N, (empty).Set{BoolTerm})
+*********** equation
+eq insert(E:BoolTerm, S:Set{BoolTerm}) = E:BoolTerm, S:Set{BoolTerm} .
+E:BoolTerm --> qidAsTerm 'i <T qidAsTerm 'N
+S:Set{BoolTerm} --> (empty).Set{BoolTerm}
+insert(qidAsTerm 'i <T qidAsTerm 'N, (empty).Set{BoolTerm})
+--->
+qidAsTerm 'i <T qidAsTerm 'N, (empty).Set{BoolTerm}
+*********** trial #8
+ceq A:Set{BoolTerm} |= nt1:NatTerm =T= nt2:NatTerm with f:Map{Qid,NatTerm} =
+    true if evalBoolTerm(evalTerm nt1:NatTerm extendWithAssums A:Set{BoolTerm}
+    f:Map{Qid,NatTerm} =T= evalTerm nt2:NatTerm extendWithAssums A:Set{
+    BoolTerm} f:Map{Qid,NatTerm}, A:Set{BoolTerm}, f:Map{Qid,NatTerm}) = true .
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+nt1:NatTerm --> natAsTerm 0
+nt2:NatTerm --> qidAsTerm 'i
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+*********** solving condition fragment
+evalBoolTerm(evalTerm nt1:NatTerm extendWithAssums A:Set{BoolTerm} f:Map{Qid,
+    NatTerm} =T= evalTerm nt2:NatTerm extendWithAssums A:Set{BoolTerm} f:Map{
+    Qid,NatTerm}, A:Set{BoolTerm}, f:Map{Qid,NatTerm}) = true
+*********** equation
+eq extendWithAssums A:Set{BoolTerm} f:Map{Qid,NatTerm} = f:Map{Qid,NatTerm} [
+    owise] .
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+extendWithAssums qidAsTerm 'i <T qidAsTerm 'N empty
+--->
+(empty).Map{Qid,NatTerm}
+*********** equation
+eq evalTerm natAsTerm n1:Nat f:Map{Qid,NatTerm} = natAsTerm n1:Nat .
+n1:Nat --> 0
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+evalTerm natAsTerm 0 empty
+--->
+natAsTerm 0
+*********** equation
+eq evalTerm qidAsTerm q:Qid f:Map{Qid,NatTerm} = if f:Map{Qid,NatTerm}[q:Qid]
+    == undefined then qidAsTerm q:Qid else f:Map{Qid,NatTerm}[q:Qid] fi .
+q:Qid --> 'i
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+evalTerm qidAsTerm 'i empty
+--->
+if (empty).Map{Qid,NatTerm}['i] == undefined then qidAsTerm 'i else (
+    empty).Map{Qid,NatTerm}['i] fi
+*********** equation
+eq M:Map{Qid,NatTerm}[D:Qid] = undefined [owise] .
+M:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+D:Qid --> 'i
+(empty).Map{Qid,NatTerm}['i]
+--->
+undefined
+*********** equation
+(built-in equation for symbol _==_)
+undefined == undefined
+--->
+true
+*********** equation
+(built-in equation for symbol if_then_else_fi)
+if true then qidAsTerm 'i else undefined fi
+--->
+qidAsTerm 'i
+*********** equation
+eq evalBoolTerm(bt:BoolTerm, A:Set{BoolTerm}, f:Map{Qid,NatTerm}) =
+    evalBoolTermAux(bt:BoolTerm, expandIneq A:Set{BoolTerm} empty, f:Map{Qid,
+    NatTerm}) .
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+evalBoolTerm(natAsTerm 0 =T= qidAsTerm 'i, qidAsTerm 'i <T qidAsTerm 'N, empty)
+--->
+evalBoolTermAux(natAsTerm 0 =T= qidAsTerm 'i, expandIneq qidAsTerm 'i <T
+    qidAsTerm 'N empty, empty)
+*********** equation
+eq expandIneq A:Set{BoolTerm} A':Set{BoolTerm} = union(A:Set{BoolTerm}, A':Set{
+    BoolTerm}) [owise] .
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+A':Set{BoolTerm} --> (empty).Set{BoolTerm}
+expandIneq qidAsTerm 'i <T qidAsTerm 'N empty
+--->
+union(qidAsTerm 'i <T qidAsTerm 'N, (empty).Set{BoolTerm})
+*********** equation
+eq union(S:Set{BoolTerm}, S':Set{BoolTerm}) = S:Set{BoolTerm}, S':Set{BoolTerm}
+    .
+S:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+S':Set{BoolTerm} --> (empty).Set{BoolTerm}
+union(qidAsTerm 'i <T qidAsTerm 'N, (empty).Set{BoolTerm})
+--->
+qidAsTerm 'i <T qidAsTerm 'N, (empty).Set{BoolTerm}
+*********** trial #9
+ceq evalBoolTermAux(bt:BoolTerm, A:Set{BoolTerm}, f:Map{Qid,NatTerm}) = true if
+    bt:BoolTerm in A:Set{BoolTerm} = true .
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+*********** solving condition fragment
+bt:BoolTerm in A:Set{BoolTerm} = true
+*********** equation
+eq E:BoolTerm in S:Set{BoolTerm} = false [owise] .
+E:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+S:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+natAsTerm 0 =T= qidAsTerm 'i in qidAsTerm 'i <T qidAsTerm 'N
+--->
+false
+*********** failure for condition fragment
+bt:BoolTerm in A:Set{BoolTerm} = true
+*********** failure #9
+*********** trial #10
+ceq evalBoolTermAux(bt:BoolTerm, A:Set{BoolTerm}, f:Map{Qid,NatTerm}) = false
+    if neg bt:BoolTerm in A:Set{BoolTerm} = true .
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+*********** solving condition fragment
+neg bt:BoolTerm in A:Set{BoolTerm} = true
+*********** equation
+eq E:BoolTerm in S:Set{BoolTerm} = false [owise] .
+E:BoolTerm --> neg (natAsTerm 0 =T= qidAsTerm 'i)
+S:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+neg (natAsTerm 0 =T= qidAsTerm 'i) in qidAsTerm 'i <T qidAsTerm 'N
+--->
+false
+*********** failure for condition fragment
+neg bt:BoolTerm in A:Set{BoolTerm} = true
+*********** failure #10
+*********** equation
+eq evalBoolTermAux(t1:NatTerm =T= t2:NatTerm, A:Set{BoolTerm}, f:Map{Qid,
+    NatTerm}) = evalTerm t1:NatTerm f:Map{Qid,NatTerm} == evalTerm t2:NatTerm
+    f:Map{Qid,NatTerm} .
+t1:NatTerm --> natAsTerm 0
+t2:NatTerm --> qidAsTerm 'i
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+evalBoolTermAux(natAsTerm 0 =T= qidAsTerm 'i, qidAsTerm 'i <T qidAsTerm 'N,
+    empty)
+--->
+evalTerm natAsTerm 0 empty == evalTerm qidAsTerm 'i empty
+*********** equation
+eq evalTerm natAsTerm n1:Nat f:Map{Qid,NatTerm} = natAsTerm n1:Nat .
+n1:Nat --> 0
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+evalTerm natAsTerm 0 empty
+--->
+natAsTerm 0
+*********** equation
+eq evalTerm qidAsTerm q:Qid f:Map{Qid,NatTerm} = if f:Map{Qid,NatTerm}[q:Qid]
+    == undefined then qidAsTerm q:Qid else f:Map{Qid,NatTerm}[q:Qid] fi .
+q:Qid --> 'i
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+evalTerm qidAsTerm 'i empty
+--->
+if (empty).Map{Qid,NatTerm}['i] == undefined then qidAsTerm 'i else (
+    empty).Map{Qid,NatTerm}['i] fi
+*********** equation
+eq M:Map{Qid,NatTerm}[D:Qid] = undefined [owise] .
+M:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+D:Qid --> 'i
+(empty).Map{Qid,NatTerm}['i]
+--->
+undefined
+*********** equation
+(built-in equation for symbol _==_)
+undefined == undefined
+--->
+true
+*********** equation
+(built-in equation for symbol if_then_else_fi)
+if true then qidAsTerm 'i else undefined fi
+--->
+qidAsTerm 'i
+*********** equation
+(built-in equation for symbol _==_)
+natAsTerm 0 == qidAsTerm 'i
+--->
+false
+*********** failure for condition fragment
+evalBoolTerm(evalTerm nt1:NatTerm extendWithAssums A:Set{BoolTerm} f:Map{Qid,
+    NatTerm} =T= evalTerm nt2:NatTerm extendWithAssums A:Set{BoolTerm} f:Map{
+    Qid,NatTerm}, A:Set{BoolTerm}, f:Map{Qid,NatTerm}) = true
+*********** failure #8
+*********** trial #11
+ceq A:Set{BoolTerm} |= nt1:NatTerm =T= nt2:NatTerm with f:Map{Qid,NatTerm} =
+    true if evalBoolTerm(evalTerm nt1:NatTerm extendWithAssums A:Set{BoolTerm}
+    f:Map{Qid,NatTerm} =T= evalTerm nt2:NatTerm extendWithAssums A:Set{
+    BoolTerm} f:Map{Qid,NatTerm}, A:Set{BoolTerm}, f:Map{Qid,NatTerm}) = true .
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+nt1:NatTerm --> qidAsTerm 'i
+nt2:NatTerm --> natAsTerm 0
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+*********** solving condition fragment
+evalBoolTerm(evalTerm nt1:NatTerm extendWithAssums A:Set{BoolTerm} f:Map{Qid,
+    NatTerm} =T= evalTerm nt2:NatTerm extendWithAssums A:Set{BoolTerm} f:Map{
+    Qid,NatTerm}, A:Set{BoolTerm}, f:Map{Qid,NatTerm}) = true
+*********** equation
+eq extendWithAssums A:Set{BoolTerm} f:Map{Qid,NatTerm} = f:Map{Qid,NatTerm} [
+    owise] .
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+extendWithAssums qidAsTerm 'i <T qidAsTerm 'N empty
+--->
+(empty).Map{Qid,NatTerm}
+*********** equation
+eq evalTerm qidAsTerm q:Qid f:Map{Qid,NatTerm} = if f:Map{Qid,NatTerm}[q:Qid]
+    == undefined then qidAsTerm q:Qid else f:Map{Qid,NatTerm}[q:Qid] fi .
+q:Qid --> 'i
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+evalTerm qidAsTerm 'i empty
+--->
+if (empty).Map{Qid,NatTerm}['i] == undefined then qidAsTerm 'i else (
+    empty).Map{Qid,NatTerm}['i] fi
+*********** equation
+eq M:Map{Qid,NatTerm}[D:Qid] = undefined [owise] .
+M:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+D:Qid --> 'i
+(empty).Map{Qid,NatTerm}['i]
+--->
+undefined
+*********** equation
+(built-in equation for symbol _==_)
+undefined == undefined
+--->
+true
+*********** equation
+(built-in equation for symbol if_then_else_fi)
+if true then qidAsTerm 'i else undefined fi
+--->
+qidAsTerm 'i
+*********** equation
+eq evalTerm natAsTerm n1:Nat f:Map{Qid,NatTerm} = natAsTerm n1:Nat .
+n1:Nat --> 0
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+evalTerm natAsTerm 0 empty
+--->
+natAsTerm 0
+*********** equation
+eq evalBoolTerm(bt:BoolTerm, A:Set{BoolTerm}, f:Map{Qid,NatTerm}) =
+    evalBoolTermAux(bt:BoolTerm, expandIneq A:Set{BoolTerm} empty, f:Map{Qid,
+    NatTerm}) .
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+evalBoolTerm(natAsTerm 0 =T= qidAsTerm 'i, qidAsTerm 'i <T qidAsTerm 'N, empty)
+--->
+evalBoolTermAux(natAsTerm 0 =T= qidAsTerm 'i, expandIneq qidAsTerm 'i <T
+    qidAsTerm 'N empty, empty)
+*********** equation
+eq expandIneq A:Set{BoolTerm} A':Set{BoolTerm} = union(A:Set{BoolTerm}, A':Set{
+    BoolTerm}) [owise] .
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+A':Set{BoolTerm} --> (empty).Set{BoolTerm}
+expandIneq qidAsTerm 'i <T qidAsTerm 'N empty
+--->
+union(qidAsTerm 'i <T qidAsTerm 'N, (empty).Set{BoolTerm})
+*********** equation
+eq union(S:Set{BoolTerm}, S':Set{BoolTerm}) = S:Set{BoolTerm}, S':Set{BoolTerm}
+    .
+S:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+S':Set{BoolTerm} --> (empty).Set{BoolTerm}
+union(qidAsTerm 'i <T qidAsTerm 'N, (empty).Set{BoolTerm})
+--->
+qidAsTerm 'i <T qidAsTerm 'N, (empty).Set{BoolTerm}
+*********** trial #12
+ceq evalBoolTermAux(bt:BoolTerm, A:Set{BoolTerm}, f:Map{Qid,NatTerm}) = true if
+    bt:BoolTerm in A:Set{BoolTerm} = true .
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+*********** solving condition fragment
+bt:BoolTerm in A:Set{BoolTerm} = true
+*********** equation
+eq E:BoolTerm in S:Set{BoolTerm} = false [owise] .
+E:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+S:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+natAsTerm 0 =T= qidAsTerm 'i in qidAsTerm 'i <T qidAsTerm 'N
+--->
+false
+*********** failure for condition fragment
+bt:BoolTerm in A:Set{BoolTerm} = true
+*********** failure #12
+*********** trial #13
+ceq evalBoolTermAux(bt:BoolTerm, A:Set{BoolTerm}, f:Map{Qid,NatTerm}) = false
+    if neg bt:BoolTerm in A:Set{BoolTerm} = true .
+bt:BoolTerm --> natAsTerm 0 =T= qidAsTerm 'i
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+*********** solving condition fragment
+neg bt:BoolTerm in A:Set{BoolTerm} = true
+*********** equation
+eq E:BoolTerm in S:Set{BoolTerm} = false [owise] .
+E:BoolTerm --> neg (natAsTerm 0 =T= qidAsTerm 'i)
+S:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+neg (natAsTerm 0 =T= qidAsTerm 'i) in qidAsTerm 'i <T qidAsTerm 'N
+--->
+false
+*********** failure for condition fragment
+neg bt:BoolTerm in A:Set{BoolTerm} = true
+*********** failure #13
+*********** equation
+eq evalBoolTermAux(t1:NatTerm =T= t2:NatTerm, A:Set{BoolTerm}, f:Map{Qid,
+    NatTerm}) = evalTerm t1:NatTerm f:Map{Qid,NatTerm} == evalTerm t2:NatTerm
+    f:Map{Qid,NatTerm} .
+t1:NatTerm --> natAsTerm 0
+t2:NatTerm --> qidAsTerm 'i
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+evalBoolTermAux(natAsTerm 0 =T= qidAsTerm 'i, qidAsTerm 'i <T qidAsTerm 'N,
+    empty)
+--->
+evalTerm natAsTerm 0 empty == evalTerm qidAsTerm 'i empty
+*********** equation
+eq evalTerm natAsTerm n1:Nat f:Map{Qid,NatTerm} = natAsTerm n1:Nat .
+n1:Nat --> 0
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+evalTerm natAsTerm 0 empty
+--->
+natAsTerm 0
+*********** equation
+eq evalTerm qidAsTerm q:Qid f:Map{Qid,NatTerm} = if f:Map{Qid,NatTerm}[q:Qid]
+    == undefined then qidAsTerm q:Qid else f:Map{Qid,NatTerm}[q:Qid] fi .
+q:Qid --> 'i
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+evalTerm qidAsTerm 'i empty
+--->
+if (empty).Map{Qid,NatTerm}['i] == undefined then qidAsTerm 'i else (
+    empty).Map{Qid,NatTerm}['i] fi
+*********** equation
+eq M:Map{Qid,NatTerm}[D:Qid] = undefined [owise] .
+M:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+D:Qid --> 'i
+(empty).Map{Qid,NatTerm}['i]
+--->
+undefined
+*********** equation
+(built-in equation for symbol _==_)
+undefined == undefined
+--->
+true
+*********** equation
+(built-in equation for symbol if_then_else_fi)
+if true then qidAsTerm 'i else undefined fi
+--->
+qidAsTerm 'i
+*********** equation
+(built-in equation for symbol _==_)
+natAsTerm 0 == qidAsTerm 'i
+--->
+false
+*********** failure for condition fragment
+evalBoolTerm(evalTerm nt1:NatTerm extendWithAssums A:Set{BoolTerm} f:Map{Qid,
+    NatTerm} =T= evalTerm nt2:NatTerm extendWithAssums A:Set{BoolTerm} f:Map{
+    Qid,NatTerm}, A:Set{BoolTerm}, f:Map{Qid,NatTerm}) = true
+*********** failure #11
+*********** equation
+eq A:Set{BoolTerm} |= nt1:NatTerm =T= nt2:NatTerm with f:Map{Qid,NatTerm} =
+    false [owise] .
+A:Set{BoolTerm} --> qidAsTerm 'i <T qidAsTerm 'N
+nt1:NatTerm --> natAsTerm 0
+nt2:NatTerm --> qidAsTerm 'i
+f:Map{Qid,NatTerm} --> (empty).Map{Qid,NatTerm}
+qidAsTerm 'i <T qidAsTerm 'N |= natAsTerm 0 =T= qidAsTerm 'i with empty
+--->
+false
+*********** equation
+(built-in equation for symbol metaSrewrite)
+metaSrewrite(smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm, 'pConfig['typesOf_['_;_[''bool.Sort, ''nat.Sort, ''unit.Sort]], '__[
+    '_::_['fam_['_`[_`][''F.Sort, 'bound_['qidAsTerm_[''N.Sort]]]], 'typeName_[
+    ''bool.Sort]], '_::_['chn_[''C.Sort], 'typeName_[''bool.Sort]]], '_||_[
+    '_::=_[''C.Sort, 'nf['_:_<-_[''f.Sort, 'typeName_[''bool.Sort], 'read_[
+    '_`[_`][''F.Sort, 'natAsTerm_['0.Zero]]]], 'return_[''f.Sort]]],
+    'family___::=_['_`[_`][''F.Sort, 'bound_['qidAsTerm_[''N.Sort]]],
+    'qidAsTerm_[''i.Sort], 'bound_['qidAsTerm_[''N.Sort]], '_;;_['_-->_['when_[
+    '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]]], 'nf[
+    'emptyBRList.BRList, 'return_['False.IPDLExpression]]], '_-->_['when_[
+    'neg_['_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]]]], 'nf[
+    'emptyBRList.BRList, 'return_['True.IPDLExpression]]]]]],
+    'empty.Set`{CNameBound`}, '_`,_['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]], 'empty.Set`{BoolTerm`}], 'gn_0[
+    [empty]], breadthFirst, 0)
+--->
+(failure).ResultPair?
+*********** failure for condition fragment
+{Tm:Term, TP:Type} := metaSrewrite(getModule env:Env, upTerm(getPConfig
+    env:Env), aStrat:Strategy, breadthFirst, 0)
+*********** failure #7
+*********** equation
+eq srewPConfig env:Env aStrat:Strategy = env:Env [owise] .
+env:Env --> buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+aStrat:Strategy --> 'gn_0[[empty]]
+srewPConfig buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0) 'gn_0[[empty]]
+--->
+buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[bound
+    qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+rewrites: 171 in 71ms cpu (70ms real) (2408 rewrites/second)
+result Env: buildEnv aConfig(pConfig(typesOf ('bool ; 'nat ; 'unit), (fam ('F[
+    bound qidAsTerm 'N]) :: typeName 'bool)
+chn 'C :: typeName 'bool, 'C ::= nf('f : typeName 'bool <- read ('F[natAsTerm
+    0]), return 'f)
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return False))
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+nf(emptyBRList, return True)
+, empty, (fam ('F[bound qidAsTerm 'N]), chn 'C), empty), width 0, length 0)
+    'Delta |-> emptyChannelCtx pairSetIO (fam ('F[bound qidAsTerm 'N]) ::
+    typeName 'bool)
+chn 'C :: typeName 'bool 'P |-> ('C ::= 'f : typeName 'bool <- read ('F[
+    natAsTerm 0]) ; return 'f
+
+||
+family 'F[bound qidAsTerm 'N] qidAsTerm 'i
+bound qidAsTerm 'N
+::=
+(when (natAsTerm 0 =T= qidAsTerm 'i) -->
+return False)
+;;
+when neg (natAsTerm 0 =T= qidAsTerm 'i) -->
+return True
+) empty smod 'TEST is
+  protecting 'STRATS .
+  sorts none .
+  none
+  none
+  none
+  none
+  none
+  strat 'gn_0 : nil @ 'ProtocolConfig [none] .
+  sd 'gn_0[[empty]] := 'select-case-family-r[
+    'blist1:List`{Bounds`} <- 'bound_['qidAsTerm_[''N.Sort]] ; 
+    'bt:BoolTerm <- '_=T=_['natAsTerm_['0.Zero], 'qidAsTerm_[''i.Sort]] ; 
+    'fns1:NameWithScripts <- ''F.Sort]{'subst[['fam_['_`[_`][''F.Sort, 'bound_[
+    'qidAsTerm_[''N.Sort]]]], 'chn_[''C.Sort]]]} [none] .
+endsm empty none 'N : typeName 'nat aConfig(pConfig(typesOf ('bool ; 'nat ;
+    'unit), emptyChannelCtx, emptyProtocol, empty, empty, empty), width 0,
+    length 0)
+Bye.

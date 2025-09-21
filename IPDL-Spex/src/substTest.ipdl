@@ -1,11 +1,24 @@
 lang IPDL
 
-parameter N : nat .
+channel context delta = 
+input I1 : bool ;
+input I2 : bool ;
+output C : bool ;
+output D : bool ; 
+output E : bool .
 
-input i1 : bool .
-input i2 : bool .
-input i3 : bool .
+protocol P =
+ (C ::= i1 : bool <- read I1 ; return i1)
+ ||
+ (D ::= i2 : bool <- read I2 ; return i2)
+ ||
+ (E ::= c : bool <- read C ; d : bool <- read D ; return True)
+.
 
-output C : unit .
+start with P over delta
 
-protocol P = C ::= x : bool <- read i1 ; y : bool <- read i2 ; z : bool <- read i3 ; return () .
+include substTest1.proof
+
+include substTest2.proof
+
+current-protocol

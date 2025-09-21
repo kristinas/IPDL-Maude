@@ -1,0 +1,64 @@
+lang IPDL 
+
+parameter N : nat .
+parameter M : nat .
+
+hypothesis M = 0 .
+
+distribution flip : unit -> bool .
+
+channel context delta = 
+ input InShare$[bound N + 2 bound N + 2 dependentBound I ] : bool ;
+ output InShare$-Sum [bound N + 1 bound N + 2 dependentBound I ] : bool ;
+ output InShare$Sum-OK[fixedBound M bound N + 2 dependentBound I ] : unit ;
+ output Chn : bool 
+.
+
+protocol real = 
+(Chn ::= return True) ||
+(family InShare$-Sum[bound N + 1 bound N + 2 dependentBound I ]
+  indices: m ,n ,i
+  bounds: bound N + 1 bound N + 2 dependentBound I ::= 
+  (when (0 = m) --> 
+   in : bool <- read InShare$[0 ,n ,i ] ; 
+   return in 
+  )
+  ;; 
+  (when (not (0 = m)) --> 
+    s : bool <- read InShare$-Sum[m - 1 ,n ,i ] ; 
+    x : bool <- read InShare$[m ,n ,i ] ; 
+    return True 
+  )
+)
+||
+(family InShare$Sum-OK[fixedBound M bound N + 2 dependentBound I ]
+  indices: m ,n ,i 
+  bounds: fixedBound M bound N + 2 dependentBound I ::= 
+  is : bool <- read InShare$-Sum[M ,n ,i] ;
+  return ()
+)
+.
+
+start with real over delta
+
+focus fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I] ,
+       fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] 
+ (
+ subst branch when m = 0 of 
+    fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I]
+    into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] 
+ )    
+
+current-protocol
+eof
+
+using branch when not (m = N + 1) of family InShare$[bound (N + 2) bound (N + 2) dependentBound I]
+(
+ subst fam InShare$[bound (N + 2) bound (N + 2) dependentBound I]
+  into fam InShare$-OK[bound (N + 1) bound (N + 2) dependentBound I]
+)
+
+eof
+using branch when not (m = N + 1) of family InShare$[bound (N + 2) bound (N + 2) dependentBound I]
+ (drop read fam InShare$[bound (N + 2) bound (N + 2) dependentBound I]
+       from fam InShare$-OK[bound (N + 1) bound (N + 2) dependentBound I]) 

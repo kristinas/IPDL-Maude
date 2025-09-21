@@ -2,6 +2,8 @@ lang IPDL
 
 parameter N : nat .
 
+eof
+
 channel context delta = 
 output c : bool ;
 output f[bound N] : bool .
@@ -18,8 +20,6 @@ protocol P =
 
 start with P over delta
 
-strict(
 on branch isHonest(i) of family f[bound N](
     subst chn c into fam f[bound N]
-)
 )

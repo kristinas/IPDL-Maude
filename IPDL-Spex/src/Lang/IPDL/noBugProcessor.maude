@@ -2,9 +2,10 @@
 
   This file is part of the SpeX-languages suite.
 
-  Copyright : (C) 2024 IPDLMaude
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
   License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
-  Author    : ipdlmaude@gmail.com
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
 
 )
 
@@ -33,7 +34,7 @@ mod IPDL/PROCESSOR is
   including  BASIC-SPEX-PROCESSOR { IPDL, IPDL/Data, IPDL/Command } .
   protecting IPDL/PARSING-&-PRINTING .
   including META-LEVEL .
-  including APPROX-EQUALITY .
+  including PROTOCOL-EQUALITY .
 
   var L : IPDL .
   var I : Oid .
@@ -44,40 +45,20 @@ mod IPDL/PROCESSOR is
   var Atts : AttributeSet .
   var D : Decl{IPDL} .
   var P : Proof{IPDL} .
-  var AP : ApproxProof{IPDL} .
   var DL : DeclList{IPDL} .
   var Tm : Term .
   var TP : Type .
-  var aConf : ApproxEqConfig .
-  var env : Env .
+  var pConf : ProtocolConfig .
+  vars env env' : Env .
   var protMap : Map{Qid, Protocol} .
   var dIns dOuts : ChannelContext .
-  var tc : Bool .
-  var V? : [AttrValue] .
-
-  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
-  op typecheck : IPDL -> AttrName [ctor] .
-
-  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
-  op typecheck? : IPDL AttributeSet -> Bool .
-  ceq typecheck?(L, Atts) = tc
-   if AttrValue(tc) := (Atts).get(typecheck(L)) .
-  eq typecheck?(L, Atts) = false [owise] .
-
-  op enable-typechecking : IPDL -> AttrModifier .
-  eq subject(enable-typechecking(L)) = typecheck(L) .
-  eq enable-typechecking(L) V? = AttrValue(true) .
-
-  op disable-typechecking : IPDL -> AttrModifier .
-  eq subject(disable-typechecking(L)) = typecheck(L) .
-  eq disable-typechecking(L) V? = AttrValue(false) .
 
   *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   rl [IPDL:parse] :
     < $[L] : PROC | running, Atts >
     parse($[L], I, QIL, DB)
   => < $[L] : PROC | running, Atts >
-    parsed(I, $[L], parse L input [typecheck?(L, Atts)] (QIL) in DB[L]) .
+    parsed(I, $[L], parse L input (QIL) in DB[L]) .
 
   crl [IPDL:process-types] :
     < $[L] : PROC | running, Atts >
@@ -112,18 +93,7 @@ mod IPDL/PROCESSOR is
       )
   if (Decl[L]{channel context q =  dIns pairSetIO dOuts .}) := read-decl(L, DB[L], T) 
   /\ T :: 'DeltaDecl 
-  /\ env := DB[L] .
-
-   crl [IPDL:process-embeds] :
-    < $[L] : PROC | running, Atts >
-    process($[L], I, T, DB)
-   => < $[L] : PROC | running, Atts >
-    processed(I, $[L], 
-      env >>= T
-      )
-  if T :: 'EmbedDecl 
-  /\ env := DB[L] .
-
+  /\ env := DB[L].
 
 ***  crl [IPDL:process-ins] :
 ***     < $[L] : PROC | running, Atts >
@@ -151,12 +121,6 @@ mod IPDL/PROCESSOR is
 ***      setPConfig (DB[L]) ( addOutput (getCNB(D)) (preToType(getChannelType(D))) (getPConfig (DB[L]))) )
 ***   if D := read-decl(L, DB[L], T) /\ T :: 'OutDecl . 
 
-  var Pr : Protocol .
- 
-  op getProtocol : Decl{IPDL} -> Protocol .
-  eq getProtocol(Decl[L]{protocol q = Pr .}) = Pr .
-  eq getProtocol(Decl[L]{protocol q .}) = protocolRef(q) .
-
   crl [IPDL:process-protocols] :
     < $[L] : PROC | running, Atts >
     process($[L], I, T, DB)
@@ -179,13 +143,6 @@ mod IPDL/PROCESSOR is
     processed(I, $[L], DB[L] >>= T )
   if D := read-decl(L, DB[L], T) /\ T :: 'SubProofDecl .
 
-  crl [IPDL:process-lemmas] :
-    < $[L] : PROC | running, Atts >
-    process($[L], I, T, DB)
-   => < $[L] : PROC | running, Atts >
-    processed(I, $[L], DB[L] >>= T )
-  if D := read-decl(L, DB[L], T) /\ T :: 'LemmaDecl .
-
    crl [IPDL:process-hypothesis] :
     < $[L] : PROC | running, Atts >
     process($[L], I, T, DB)
@@ -200,15 +157,8 @@ mod IPDL/PROCESSOR is
     < $[L] : PROC | running, Atts >
     process($[L], I, T, DB)
    => < $[L] : PROC | running, Atts >
-    processed(I, $[L], DB[L] >>= T)
+    processed(I, $[L], id(D), DB[L] >>= T)
   if D := read-decl(L, DB[L], T) /\ T :: 'AssumDecl . 
-
-   crl [IPDL:process-approx-assums] :
-    < $[L] : PROC | running, Atts >
-    process($[L], I, T, DB)
-   => < $[L] : PROC | running, Atts >
-    processed(I, $[L], DB[L] >>= T)
-  if D := read-decl(L, DB[L], T) /\ T :: 'ApproxAssumDecl . 
   
   *** crl [IPDL:process-assums] :
   ***   < $[L] : PROC | running, Atts >
@@ -321,7 +271,7 @@ mod IPDL/PROCESSOR is
     processed(I, $[L],
         *** print(Decl[IPDL]{protocol N = (findProtocolInEnv (DB[L]) N) .})
         *** if listProtocol (DB[L]) N == none then (nil).QidList else listProtocol (DB[L]) N fi 
-        if new2NF(computeNF(findProtocolInEnv (DB[L]) N)) == getCrtProtocol (DB[L]) 
+        if computeNF(findProtocolInEnv (DB[L]) N) == getCrtProtocol (DB[L]) 
          then 'Done else 'Ongoing fi
     ) .   
 
@@ -341,17 +291,6 @@ mod IPDL/PROCESSOR is
   => < $[L] : PROC | running, Atts >
     processed(I, $[L], print(decls (DB[L]))) .
 
-  var nw nl : Int .
-  var countb contextb : ComplexityBound .
-  var pConf : ProtocolConfig .
-
-  crl [IPDL:show-bounds] :
-    < $[L] : PROC | executing I command, Atts >
-    do($[L], Cmd[L]{show-bounds}, DB)
-  => < $[L] : PROC | running, Atts >
-    processed(I, $[L], printBounds(countb, contextb)) 
-  if aConfig(pConf, countb, contextb) := getAConfig (DB[L])  .  
-
  ***(
   crl [IPDL:list] :
     < $[L] : PROC | executing I command, Atts >
@@ -361,19 +300,7 @@ mod IPDL/PROCESSOR is
   if
     {Tm, TP} := metaReduce(upModule('IPDL/MOD, true), 'add[upTerm(DB[L]), '''j.Qid])
     /\ DL := downTerm(Tm, (nil).DeclList{IPDL}) .
- )  
-
- rl [IPDL:enable-typeckecking] :
-    < $[L] : PROC | executing I command, Atts >
-    do($[L], Cmd[L]{enable-typechecking}, DB)
-  => < $[L] : PROC | running, Atts >>= enable-typechecking(L) >
-    processed(I, $[L]) .
-
-  rl [IPDL:disable-typeckecking] :
-    < $[L] : PROC | executing I command, Atts >
-    do($[L], Cmd[L]{disable-typechecking}, DB)
-  => < $[L] : PROC | running, Atts >>= disable-typechecking(L) >
-    processed(I, $[L]) . 
+ )   
 
  *** proofs --------
 
@@ -388,40 +315,20 @@ mod IPDL/PROCESSOR is
    ( 'mergeCaseWithOtherwise[[ upTerm(getCNB(T)), upTerm(getNatTerm(T)) ]] ) 
    )
 if P := read-proof(L, DB[L], T) 
-/\ T :: 'StrictProof 
+/\ T :: 'TopProof 
 /\ isMergeCase(T) .
 
 op isMergeCase : ATerm -> Bool .
-eq isMergeCase({'merge`case_=_with`otherwise`for_[J, I1, I2] : 'StrictProof}) = true .
+eq isMergeCase({'merge`case_=_with`otherwise`for_[J, I1, I2] : 'TopProof}) = true .
 eq isMergeCase(J) = false [owise] .
 
 op getCNB : ATerm -> CNameBound .
-eq getCNB({'merge`case_=_with`otherwise`for_[J, I1, I2] : 'StrictProof}) 
+eq getCNB({'merge`case_=_with`otherwise`for_[J, I1, I2] : 'TopProof}) 
  = read-cNameBound(IPDL, I2) .
 
 op getNatTerm : ATerm -> NatTerm .
-eq getNatTerm({'merge`case_=_with`otherwise`for_[J, I1, I2] : 'StrictProof}) 
+eq getNatTerm({'merge`case_=_with`otherwise`for_[J, I1, I2] : 'TopProof}) 
  = read-natTerm(IPDL, I1) .
-
-*** crl [IPDL:start-proof] :
-***   < $[L] : PROC | running, Atts >
-***   process($[L], I, T, DB)
-*** => < $[L] : PROC | running, Atts >
-***   *** if (getPConfig env == getPConfig (DB[L])) and (P =/= Proof[L]{idle}) 
-***   *** then processed(I, $[L], 'the 'rule 'cannot 'be 'applied '\n
-***      ***'to '\n 
-***      *** printProtocol(proofProtocol (getCrtProtocol(DB[L])) P, true, '\b '\r '\g)
-***      *** '\n 
-***      *** 'the 'LHS 'of 'the 'rule 'is '\n
-***      *** proofLHS P
-***   *** bla )
-***   *** else 
-***   processed(I, $[L], env) 
-***   *** fi
-*** if P := read-proof(L, DB[L], T) /\ T :: 'StrictProof /\ 
-***    env := DB[L] >>= T .
-
- var env' : Env .
 
   op errEnv : -> [Env] [ctor] .
   crl [IPDL:start-proof] :
@@ -431,34 +338,14 @@ eq getNatTerm({'merge`case_=_with`otherwise`for_[J, I1, I2] : 'StrictProof})
     if env' == errEnv
     then processed(I, $[L], 'reduce 'error)
     else
-    ***  if (getPConfig env' == getPConfig env) and (read-proof(L, env, T) =/= Proof[L]{idle})
-    ***  then processed(I, $[L], 'the 'rule 'cannot 'be 'applied)
-    ***  else 
-      processed(I, $[L], env') 
-    ***  fi 
-    fi
-   if T :: 'StrictProof
+      if (getPConfig env' == getPConfig env) and (read-proof(L, env, T) =/= Proof[L]{idle})
+      then processed(I, $[L], 'the 'rule 'cannot 'be 'applied)
+      else processed(I, $[L], env) fi fi
+   if T :: 'TopProof
       /\ not isMergeCase(T)
       /\ env := DB[L]
       /\ Tm := getTerm(metaReduce(upModule('IPDL/ANALYSIS-STATE, false), '_>>=_[upTerm(env), upTerm(T)]))
       /\ env' := downTerm(Tm, errEnv) .
-
-  crl [IPDL:start-approx-proof] :
-    < $[L] : PROC | running, Atts >
-    process($[L], I, T, DB)
-   => < $[L] : PROC | running, Atts >
-    if env' == errEnv
-    then processed(I, $[L], 'reduce 'error)
-    else
-      if (getPConfig env' == getPConfig env) and (read-proof(L, env, T) =/= Proof[L]{idle})
-      then processed(I, $[L], 'the 'rule 'cannot 'be 'applied)
-      else processed(I, $[L], env') fi fi
-   if T :: 'ApproxProof
-      /\ not isMergeCase(T)
-      /\ env := DB[L]
-      /\ Tm := getTerm(metaReduce(upModule('IPDL/ANALYSIS-STATE, false), '_>>=_[upTerm(env), upTerm(T)]))
-      /\ env' := downTerm(Tm, errEnv) .    
-
 endm
 
 ********************************************************************************

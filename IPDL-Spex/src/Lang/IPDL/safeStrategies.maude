@@ -1,8 +1,9 @@
 ***( IPDL
 
-  Copyright : (C) 2022-23, IPDLMaude
+  Copyright : (C) 2022-23, Kristina Sojakova, Mihai Codescu
   License   : GNU General Public License v3.0 or later (GPL-3.0-or-later)
-  Authors   : ipdlmaude@gmail.com
+  Authors   : Mihai Codescu <mscodescu@gmail.com>
+              Kristina Sojakova <sojakova.kristina@gmail.com>
 
  Strategies for applying the rules. They are grouped by the main rule that is applied,
  e.g. subst or absorb, and they may have several forms to be applied in different context
@@ -11,8 +12,6 @@
 )
 
 sload ./syntax.maude
-
-sload ../../BaseGMWN.maude
 
 smod STRATS is
  pr APPROX-EQUALITY .
@@ -52,199 +51,20 @@ smod STRATS is
  var cnb1 cnb2 cnb cnb3 : CNameBound .
 
  ***************************************
- *** applies unit-ext at occurence
- ***************************************
-
- var n1 n2 n3 : Nat . 
-
- strat applyUnitExt : CNameBound Nat @ ProtocolConfig .
- sd applyUnitExt(chn cn, n1) :=
-    match pConf
-      s.t. startsWithNew(pConf) 
-      ? CONG-NEW-NF{ applyUnitExt(chn cn, n1) } 
-      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf
-        by pConf using   
-      (CONG-COMP-RIGHT[
-       P1:Protocol <- keepOne P (chn cn),
-       Q:Protocol <- removeOne P (chn cn)]
-    {
-    CONG-REACT[
-       o:ChannelName <- cn]{
-        r-applyUnitExt(n1)
-        or-else
-       ( cong-pre-nf{r-applyUnitExt(n1)}
-       ; try(pre2Nf)  
-       )
-        or-else 
-        cong-nf{r-applyUnitExt(n1)}
-      }  
-    }  )
-       or-else
-      CONG-REACT[
-       o:ChannelName <- cn]{
-        r-applyUnitExt(n1)
-        or-else
-       ( cong-pre-nf{r-applyUnitExt(n1)}
-       ; try(pre2Nf)  
-       )
-        or-else 
-        cong-nf{r-applyUnitExt(n1)}
-      }  
-       .
-  sd applyUnitExt(fam (cn[blist]), n1) :=
-    match pConf
-      s.t. startsWithNew(pConf) 
-      ? CONG-NEW-NF{ applyUnitExt(fam (cn[blist]), n1) } 
-      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf
-        by pConf using   
-      (CONG-COMP-RIGHT[
-       P1:Protocol <- keepOne P (fam (cn[blist])),
-       Q:Protocol <- removeOne P (fam (cn[blist]))]
-    {
-    CONG-REACT-family[
-       o:ChannelName <- cn]{
-        r-applyUnitExt(n1)
-        or-else
-       ( cong-pre-nf{r-applyUnitExt(n1)}
-       ; try(pre2Nf)  
-       )
-        or-else 
-        cong-nf{r-applyUnitExt(n1)}
-      }  
-    }  )
-       or-else
-      CONG-REACT-family[
-       o:ChannelName <- cn]{
-        r-applyUnitExt(n1)
-        or-else
-       ( cong-pre-nf{r-applyUnitExt(n1)}
-       ; try(pre2Nf)  
-       )
-        or-else 
-        cong-nf{r-applyUnitExt(n1)}
-      }  
-       .
-
-  strat r-applyUnitExt : Nat @ ReactionConfig .
-  sd r-applyUnitExt(n1) := 
-     cong-ret{e-applyUnitExt(n1)} 
-      or-else 
-     b-applyUnitExt(n1, 0)
-      or-else
-     if-applyUnitExt(n1, 0, 0)  
-  .         
-
-  strat e-applyUnitExt : Nat @ ExpConfig .
-   sd e-applyUnitExt(0) := idle .
- sd e-applyUnitExt(s(0)) := 
-  unit-ext 
-  or-else
-  app-cong{e-applyUnitExt(s(0))} 
-  or-else 
-  fst-cong{e-applyUnitExt(s(0))}
-  or-else 
-  snd-cong{e-applyUnitExt(s(0))}
-  or-else
-  p-applyUnitExt(s(0), 0)
- . 
- sd e-applyUnitExt(s(n1)) :=
-  app-cong{e-applyUnitExt(s(n1))}
-  or-else
-   fst-cong{e-applyUnitExt(s(n1))}
-  or-else 
-  snd-cong{e-applyUnitExt(s(n1))}
- or-else
-  p-applyUnitExt(s(n1), 0 )
- . 
-  
-  strat p-applyUnitExt : Nat Nat @ ExpConfig .
-  sd p-applyUnitExt(0, n1) := 
- pair-cong{idle, e-applyUnitExt(n1)} .
- 
-sd p-applyUnitExt(s(n1), 0) := 
- pair-cong{e-applyUnitExt(s(n1)), idle}
- or-else
- p-applyUnitExt(n1, s(0)) .
- 
-sd p-applyUnitExt(s(n1), n2) :=
-  pair-cong{test(e-applyUnitExt(s(n1))), e-applyUnitExt(n2) }
-  or-else
-  p-applyUnitExt(n1, s(n2)) 
- . 
-
-  strat b-applyUnitExt : Nat Nat @ ReactionConfig .
-   sd b-applyUnitExt(0, n1) := 
-  cong-bind{idle, r-applyUnitExt(n1)} .
- sd b-applyUnitExt(s(n1), 0) :=
-  cong-bind{r-applyUnitExt(s(n1)), idle}
-  or-else
-  b-applyUnitExt(n1, s(0)) . 
-  sd b-applyUnitExt(s(n1), n2) :=
-  cong-bind{test (r-applyUnitExt(s(n1))), r-applyUnitExt(n2)}
-  or-else
-  b-applyUnitExt(n1, s(n2)) .  
-
-  strat if-applyUnitExt : Nat Nat Nat @ ReactionConfig .
-    sd if-applyUnitExt(0, 0, n2) :=
-    cong-if{idle, idle, r-applyUnitExt(n2)} .
-    sd if-applyUnitExt(n1, s(n2), 0) := 
-    cong-if{test(r-applyUnitExt(n1)), 
-            r-applyUnitExt(s(n2)),
-            idle } . 
-    sd if-applyUnitExt(n1, s(n2), n3) := 
-    cong-if{test(r-applyUnitExt(n1)), 
-            test(r-applyUnitExt(s(n2))),
-            r-applyUnitExt(n3) } 
-    or-else
-    cong-if{test(r-applyUnitExt(n1)), 
-            test(r-applyUnitExt(n2)),
-            r-applyUnitExt(s(n3)) } 
-    . 
-    sd if-applyUnitExt(s(n1), 0, 0) :=
-     cong-if{r-applyUnitExt(s(n1)), idle, idle}
-     or-else
-     if-applyUnitExt(n1, s(0), 0)
-    .
-    sd if-applyUnitExt(s(n1), 0, n2) :=
-     cong-if{test(r-applyUnitExt(s(n1))), idle, r-applyUnitExt(n2)}
-     or-else
-     if-applyUnitExt(n1, s(n2), 0)
-    .   
-
- ***************************************
  *** substitution strategies
  ***************************************
  
- *** subst at variable
- strat substAt : CNameBound CNameBound Qid @ ProtocolConfig .
- sd substAt(chn C1, chn C2, q) :=
-    substNFAt(C1, C2, q) 
- .
-  sd substAt(fam (fns1[bdlist1]), chn C2, q) :=
-    substNFFamilyOneAt(fam (fns1[bdlist1]), C2, q)
- .
-  *** channel into family makes no sense, can only be one occurence, we can use subst
-  *** fam into fam TODO!
-
+ 
  *** meta-strategy that tries several substitution rules
-
- strat subst : Qid Qid @ ProtocolConfig .
- sd subst(q1, q2) :=
-    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using subst(unsafeLookup Delta q1, unsafeLookup Delta q2) .
-
-
  
  strat subst : CNameBound CNameBound @ ProtocolConfig .
  sd subst(chn C1, chn C2) :=
-            *** substNFRead(C1, C2) or-else 
-            substNF(C1, C2)
+            substNFRead(C1, C2) 
+    or-else substNF(C1, C2)
  . 
- sd subst(fam (fns1[bdlist1]), fam (fns2[bdlist2])) := 
-           substDivergeJoinCases(fam (fns1[bdlist1]), fam (fns2[bdlist2]))
-   or-else applySubstReadFamilyTwoFamily(fam (fns1[bdlist1]), fam (fns2[bdlist2]))
-   or-else 
-    substNFFamiliesGen(fam (fns1[bdlist1]), fam (fns2[bdlist2]))
+ sd subst(fam (fns1[bdlist1]), fam (fns2[bdlist2])) :=
+            applySubstReadFamilyTwoFamily(fam (fns1[bdlist1]), fam (fns2[bdlist2]))
+    or-else substNFFamiliesGen(fam (fns1[bdlist1]), fam (fns2[bdlist2]))
  . 
  sd subst(fam (fns1[bdlist1]), chn C2) :=
     substNFFamilyOne(fam (fns1[bdlist1]), C2)
@@ -260,40 +80,7 @@ sd p-applyUnitExt(s(n1), n2) :=
    ? idle
    : substNF(C1, C2) 
    . 
-
- *** 
- var tlist : List{NatTerm} .
- strat symSubstDiverge : CNameBound CNameBound List{NatTerm} Qid Qid @ ProtocolConfig .
- sd symSubstDiverge(fam (fns1[blist1]), fam (fns2[blist2]), tlist, q1, q2) :=          
-    matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using 
-       SYM[
-       P1:Protocol <- 
-        change fam (fns1[blist1])
-        with nf(q1 : bool <- read (fns2[tlist]), return ())
-        in P,
-        Delta1:ChannelContext <- Delta,
-        O1:Set{CNameBound} <- O
-       ]
-       {
-           applySubstDivergeFamily(
-            fam (fns2[blist2]), 
-            fam (fns1[blist1]), 
-            q2)   
-       }   
-    .      
  
- *** substitution at
- 
- strat substNFAt : ChannelName ChannelName Qid @ ProtocolConfig .
- sd substNFAt(C1, C2, q) :=  
-     nTimesSubstNFAt(C1, C2, q) 
-   ; liftInnerBindsNF(C2)
-   ; handleRNF(C2)
-   ; try (pre2Nf) 
-   .   
- 
-
  *** substitution
  
  strat substNF : ChannelName ChannelName @ ProtocolConfig .
@@ -305,26 +92,6 @@ sd p-applyUnitExt(s(n1), n2) :=
    .   
  
  *** sub-steps in substitution
-
- *** at 
-
- strat nTimesSubstNFAt : ChannelName ChannelName Qid @ ProtocolConfig .
- sd nTimesSubstNFAt(C1, C2, q) := 
-     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{nTimesSubstNFAt(C1, C2, q)} 
-     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (
-         CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P (chn C1) (chn C2), 
-                         P1:Protocol <- keepTwo P (chn C1) (chn C2)]{
-           SUBST-nf[o1:ChannelName <- C1, 
-                    o2:ChannelName <- C2,
-                    x1:ChannelName <- q]
-         }
-         or-else *** deal with the case that Q is empty
-         SUBST-nf[o1:ChannelName <- C1, 
-                  o2:ChannelName <- C2,
-                  x1:ChannelName <- q]
-       )            .
  
  *** apply SUBST of C1 in C2
  *** if the current P is newNF(..., C1 ::= R1 || C2 ::= nf( BRL (x <- read C1), R2, order) || Q  ,...) 
@@ -354,14 +121,11 @@ sd p-applyUnitExt(s(n1), n2) :=
          CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P (chn C1) (chn C2), 
                          P1:Protocol <- keepTwo P (chn C1) (chn C2)]{
            SUBST-nf-read[cn1:ChannelName <- C1, 
-                         cn2:ChannelName <- C2] ;
-           (read-det-pre !)              
+                         cn2:ChannelName <- C2] 
          }
          or-else  
-         (SUBST-nf-read[cn1:ChannelName <- C1, 
-                       cn2:ChannelName <- C2] ;
-           (read-det-pre !)              
-         )  
+         SUBST-nf-read[cn1:ChannelName <- C1, 
+                       cn2:ChannelName <- C2] 
        ).                   
  
  *** after subst we got x <~ nf(binds, R, ...)
@@ -421,7 +185,7 @@ sd p-applyUnitExt(s(n1), n2) :=
        (
        CONG-REACT[cn:ChannelName <- C1]
                    {(ret-bind-pre or-else
-                    ( samp-over-if or-else 
+                    (samp-over-if or-else 
                      (read2Binds or-else
                       (bind-ret-2-pre
                         or-else (merge-pre ; cong-pre-nf{bindFreeS})
@@ -432,18 +196,12 @@ sd p-applyUnitExt(s(n1), n2) :=
                     ; simplifyNF
                    }
        ) .
-
- strat if-over-bind-same-2 @ ReactionConfig .
- sd if-over-bind-same-2 := 
-    if-over-bind-same
-  ; cong-if{if-over-bind-same, if-over-bind-same, idle}
-  .      
        
  strat bindFreeS @ ReactionConfig .
  sd bindFreeS := 
      ((smart-ret-bind ; (if-left ? idle : (if-right ? idle : idle)) ) or-else
        (if-over-bind  
-        ; cong-if{bindFreeS, bindFreeS, idle}
+        ; cong-branch-refl{bindFreeS, bindFreeS}
        )
        ) or-else idle . 
        
@@ -455,13 +213,13 @@ sd p-applyUnitExt(s(n1), n2) :=
  strat smart-ret-bind @ ReactionConfig .
  sd smart-ret-bind :=
      if-over-bind-same-2 
-     ? (cong-if
-        {cong-if{ret-bind , ret-bind, idle},
-         cong-if{ret-bind , ret-bind, idle}} 
+     ? (cong-branch-refl
+        {cong-branch-refl{ret-bind , ret-bind},
+         cong-branch-refl{ret-bind , ret-bind}} 
         ? idle
         : fail)  
      : (if-over-bind-same 
-       ? (cong-if{ret-bind, ret-bind, idle} ? idle : idle) 
+       ? (cong-branch-refl{ret-bind, ret-bind} ? idle : idle) 
        : ret-bind) 
        . 
     
@@ -492,10 +250,10 @@ sd p-applyUnitExt(s(n1), n2) :=
  
  *** apply subst-or-diverge
  
- strat applySubstOrDiverge : CNameBound CNameBound Qid @ ProtocolConfig .
- sd applySubstOrDiverge(fam (C1[bdlist1]), fam (C2[bdlist2]), Q) :=
+ strat applySubstOrDiverge : CNameBound CNameBound Qid Reaction @ ProtocolConfig .
+ sd applySubstOrDiverge(fam (C1[bdlist1]), fam (C2[bdlist2]), Q, R) :=
        match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applySubstOrDiverge(fam (C1[bdlist1]), fam (C2[bdlist2]), Q)} 
+     ? CONG-NEW-NF{applySubstOrDiverge(fam (C1[bdlist1]), fam (C2[bdlist2]), Q, R)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using ((CONG-COMP-RIGHT[
              Q:Protocol  <- removeTwo P (fam (C1[bdlist1])) 
@@ -513,24 +271,24 @@ sd p-applyUnitExt(s(n1), n2) :=
  .
        
  *** apply subst-diverge-join-cases
- strat substDivergeJoinCases : CNameBound CNameBound @ ProtocolConfig .
- sd substDivergeJoinCases(fam (C1[bdlist1]), fam (C2[bdlist2])) :=
+ strat substDivergeJoinCases : CNameBound CNameBound Reaction Reaction @ ProtocolConfig .
+ sd substDivergeJoinCases(fam (C1[bdlist1]), fam (C2[bdlist2]), R1, R2) :=
    match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{substDivergeJoinCases(fam (C1[bdlist1]), fam (C2[bdlist2]))} 
+     ? CONG-NEW-NF{substDivergeJoinCases(fam (C1[bdlist1]), fam (C2[bdlist2]), R1, R2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using ((CONG-COMP-RIGHT[
            Q:Protocol  <- removeTwo P (fam (C1[bdlist1])) 
                                       (fam (C2[bdlist2])), 
            P1:Protocol <- keepTwo P (fam (C1[bdlist1])) 
                                     (fam (C2[bdlist2]))]{
-               subst-diverge-join-cases{ 
+               subst-diverge-join-cases[R:Reaction <- R1]{ 
                  *** substNFFamiliesThree(fam (C1[bdlist1]), fam (C2[bdlist2]), R2)
                  substNFFamiliesGen(fam (C1[bdlist1]), fam (C2[bdlist2]))
                  }
               }
              )
              or-else
-             subst-diverge-join-cases{ 
+             subst-diverge-join-cases[R:Reaction <- R1]{ 
               *** substNFFamiliesThree(fam (C1[bdlist1]), fam (C2[bdlist2]), R2)
               substNFFamiliesGen(fam (C1[bdlist1]), fam (C2[bdlist2]))
               }  
@@ -562,14 +320,6 @@ sd p-applyUnitExt(s(n1), n2) :=
   ; handleRNFFamily(cnb2)
   ; (pre2Nf or-else idle)  
  .
-
- strat substNFFamiliesGenOccur : CNameBound CNameBound Qid @ ProtocolConfig .
- sd substNFFamiliesGenOccur(cnb1, cnb2, q) :=
-     nTimesSubstNFFamiliesGenOccur(cnb1, cnb2, q)
-  ; liftInnerBindsNFFamily(cnb2)
-  ; handleRNFFamily(cnb2)
-  ; (pre2Nf or-else idle)  
- .
  
  *** sub-strategies, similar to the ones above
  strat nTimesSubstNFFamiliesOne :  CNameBound CNameBound Reaction @ ProtocolConfig .
@@ -595,29 +345,6 @@ sd p-applyUnitExt(s(n1), n2) :=
        )
  .
  
- strat nTimesSubstNFFamiliesGenOccur : CNameBound CNameBound Qid @ ProtocolConfig .
- sd nTimesSubstNFFamiliesGenOccur(fam (ns1[bdlist1]), fam (ns2[bdlist2]), q) := 
-    match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{nTimesSubstNFFamiliesGenOccur(fam (ns1[bdlist1]), fam (ns2[bdlist2]), q )} 
-     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (CONG-COMP-RIGHT[
-         Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2])), 
-         P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2]))]{
-          subst-families-gen[
-                   fns2:NameWithScripts <- ns1, 
-                   fns1:NameWithScripts <- ns2,
-                   x:ChannelName <- q
-                ]
-                   } 
-                or-else
-                subst-families-gen[
-                   fns2:NameWithScripts <- ns1, 
-                   fns1:NameWithScripts <- ns2,
-                   x:ChannelName <- q
-                ]
-       )
- .
-
  strat nTimesSubstNFFamiliesGen : CNameBound CNameBound @ ProtocolConfig .
  sd nTimesSubstNFFamiliesGen(fam (ns1[bdlist1]), fam (ns2[bdlist2])) := 
     match pConf s.t. startsWithNew pConf
@@ -699,7 +426,7 @@ sd p-applyUnitExt(s(n1), n2) :=
                              P1:Protocol <- keepOne P (fam (cn[blist]))]{
          CONG-FAMILY-R[C:Qid <- cn]
                    {(ret-bind-pre or-else
-                    (samp-over-if or-else  
+                    (samp-over-if or-else 
                      (read2Binds or-else
                       (bind-ret-2-pre
                         or-else (merge-pre ; cong-pre-nf{bindFreeS})
@@ -713,7 +440,7 @@ sd p-applyUnitExt(s(n1), n2) :=
        or-else
        CONG-FAMILY-R[C:Qid <- cn]
                    {(ret-bind-pre or-else
-                    ( samp-over-if or-else 
+                    (samp-over-if or-else 
                      (read2Binds or-else
                       (bind-ret-2-pre
                         or-else (merge-pre ; cong-pre-nf{bindFreeS})
@@ -786,7 +513,7 @@ sd p-applyUnitExt(s(n1), n2) :=
   ; liftInnerBindsNFFamily(fam (ns2[bdlist2]))
   ; handleRNFFamily(fam (ns2[bdlist2]))
   ; (pre2Nf or-else idle)  
- .  
+ . 
  
  *** sub-strategy, similar to subst-nf
  strat nTimesSubstChannelFamilyOne :  CNameBound CNameBound @ ProtocolConfig .
@@ -934,16 +661,7 @@ sd p-applyUnitExt(s(n1), n2) :=
                       ]       
               )
   .   
-
- *** subst-nf for a family into a channel at var
- strat substNFFamilyOneAt : CNameBound ChannelName Qid @ ProtocolConfig .
- sd substNFFamilyOneAt(cnb1, C2, q) :=
-     nTimesSubstNFFamilyOneAt(cnb1, C2, q)
-  ; liftInnerBindsNF(C2)
-  ; handleRNF(C2)
-  ; (pre2Nf or-else idle)  
- .      
-
+            
  *** subst-nf for a family into a channel
  strat substNFFamilyOne : CNameBound ChannelName @ ProtocolConfig .
  sd substNFFamilyOne(cnb1, C2) :=
@@ -951,30 +669,6 @@ sd p-applyUnitExt(s(n1), n2) :=
   ; liftInnerBindsNF(C2)
   ; handleRNF(C2)
   ; (pre2Nf or-else idle)  
- .  
-
- *** similar sub-strategy as for channels
- strat nTimesSubstNFFamilyOneAt : CNameBound ChannelName Qid @ ProtocolConfig .
- sd nTimesSubstNFFamilyOneAt(fam (C1[bdlist1]), C2, q) := 
-     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{nTimesSubstNFFamilyOneAt(fam (C1[bdlist1]), C2, q)} 
-     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (CONG-COMP-RIGHT[
-       Q:Protocol  <- removeTwo P (fam (C1[bdlist1])) (chn C2), 
-       P1:Protocol <- keepTwo P (fam (C1[bdlist1])) (chn C2)]{
-          subst-families-one[
-                   fns:NameWithScripts <- C1, 
-                   cn2:ChannelName <- C2,
-                   x:ChannelName <- q
-                ]
-                   } 
-                   or-else
-                   subst-families-one[
-                   fns:NameWithScripts <- C1, 
-                   cn2:ChannelName <- C2,
-                   x:ChannelName <- q
-                ]
-                   )
  .   
  
  *** similar sub-strategy as for channels
@@ -1169,43 +863,8 @@ sd p-applyUnitExt(s(n1), n2) :=
   strat dropSubsume : CNameBound CNameBound @ ProtocolConfig .
   sd dropSubsume(fam (ns1[bdlist1]), fam (ns2[bdlist2])) := 
      applyDropSubsumeRevFamilies(fam (ns1[bdlist1]), fam (ns2[bdlist2])) .
-  sd dropSubsume(fam (ns1[bdlist1]), chn C2) :=
-     applyDropSubsumeFC(fam (ns1[bdlist1]), chn C2) .
-  sd dropSubsume(chn C1, fam (ns2[bdlist2])) :=
-     applyDropSubsumeCF(chn C1, fam (ns2[bdlist2])) .
   sd dropSubsume(chn C1, chn C2) := 
      applyDropSubsumeRevChannels(C1, C2) .  
-
-   strat applyDropSubsumeFC : CNameBound CNameBound @ ProtocolConfig .
- sd applyDropSubsumeFC(fam (ns1[bdlist1]), chn C2) :=
-    match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applyDropSubsumeFC(fam (ns1[bdlist1]), chn C2)} 
-     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (CONG-COMP-RIGHT[
-         Q:Protocol  <- removeTwo P  (fam (ns1[bdlist1])) (chn C2), 
-         P1:Protocol <- keepTwo P  (fam (ns1[bdlist1])) (chn C2)]{
-                    DROP-SUBSUME-family-channel-gen
-             }
-              or-else DROP-SUBSUME-family-channel-gen
-             )
- . 
-
-  strat applyDropSubsumeCF : CNameBound CNameBound @ ProtocolConfig .
- sd applyDropSubsumeCF(chn C1, fam (ns2[bdlist2])) :=
-    match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applyDropSubsumeCF(chn C1, fam (ns2[bdlist2]))} 
-     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (CONG-COMP-RIGHT[
-         Q:Protocol  <- removeTwo P  (fam (ns2[bdlist2])) (chn C1), 
-         P1:Protocol <- keepTwo P  (fam (ns2[bdlist2])) (chn C1)]{
-                    DROP-SUBSUME-channel-family-gen or-else
-                    DROP-SUBSUME-ret-channel-family-gen
-             }
-              or-else (DROP-SUBSUME-channel-family-gen  or-else
-                    DROP-SUBSUME-ret-channel-family-gen
-              )
-             )
- .    
 
  strat applyDropSubsumeRevFamilies : CNameBound CNameBound @ ProtocolConfig .
  sd applyDropSubsumeRevFamilies(fam (ns1[bdlist1]), fam (ns2[bdlist2])) :=
@@ -1230,15 +889,8 @@ sd p-applyUnitExt(s(n1), n2) :=
         Q:Protocol  <- removeTwo P (chn C1) (chn C2), 
         P1:Protocol <- keepTwo P (chn C1) (chn C2)]{
                              DROP-SUBSUME-channels
-                             or-else
-                             DROP-SUBSUME-channels-pre
-
                              }
-              or-else (
-                DROP-SUBSUME-channels
-                or-else
-                DROP-SUBSUME-channels-pre
-              )
+              or-else DROP-SUBSUME-channels
              )
  . 
   
@@ -1366,13 +1018,6 @@ sd p-applyUnitExt(s(n1), n2) :=
  *****************
  *** merge groups
  *****************
-
- strat metaMerge : CNameBound CNameBound NameWithScripts @ ProtocolConfig .
- sd metaMerge(fam (fns1[blist1]), fam (fns2[blist2]), fns) :=
-    applyMergeGroups(fam (fns1[blist1]), fam (fns2[blist2]), fns) . 
- sd metaMerge(chn cn1, chn cn2, fns) :=
-    applyMergeCasesChannelGroup(cn1, cn2) .
-
  strat applyMergeGroups : CNameBound CNameBound NameWithScripts @ ProtocolConfig .
  sd applyMergeGroups(fam (fns1[blist1]), fam (fns2[blist2]), fns) :=
  match pConf s.t. startsWithNew pConf
@@ -1510,19 +1155,6 @@ sd p-applyUnitExt(s(n1), n2) :=
  .
  
  var blist1 blist2 : List{Bounds} .
-
- strat applyFixIndex : CNameBound @ ProtocolConfig .
- sd applyFixIndex(fam (fns[blist])) := 
-    match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applyFixIndex(fam (fns[blist]))} 
-     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P (fam (fns[blist])), 
-                             P1:Protocol <- keepOne P (fam (fns[blist]))]{
-              fix-index
-                             }
-              or-else fix-index
-             )
-  .  
  
  strat applyRemoveBranch : CNameBound @ ProtocolConfig .
  sd applyRemoveBranch(fam (fns[blist])) := 
@@ -1550,14 +1182,6 @@ sd p-applyUnitExt(s(n1), n2) :=
              )
   .   
  
- *** also try to remove otherwise branch, if it's the only one remaining
- strat metaDropBranch : CNameBound Qid NatTerm @ ProtocolConfig .
- sd metaDropBranch(fam (fns[blist]), q, nt) :=
-    applyDropBranch(fam (fns[blist]), q, nt) ;
-    (try (applyRemoveOtherwiseBranch(fam (fns[blist]))))
- .   
-
-
  *** drop a branch if we can prove the negation of its condition 
  strat applyDropBranch : CNameBound Qid NatTerm @ ProtocolConfig .
  sd applyDropBranch(fam (fns[blist]), q, nt) := 
@@ -1597,129 +1221,69 @@ sd p-applyUnitExt(s(n1), n2) :=
    )                           
  .
  
- *** this one splits both in newnf and at top
-***   strat applySplitFstBranches : CNameBound CNameBound @ ProtocolConfig .
-***  sd applySplitFstBranches(fam (fns1[blist1]), fam (fns2[blist2])) :=
-    
-***     SPLIT-fst-all-branches-nf-3[fn:FamilyName <- fns1[blist1], 
-***                              fns:NameWithScripts <- fns2
-***                             ]
-***     or-else                        
-***     SPLIT-fst-all-branches-top-3[fn:FamilyName <- fns1[blist1], 
-***                              fns:NameWithScripts <- fns2
-***                             ]
-   
-***  .    
-
- strat metaSplitInsideGroup : CNameBound CNameBound @ ProtocolConfig .
- sd metaSplitInsideGroup(fam (fns1[blist1]), fam (fns2[blist2])) :=
-  applySplitFstBranches(fam (fns1[blist1]), fam (fns2[blist2]))
-  or-else
-  applySplitInsideGroup(fam (fns1[blist1]), fam (fns2[blist2]))
- .  
-
- strat applySplitFstBranches : CNameBound CNameBound @ ProtocolConfig .
- sd applySplitFstBranches(fam (fns1[blist1]), fam (fns2[bd1 bd2 bd3])):=
-  SPLIT-fst-all-branches-nf-3[fn:FamilyName <- fns1[blist1], 
-                             fns:NameWithScripts <- fns2
-                            ]
-    or-else                        
-    SPLIT-fst-all-branches-top-3[fn:FamilyName <- fns1[blist1], 
-                             fns:NameWithScripts <- fns2
-                            ]                   
-                            .
- sd applySplitFstBranches(fam (fns1[blist1]), fam (fns2[blist2])) :=
-                         
+ 
+ strat applySplitBranches : CNameBound CNameBound @ ProtocolConfig .
+ sd applySplitBranches(fam (fns1[blist1]), fam (fns2[blist2])) :=
     SPLIT-all-branches-nf-2[fn:FamilyName <- fns1[blist1], 
                              fns:NameWithScripts <- fns2
                             ]
     or-else                        
-    SPLIT-all-branches-top-2[fn:FamilyName <- fns1[blist1], 
-                             fns:NameWithScripts <- fns2
-                            ]        
-    or-else applySplitFstAllBranches(fam (fns1[blist1]), fam (fns2[blist2]))                                           
-  .
-  *** TODO: applySplitFstBranches missing for 3 indices 
- strat applySplitSndBranches : CNameBound CNameBound @ ProtocolConfig .
- sd applySplitSndBranches(fam (fns1[blist1]), fam (fns2[blist2])) :=
-                         
     SPLIT-all-branches-nf-3[fn:FamilyName <- fns1[blist1], 
+                             fns:NameWithScripts <- fns2
+                            ]
+    or-else                       
+    SPLIT-all-branches-top-2[fn:FamilyName <- fns1[blist1], 
                              fns:NameWithScripts <- fns2
                             ]
     or-else                        
     SPLIT-all-branches-top-3[fn:FamilyName <- fns1[blist1], 
                              fns:NameWithScripts <- fns2
-                            ]  
-    or-else applySplitSndAllBranches(fam (fns1[blist1]), fam (fns2[blist2]))                                               
-  .
-  
-  
-
-***  sd applySplitBranches(fam (fns1[blist1]), fam (fns2[blist2])) :=
-***     SPLIT-all-branches-nf-2[fn:FamilyName <- fns1[blist1], 
-***                              fns:NameWithScripts <- fns2
-***                             ]
-***     or-else                        
-***     SPLIT-all-branches-nf-3[fn:FamilyName <- fns1[blist1], 
-***                              fns:NameWithScripts <- fns2
-***                             ]
-***     or-else                       
-***     SPLIT-all-branches-top-2[fn:FamilyName <- fns1[blist1], 
-***                              fns:NameWithScripts <- fns2
-***                             ]
-***     or-else                        
-***     SPLIT-all-branches-top-3[fn:FamilyName <- fns1[blist1], 
-***                              fns:NameWithScripts <- fns2
-***                             ]
+                            ]
    
-***  .   
+ .   
  
-                                                                        
+ strat applySplitFstBranches : CNameBound CNameBound @ ProtocolConfig .
+ sd applySplitFstBranches(fam (fns1[blist1]), fam (fns2[blist2])) :=
+   
+    SPLIT-fst-all-branches-nf-3[fn:FamilyName <- fns1[blist1], 
+                             fns:NameWithScripts <- fns2
+                            ]
+    or-else                        
+    SPLIT-fst-all-branches-top-3[fn:FamilyName <- fns1[blist1], 
+                             fns:NameWithScripts <- fns2
+                            ]
+   
+ .                                                   
+                            
  
- strat applySplitSndAllBranches : CNameBound CNameBound @ ProtocolConfig .
- sd applySplitSndAllBranches(cnb1, cnb2) :=
+ strat applySplitAllBranches : CNameBound CNameBound @ ProtocolConfig .
+ sd applySplitAllBranches(cnb1, cnb2) :=
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applySplitSndAllBranches(cnb1, cnb2)} 
+     ? CONG-NEW-NF{applySplitAllBranches(cnb1, cnb2)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using
         (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P cnb1, 
                         P1:Protocol <- keepOne P cnb1]{
-            applySplitSndLoop(cnb2)            
+            applySplitLoop(cnb2)            
          }
-         or-else applySplitSndLoop(cnb2)
-        ) 
-      
- .
-
- strat applySplitFstAllBranches : CNameBound CNameBound @ ProtocolConfig .
- sd applySplitFstAllBranches(cnb1, cnb2) :=
-    match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applySplitFstAllBranches(cnb1, cnb2)} 
-     : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using
-        (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P cnb1, 
-                        P1:Protocol <- keepOne P cnb1]{
-            applySplitFstLoop(cnb2)            
-         }
-         or-else applySplitFstLoop(cnb2)
+         or-else applySplitLoop(cnb2)
         ) 
       
  .
  
- strat applySplitFstLoop : CNameBound @ ProtocolConfig .
- sd applySplitFstLoop(fam (cn[bd1 bd2])) :=
+ strat applySplitLoop : CNameBound @ ProtocolConfig .
+ sd applySplitLoop(fam (cn[bd1 bd2])) :=
     SPLIT-family-2-all-branches-end[fns:NameWithScripts <- cn]
     or-else
     SPLIT-family-2-all-branches-loop[fns:NameWithScripts <- cn]{
-      applySplitFstLoop(fam (cn[bd1 bd2]))
+      applySplitLoop(fam (cn[bd1 bd2]))
     }
  .
- strat applySplitSndLoop : CNameBound @ ProtocolConfig .
- sd applySplitSndLoop(fam (cn[bd1 bd2 bd3])) :=
+ sd applySplitLoop(fam (cn[bd1 bd2 bd3])) :=
     SPLIT-family-3-all-branches-end[fns:NameWithScripts <- cn]
     or-else
     SPLIT-family-3-all-branches-loop[fns:NameWithScripts <- cn]{
-      applySplitSndLoop(fam (cn[bd1 bd2 bd3]))
+      applySplitLoop(fam (cn[bd1 bd2 bd3]))
     }
  .
   
@@ -1771,16 +1335,6 @@ sd p-applyUnitExt(s(n1), n2) :=
  sd applyUnsplitFstNewNF(fam (cn[bd1 bd2 bd3]), fam (cn[blist])) :=  
      UNSPLIT-fst-family-3-nf[fns:NameWithScripts <- cn]
  .  
-
- *** meta unsplit with two arguments 
-
- strat metaUnsplit2 : CNameBound CNameBound @ ProtocolConfig .
- sd metaUnsplit2(cnb1, cnb2) :=
-    applyUnsplitTop(cnb1, cnb2)
-    or-else
-    applyUnsplitFstNewNF(cnb1, cnb2)
-    or-else
-    applyUnsplitFst(cnb1, cnb2) .
                   
   
    
@@ -1908,19 +1462,11 @@ sd p-applyUnitExt(s(n1), n2) :=
              ; (SYM[P1:Protocol <- pr]{COMP-NEW-newNF})
              }
          , idle
-         } . 
-
-
+         } .       
  
  *********************
  *** fold
  *********************
-
- strat fold : CNameBound CNameBound @ ProtocolConfig .
- sd fold(chn C1, chn C2) := 
-    foldNF(C1, C2) or-else foldNFPre(C1, C2) .
- sd fold(fam (ns1[bdlist1]), fam (ns2[bdlist2])) := 
-    foldNFFamilyGen(fam (ns1[bdlist1]), fam (ns2[bdlist2])) .
  
  *** fold a channel
  strat foldNF : ChannelName ChannelName @ ProtocolConfig .
@@ -1964,25 +1510,7 @@ sd p-applyUnitExt(s(n1), n2) :=
          )          
         .   
        
- *** fold a family 
- strat foldNFFamilyGen : CNameBound CNameBound @ ProtocolConfig .
- sd foldNFFamilyGen(fam (ns1[bdlist1]), fam (ns2[bdlist2])) := 
-                 (fold-bind-new-nf-families-gen[fns1:NameWithScripts <- ns1,
-                                            fns2:NameWithScripts <- ns2] 
-                  or-else
-                  fold-bind-new-nf-families-gen-preNF[fns1:NameWithScripts <- ns1,
-                                            fns2:NameWithScripts <- ns2] 
-                  or-else
-                  fold-bind-new-nf-families-gen-zero[fns1:NameWithScripts <- ns1,
-                                            fns2:NameWithScripts <- ns2]
-                 )
-                 *** these last 2 steps should be reusable from subst!
-                 ; liftInnerBindsNFFamily(fam (ns2[bdlist2])) 
-                 ; handleRNFFamily(fam (ns2[bdlist2])) 
-                 ; try (pre2Nf)
-                  ; try (delete-empty-newNF)
-                 . 
-
+ *** fold a family                
  strat foldNFFamily : CNameBound CNameBound @ ProtocolConfig .
  sd foldNFFamily(fam (ns1[bdlist1]), fam (ns2[bdlist2])) := 
                  (fold-bind-new-nf-families[fns1:ChannelName <- ns1,
@@ -2081,12 +1609,6 @@ sd p-applyUnitExt(s(n1), n2) :=
              )                              
  .   
  
- strat allNewToFront @ ProtocolConfig .
- sd allNewToFront := 
-    ((COMP-NEW-newNF-inside-new) !) 
- .   
-    
-
  *** get all new declarations in front
  strat moveNewToFront @ ProtocolConfig .
  sd moveNewToFront := 
@@ -2114,13 +1636,6 @@ sd p-applyUnitExt(s(n1), n2) :=
      : ((CONG-COMP-RIGHT{comp-new-families} or-else comp-new-families) )
  .  
  
- strat metaMoveFamToGroup : CNameBound CNameBound @ ProtocolConfig .
- sd metaMoveFamToGroup(fam (ns1[bdlist1]), fam (ns2[bdlist2])) :=
-  applyAddFamToGroupSameCases(fam (ns2[bdlist2]), fam (ns1[bdlist1]))
-  or-else
-  applyAddToGroupCases(fam (ns1[bdlist1]), fam (ns2[bdlist2]))
- .  
-
  *** add the corresponding cases of cn to the group ns
 strat applyAddChnToGroupSameCases : CNameBound ChannelName @ ProtocolConfig .     
  sd applyAddChnToGroupSameCases(fam (ns[blist]), cn) :=
@@ -2144,10 +1659,7 @@ strat applyAddChnToGroupSameCases : CNameBound ChannelName @ ProtocolConfig .
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using (CONG-COMP-RIGHT[Q:Protocol  <- removeTwo P (fam (ns[blist])) (fam (fns1[blist1])), 
                              P1:Protocol <- keepTwo P (fam (ns[blist])) (fam (fns1[blist1]))]
-              { add-fam-to-group-same-cases[
-                 fns:NameWithScripts <- ns,
-                 fns1:NameWithScripts <- fns1
-              ]
+              { add-fam-to-group-same-cases
               }           
               or-else 
               add-fam-to-group-same-cases    
@@ -2247,8 +1759,7 @@ strat applyAddChnToGroupSameCases : CNameBound ChannelName @ ProtocolConfig .
      ? CONG-NEW-NF{applyRemoveMergeFromGroupCases(fam (ns1[bdlist1]), fam (ns2[bdlist2])) }
      : matchrew pConf s.t. 
          pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (
-        CONG-COMP-RIGHT[
+       using (CONG-COMP-RIGHT[
         Q:Protocol  <- removeOne P (fam (ns1[bdlist1])) , 
         P1:Protocol <- keepOne P (fam (ns1[bdlist1]))]
         {remove-merge-from-group-cases[
@@ -2364,8 +1875,8 @@ strat applyAddChnToGroupSameCases : CNameBound ChannelName @ ProtocolConfig .
    ? CONG-NEW-NF{applyUngroupFamiliesNew(fam (fns1[blist]), fam (fns2[blist]))}
    : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using
-        (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P (fam (('Comp[qidAsTerm fns1 qidAsTerm fns2])[blist])), 
-                        P1:Protocol <- keepOne P (fam (('Comp[qidAsTerm fns1 qidAsTerm fns2])[blist]))]{
+        (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P (fam (('Comp[fns1 fns2])[blist])), 
+                        P1:Protocol <- keepOne P (fam (('Comp[fns1 fns2])[blist]))]{
      ungroup-families-new
      }
      or-else
@@ -2445,18 +1956,6 @@ strat applyAddChnToGroupSameCases : CNameBound ChannelName @ ProtocolConfig .
                              P1:Protocol <- keepOne P (fam (ns[blist]))]
                              {convert-combined-new}
              or-else convert-combined-new                
-             )
- .
-
- strat applyNewCombineFam : CNameBound @ ProtocolConfig .
- sd applyNewCombineFam(fam (ns[blist])) := 
-     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applyNewCombineFam(fam (ns[blist]))} 
-     :  matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
-       using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P (fam (ns[blist])), 
-                             P1:Protocol <- keepOne P (fam (ns[blist]))]
-                             {convert-combined-fam}
-             or-else convert-combined-fam              
              )
  .
  
@@ -2786,60 +2285,6 @@ strat applyAddChnToGroupSameCases : CNameBound ChannelName @ ProtocolConfig .
              CONG-REACT-family[fns:ChannelName <- C]{alphaNFOverList(QPL)}             
              )
   .  
-
- var q5 q6 : Qid .
-
-  *** rename the variables of a family
-  strat applyAlphaFamilyThree : CNameBound QidPairList @ ProtocolConfig .
-  sd applyAlphaFamilyThree(fam (C[blist]), 
-   << q1, q4 >> << q2, q5 >> << q3, q6 >> emptyQidPairList) := 
-    alpha-family-three[
-           fns:NameWithScripts <- C, 
-           q1:Qid <- q1,
-           q2:Qid <- q2,
-           q3:Qid <- q3,
-           q4:Qid <- q4,
-           q5:Qid <- q5,
-           q6:Qid <- q6]
-  .
-
-  *** meta strategy for renaming indices 
-
-  strat metaRenameIndices : CNameBound QidList @ ProtocolConfig .
-  sd metaRenameIndices(fam (C[bd1 bd2]), (q1 q2)) :=
-     alpha-family-two-top[fns:NameWithScripts <- C,
-          bd1:Bounds <- bd1,
-          bd2:Bounds <- bd2,
-          q3:Qid <- q1,
-          q4:Qid <- q2
-         ]
-  .
-  sd metaRenameIndices(fam (C[bd1 bd2 bd3]), (q1 q2 q3)) :=
-     alpha-family-three[fns:NameWithScripts <- C,
-          bd1:Bounds <- bd1,
-          bd2:Bounds <- bd2,
-          bd3:Bounds <- bd3,
-          q4:Qid <- q1,
-          q5:Qid <- q2,
-          q6:Qid <- q3
-         ] 
-    or-else
-    renIndTop(fam (C[bd1 bd2 bd3]), (q1 q2 q3))    
-  .
-
-  strat renIndTop  : CNameBound QidList @ ProtocolConfig .
-  sd renIndTop(fam (C[bd1 bd2 bd3]), (q1 q2 q3)) :=
-   match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{renIndTop(fam (C[bd1 bd2 bd3]), (q1 q2 q3))} 
-     : alpha-family-three-top[fns:NameWithScripts <- C,
-          bd1:Bounds <- bd1,
-          bd2:Bounds <- bd2,
-          bd3:Bounds <- bd3,
-          q4:Qid <- q1,
-          q5:Qid <- q2,
-          q6:Qid <- q3
-         ] 
-  .  
  
  *****************************
  *** read-inside-if
@@ -2854,13 +2299,13 @@ strat applyAddChnToGroupSameCases : CNameBound ChannelName @ ProtocolConfig .
        using (CONG-COMP-RIGHT[Q:Protocol  <- removeOne P (chn C), 
                              P1:Protocol <- keepOne P (chn C)]
        {CONG-REACT[o:ChannelName <- C]
-        {cong-pre-nf{ bind-over-if *** read-inside-if
+        {cong-pre-nf{read-inside-if
                     } 
         }
        }
        or-else
        CONG-REACT[o:ChannelName <- C]
-        {cong-pre-nf{ bind-over-if *** read-inside-if
+        {cong-pre-nf{read-inside-if
                     } 
         }
        )
@@ -3006,22 +2451,23 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
  
  var i1 i2 i3 : Qid .
  
- strat applySubstFamilyGenCase : CNameBound CNameBound BoolTerm @ ProtocolConfig .
- sd applySubstFamilyGenCase(fam (ns1[bdlist1]), fam (ns2[bdlist2]), bt) :=
+ strat applySubstFamilyGenCase : CNameBound CNameBound 
+                               Reaction Reaction BoolTerm @ ProtocolConfig .
+ sd applySubstFamilyGenCase(fam (ns1[bdlist1]), fam (ns2[bdlist2]), R1, R2, bt) :=
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{
-      applySubstFamilyGenCase(fam (ns1[bdlist1]), fam (ns2[bdlist2]), bt)}
+      applySubstFamilyGenCase(fam (ns1[bdlist1]), fam (ns2[bdlist2]), R1, R2, bt)}
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using ((CONG-COMP-RIGHT[
         Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2])), 
         P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2]))]
-              {subst-family-case-generic[bt:BoolTerm <- bt]{ 
+              {subst-family-case-generic[R':Reaction <- R2, bt:BoolTerm <- bt]{ 
                  substNFFamiliesGen(fam (ns1[bdlist1]), fam(ns2[bdlist2]))
                }
               }
               )
               or-else 
-              subst-family-case-generic[bt:BoolTerm <- bt]{
+              subst-family-case-generic[R':Reaction <- R2, bt:BoolTerm <- bt]{
                 substNFFamiliesGen(fam (ns1[bdlist1]), fam(ns2[bdlist2]))
                }
              ) .              
@@ -3147,43 +2593,43 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
              )                
  .
  
- strat applySubstDivergeFamily : CNameBound CNameBound Qid @ ProtocolConfig .
- sd applySubstDivergeFamily(fam (ns1[bdlist1]), fam (ns2[bdlist2]), x) := 
+ strat applySubstDivergeFamily : CNameBound CNameBound Qid IPDLType @ ProtocolConfig .
+ sd applySubstDivergeFamily(fam (ns1[bdlist1]), fam (ns2[bdlist2]), x, T) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applySubstDivergeFamily(fam (ns1[bdlist1]), fam (ns2[bdlist2]), x)}
+     ? CONG-NEW-NF{applySubstDivergeFamily(fam (ns1[bdlist1]), fam (ns2[bdlist2]), x, T)}
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using (
              (CONG-COMP-RIGHT[
               Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2])), 
               P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2]))]{
-                 subst-diverge-family[x3:ChannelName <- x]            
+                 subst-diverge-family[x3:ChannelName <- x, T2:IPDLType <- T]            
               }
-             ) or-else subst-diverge-family[x3:ChannelName <- x]
+             ) or-else subst-diverge-family[x3:ChannelName <- x, T2:IPDLType <- T]
              )
  .
  
- strat applySubstDivergeCase : CNameBound CNameBound BoolTerm Qid @ ProtocolConfig .
- sd applySubstDivergeCase(fam (ns1[bdlist1]), fam (ns2[bdlist2]), bt, x) := 
+ strat applySubstDivergeCase : CNameBound CNameBound BoolTerm Qid IPDLType @ ProtocolConfig .
+ sd applySubstDivergeCase(fam (ns1[bdlist1]), fam (ns2[bdlist2]), bt, x, T) := 
     match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applySubstDivergeCase(fam (ns1[bdlist1]), fam (ns2[bdlist2]), bt, x)}
+     ? CONG-NEW-NF{applySubstDivergeCase(fam (ns1[bdlist1]), fam (ns2[bdlist2]), bt, x, T)}
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using (
              (CONG-COMP-RIGHT[
               Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2])), 
               P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2]))]{
-                 diverge-case[q:Qid <- x, bt:BoolTerm <- bt]            
+                 diverge-case[q:Qid <- x, T1:IPDLType <- T, bt:BoolTerm <- bt]            
               }
              ) or-else diverge-case[q:Qid <- x, 
-                                    bt:BoolTerm <- bt]
+                                    T1:IPDLType <- T, bt:BoolTerm <- bt]
              )
  .
   
  strat applyDivergeChannel3FamilyBranch : 
-    CNameBound CNameBound BoolTerm Qid @ ProtocolConfig .
- sd applyDivergeChannel3FamilyBranch(fam (ns1[bdlist1]), fam (ns2[bdlist2]), bt, x) := 
+    CNameBound CNameBound BoolTerm Qid IPDLType @ ProtocolConfig .
+ sd applyDivergeChannel3FamilyBranch(fam (ns1[bdlist1]), fam (ns2[bdlist2]), bt, x, T) := 
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{
-        applyDivergeChannel3FamilyBranch(fam (ns1[bdlist1]), fam (ns2[bdlist2]), bt, x)
+        applyDivergeChannel3FamilyBranch(fam (ns1[bdlist1]), fam (ns2[bdlist2]), bt, x, T)
        }
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using (
@@ -3191,12 +2637,12 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
          Q:Protocol  <- removeTwo P (fam (ns1[bdlist1])) (fam (ns2[bdlist2])), 
          P1:Protocol <- keepTwo P (fam (ns1[bdlist1])) fam (ns2[bdlist2])]
               {subst-family-case-three[bt:BoolTerm <- bt]{
-                subst-diverge-family[x3:ChannelName <- x]
+                subst-diverge-family[x3:ChannelName <- x, T2:IPDLType <- T]
                }
               })
               or-else
               subst-family-case-three[bt:BoolTerm <- bt]{
-                subst-diverge-family[x3:ChannelName <- x]
+                subst-diverge-family[x3:ChannelName <- x, T2:IPDLType <- T]
                }
              )
      .
@@ -3360,13 +2806,13 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
     .    
     
   strat applySubstDivergeFromBranchP : 
-   CNameBound CNameBound CNameBound BoolTerm Qid @ ProtocolConfig .
+   CNameBound CNameBound CNameBound BoolTerm Qid IPDLType @ ProtocolConfig .
  sd applySubstDivergeFromBranchP(fam (ns[blist]), fam (ns1[bdlist1]), fam (ns2[bdlist2]), 
-                          bt, x) :=          
+                          bt, x, T) :=          
     match pConf s.t. startsWithNew pConf
      ? CONG-NEW-NF{
       applySubstDivergeFromBranchP(fam (ns[blist]), fam (ns1[bdlist1]), fam (ns2[bdlist2]), 
-                            bt, x)}
+                            bt, x, T)}
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using 
         ( CONG-COMP-RIGHT[
@@ -3379,7 +2825,7 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
            fns2:NameWithScripts <- ns2,
            bt:BoolTerm <- bt
           ]{
-          subst-diverge-family[x3:ChannelName <- x]
+          subst-diverge-family[x3:ChannelName <- x, T2:IPDLType <- T]
            }
               }
        )       
@@ -3407,25 +2853,9 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
           ]{
           DROP-SUBSUME-families-gen 
            }
-              } or-else
-              select-case-subst-family-r[
-           fns1:NameWithScripts <- ns1,
-           blist1:List{Bounds} <- bdlist1,
-           fns2:NameWithScripts <- ns2,
-           blist2:List{Bounds} <- bdlist2,
-           bt:BoolTerm <- bt
-          ]{
-          DROP-SUBSUME-families-gen 
-           }
+              }
        )       
-    .  
-
-   strat metaDropSubsumeCase : CNameBound CNameBound BoolTerm @ ProtocolConfig .
-   sd metaDropSubsumeCase(cnb1, cnb2, bt) := 
-      applyDropSubsumeCase(cnb1, cnb2, bt)
-      or-else
-      applyDropSubsumeFromBranchP(cnb1, cnb2, bt) .
-
+    .     
     
    strat applyDropSubsumeCase : 
    CNameBound CNameBound BoolTerm @ ProtocolConfig .
@@ -3512,31 +2942,24 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
                 (select-case-subst[bt:BoolTerm <- bt]{substNF(cn1, cn2)})
              ) 
  .
-
- strat metaCaseDiverge : CNameBound CNameBound BoolTerm Qid @ ProtocolConfig .
- sd metaCaseDiverge(fam (cn1[bdlist1]), fam (cn2[bdlist2]), bt, x) :=
-    applySelectCaseDiverge(fam (cn1[bdlist1]), fam (cn2[bdlist2]), bt, x)
-    or-else
-    applySubstDivergeCase(fam (cn1[bdlist1]), fam (cn2[bdlist2]), bt, x)
-  .   
  
  *** if we can deduce the condition of a branch in a family
  *** use that to do subst-diverge
- strat applySelectCaseDiverge : CNameBound CNameBound BoolTerm Qid @ ProtocolConfig .
- sd applySelectCaseDiverge(fam (cn1[bdlist1]), fam (cn2[bdlist2]), bt, x) := 
+ strat applySelectCaseDiverge : CNameBound CNameBound BoolTerm Qid IPDLType @ ProtocolConfig .
+ sd applySelectCaseDiverge(fam (cn1[bdlist1]), fam (cn2[bdlist2]), bt, x, T) := 
      match pConf s.t. startsWithNew pConf
-     ? CONG-NEW-NF{applySelectCaseDiverge(fam (cn1[bdlist1]), fam (cn2[bdlist2]), bt, x)} 
+     ? CONG-NEW-NF{applySelectCaseDiverge(fam (cn1[bdlist1]), fam (cn2[bdlist2]), bt, x, T)} 
      : matchrew pConf s.t. pConfig(Sigma, Delta, P, I, O, A) := pConf by pConf 
        using ((CONG-COMP-RIGHT[
                  Q:Protocol  <- removeTwo P (fam (cn1[bdlist1])) (fam (cn2[bdlist2])), 
                  P1:Protocol <- keepTwo P (fam (cn1[bdlist1])) (fam (cn2[bdlist2]))]
               {select-case-subst-family[bt:BoolTerm <- bt]{
-                subst-diverge-family[x3:ChannelName <- x]
+                subst-diverge-family[x3:ChannelName <- x, T2:IPDLType <- T]
                 }
               }
              ) or-else
                 (select-case-subst-family[bt:BoolTerm <- bt]{
-                   subst-diverge-family[x3:ChannelName <- x] })
+                   subst-diverge-family[x3:ChannelName <- x, T2:IPDLType <- T] })
              ) 
  .
  
@@ -3578,13 +3001,11 @@ sd substFamCaseFam(cnb1, cnb2, bt, R) :=
  ******************************************
  *** helpers
  ******************************************
-
- var cb1 cb2 : ComplexityBound .
  
   *** checks that the protocol in a aConfig starts with new/newfamily or is in new normal form
  op aConfStartsWithNew_ : ApproxEqConfig -> Bool .
- eq aConfStartsWithNew aConfig(pConf, cb1, cb2) =
-    startsWithNew pConf .
+ eq aConfStartsWithNew aConfig(S, D, P, I, O, A, width w, length l) =
+    startsWithNew pConfig(S, D, P, I, O, A) .
 
  *** checks that the protocol in a pConfig starts with new/newfamily or is in new normal form     
  op startsWithNew_ : ProtocolConfig -> Bool .
@@ -3929,13 +3350,13 @@ smod UNUSED-STRATS is
  sd ifOverBindInBranch :=  
      match rConf s.t. rBindRead(rConf) 
       ? cong-bind{idle, ifOverBindInBranch}
-      : cong-if{if-over-bind, if-over-bind, idle} . 
+      : cong-branch-refl{if-over-bind, if-over-bind} . 
       
  strat ifOverBindInBranch2 @ ReactionConfig .  
  sd ifOverBindInBranch2 :=  
      match rConf s.t. rBindRead(rConf) 
       ? cong-bind{idle, ifOverBindInBranch2}
-      : cong-if{ifOverBindInBranch, ifOverBindInBranch, idle} . 
+      : cong-branch-refl{ifOverBindInBranch, ifOverBindInBranch} . 
      
       
  strat ifLeftOverBind @ ReactionConfig .
@@ -3972,18 +3393,17 @@ smod UNUSED-STRATS is
  sd bindRetInBranchTwiceIOB := 
     match rConf s.t. rBindRead(rConf)
     ? cong-bind{idle, bindRetInBranchTwiceIOB}
-    : cong-if
-        {cong-if{ret-bind ; ifRightOverBind, ret-bind ; ifLeftOverBind, idle},
-         cong-if{ret-bind ; ifLeftOverBind, ret-bind ; ifRightOverBind, idle}} .
+    : cong-branch-refl
+        {cong-branch-refl{ret-bind ; ifRightOverBind, ret-bind ; ifLeftOverBind},
+         cong-branch-refl{ret-bind ; ifLeftOverBind, ret-bind ; ifRightOverBind}} .
  
  strat bindRetInBranchTwice @ ReactionConfig .
  sd bindRetInBranchTwice := 
     match rConf s.t. rBindRead(rConf)
     ? cong-bind{idle, bindRetInBranchTwice}
-    : cong-if
-        {cong-if{ret-bind , ret-bind, idle},
-         cong-if{ret-bind , ret-bind, idle}, 
-         idle} .
+    : cong-branch-refl
+        {cong-branch-refl{ret-bind , ret-bind},
+         cong-branch-refl{ret-bind , ret-bind}} .
          
  strat moveInsideIf : Qid ChannelName @ ProtocolConfig .
  sd moveInsideIf(Q, C) :=  *** first what var and then the channel
@@ -4015,21 +3435,20 @@ smod UNUSED-STRATS is
  sd moveLastBindInsideIf(Q) :=
     match rConf s.t. Q =/= firstBind(rConf)
     ? cong-bind{idle, moveLastBindInsideIf(Q)}
-    : bind-over-if *** read-inside-if . 
+    : read-inside-if . 
     
  strat moveLastBindInsideInnerIf : Qid @ ReactionConfig .
  sd moveLastBindInsideInnerIf(Q) :=
     match rConf s.t. rBind(rConf)
     ? cong-bind{idle, moveLastBindInsideInnerIf(Q)}
-    : cong-idle{bind-over-if, bind-over-if, idle}
-      *** read-inside-if, read-inside-if, idle} .   
+    : cong-branch-refl{read-inside-if, read-inside-if} .   
            
          
  strat bindRetInBranch @ ReactionConfig .
  sd bindRetInBranch :=  
      match rConf s.t. rBindRead(rConf) *** TODO: allow any bind?
     ? cong-bind{idle, bindRetInBranch}
-    : cong-idle{ret-bind , ret-bind, idle} . 
+    : cong-branch-refl{ret-bind , ret-bind} . 
     
  strat nTimesBindRetBranch : ChannelName @ ProtocolConfig .
  sd nTimesBindRetBranch(C) := 
@@ -4065,14 +3484,14 @@ smod UNUSED-STRATS is
      match rConf s.t. rBind(rConf)
      ? cong-bind{idle, moveAllBindsToFrontIf}
      : match rConf s.t. startsWithIfRead(rConf) 
-       ? bind-over-if ; moveAllBindsToFrontIf
+       ? if-over-read ; moveAllBindsToFrontIf
        : idle .
         
  strat moveAllBindsTwoIfs @ ReactionConfig .
  sd moveAllBindsTwoIfs := 
     match rConf s.t. rBind(rConf)
      ? cong-bind{idle, moveAllBindsTwoIfs}
-     : cong-if{ moveAllBindsToFrontIf, moveAllBindsToFrontIf, idle} .
+     : cong-branch-refl{ moveAllBindsToFrontIf, moveAllBindsToFrontIf} .
     
  strat moveBinds : ChannelName @ ProtocolConfig .
  sd moveBinds(C) := 
@@ -4204,10 +3623,9 @@ smod UNUSED-STRATS is
  sd retBind2OverIf(T, M1, M2 , R, x) := 
     match rConf s.t. rBind(rConf) 
     ? cong-bind{idle, retBind2OverIf(T, M1, M2, R, x) }
-    : cong-if{
+    : cong-branch-refl{
            ret-bind-2[M1:IPDLExpression <- M1 , T1:IPDLType <- T, R2:Reaction <- R , x:Qid <- x],
-           ret-bind-2[M1:IPDLExpression <- M2 , T1:IPDLType <- T, R2:Reaction <- R , x:Qid <- x],
-           idle} .
+           ret-bind-2[M1:IPDLExpression <- M2 , T1:IPDLType <- T, R2:Reaction <- R , x:Qid <- x]} .
      
  strat applyRetBind2OverIf : ChannelName IPDLType IPDLExpression IPDLExpression Reaction Qid @ ProtocolConfig .
  sd applyRetBind2OverIf(C, T, M1, M2, R, x) :=                                 
@@ -4273,7 +3691,4 @@ endsm
  
  )
 
-smod MYTEST is
- pr STRATS .
- pr BASEGMWN .
-endsm 
+    

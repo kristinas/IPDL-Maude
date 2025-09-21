@@ -1,0 +1,17 @@
+lang IPDL
+
+include gmwn-defs.imod
+
+include gmwn-subs.imod
+
+start with real over deltaReal
+
+include 0gmwn.proof
+
+include 1gmwn.proof
+
+restructure pInt0
+
+check-proof pInt0
+quit
+

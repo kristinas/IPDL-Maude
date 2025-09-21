@@ -269,7 +269,6 @@ mod EXPRESSION-EQUALITY is
   expConfig(Sigma, Gamma, T, M2) 
  => 
  expConfig(Sigma, Gamma, T, M1) [nonexec] .
-
  crl [exp-subst] :
  expConfig(Sigma, Gamma1, T, M1')
  =>
@@ -2768,27 +2767,15 @@ eq whenListToBoolTerm (otherwise --> cases) = empty .
 
 var cnbl : List{CNameBound} .
 
-var cnbs : Set{CNameBound} .
-
 op removeAll__ : Protocol List{CNameBound} -> Protocol .
 eq removeAll P empty = P .
 eq removeAll P cnb = removeOne P cnb .
 eq removeAll P (cnb cnbl) = removeAll (removeOne P cnb) cnbl .
 
-op removeAllSet__ : Protocol Set{CNameBound} -> Protocol .
-eq removeAllSet P empty = P .
-eq removeAllSet P cnb = removeOne P cnb .
-eq removeAllSet P (cnb, cnbs) = removeAllSet (removeOne P cnb) cnbs .
-
 op keepAll__ : Protocol List{CNameBound} -> Protocol .
 eq keepAll P empty = P .
 eq keepAll P cnb = keepOne P cnb .
 eq keepAll P (cnb cnbl) = (keepOne P cnb)  || (keepAll P cnbl) .
-
-op keepAllSet__ : Protocol Set{CNameBound} -> Protocol .
-eq keepAllSet P empty = P .
-eq keepAllSet P cnb = keepOne P cnb .
-eq keepAllSet P (cnb, cnbs) = (keepOne P cnb)  || (keepAllSet P cnbs) .
 
  op keepOne__ : Protocol CNameBound -> Protocol .
  eq keepOne emptyProtocol cnb = emptyProtocol .
@@ -4754,6 +4741,7 @@ mod PROTOCOL-EQ-CORE is
      
   *** COMP-COMM and COMP-ASSOC are out, || has these attributes
   *** AXIOM don't requires a new rule, axioms are either equations or have own strategies
+  *** SUBST is just application of rules to terms.
   
   crl [NEW-EXCH] :
      pConfig(Sigma, Delta, new cn1 : T1 in new cn2 : T2 in P, I, O, A) 
@@ -10939,89 +10927,51 @@ fmod APPROX-EQ-SIZES is
  eq revertNF(preNF(emptyBRList, R)) = R . 
  eq revertNF(R) = R [owise] . 
   
-var cases : Cases .
-var bd1 bd2 bd3 : Bounds .
 
-*** helper for size of groups
-op reduceFixed__ : List{NatTerm} Protocol -> Protocol .
-eq reduceFixed nil P = P .
-eq reduceFixed (qidAsTerm q) (family fn qidAsTerm q bound nt ::= cases) 
- = 'c ::= cases .
-eq reduceFixed (qidAsTerm q) (family fn qidAsTerm q qidAsTerm q2 bd1 bd2 ::= cases) 
- = (family fn qidAsTerm q2 bd2 ::= cases)  . 
-eq reduceFixed (qidAsTerm q) (family fn qidAsTerm q1 qidAsTerm q bd1 bd2 ::= cases) 
- = (family fn qidAsTerm q1 bd1 ::= cases)  . 
-eq reduceFixed (qidAsTerm q) 
-   (family fn qidAsTerm q qidAsTerm q2 qidAsTerm q3 bd1 bd2 bd3 ::= cases) 
- = (family fn qidAsTerm q2 qidAsTerm q3 bd2 bd3 ::= cases)  . 
-eq reduceFixed (qidAsTerm q) 
-   (family fn qidAsTerm q1 qidAsTerm q qidAsTerm q3 bd1 bd2 bd3 ::= cases) 
- = (family fn qidAsTerm q1 qidAsTerm q3 bd1 bd3 ::= cases)  . 
-eq reduceFixed (qidAsTerm q) 
-   (family fn qidAsTerm q1 qidAsTerm q2 qidAsTerm q bd1 bd2 bd3 ::= cases) 
- = (family fn qidAsTerm q1 qidAsTerm q2 bd1 bd2 ::= cases)  . 
-eq reduceFixed (qidAsTerm q nlist) P =
-   reduceFixed nlist (reduceFixed qidAsTerm q P) .
-eq reduceFixed nlist (P1 || P2) = reduceFixed nlist P1 || reduceFixed nlist P2 .
-eq reduceFixed nlist newNF(ltq, P) = newNF(ltq, reduceFixed nlist P) .
-eq reduceFixed nlist (new cn : T in P) =
-   new cn : T in reduceFixed nlist P .
-eq reduceFixed nlist (newfamily fn nlist blist : T in P) 
- = newfamily fn nlist blist : T in reduceFixed nlist P .      
-eq reduceFixed ntlist P  = P [owise] . 
-
-var fixedInds : List{NatTerm} .
-
-op  sizeIPDLP : Signature ChannelContext Set{BoolTerm} List{NatTerm} Protocol -> Nat . 
-eq  sizeIPDLP(Sigma, Delta, A, fixedInds, emptyProtocol) = 0 .
-eq  sizeIPDLP(Sigma, Delta, A, fixedInds, cn ::= R) 
+ op  sizeIPDLP : Signature ChannelContext Set{BoolTerm} Protocol -> Nat . 
+eq  sizeIPDLP(Sigma, Delta, A, emptyProtocol) = 0 .
+eq  sizeIPDLP(Sigma, Delta, A, cn ::= R) 
  =  sizeIPDLR(Sigma, Delta, emptyTypeContext, R) + 5 .
-eq  sizeIPDLP(Sigma, Delta, A, fixedInds, P1 || P2) 
- =  sizeIPDLP(Sigma, Delta, A, fixedInds, P1) +  sizeIPDLP(Sigma, Delta, A, fixedInds, P2) + 3 .
-eq  sizeIPDLP(Sigma, Delta, A, fixedInds, new cn : T in P) =
-   5 +  sizeIPDLT(T) +  sizeIPDLP(Sigma, Delta (chn cn :: T), A, fixedInds, P) .
-eq  sizeIPDLP(Sigma, Delta, A, fixedInds, newfamily fn nlist blist : T in P) =
-   5 +  sizeIPDLT(T) +  sizeIPDLP(Sigma, Delta (fam fn :: T), A, fixedInds, P) .
-eq  sizeIPDLP(Sigma, Delta, A, fixedInds, newNF(ltq, P1)) 
- =  sizeIPDLP(Sigma, Delta, A, fixedInds, newNF2New(newNF(ltq, P1))) . 
+eq  sizeIPDLP(Sigma, Delta, A, P1 || P2) 
+ =  sizeIPDLP(Sigma, Delta, A, P1) +  sizeIPDLP(Sigma, Delta, A, P2) + 3 .
+eq  sizeIPDLP(Sigma, Delta, A, new cn : T in P) =
+   5 +  sizeIPDLT(T) +  sizeIPDLP(Sigma, Delta (chn cn :: T), A, P) .
+eq  sizeIPDLP(Sigma, Delta, A, newfamily fn nlist blist : T in P) =
+   5 +  sizeIPDLT(T) +  sizeIPDLP(Sigma, Delta (fam fn :: T), A, P) .
+eq  sizeIPDLP(Sigma, Delta, A, newNF(ltq, P1)) 
+ =  sizeIPDLP(Sigma, Delta, A, newNF2New(newNF(ltq, P1))) . 
  *** families with one index  
-ceq sizeIPDLP(Sigma, Delta, A, fixedInds, family fn nlist blist ::= cases)
- =  sizeIPDLP(Sigma, Delta, A, nil, reduceFixed fixedInds (family fn nlist blist ::= cases))
- if fixedInds =/= nil .
-eq  sizeIPDLP(Sigma, Delta, A, nil, family fn qidAsTerm q bound nt ::= R ) 
+eq  sizeIPDLP(Sigma, Delta, A, family fn qidAsTerm q bound nt ::= R ) 
  =  sizeIPDLNT(A, nt) *  (sizeIPDLR(Sigma, Delta, emptyTypeContext, R) + 5)  + 
     3 * sizeIPDLNT(A, nt) + 1 .
-eq  sizeIPDLP(Sigma, Delta, A, nil, family fn qidAsTerm q bound nt ::= P) 
- =  sizeIPDLNT(A, nt) *  sizeIPDLP(Sigma, Delta, A, qidAsTerm q, P)  + 
+eq  sizeIPDLP(Sigma, Delta, A, family fn qidAsTerm q bound nt ::= P) 
+ =  sizeIPDLNT(A, nt) *  sizeIPDLP(Sigma, Delta, A, P)  + 
     3 * sizeIPDLNT(A, nt) + 1 .
-eq  sizeIPDLP(Sigma, Delta, A, nil, family fn qidAsTerm q bound nt ::= whenList) 
- =  sizeIPDLNT(A, nt) * sizeIPDLW(Sigma, Delta, A, qidAsTerm q, whenList)  + 
+eq  sizeIPDLP(Sigma, Delta, A, family fn qidAsTerm q bound nt ::= whenList) 
+ =  sizeIPDLNT(A, nt) * sizeIPDLW(Sigma, Delta, A, whenList)  + 
     3 * sizeIPDLNT(A, nt) + 1 .
 *** families with two indices
-eq  sizeIPDLP(Sigma, Delta, A, nil, 
-              family fn qidAsTerm q1 qidAsTerm q2 bound nt1 bound nt2 ::= R ) 
+eq  sizeIPDLP(Sigma, Delta, A, family fn qidAsTerm q1 qidAsTerm q2 bound nt1 bound nt2 ::= R ) 
  =  sizeIPDLNT(A, nt1) * ( 
     sizeIPDLNT(A, nt2) *  (sizeIPDLR(Sigma, Delta, emptyTypeContext, R) + 5)  + 
     3 * sizeIPDLNT(A, nt2) + 1 
     ) + 
     3 * sizeIPDLNT(A, nt1) + 1 .
-eq  sizeIPDLP(Sigma, Delta, A, nil,
-              family fn qidAsTerm q1 qidAsTerm q2 bound nt1 bound nt2 ::= P ) 
+eq  sizeIPDLP(Sigma, Delta, A, family fn qidAsTerm q1 qidAsTerm q2 bound nt1 bound nt2 ::= P ) 
  =  sizeIPDLNT(A, nt1) * ( 
-    sizeIPDLNT(A, nt2) *  sizeIPDLP(Sigma, Delta, A, qidAsTerm q1 qidAsTerm q2, P)  + 
+    sizeIPDLNT(A, nt2) *  sizeIPDLP(Sigma, Delta, A, P)  + 
     3 * sizeIPDLNT(A, nt2) + 1 
     ) + 
     3 * sizeIPDLNT(A, nt1) + 1 .    
-eq  sizeIPDLP(Sigma, Delta, A, nil, 
-              family fn qidAsTerm q1 qidAsTerm q2 bound nt1 bound nt2 ::= whenList ) 
+eq  sizeIPDLP(Sigma, Delta, A, family fn qidAsTerm q1 qidAsTerm q2 bound nt1 bound nt2 ::= whenList ) 
  =  sizeIPDLNT(A, nt1) * ( 
-    sizeIPDLNT(A, nt2) *  sizeIPDLW(Sigma, Delta, A, qidAsTerm q1 qidAsTerm q2, whenList)  + 
+    sizeIPDLNT(A, nt2) *  sizeIPDLW(Sigma, Delta, A, whenList)  + 
     3 * sizeIPDLNT(A, nt2) + 1 
     ) + 
     3 * sizeIPDLNT(A, nt1) + 1 .    
     
 *** families with three indices
-eq  sizeIPDLP(Sigma, Delta, A, nil, 
+eq  sizeIPDLP(Sigma, Delta, A, 
      family fn qidAsTerm q1 qidAsTerm q2 qidAsTerm q3 bound nt1 bound nt2 bound nt3 ::= R ) 
  =  sizeIPDLNT(A, nt1) * ( 
     sizeIPDLNT(A, nt2) * ( 
@@ -11030,51 +10980,46 @@ eq  sizeIPDLP(Sigma, Delta, A, nil,
     ) + 
     3 * sizeIPDLNT(A, nt2) + 1 ) + 
     3 * sizeIPDLNT(A, nt1) + 1 .
-eq  sizeIPDLP(Sigma, Delta, A, nil, 
+eq  sizeIPDLP(Sigma, Delta, A, 
       family fn qidAsTerm q1 qidAsTerm q2 qidAsTerm q3 bound nt1 bound nt2 bound nt3 ::= P ) 
  =  sizeIPDLNT(A, nt1) * ( 
     sizeIPDLNT(A, nt2) * ( 
-    sizeIPDLNT(A, nt3) *  sizeIPDLP(Sigma, Delta, A, qidAsTerm q1 qidAsTerm q2 qidAsTerm q3, P)  + 
+    sizeIPDLNT(A, nt3) *  sizeIPDLP(Sigma, Delta, A, P)  + 
     3 * sizeIPDLNT(A, nt3) + 1 
     ) + 
     3 * sizeIPDLNT(A, nt2) + 1 ) + 
     3 * sizeIPDLNT(A, nt1) + 1 .    
-eq  sizeIPDLP(Sigma, Delta, A, nil,
-     family fn qidAsTerm q1 qidAsTerm q2 qidAsTerm q3 
-               bound nt1 bound nt2 bound nt3 ::= whenList ) 
+eq  sizeIPDLP(Sigma, Delta, A, 
+     family fn qidAsTerm q1 qidAsTerm q2 qidAsTerm q3 bound nt1 bound nt2 bound nt3 ::= whenList ) 
  =  sizeIPDLNT(A, nt1) * ( 
     sizeIPDLNT(A, nt2) * ( 
-    sizeIPDLNT(A, nt3) *  
-      sizeIPDLW(Sigma, Delta, A, qidAsTerm q1 qidAsTerm q2 qidAsTerm q3, whenList)  + 
+    sizeIPDLNT(A, nt3) *  sizeIPDLW(Sigma, Delta, A, whenList)  + 
     3 * sizeIPDLNT(A, nt3) + 1 
     ) + 
     3 * sizeIPDLNT(A, nt2) + 1 ) + 
     3 * sizeIPDLNT(A, nt1) + 1 . 
 
 *** families with two indices, dep bound
-eq  sizeIPDLP(Sigma, Delta, A, nil,
-              family fn qidAsTerm q1 qidAsTerm q2 bound nt1 dependentBound F ::= R ) 
+eq  sizeIPDLP(Sigma, Delta, A, family fn qidAsTerm q1 qidAsTerm q2 bound nt1 dependentBound F ::= R ) 
  =  sizeIPDLNT(A, nt1) * ( 
     maxValue(F, nt1) *  (sizeIPDLR(Sigma, Delta, emptyTypeContext, R) + 5)  + 
     3 * maxValue(F, nt1)  + 1 
     ) + 
     3 * sizeIPDLNT(A, nt1) + 1 .
-eq  sizeIPDLP(Sigma, Delta, A, nil,  
-              family fn qidAsTerm q1 qidAsTerm q2 bound nt1 dependentBound F ::= P ) 
+eq  sizeIPDLP(Sigma, Delta, A, family fn qidAsTerm q1 qidAsTerm q2 bound nt1 dependentBound F ::= P ) 
  =  sizeIPDLNT(A, nt1) * ( 
-    maxValue(F, nt1) *  sizeIPDLP(Sigma, Delta, A, qidAsTerm q1 qidAsTerm q2, P)  + 
+    maxValue(F, nt1) *  sizeIPDLP(Sigma, Delta, A, P)  + 
     3 * maxValue(F, nt1)  + 1 
     ) + 
     3 * sizeIPDLNT(A, nt1) + 1 .    
-eq  sizeIPDLP(Sigma, Delta, A, nil, 
-              family fn qidAsTerm q1 qidAsTerm q2 bound nt1 dependentBound F ::= whenList ) 
+eq  sizeIPDLP(Sigma, Delta, A, family fn qidAsTerm q1 qidAsTerm q2 bound nt1 dependentBound F ::= whenList ) 
  =  sizeIPDLNT(A, nt1) * ( 
-    maxValue(F, nt1) *  sizeIPDLW(Sigma, Delta, A, qidAsTerm q1 qidAsTerm q2, whenList)  + 
+    maxValue(F, nt1) *  sizeIPDLW(Sigma, Delta, A, whenList)  + 
     3 * maxValue(F, nt1)  + 1 
     ) + 
     3 * sizeIPDLNT(A, nt1) + 1 . 
 *** families with three indices, dep bound
-eq  sizeIPDLP(Sigma, Delta, A, nil,
+eq  sizeIPDLP(Sigma, Delta, A, 
      family fn qidAsTerm q1 qidAsTerm q2 qidAsTerm q3 bound nt1 bound nt2 dependentBound F ::= R ) 
  =  sizeIPDLNT(A, nt1) * ( 
     sizeIPDLNT(A, nt2) * ( 
@@ -11083,35 +11028,32 @@ eq  sizeIPDLP(Sigma, Delta, A, nil,
     ) + 
     3 * sizeIPDLNT(A, nt2) + 1 ) + 
     3 * sizeIPDLNT(A, nt1) + 1 .
-eq  sizeIPDLP(Sigma, Delta, A, nil,
-    family fn qidAsTerm q1 qidAsTerm q2 qidAsTerm q3 
-              bound nt1 bound nt2 dependentBound F ::= P ) 
+eq  sizeIPDLP(Sigma, Delta, A, 
+    family fn qidAsTerm q1 qidAsTerm q2 qidAsTerm q3 bound nt1 bound nt2 dependentBound F ::= P ) 
  =  sizeIPDLNT(A, nt1) * ( 
     sizeIPDLNT(A, nt2) * ( 
-     maxValue(F, nt2) *  sizeIPDLP(Sigma, Delta, A, qidAsTerm q1 qidAsTerm q2 qidAsTerm q3, P)  + 
+     maxValue(F, nt2) *  sizeIPDLP(Sigma, Delta, A, P)  + 
     3 *  maxValue(F, nt2) + 1 
     ) + 
     3 * sizeIPDLNT(A, nt2) + 1 ) + 
     3 * sizeIPDLNT(A, nt1) + 1 .    
-eq  sizeIPDLP(Sigma, Delta, A, nil,
-    family fn qidAsTerm q1 qidAsTerm q2 qidAsTerm q3  
-              bound nt1 bound nt2 dependentBound F ::= whenList ) 
+eq  sizeIPDLP(Sigma, Delta, A, 
+    family fn qidAsTerm q1 qidAsTerm q2 qidAsTerm q3 bound nt1 bound nt2 dependentBound F ::= whenList ) 
  =  sizeIPDLNT(A, nt1) * ( 
     sizeIPDLNT(A, nt2) * ( 
-     maxValue(F, nt2) *  
-       sizeIPDLW(Sigma, Delta, A, qidAsTerm q1 qidAsTerm q2 qidAsTerm q3, whenList)  + 
+     maxValue(F, nt2) *  sizeIPDLW(Sigma, Delta, A, whenList)  + 
     3 *  maxValue(F, nt2) + 1 
     ) + 
     3 * sizeIPDLNT(A, nt2) + 1 ) + 
     3 * sizeIPDLNT(A, nt1) + 1 . 
 
 *** channels with cases    
-eq  sizeIPDLP(Sigma, Delta, A, nil, cn ::= whenList) 
- =  sizeIPDLW(Sigma, Delta, A, nil, whenList) + 5 . 
+eq  sizeIPDLP(Sigma, Delta, A, cn ::= whenList) 
+ =  sizeIPDLW(Sigma, Delta, A, whenList) + 5 . 
  
 *** embedding 
- eq sizeIPDLP(Sigma, Delta, A, nil, embedProtocol(P, F from Delta1 to Delta2 is cnmap)) = 
-    sizeIPDLP(Sigma, Delta2, A, nil, P) .  
+ eq sizeIPDLP(Sigma, Delta, A, embedProtocol(P, F from Delta1 to Delta2 is cnmap)) = 
+    sizeIPDLP(Sigma, Delta2, A, P) .  
 
   
  var binds : BindList .
@@ -11174,18 +11116,16 @@ eq  sizeIPDLNT(A, nt1 + nt2) =  sizeIPDLNT(A, nt1) +  sizeIPDLNT(A, nt2) .
 *** eq  sizeIPDLNT(nt1 - nt2) =  sizeIPDLNT(nt1) -  sizeIPDLNT(nt2) .
 eq  sizeIPDLNT(A, fun f nt) = eval(f, nt) .
 
-op  sizeIPDLW : Signature ChannelContext Set{BoolTerm} List{NatTerm} WhenList -> Nat .
-eq  sizeIPDLW(Sigma, Delta, A, fixedInds, (whenCond --> R)) 
- =  sizeIPDLR(Sigma, Delta, emptyTypeContext, R) .
-eq  sizeIPDLW(Sigma, Delta, A, fixedInds, (whenCond --> P)) 
- =  sizeIPDLP(Sigma, Delta, A, fixedInds, P) .
-eq  sizeIPDLW(Sigma, Delta, A, fixedInds, (whenCond --> R) ;; whenList) = 
+op  sizeIPDLW : Signature ChannelContext Set{BoolTerm} WhenList -> Nat .
+eq  sizeIPDLW(Sigma, Delta, A, (whenCond --> R)) =  sizeIPDLR(Sigma, Delta, emptyTypeContext, R) .
+eq  sizeIPDLW(Sigma, Delta, A, (whenCond --> P)) =  sizeIPDLP(Sigma, Delta, A, P) .
+eq  sizeIPDLW(Sigma, Delta, A, (whenCond --> R) ;; whenList) = 
    defMax(  sizeIPDLR(Sigma, Delta, emptyTypeContext, R), 
-           sizeIPDLW(Sigma, Delta, A, fixedInds, whenList)
+           sizeIPDLW(Sigma, Delta, A, whenList)
          ) .
-eq  sizeIPDLW(Sigma, Delta, A, fixedInds, (whenCond --> P) ;; whenList) = 
-   defMax(  sizeIPDLP(Sigma, Delta, A, fixedInds, P), 
-            sizeIPDLW(Sigma, Delta, A, fixedInds, whenList)
+eq  sizeIPDLW(Sigma, Delta, A, (whenCond --> P) ;; whenList) = 
+   defMax(  sizeIPDLP(Sigma, Delta, A, P), 
+            sizeIPDLW(Sigma, Delta, A, whenList)
          ) .
          
   *** for some reason Maude does not set the max between anything and 0
@@ -11212,9 +11152,14 @@ eq  sizeIPDLW(Sigma, Delta, A, fixedInds, (whenCond --> P) ;; whenList) =
  eq (s(n1) + an:Nat) defDiff 1 = n1 + an:Nat .
 
   op _defTimes_ : Int Int -> Int [assoc comm] .
-  eq anInt defTimes 1 = anInt .
-  eq 1 defTimes anInt = anInt .
-  eq anInt1 defTimes anInt2 = anInt1 * anInt2 .
+ eq anInt defTimes 1 = anInt .
+ eq 1 defTimes anInt = anInt .
+ eq anInt1 defTimes anInt2 = anInt1 * anInt2 .
+
+ *** op pConf2aConf___ : ProtocolConfig Width Length -> ApproxEqConfig .
+ *** eq pConf2aConf pConfig(Sigma, Delta, P, I, O, A) w l
+ *** = aConfig(Sigma, Delta, P, I, O, A, w, l) .  
+ *** don't need it anymore
 
  eq an:Nat + s(n2) * an:Nat = (n2 + 2) * an:Nat .
  eq s(n1) * an:Nat + s(n2) * an:Nat = (n1 + n2 + 2) * an:Nat .
@@ -11226,8 +11171,6 @@ eq  sizeIPDLW(Sigma, Delta, A, fixedInds, (whenCond --> P) ;; whenList) =
  eq s(n1) * eval(A, q) + s(n2) * eval(A', q) = (n1 + n2 + 2) * eval(A, q) .
  eq eval(A, q) + s(n2) * eval(A, q) = (n2 + 2) * eval(A, q) .
 
-
- *** distributivity axiom
  eq (n1 + n2) * an:Nat = n1 * an:Nat + n2 * an:Nat .
   
 endfm  
@@ -11363,7 +11306,7 @@ mod APPROX-CONGR is
   aCongrConfig(pConfig(Sigma, Delta, P1 || Q, I, O, A), cb1)
   =>
   aCongrConfig(pConfig(Sigma, Delta', P2 || Q, I, union (O1, getOutputs(Q)), A),
-          addValue cb2 (sizeIPDLP(Sigma, Delta,  A, nil, Q) defPlus 3)
+          addValue cb2 (sizeIPDLP(Sigma, Delta,  A, Q) defPlus 3)
          )
  if 
   aCongrConfig(pConfig(Sigma, Delta, P1, union(I, getOutputs(Q)), getOutputs(P1), A),
@@ -11623,7 +11566,7 @@ mod APPROX-EQUALITY is
   =>
   aConfig(pConfig(Sigma, Delta', P2 || Q, I, union (O1, getOutputs(Q)), A),
           pointwiseSum countb countb1,
-          sumValue contextb1 (sizeIPDLP(Sigma, Delta,  A, nil, Q) + 3)
+          sumValue contextb1 (sizeIPDLP(Sigma, Delta,  A, Q) + 3)
   )
  if 
   aConfig(pConfig(Sigma, Delta, P1, union(I, getOutputs(Q)), getOutputs(P1), A),
@@ -11641,9 +11584,8 @@ mod APPROX-EQUALITY is
   =>
    aConfig(pConfig(Sigma, diff Delta' (addChannels ltq emptyChannelCtx), 
            newNF(ltq, P') , I, O' \ (chansInList ltq), A), 
-           countb2, contextb2)
-           *** pointwiseSum countb1 countb2,
-           *** pointwiseMax contextb1 contextb2)
+          pointwiseSum countb1 countb2,
+          pointwiseMax contextb1 contextb2)
  if 
    aConfig(pConfig(Sigma, addChannels ltq Delta, P, I, union(chansInList ltq, O), A),
            emptyBound, emptyBound)
@@ -11670,12 +11612,12 @@ mod APPROX-EQUALITY is
                  (qidAsTerm i qidAsTerm j qidAsTerm k)    
                  (bound nt1 bound nt2 bound nt3) ::=  whenList2, 
           I, O, A), 
-           famBound (bound nt1 bound nt2 bound nt3) 
+          famBound (bound nt1 bound nt2 bound nt3) 
     (toCountFam contextb (qidAsTerm i qidAsTerm j qidAsTerm k)  (bound nt1 bound nt2 bound nt3) ), 
           famBound (bound nt1 bound nt2 bound nt3) 
     (toContextFam contextb (bound nt1 bound nt2 bound nt3) whenList1 whenList2 
                   Sigma Delta A)
-    )      
+    )              
   if 
   aCongrConfig(pConfig(Sigma, 
      toChannelCCtx Delta (toChannel I (qidAsTerm i qidAsTerm j qidAsTerm k), 
@@ -11723,16 +11665,16 @@ mod APPROX-EQUALITY is
     Sigma Delta A
    = singleBound whenCond uncondBound (q |->
      nl + (sizeIPDLNT(A, nt3) defDiff 1) * 
-     defMax(sizeIPDLP(Sigma, Delta,  A, nil, P1), 
-            sizeIPDLP(Sigma, Delta,  A, nil, Q1)) + 
+     defMax(sizeIPDLP(Sigma, Delta,  A, P1), 
+            sizeIPDLP(Sigma, Delta,  A, Q1)) + 
      3 * sizeIPDLNT(A, nt3) + 1 +
      (sizeIPDLNT(A, nt2) defDiff 1) * 
-     (sizeIPDLNT(A, nt3) * defMax(sizeIPDLP(Sigma, Delta,  A, nil, P1), 
-            sizeIPDLP(Sigma, Delta,  A, nil, Q1)) + 3 * sizeIPDLNT(A, nt3) + 1) + 
+     (sizeIPDLNT(A, nt3) * defMax(sizeIPDLP(Sigma, Delta,  A, P1), 
+            sizeIPDLP(Sigma, Delta,  A, Q1)) + 3 * sizeIPDLNT(A, nt3) + 1) + 
             3 * sizeIPDLNT(A, nt2) + 1 +
      (sizeIPDLNT(A, nt1) defDiff 1) * 
-     (sizeIPDLNT(A, nt2) * (sizeIPDLNT(A, nt3) * defMax(sizeIPDLP(Sigma, Delta,  A, nil, P1), 
-            sizeIPDLP(Sigma, Delta,  A, nil, Q1)) + 3 * sizeIPDLNT(A, nt3) + 1) + 
+     (sizeIPDLNT(A, nt2) * (sizeIPDLNT(A, nt3) * defMax(sizeIPDLP(Sigma, Delta,  A, P1), 
+            sizeIPDLP(Sigma, Delta,  A, Q1)) + 3 * sizeIPDLNT(A, nt3) + 1) + 
             3 * sizeIPDLNT(A, nt2) + 1) + 3 * sizeIPDLNT(A, nt1) + 1
      )
  .    
@@ -11749,7 +11691,7 @@ mod APPROX-EQUALITY is
      Sigma Delta A
     ) 
     (toContextFam 
-    cnb
+    ((singleBound whenCond uncondBound (q |-> nl)) ) 
     (bound nt1 bound nt2 bound nt3)
      whenList1
      whenList2 

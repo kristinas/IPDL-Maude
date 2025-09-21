@@ -10,12 +10,13 @@ channel context delta =
  output LeakCtxtAliceAdv : bool 
 .
 
-reaction-assumption flipInvariantXorFixed using x : 
+reaction-assumption flipInvariantXorFixed using x y : 
    emptyCCtxt ; x : bool ; nil |= 
     y : bool <- samp flip (()) ; return  xor( (x, y) ) 
     = samp flip(()) .
 
-expression-assumption %automatic xorIdemLeft using x y : (x : bool) (y : bool) |= xor( ( xor( (x, y) ) , y) ) = y .
+expression-assumption %automatic xorIdemLeft using x y : 
+  (x : bool) (y : bool) |= xor( ( xor( (x, y) ) , y) ) = y .
 
 protocol real =
     new Ctxt : bool in
@@ -47,22 +48,15 @@ protocol idealPlusSim =
 
 start with real over delta then 
 fold chn Key into chn Ctxt then
-fold chn Ctxt into chn LeakCtxtAliceAdv then
-use assumption flipInvariantXorFixed on LeakCtxtAliceAdv then 
+fold chn Ctxt into chn LeakCtxtAliceAdv then 
+use assumption flipInvariantXorFixed on chn LeakCtxtAliceAdv then
 sym from idealPlusSim (
    fold chn LeakCtxtIdAdv into chn LeakCtxtAliceAdv then 
    fold chn Ctxt into chn LeakCtxtAliceAdv
-)   
+) then
+restructure idealPlusSim
 
-check-proof idealPlusSim
-
- eof
- protocol test = 
- LeakCtxtAliceAdv ::= x : bool <- read X ; y : bool <- read In ; return  xor( ( xor( (x, y) ) , y) ) .
-
-start with test over delta
 current-protocol
-
-eof
-
+check-proof idealPlusSim
+quit
 

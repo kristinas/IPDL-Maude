@@ -45,6 +45,7 @@ fmod SPEX/LANGUAGE is
    = grammar 'SpeX/Cmd/Syntax is
        'Command
          ::= "load_" : 'FilePath [format ('b 'so 'd)]
+          |  "include_" : 'FilePath [format ('b 'so 'd)]
           |  lit "eof" [format ('r 'o)]
           |  lit "quit" [format ('r 'o)]
           |  "lang_" : 'Language [format ('b 'so 'd)]
@@ -75,6 +76,7 @@ fmod SPEX/READ is
   *** read command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op read-cmd : SpeX ATerm ~> Cmd{SpeX} .
   eq read-cmd(L, {'load_[FP] : 'Command}) = load read-file-path(L, FP) .
+  eq read-cmd(L, {'include_[FP] : 'Command}) = load read-file-path(L, FP) .
   eq read-cmd(L, {'eof.Command : 'Command}) = eof .
   eq read-cmd(L, {'quit.Command : 'Command}) = quit .
   eq read-cmd(L, {'lang_[LN] : 'Command}) = lang read-lang-name(L, LN) .
@@ -115,6 +117,8 @@ mod SPEX/PARSING is
    = return {C : 'Command} .
   eq analyse L command {'load_[$FP] : 'Command}
    = try {'load_ [ solve L file path ($FP) ] : 'Command} .
+  eq analyse L command {'include_[$FP] : 'Command}
+   = try {'include_ [ solve L file path ($FP) ] : 'Command} .
   eq analyse L command {'lang_[$LN] : 'Command}
    = try {'lang_ [ analyse L language name ($LN) ] : 'Command} .
 

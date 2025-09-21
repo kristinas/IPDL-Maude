@@ -85,9 +85,26 @@ fmod IPDL/PROOF is
   op ApproxProof[_]{sym-approx from_(_)} : IPDL Protocol ApproxProof{IPDL} -> ApproxProof{IPDL} .
   op ApproxProof[_]{use approx assumption_on_} : IPDL Qid List{CNameBound} -> ApproxProof{IPDL} [ctor] .
   op ApproxProof[_]{use approx assumption_} : IPDL Qid -> ApproxProof{IPDL} [ctor] .
-  op ApproxProof[_]{call-approx_} : IPDL Qid -> Proof{IPDL} [ctor] . 
+  op ApproxProof[_]{call-approx_} : IPDL Qid -> ApproxProof{IPDL} [ctor] . 
   op ApproxProof[_]{in the presence of_rewrite_to_by generalization of _ } 
-      : IPDL List{CNameBound} RuleTarget Cases Qid -> Proof{IPDL} [ctor] . 
+      : IPDL List{CNameBound} RuleTarget Cases Qid -> ApproxProof{IPDL} [ctor] . 
+  op ApproxProof[_]{approx generalize for_(_)}
+      : IPDL CNameBound ApproxCongrProof{IPDL} -> ApproxProof{IPDL} [ctor] .
+      
+
+  sort ApproxCongrProof{IPDL} .
+  op ApproxCongrProof[_]{use approx axiom _} : IPDL Qid -> ApproxCongrProof{IPDL} [ctor] .
+  op ApproxCongrProof[_]{approx case distinction on_(_)} 
+      : IPDL CNameBound ApproxCongrProofCaseList -> ApproxCongrProof{IPDL} [ctor] .
+  op ApproxCongrProof[_]{approx embed_along_with inputs_(_)}
+      : IPDL Protocol Qid Set{CNameBound} ApproxCongrProof{IPDL} -> ApproxCongrProof{IPDL} [ctor] .
+
+  sort ApproxCongrProofCase .
+  op approxCase_ : ApproxCongrProof{IPDL} -> ApproxCongrProofCase [ctor] .
+
+  sort ApproxCongrProofCaseList .
+  subsort ApproxCongrProofCase < ApproxCongrProofCaseList .
+  op __ : ApproxCongrProofCaseList ApproxCongrProofCaseList -> ApproxCongrProofCaseList [ctor assoc] .     
 
   sort Proof{IPDL} .
   op Proof[_]{todo} : IPDL -> Proof{IPDL} [ctor] .
@@ -96,6 +113,7 @@ fmod IPDL/PROOF is
   op Proof[_]{bring declarations of hidden channels in front} : IPDL -> Proof{IPDL} [ctor] .
   op Proof[_]{start with_over_} : IPDL Qid Qid -> Proof{IPDL} [ctor] .
   op Proof[_]{absorb_} : IPDL CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{group-absorb_} : IPDL RuleTarget -> Proof{IPDL} [ctor] .
   op Proof[_]{compose _ with _ in group} : IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .
   op Proof[_]{decompose _ with _} : IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .
   op Proof[_]{turn neg into otherwise for_} : IPDL CNameBound -> Proof{IPDL} [ctor] .
@@ -104,14 +122,25 @@ fmod IPDL/PROOF is
     *** the bool term must be an equation q = nt
   op Proof[_]{turn otherwise into neg for_} : IPDL CNameBound -> Proof{IPDL} [ctor] .
   op Proof[_]{combine_} : IPDL CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{combine_into families} : IPDL CNameBound -> Proof{IPDL} [ctor] .
   op Proof[_]{drop read_from_} : IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{drop read branch_of_from_} : IPDL WhenCond CNameBound CNameBound -> Proof{IPDL} [ctor] .
   op Proof[_]{fold_into_} : IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .
   op Proof[_]{subst_into_} : IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{subst_into_at_} : IPDL CNameBound CNameBound Qid -> Proof{IPDL} [ctor] .
+  op Proof[_]{subst branch_of_into_} : IPDL WhenCond CNameBound CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{subst branch_of_into_at_} : IPDL WhenCond CNameBound CNameBound Qid -> Proof{IPDL} [ctor] .
   op Proof[_]{use assumption_on_} : IPDL Qid List{CNameBound} -> Proof{IPDL} [ctor] .
   op Proof[_]{use expression assumption_on_at_} : IPDL Qid List{CNameBound} Nat -> Proof{IPDL} [ctor] . 
   op Proof[_]{_then_} : IPDL Proof{IPDL} Proof{IPDL} -> Proof{IPDL} [ctor] .
   op Proof[_]{sym from_(_)} : IPDL Protocol Proof{IPDL} -> Proof{IPDL} [ctor] .
   op Proof[_]{sym from_over_(_)} : IPDL Protocol ChannelContext Proof{IPDL} -> Proof{IPDL} [ctor] .
+  *** op Proof[_]{split-sym from_over_and_(_)} 
+  ***    : IPDL Protocol ChannelContext List{CNameBound} Proof{IPDL} -> Proof{IPDL} [ctor] .
+  *** op Proof[_]{try sym from_over_and_:_ } 
+  ***    : IPDL Protocol ChannelContext List{CNameBound} Proof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{try sym from_over_:_ } 
+     : IPDL Protocol ChannelContext Proof{IPDL} -> Proof{IPDL} [ctor] .      
   op Proof[_]{try sym from_:_done} : IPDL Protocol Proof{IPDL} -> Proof{IPDL} [ctor] .
   op Proof[_]{try sym from_:_} : IPDL Protocol Proof{IPDL} -> Proof{IPDL} [ctor] .
   op Proof[_]{add internal family_indices:_bounds:_typed:_assigned:_} : 
@@ -121,8 +150,12 @@ fmod IPDL/PROOF is
   op Proof[_]{case distinction on_(_)} : IPDL RuleTarget ProofCaseList -> Proof{IPDL} [ctor] . 
   op Proof[_]{in the presence of_rewrite_to_by induction on_bound_(_)} 
       : IPDL List{CNameBound} RuleTarget Cases NatTerm NatTerm Proof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{rewrite_to_by induction on_bound_(_)} 
+      : IPDL RuleTarget Cases NatTerm NatTerm Proof{IPDL} -> Proof{IPDL} [ctor] .    
   op Proof[_]{try in the presence of_rewrite_to_by induction on_bound_:_} 
       : IPDL List{CNameBound} RuleTarget Cases NatTerm NatTerm Proof{IPDL} -> Proof{IPDL} [ctor] .    
+  op Proof[_]{try rewrite_to_by induction on_bound_:_} 
+      : IPDL RuleTarget Cases NatTerm NatTerm Proof{IPDL} -> Proof{IPDL} [ctor] .        
   op Proof[_]{rename_in_} : IPDL QidPairList CNameBound -> Proof{IPDL} [ctor] . 
   op Proof[_]{rename variables_of_} : IPDL QidPairList CNameBound -> Proof{IPDL} [ctor] .
   op Proof[_]{remove only branch of_} : IPDL CNameBound -> Proof{IPDL} [ctor] . 
@@ -131,13 +164,15 @@ fmod IPDL/PROOF is
     op Proof[_]{on all branches of_split_on second index} : 
      IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .   
   op Proof[_]{split_on first index} : IPDL CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{split_on first index inside _} : IPDL CNameBound RuleTarget -> Proof{IPDL} [ctor] .
   op Proof[_]{split_on second index} : IPDL CNameBound -> Proof{IPDL} [ctor] .
   op Proof[_]{try case distinction on_: (case:_) } : IPDL RuleTarget Proof{IPDL}-> Proof{IPDL} [ctor] .
   op Proof[_]{try case distinction on_: (case:_done) (case:_) } 
      : IPDL RuleTarget Proof{IPDL} Proof{IPDL} -> Proof{IPDL} [ctor] .
   op Proof[_]{unsplit_} : IPDL ChannelName -> Proof{IPDL} [ctor] .  
   op Proof[_]{on branch _ of _ (_)} : IPDL BoolTerm RuleTarget Proof{IPDL} -> Proof{IPDL} [ctor] .
-  *** op Proof[_]{try on branch_of_:_} : IPDL BoolTerm RuleTarget Proof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{try on branch_of_:_} : IPDL BoolTerm RuleTarget Proof{IPDL} -> Proof{IPDL} [ctor] .
+  op Proof[_]{try on branch_of_:_done} : IPDL BoolTerm RuleTarget Proof{IPDL} -> Proof{IPDL} [ctor] .
   op Proof[_]{move_on each branch of_} : IPDL RuleTarget RuleTarget -> Proof{IPDL} [ctor] .  
   op Proof[_]{diverge on_with_var_} : IPDL CNameBound CNameBound Qid -> Proof{IPDL} [ctor] . 
   op Proof[_]{reverse subst_in_using_} : IPDL CNameBound CNameBound CNameBound -> Proof{IPDL} [ctor] .
@@ -147,9 +182,31 @@ fmod IPDL/PROOF is
       IPDL CNameBound BoolTerm CNameBound Qid -> Proof{IPDL} [ctor] .
   op Proof[_]{group_in_indices:_bounds:_} : 
       IPDL List{CNameBound} Qid List{NatTerm} List{Bounds} -> Proof{IPDL} [ctor] . 
-  op Proof[_]{ungroup_} : IPDL CNameBound -> Proof{IPDL} [ctor] .     
-
-  op Proof[_]{call_} : IPDL Qid -> Proof{IPDL} [ctor] .    
+  op Proof[_]{ungroup_} : IPDL CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{using_(_)} : IPDL RuleTarget Proof{IPDL} -> Proof{IPDL} [ctor] .    
+  op Proof[_]{using branch_of_(_)} : IPDL WhenCond RuleTarget Proof{IPDL} -> Proof{IPDL} [ctor] . 
+  op Proof[_]{sym var_terms_diverge_into_var_} 
+   : IPDL Qid List{NatTerm} CNameBound CNameBound Qid -> Proof{IPDL} [ctor] .
+  op Proof[_]{save current configuration} : IPDL -> Proof{IPDL} [ctor] .
+  op Proof[_]{call_} : IPDL Qid -> Proof{IPDL} [ctor] . 
+  op Proof[_]{use lemma_trust} : IPDL Qid -> Proof{IPDL} [ctor] . 
+  op Proof[_]{use lemma_run} : IPDL Qid -> Proof{IPDL} [ctor] . 
+  op Proof[_]{split_inside_} : IPDL CNameBound RuleTarget -> Proof{IPDL} [ctor] .    
+  op Proof[_]{unsplit_and_} : IPDL CNameBound CNameBound -> Proof{IPDL} [ctor] .   
+  op Proof[_]{unsplit_and_inside_} : IPDL CNameBound CNameBound RuleTarget -> Proof{IPDL} [ctor] .   
+  op Proof[_]{unit-ext on_at_} : IPDL CNameBound Nat -> Proof{IPDL} [ctor] .   
+  op Proof[_]{rename indices to_in_} : IPDL List{NatTerm} CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{remove_from_} : IPDL CNameBound RuleTarget -> Proof{IPDL} [ctor] .      
+  op Proof[_]{change name_to_} : IPDL CNameBound Qid -> Proof{IPDL} [ctor] . 
+  op Proof[_]{focus_(_)} : IPDL List{CNameBound} Proof{IPDL} -> Proof{IPDL} [ctor] .   
+  op Proof[_]{use assumptions for _ in _} : IPDL Qid CNameBound -> Proof{IPDL} [ctor] .
+  op Proof[_]{remove and merge _ from _ } : IPDL CNameBound RuleTarget -> Proof{IPDL} [ctor] .
+  op Proof[_]{merge cases for _ and _ into group _} : 
+      IPDL CNameBound CNameBound Qid -> Proof{IPDL} [ctor] .  
+  op Proof[_]{extract _ from _ into group _} : 
+      IPDL List{CNameBound} RuleTarget Qid -> Proof{IPDL} [ctor] . 
+  op Proof[_]{discard branch _ of _} : IPDL BoolTerm CNameBound -> Proof{IPDL} [ctor] . 
+  op Proof[_]{fix index for _} : IPDL CNameBound -> Proof{IPDL} [ctor] .                  
 
   sort ReactionProof{IPDL} .
   op ReactionProof[_]{idle} : IPDL -> ReactionProof{IPDL} [ctor] .
@@ -199,6 +256,10 @@ fmod IPDL/DECL is
   sorts Decl{IPDL} DeclList{IPDL} .
   subsort Decl{IPDL} < DeclList{IPDL} .
   op nil : ->  DeclList{IPDL} [ctor] .
+  op (Decl[_]{embedding _ from _ to _ = _ .}) : 
+      IPDL Qid Qid Qid CNameMap -> Decl{IPDL} [ctor] .
+  op (Decl[_]{lemma _ = _ => _ : _  .}) : 
+      IPDL Qid Protocol Protocol Proof{IPDL} -> Decl{IPDL} [ctor] .    
   op (Decl[_]{strict subproof _ = _ .}) : IPDL Qid Proof{IPDL} -> Decl{IPDL} [ctor] .
   op (Decl[_]{approx subproof _ = _ .}) : IPDL Qid ApproxProof{IPDL} -> Decl{IPDL} [ctor] .
   op (Decl[_]{type _ .}) : IPDL Qid -> Decl{IPDL} [ctor] .
@@ -208,7 +269,8 @@ fmod IPDL/DECL is
   op (Decl[_]{parameter _ : _ .}) : IPDL Qid IPDLPreType -> Decl{IPDL} [ctor] .
   *** op (Decl[_]{output _ : _ .}) : IPDL CNameBound IPDLPreType -> Decl{IPDL} [ctor] .
   op (Decl[_]{channel context _ = _ .}) : IPDL Qid PairSetIO -> Decl{IPDL} [ctor] .
-  op (Decl[_]{protocol _ = _ .}) : IPDL Qid Protocol -> Decl{IPDL} [ctor] .  
+  op (Decl[_]{protocol _ = _ .}) : IPDL Qid Protocol -> Decl{IPDL} [ctor] .
+  op (Decl[_]{protocol _ .}) : IPDL Qid -> Decl{IPDL} [ctor] .  
   op (Decl[_]{import _ .}) : IPDL Qid -> Decl{IPDL} [ctor] .  
   op (Decl[_]{hypothesis _ .}) : IPDL BoolTerm -> Decl{IPDL} [ctor] .
   op (Decl[_]{approx assumption _ using _ :  _ ; _ ; _ |= _ = _.}) 
@@ -261,6 +323,7 @@ fmod IPDL/DECL is
   *** eq id(Decl[L]{output (chn I) : t1 .}) = I .
   *** eq id(Decl[L]{output (fam (I[bdl])) : t1 .}) = I .
   eq id(Decl[L]{protocol I = P .}) = I .
+  eq id(Decl[L]{protocol I .}) = I .
   eq id(Decl[L]{reaction-assumption I using QIS : Delta ; Gamma ; Ins |= R1 = R2 .}) = I .
   eq id(Decl[L]{assumption automatic I using QIS : Gamma |= E1 = E2 .}) = I .
 
@@ -285,8 +348,7 @@ fmod IPDL/DECL is
   op getParameterType : Decl{IPDL} -> IPDLPreType .
   eq getParameterType(Decl[L]{parameter I : t1 .}) = t1 .  
   
-  op getProtocol : Decl{IPDL} -> Protocol .
-  eq getProtocol(Decl[L]{protocol I = P .}) = P .
+
 
   op getAssumVars : Decl{IPDL} -> QidSet .
   eq getAssumVars(Decl[L]{reaction-assumption I using QIS : Delta ; Gamma ; Ins |= R1 = R2 .}) = QIS .
@@ -366,5 +428,7 @@ fmod IPDL/CMD is
   op Cmd[_]{check-proof_} : IPDL Qid -> Cmd{IPDL} [ctor] .
   *** op Cmd[_]{add} : IPDL -> Cmd{IPDL} [ctor] .
   op Cmd[_]{show-bounds} : IPDL -> Cmd{IPDL} [ctor] .
+  op Cmd[_]{enable-typechecking} : IPDL -> Cmd{IPDL} [ctor] .
+  op Cmd[_]{disable-typechecking} : IPDL -> Cmd{IPDL} [ctor] .
 endfm
 

@@ -112,8 +112,511 @@ mod BASEGMWN is
   if A |= nt1 <T nt2 with f [label wireSmallThen1] . 
   
  eq (A, apply 'isHonest nt) |= neg (apply 'isSemiHonest nt) with f = true .
- eq (A, apply 'isSemiHonest nt) |= neg (apply 'isHonest nt) with f = true .     
- 
+ eq (A, apply 'isSemiHonest nt) |= neg (apply 'isHonest nt) with f = true .  
+ eq (apply 'isHonest nt) disj (apply 'isSemiHonest nt) = trueBT .
+ *** added later:
+ eq (apply 'isHonest nt) conj (apply 'isSemiHonest nt) = falseBT .
+
+ *** assumptions on the abstract protocols
+
+ eq getOutputs(protocolRef('1OutOf4OTReal-Honest-Honest))
+  = (chn ('OTOut[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTChc-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTChc-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTChcRcvd-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]),
+     chn (('OTChcRcvd-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-2OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-3OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsgRcvd-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsgRcvd-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsgRcvd-2OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]),
+     chn (('OTMsgRcvd-3OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTOutOtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w])
+   ) .   
+
+  eq getOutputs(protocolRef('1OutOf4OTReal-Honest-SemiHonest))
+  = (chn ('OTOut[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTChc-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTChc-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTChcRcvd-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]),
+     chn (('OTChcRcvd-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-2OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-3OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsgRcvd-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsgRcvd-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsgRcvd-2OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]),
+     chn (('OTMsgRcvd-3OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTOutOtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w])
+   ) .    
+
+  eq getOutputs(protocolRef('1OutOf4OTReal-SemiHonest-Honest))
+  = (chn ('OTOut[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTChc-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTChc-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTChcRcvd-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]),
+     chn (('OTChcRcvd-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-2OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-3OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsgRcvd-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsgRcvd-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsgRcvd-2OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]),
+     chn (('OTMsgRcvd-3OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTOutOtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w])
+   ) .    
+
+   eq getOutputs(protocolRef('1OutOf4OTReal-SemiHonest-SemiHonest))
+  = (chn ('OTOut[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTChc-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTChc-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTChcRcvd-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]),
+     chn (('OTChcRcvd-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-2OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsg-3OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsgRcvd-0OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsgRcvd-1OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTMsgRcvd-2OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]),
+     chn (('OTMsgRcvd-3OtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]), 
+     chn (('OTOutOtAdv)[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w])
+   ) .   
+
+  *** typing assumptions
+
+ var Delta : ChannelContext .
+ vars I : Set{CNameBound} .
+
+eq typeOfAux(typesOf ('bool ; 'nat ; 'unit)
+('** : typeName 'bool * typeName 'bool ~> typeName 'bool)
+('neg : typeName 'bool ~> typeName 'bool)
+('xor : typeName 'bool * typeName 'bool ~> typeName 'bool)
+'flip : typeName 'unit ~>> typeName 'bool, 
+Delta
+(fam ('CtrbPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('CtrbSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('In[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InRcvdPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'unit)
+(fam ('InShare$-SumPartyAdv[bound (natAsTerm 1 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InShare$PartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('OTChc-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChcRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTChcRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsg-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-2[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-3[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsgRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTOut[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTOutOtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('Out[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutShareSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('RcvdBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('RcvdInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('RcvdOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('SendBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('SendInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('SendOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+fam ('SharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool, 
+(I, fam ('In[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I])), 
+(neg (apply 'isAndGate natAsTerm 0), 
+ neg (apply 'isNotGate natAsTerm 0), 
+ neg (apply 'isXorGate natAsTerm 0), 
+ apply 'isHonest natAsTerm 1 + qidAsTerm 'N, 
+ (apply 'isHonest qidAsTerm 'm) conj apply 'isHonest qidAsTerm 'n,
+ A
+), 
+ embedProtocol(protocolRef('1OutOf4OTReal-Honest-Honest), 'phi from (chn ('OTChc-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChc-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChc-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChc-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChcRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTChcRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsg-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-2[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-2OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-3[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-3OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsgRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsgRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsgRcvd-2OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsgRcvd-3OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTOut[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+chn ('OTOutOtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool to (chn ('OTChc-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChc-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChc-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChc-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChcRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTChcRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-3[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsgRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsgRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsgRcvd-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsgRcvd-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTOut[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+chn ('OTOutOtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool is ('OTChc-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChc-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]))
+    ; ('OTChc-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChc-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTChc-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to (
+    'OTChc-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTChc-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChc-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; (
+    'OTChcRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChcRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTChcRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm
+    'w] to ('OTChcRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; (
+    'OTMsg-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-1[
+    qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-2[
+    qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-2OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-2OtAdv[qidAsTerm
+    'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-3[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-3[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-3OtAdv[qidAsTerm 's qidAsTerm
+    'r qidAsTerm 'w] to ('OTMsg-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsgRcvd-0OtAdv[qidAsTerm 'n
+    qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsgRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-2OtAdv[
+    qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsgRcvd-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-3OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to (
+    'OTMsgRcvd-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTOut[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTOut[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; 'OTOutOtAdv[
+    qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTOutOtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]))) 
+    = true [label typeOfHH] .
+    
+eq typeOfAux(typesOf ('bool ; 'nat ; 'unit)
+('** : typeName 'bool * typeName 'bool ~> typeName 'bool)
+('neg : typeName 'bool ~> typeName 'bool)
+('xor : typeName 'bool * typeName 'bool ~> typeName 'bool)
+'flip : typeName 'unit ~>> typeName 'bool, 
+Delta
+(fam ('CtrbPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('CtrbSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('In[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InRcvdPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'unit)
+(fam ('InShare$-SumPartyAdv[bound (natAsTerm 1 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InShare$PartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('OTChc-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChcRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTChcRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsg-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-2[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-3[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsgRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTOut[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTOutOtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('Out[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutShareSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('RcvdBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('RcvdInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('RcvdOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('SendBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('SendInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('SendOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+fam ('SharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool, 
+(I, fam ('In[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I])), 
+(neg (apply 'isAndGate
+    natAsTerm 0), neg (apply 'isNotGate natAsTerm 0), neg (apply 'isXorGate natAsTerm 0), neg ((apply 'isHonest qidAsTerm 'm) conj apply 'isHonest qidAsTerm 'n), apply 'isHonest
+    natAsTerm 1 + qidAsTerm 'N, 
+    (apply 'isHonest qidAsTerm 'm) conj apply 'isSemiHonest qidAsTerm 'n,
+    A), 
+    embedProtocol(protocolRef('1OutOf4OTReal-SemiHonest-Honest), 'phi from (chn (
+    'OTChc-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChc-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChc-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChc-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChcRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTChcRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsg-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-2[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-2OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-3[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-3OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsgRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsgRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsgRcvd-2OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsgRcvd-3OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTOut[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+chn ('OTOutOtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool to (chn ('OTChc-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChc-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChc-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChc-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChcRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTChcRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-3[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsgRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsgRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsgRcvd-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsgRcvd-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTOut[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+chn ('OTOutOtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool is ('OTChc-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChc-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]))
+    ; ('OTChc-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChc-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTChc-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to (
+    'OTChc-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTChc-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChc-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; (
+    'OTChcRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChcRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTChcRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm
+    'w] to ('OTChcRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; (
+    'OTMsg-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-1[
+    qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-2[
+    qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-2OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-2OtAdv[qidAsTerm
+    'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-3[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-3[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-3OtAdv[qidAsTerm 's qidAsTerm
+    'r qidAsTerm 'w] to ('OTMsg-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsgRcvd-0OtAdv[qidAsTerm 'n
+    qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsgRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-2OtAdv[
+    qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsgRcvd-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-3OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to (
+    'OTMsgRcvd-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTOut[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTOut[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; 'OTOutOtAdv[
+    qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTOutOtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]))) 
+    = true [label typeOfSHH] .
+    
+eq  typeOfAux(typesOf ('bool ; 'nat ; 'unit)
+('** : typeName 'bool * typeName 'bool ~> typeName 'bool)
+('neg : typeName 'bool ~> typeName 'bool)
+('xor : typeName 'bool * typeName 'bool ~> typeName 'bool)
+'flip : typeName 'unit ~>> typeName 'bool, 
+Delta 
+(fam ('CtrbPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('CtrbSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('In[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InRcvdPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'unit)
+(fam ('InShare$-SumPartyAdv[bound (natAsTerm 1 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InShare$PartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('OTChc-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChcRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTChcRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsg-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-2[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-3[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsgRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTOut[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTOutOtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('Out[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutShareSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('RcvdBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('RcvdInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('RcvdOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('SendBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('SendInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('SendOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+fam ('SharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool, 
+(I, fam ('In[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I])), 
+(neg (apply 'isAndGate
+    natAsTerm 0), neg (apply 'isNotGate natAsTerm 0), neg (apply 'isXorGate natAsTerm 0), neg ((apply 'isHonest qidAsTerm 'm) conj apply 'isHonest qidAsTerm 'n), neg ((apply 'isHonest
+    qidAsTerm 'm) conj apply 'isSemiHonest qidAsTerm 'n), 
+    apply 'isHonest natAsTerm 1 + qidAsTerm 'N, 
+    (apply 'isHonest qidAsTerm 'n) conj apply 'isSemiHonest qidAsTerm 'm, A),
+    embedProtocol(protocolRef('1OutOf4OTReal-Honest-SemiHonest), 'phi from (chn ('OTChc-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChc-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChc-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChc-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChcRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTChcRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsg-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-2[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-2OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-3[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-3OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsgRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsgRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsgRcvd-2OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsgRcvd-3OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTOut[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+chn ('OTOutOtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool to (chn ('OTChc-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChc-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChc-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChc-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChcRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTChcRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-3[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsgRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsgRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsgRcvd-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsgRcvd-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTOut[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+chn ('OTOutOtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool is ('OTChc-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChc-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]))
+    ; ('OTChc-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChc-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTChc-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to (
+    'OTChc-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTChc-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChc-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; (
+    'OTChcRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChcRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTChcRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm
+    'w] to ('OTChcRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; (
+    'OTMsg-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-1[
+    qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-2[
+    qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-2OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-2OtAdv[qidAsTerm
+    'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-3[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-3[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-3OtAdv[qidAsTerm 's qidAsTerm
+    'r qidAsTerm 'w] to ('OTMsg-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsgRcvd-0OtAdv[qidAsTerm 'n
+    qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsgRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-2OtAdv[
+    qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsgRcvd-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-3OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to (
+    'OTMsgRcvd-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTOut[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTOut[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; 'OTOutOtAdv[
+    qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTOutOtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]))) 
+    = true [label typeOfHSH] . 
+    
+eq  typeOfAux(typesOf ('bool ; 'nat ; 'unit)
+('** : typeName 'bool * typeName 'bool ~> typeName 'bool)
+('neg : typeName 'bool ~> typeName 'bool)
+('xor : typeName 'bool * typeName 'bool ~> typeName 'bool)
+'flip : typeName 'unit ~>> typeName 'bool, 
+Delta
+(fam ('CtrbPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('CtrbSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('In[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InRcvdPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'unit)
+(fam ('InShare$-SumPartyAdv[bound (natAsTerm 1 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InShare$PartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('InSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('OTChc-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChc-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTChcRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTChcRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsg-0[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-1[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-2[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-3[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsg-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTMsgRcvd-0OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-1OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-2OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTMsgRcvd-3OtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'unit)
+(fam ('OTOut[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OTOutOtAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('Out[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('OutShareSumPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('RcvdBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('RcvdInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('RcvdOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('SendBitPartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+(fam ('SendInSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I]) :: typeName 'bool)
+(fam ('SendOutSharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool)
+fam ('SharePartyAdv[bound (natAsTerm 2 + qidAsTerm 'N) bound qidAsTerm 'K]) :: typeName 'bool, 
+(I, fam ('In[bound (natAsTerm 2 + qidAsTerm 'N) dependentBound 'I])), 
+(neg (apply 'isAndGate
+    natAsTerm 0), neg (apply 'isNotGate natAsTerm 0), neg (apply 'isXorGate natAsTerm 0), neg ((apply 'isHonest qidAsTerm 'm) conj apply 'isHonest qidAsTerm 'n), neg ((apply 'isHonest
+    qidAsTerm 'm) conj apply 'isSemiHonest qidAsTerm 'n), neg ((apply 'isHonest qidAsTerm 'n) conj apply 'isSemiHonest qidAsTerm 'm), apply 'isHonest natAsTerm 1 + qidAsTerm 'N, (
+    apply 'isSemiHonest qidAsTerm 'm) conj apply 'isSemiHonest qidAsTerm 'n,
+    A), 
+embedProtocol(protocolRef('1OutOf4OTReal-SemiHonest-SemiHonest), 'phi from (chn ('OTChc-0[qidAsTerm 's
+    qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChc-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChc-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChc-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTChcRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTChcRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsg-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-2[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-2OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-3[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsg-3OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+(chn ('OTMsgRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsgRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsgRcvd-2OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTMsgRcvd-3OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'unit)
+(chn ('OTOut[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool)
+chn ('OTOutOtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w]) :: typeName 'bool to (chn ('OTChc-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChc-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChc-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChc-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTChcRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTChcRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-3[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsg-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+(chn ('OTMsgRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsgRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsgRcvd-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTMsgRcvd-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'unit)
+(chn ('OTOut[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool)
+chn ('OTOutOtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]) :: typeName 'bool is ('OTChc-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChc-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]))
+    ; ('OTChc-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChc-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTChc-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to (
+    'OTChc-1[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTChc-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChc-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; (
+    'OTChcRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTChcRcvd-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTChcRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm
+    'w] to ('OTChcRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-0[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-0[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; (
+    'OTMsg-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-0OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-1[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-1[
+    qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-2[
+    qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-2[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-2OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-2OtAdv[qidAsTerm
+    'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-3[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsg-3[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsg-3OtAdv[qidAsTerm 's qidAsTerm
+    'r qidAsTerm 'w] to ('OTMsg-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-0OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsgRcvd-0OtAdv[qidAsTerm 'n
+    qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-1OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsgRcvd-1OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-2OtAdv[
+    qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTMsgRcvd-2OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTMsgRcvd-3OtAdv[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to (
+    'OTMsgRcvd-3OtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; ('OTOut[qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTOut[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k])) ; 'OTOutOtAdv[
+    qidAsTerm 's qidAsTerm 'r qidAsTerm 'w] to ('OTOutOtAdv[qidAsTerm 'n qidAsTerm 'm qidAsTerm 'k]))) 
+    = true [label typeOfSHSH] .
+
+
  endm
 
 

@@ -2410,23 +2410,3 @@ restrFinal =
 .
 
 `` end pInt1
-
-start with pInt0 over deltaReal then
-combine fam Adv[bound K] then
-combine fam Shares[bound K] then
-combine fam 1OutOf4OT[bound K] then
-absorb fam OTOut[ bound N + 2 bound N + 2 bound K] then
-absorb fam OTMsg-0[bound N + 2 bound N + 2 bound K] then
-absorb fam OTMsg-1[bound N + 2 bound N + 2 bound K] then
-absorb fam OTMsg-2[bound N + 2 bound N + 2 bound K] then
-absorb fam OTMsg-3[bound N + 2 bound N + 2 bound K] then 
-absorb fam OTChc-0[bound N + 2 bound N + 2 bound K] then
-absorb fam OTChc-1[bound N + 2 bound N + 2 bound K] then
-sym from pInt1(
-  combine fam Adv[bound K] then
-  combine fam Shares[bound K] 
-) then
-restructure pInt1
-
-check-proof pInt1
-quit
