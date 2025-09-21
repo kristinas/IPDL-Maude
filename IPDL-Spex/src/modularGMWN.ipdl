@@ -1,6 +1,10 @@
 lang IPDL
 
 include gmwn-defs.imod
+include realGMWN.imod
+include restr.imod
+include pInt1.imod
+include idealPlusSimGMWN.imod
 
 include gmwn-subs.imod
 
@@ -10,8 +14,16 @@ include 0gmwn.proof
 
 include 1gmwn.proof
 
-restructure pInt0
+include 2gmwn.proof
 
-check-proof pInt0
+include 3gmwn.proof
+
+include 4gmwn.proof
+
+include 5gmwn.proof
+
+
+check-proof idealPlusSim
+show-bounds
 quit
 
