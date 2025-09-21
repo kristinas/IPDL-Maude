@@ -1,0 +1,16 @@
+lang IPDL 
+
+include gmwn-defs.imod
+include deltaRealSplit.imod
+include pInt2.imod
+include pInt3.imod
+
+include gmwn-subs.imod
+
+start with pInt2 over deltaRealSplit
+
+include 4gmwn.proof 
+ 
+check-proof pInt3
+quit
+

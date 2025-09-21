@@ -1,0 +1,982 @@
+protocol pInt2 =
+ newfamily Ctrb[bound N + 2 bound N + 2 bound K ]
+           indices: n, m, k
+           bounds: bound N + 2 bound N + 2 bound K : bool in   
+ newfamily CtrbSum[bound N + 2 bound N + 2 bound K ]
+           indices: n, m, k
+           bounds: bound N + 2 bound N + 2 bound K : bool in
+ newfamily InShare[bound N + 2 bound N + 2 dependentBound I]
+           indices: n, m, i
+           bounds: bound N + 2 bound N + 2 dependentBound I : bool in
+ newfamily InShare$[bound N + 2 bound N + 2 dependentBound I]
+           indices: m, n, i
+           bounds: bound N + 2 bound N + 2 dependentBound I : bool in
+ newfamily InShare$-Sum[bound N + 1 bound N + 2 dependentBound I]
+           indices: m, n, i
+           bounds: bound N + 1 bound N + 2 dependentBound I : bool in          
+ newfamily OutShare[bound N + 2 bound N + 2 bound K ]
+           indices: n, m, k
+           bounds: bound N + 2 bound N + 2 bound K : bool in
+ newfamily OutShareSum[bound N + 2 bound N + 2 bound K ]
+           indices: n, m, k
+           bounds: bound N + 2 bound N + 2 bound K : bool in
+ newfamily RcvdBit[bound N + 2 bound N + 2 bound K ]
+           indices: n, m, k
+           bounds: bound N + 2 bound N + 2 bound K : bool in
+ newfamily SendBit[bound N + 2 bound N + 2 bound K ]
+           indices: n, m, k
+           bounds: bound N + 2 bound N + 2 bound K : bool in
+ newfamily Share[bound N + 1 bound K ]
+           indices: n, k
+           bounds: bound N + 1 bound K : bool in
+ newfamily Share[fixedBound N + 1 bound K ]
+           indices: n, k
+           bounds: fixedBound N + 1 bound K : bool in
+ newfamily ShareSum[bound N + 2 bound K ]
+           indices: m, k
+           bounds: bound N + 2 bound K : bool in (
+(family Adv[bound K] 
+ indices: k 
+ bounds: bound K ::= 
+ (when isInputGate(k) --> (
+ (family SharePartyAdv[bound N + 2 bound K] 
+ indices: n ,k 
+ bounds: bound N + 2 bound K ::= 
+  (when isSemiHonest(n) -->
+    s : bool <- read Share[n ,k ] ; return s 
+  )
+  ;; 
+  (when isHonest(n) -->
+    s : bool <- read SharePartyAdv[n ,k] ; return s 
+  )
+ ) || 
+ (family SendBitPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  sb : bool <- read SendBitPartyAdv[n ,m ,k ] ; return sb 
+ ) || 
+ (family RcvdBitPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  rb : bool <- read RcvdBitPartyAdv[n ,m ,k ] ; return rb 
+ ) ||
+ (family OTOutOtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  out : bool <- read OTOutOtAdv[n ,m ,k ] ; return out
+ ) ||
+ (family OTMsgRcvd-3OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : unit <- read OTMsgRcvd-3OtAdv[n ,m ,k ] ; return om
+ ) || 
+ (family OTMsgRcvd-2OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : unit <- read OTMsgRcvd-2OtAdv[n ,m ,k ] ; return om 
+ ) || 
+ (family OTMsgRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : unit <- read OTMsgRcvd-1OtAdv[n ,m ,k ] ; return om 
+ ) || 
+ (family OTMsgRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : unit <- read OTMsgRcvd-0OtAdv[n ,m ,k ] ; return om
+ ) || 
+ (family OTMsg-3OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : bool <- read OTMsg-3OtAdv[n ,m ,k ] ; return om 
+ ) || 
+ (family OTMsg-2OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : bool <- read OTMsg-2OtAdv[n ,m , k ] ; return om 
+ ) || 
+ (family OTMsg-1OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : bool <- read OTMsg-1OtAdv[n ,m ,k] ; return om 
+ ) || 
+ (family OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : bool <- read OTMsg-0OtAdv[n ,m ,k ] ; return om 
+ ) || 
+ (family OTChcRcvd-1OtAdv[bound N + 2 fixedBound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 fixedBound N + 1 bound K ::= 
+  oc : unit <- read OTChcRcvd-1OtAdv[n ,N + 1 ,k ] ; return oc 
+ ) || 
+ (family OTChcRcvd-1OtAdv[bound N + 2 bound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 1 bound K ::= 
+  oc : unit <- read OTChcRcvd-1OtAdv[n ,m ,k ] ; return oc 
+ ) || 
+ (family OTChcRcvd-0OtAdv[bound N + 2 fixedBound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 fixedBound N + 1 bound K ::=
+  oc : unit <- read OTChcRcvd-0OtAdv[n ,N + 1 ,k ] ; return oc
+ ) || 
+ (family OTChcRcvd-0OtAdv[bound N + 2 bound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 1 bound K ::= 
+  oc : unit <- read OTChcRcvd-0OtAdv[n ,m ,k ] ; return oc 
+ ) || 
+ (family OTChc-1OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  oc : bool <- read OTChc-1OtAdv[n ,m ,k ] ; return oc 
+ ) || 
+ (family OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  oc : bool <- read OTChc-0OtAdv[n ,m ,k ] ; return oc 
+ ) || 
+ (family CtrbSumPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read CtrbSumPartyAdv[n ,m ,k ] ; return b 
+ ) || 
+ (family CtrbPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read CtrbPartyAdv[n ,m ,k ] ; return b )
+)) ;; 
+(when isNotGate(k) --> (
+ (family SharePartyAdv[bound N + 2 bound K] 
+ indices: n ,k 
+ bounds: bound N + 2 bound K ::= 
+  (when isSemiHonest(n) -->
+    s : bool <- read Share[n ,k ] ; return s 
+  )
+  ;; 
+  (when isHonest(n) -->
+    s : bool <- read SharePartyAdv[n ,k] ; return s 
+  )
+ ) || 
+ (family SendBitPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  sb : bool <- read SendBitPartyAdv[n ,m ,k ] ; return sb 
+ ) || 
+ (family RcvdBitPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  rb : bool <- read RcvdBitPartyAdv[n ,m ,k ] ; return rb 
+ ) ||
+ (family OTOutOtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  out : bool <- read OTOutOtAdv[n ,m ,k ] ; return out
+ ) ||
+ (family OTMsgRcvd-3OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : unit <- read OTMsgRcvd-3OtAdv[n ,m ,k ] ; return om
+ ) || 
+ (family OTMsgRcvd-2OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : unit <- read OTMsgRcvd-2OtAdv[n ,m ,k ] ; return om 
+ ) || 
+ (family OTMsgRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : unit <- read OTMsgRcvd-1OtAdv[n ,m ,k ] ; return om 
+ ) || 
+ (family OTMsgRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : unit <- read OTMsgRcvd-0OtAdv[n ,m ,k ] ; return om
+ ) || 
+ (family OTMsg-3OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : bool <- read OTMsg-3OtAdv[n ,m ,k ] ; return om 
+ ) || 
+ (family OTMsg-2OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : bool <- read OTMsg-2OtAdv[n ,m , k ] ; return om 
+ ) || 
+ (family OTMsg-1OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : bool <- read OTMsg-1OtAdv[n ,m ,k] ; return om 
+ ) || 
+ (family OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : bool <- read OTMsg-0OtAdv[n ,m ,k ] ; return om 
+ ) || 
+ (family OTChcRcvd-1OtAdv[bound N + 2 fixedBound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 fixedBound N + 1 bound K ::= 
+  oc : unit <- read OTChcRcvd-1OtAdv[n ,N + 1 ,k ] ; return oc 
+ ) || 
+ (family OTChcRcvd-1OtAdv[bound N + 2 bound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 1 bound K ::= 
+  oc : unit <- read OTChcRcvd-1OtAdv[n ,m ,k ] ; return oc 
+ ) || 
+ (family OTChcRcvd-0OtAdv[bound N + 2 fixedBound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 fixedBound N + 1 bound K ::=
+  oc : unit <- read OTChcRcvd-0OtAdv[n ,N + 1 ,k ] ; return oc
+ ) || 
+ (family OTChcRcvd-0OtAdv[bound N + 2 bound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 1 bound K ::= 
+  oc : unit <- read OTChcRcvd-0OtAdv[n ,m ,k ] ; return oc 
+ ) || 
+ (family OTChc-1OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  oc : bool <- read OTChc-1OtAdv[n ,m ,k ] ; return oc 
+ ) || 
+ (family OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  oc : bool <- read OTChc-0OtAdv[n ,m ,k ] ; return oc 
+ ) || 
+ (family CtrbSumPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read CtrbSumPartyAdv[n ,m ,k ] ; return b 
+ ) || 
+ (family CtrbPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read CtrbPartyAdv[n ,m ,k ] ; return b ) 
+ )) ;; 
+(when isXorGate(k) --> (
+ (family SharePartyAdv[bound N + 2 bound K] 
+ indices: n ,k 
+ bounds: bound N + 2 bound K ::= 
+  (when isSemiHonest(n) -->
+    s : bool <- read Share[n ,k ] ; return s 
+  )
+  ;; 
+  (when isHonest(n) -->
+    s : bool <- read SharePartyAdv[n ,k] ; return s 
+  )
+ ) || 
+ (family SendBitPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  sb : bool <- read SendBitPartyAdv[n ,m ,k ] ; return sb 
+ ) || 
+ (family RcvdBitPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  rb : bool <- read RcvdBitPartyAdv[n ,m ,k ] ; return rb 
+ ) ||
+ (family OTOutOtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  out : bool <- read OTOutOtAdv[n ,m ,k ] ; return out
+ ) ||
+ (family OTMsgRcvd-3OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : unit <- read OTMsgRcvd-3OtAdv[n ,m ,k ] ; return om
+ ) || 
+ (family OTMsgRcvd-2OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : unit <- read OTMsgRcvd-2OtAdv[n ,m ,k ] ; return om 
+ ) || 
+ (family OTMsgRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : unit <- read OTMsgRcvd-1OtAdv[n ,m ,k ] ; return om 
+ ) || 
+ (family OTMsgRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : unit <- read OTMsgRcvd-0OtAdv[n ,m ,k ] ; return om
+ ) || 
+ (family OTMsg-3OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : bool <- read OTMsg-3OtAdv[n ,m ,k ] ; return om 
+ ) || 
+ (family OTMsg-2OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : bool <- read OTMsg-2OtAdv[n ,m , k ] ; return om 
+ ) || 
+ (family OTMsg-1OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : bool <- read OTMsg-1OtAdv[n ,m ,k] ; return om 
+ ) || 
+ (family OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  om : bool <- read OTMsg-0OtAdv[n ,m ,k ] ; return om 
+ ) || 
+ (family OTChcRcvd-1OtAdv[bound N + 2 fixedBound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 fixedBound N + 1 bound K ::= 
+  oc : unit <- read OTChcRcvd-1OtAdv[n ,N + 1 ,k ] ; return oc 
+ ) || 
+ (family OTChcRcvd-1OtAdv[bound N + 2 bound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 1 bound K ::= 
+  oc : unit <- read OTChcRcvd-1OtAdv[n ,m ,k ] ; return oc 
+ ) || 
+ (family OTChcRcvd-0OtAdv[bound N + 2 fixedBound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 fixedBound N + 1 bound K ::=
+  oc : unit <- read OTChcRcvd-0OtAdv[n ,N + 1 ,k ] ; return oc
+ ) || 
+ (family OTChcRcvd-0OtAdv[bound N + 2 bound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 1 bound K ::= 
+  oc : unit <- read OTChcRcvd-0OtAdv[n ,m ,k ] ; return oc 
+ ) || 
+ (family OTChc-1OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  oc : bool <- read OTChc-1OtAdv[n ,m ,k ] ; return oc 
+ ) || 
+ (family OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  oc : bool <- read OTChc-0OtAdv[n ,m ,k ] ; return oc 
+ ) || 
+ (family CtrbSumPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read CtrbSumPartyAdv[n ,m ,k ] ; return b 
+ ) || 
+ (family CtrbPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read CtrbPartyAdv[n ,m ,k ] ; return b ) 
+)) ;; 
+(when isAndGate(k) --> (
+ (family SharePartyAdv[bound N + 2 bound K] 
+ indices: n, k 
+ bounds: bound N + 2 bound K ::= 
+  (when isSemiHonest(n) -->
+    s : bool <- read Share[n ,k ] ; return s 
+  ) ;; 
+  (when isHonest(n) -->
+    s : bool <- read SharePartyAdv[n ,k ] ; return s 
+  )
+  ) || 
+  (family SendBitPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when isSemiHonest(n) -->
+    s : bool <- read SendBit[n ,m ,k ] ; return s 
+  ) ;; 
+  (when isHonest(n) -->
+    s : bool <- read SendBitPartyAdv[n ,m ,k ] ; return s 
+  )
+  ) || 
+  (family RcvdBitPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when isSemiHonest(n) -->
+    s : bool <- read RcvdBit[n ,m ,k ] ; return s
+  ) ;; 
+  (when isHonest(n) -->
+    s : bool <- read RcvdBitPartyAdv[n ,m ,k ] ; return s 
+  )
+  ) || 
+  (family OTOutOtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when isSemiHonest(m) -->
+    out : bool <- read RcvdBit[m ,n ,k ] ; return out 
+  ) ;; 
+  (when isHonest(m) -->
+    out : bool <- read OTOutOtAdv[n ,m ,k ] ; return out 
+  )
+  ) || 
+  (family OTMsgRcvd-3OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when ((n < m) and (isHonest(n))) -->
+    b : bool <- read SendBit[n ,m ,k ] ;
+    x : bool <- read Share[n , wire0(k)] ;
+    y : bool <- read Share[n , wire1(k)] ; 
+    return ()
+  ) ;; 
+  (when ((m <= n) or (isSemiHonest(n))) -->
+    om : unit <- read OTMsgRcvd-3OtAdv[n ,m ,k ] ; return om 
+  )
+  ) ||
+  (family OTMsgRcvd-2OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when ((n < m) and (isHonest(n) )) -->
+    b : bool <- read SendBit[n ,m ,k ] ;
+    x : bool <- read Share[n , wire0(k)] ; 
+    y : bool <- read Share[n , wire1(k)] ; 
+    return ()
+  ) ;; 
+  (when ((m <= n) or (isSemiHonest(n))) -->
+    om : unit <- read OTMsgRcvd-2OtAdv[n ,m ,k ] ; return om
+  )
+  ) || 
+  (family OTMsgRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when ((n < m) and (isHonest(n))) -->
+    b : bool <- read SendBit[n ,m ,k ] ;
+    x : bool <- read Share[n , wire0(k)] ;
+    y : bool <- read Share[n , wire1(k)] ; 
+    return ()
+  ) ;; 
+  (when ((m <= n) or (isSemiHonest(n))) -->
+    om : unit <- read OTMsgRcvd-1OtAdv[n ,m ,k ] ; return om
+  )
+  ) || 
+  (family OTMsgRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+   (when ((n < m) and (isHonest(n))) -->
+     b : bool <- read SendBit[n ,m ,k ] ;
+     x : bool <- read Share[n , wire0(k)] ;
+     y : bool <- read Share[n , wire1(k)] ; 
+     return ()
+   ) ;;
+   (when ((m <= n) or (isSemiHonest(n))) -->
+     om : unit <- read OTMsgRcvd-0OtAdv[n ,m ,k ] ; return om
+   )
+   ) ||
+   (family OTMsg-3OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when ((n < m) and (isSemiHonest(n))) -->
+     b : bool <- read SendBit[n ,m ,k ] ;
+     x : bool <- read Share[n , wire0(k)] ;
+     y : bool <- read Share[n , wire1(k)] ; 
+     return xor((xor((x ,y )), b))
+  ) ;; 
+  (when ((m <= n) or (isHonest(n))) -->
+    om : bool <- read OTMsg-3OtAdv[n ,m ,k ] ; return om
+  )
+  ) || 
+  (family OTMsg-2OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when ((n < m) and (isSemiHonest(n))) -->
+    b : bool <- read SendBit[n ,m ,k ] ;
+    x : bool <- read Share[n, wire0(k)] ;
+    y : bool <- read Share[n, wire1(k)] ; 
+    return xor((y ,b ))
+   ) ;; 
+   (when ((m <= n) or (isHonest(n))) -->
+     om : bool <- read OTMsg-2OtAdv[n ,m ,k ] ; return om 
+   )
+   ) || 
+   (family OTMsg-1OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when ((n < m) and (isSemiHonest(n))) -->
+    b : bool <- read SendBit[n ,m, k] ;
+    x : bool <- read Share[n , wire0(k)] ;
+    y : bool <- read Share[n , wire1(k)] ; 
+    return xor((x ,b ))
+  ) ;; 
+  (when ((m <= n) or (isHonest(n))) -->
+    om : bool <- read OTMsg-1OtAdv[n, m ,k ] ; return om 
+  )
+  ) || 
+  (family OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when ((n < m) and (isSemiHonest(n))) -->
+    b : bool <- read SendBit[n ,m ,k ] ;
+    x : bool <- read Share[n , wire0(k)] ;
+    y : bool <- read Share[n , wire1(k)] ; 
+    return b
+  ) ;; 
+  (when ((m <= n) or (isHonest(n))) -->
+    om : bool <- read OTMsg-0OtAdv[n ,m ,k ] ; return om
+  )
+  ) || 
+  (family OTChcRcvd-1OtAdv[bound N + 2 fixedBound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 fixedBound N + 1 bound K ::= 
+  (when n < N + 1 --> 
+     x : bool <- read ShareSum[N , wire1(k)] ; return ()
+  ) ;; 
+  (when n = N + 1 --> 
+   oc : unit <- read OTChcRcvd-1OtAdv[n ,N + 1 ,k ] ; return oc
+  )
+  ) || 
+  (family OTChcRcvd-1OtAdv[bound N + 2 bound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 1 bound K ::= 
+  (when ((n < m) and (isHonest(m))) -->
+    x : bool <- read Share[m , wire1(k)] ; 
+    return ()
+  ) ;; 
+  (when ((m <= n) or (isSemiHonest(m))) -->
+   oc : unit <- read OTChcRcvd-1OtAdv[n ,m ,k ] ; return oc
+  )
+  ) || 
+  (family OTChcRcvd-0OtAdv[bound N + 2 fixedBound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 fixedBound N + 1 bound K ::= 
+  (when n < N + 1 --> 
+     x : bool <- read ShareSum[N , wire0(k)] ; return ()
+  ) ;; 
+  (when n = N + 1 --> 
+    oc : unit <- read OTChcRcvd-0OtAdv[n ,N + 1 ,k ] ; return oc
+  )
+  ) || 
+  (family OTChcRcvd-0OtAdv[bound N + 2 bound N + 1 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 1 bound K ::= 
+  (when ((n < m) and (isHonest(m)))  -->
+    x : bool <- read Share[m , wire0(k)] ; 
+    return ()
+  ) ;; 
+  (when ((m <= n) or (isSemiHonest(m))) -->
+    oc : unit <- read OTChcRcvd-0OtAdv[n ,m ,k ] ; return oc
+  )
+  ) ||
+  (family OTChc-1OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when ((n < m) and (isSemiHonest(m))) -->
+    x : bool <- read Share[m , wire1(k)] ; 
+    return x 
+  ) ;; 
+  (when ((m <= n) or (isHonest(m))) -->
+    oc : bool <- read OTChc-1OtAdv[n , m, k ] ; return oc
+  )
+  ) || 
+(family OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when ((n < m) and (isSemiHonest(m))) -->
+    x : bool <- read Share[m ,wire0(k)] ; return x 
+  )
+  ;; 
+  (when ((m <= n) or (isHonest(m))) -->
+    oc : bool <- read OTChc-0OtAdv[n ,m ,k ] ; return oc 
+  )
+)
+||  
+(family CtrbSumPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when isSemiHonest(n) -->
+    s : bool <- read CtrbSum[n ,m ,k ] ; return s 
+  ) 
+  ;; 
+  (when isHonest(n) -->
+    s : bool <- read CtrbSumPartyAdv[n ,m ,k ] ; return s 
+  )
+) || 
+( family CtrbPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when isSemiHonest(n) -->
+    s : bool <- read Ctrb[n ,m ,k ] ; return s
+  )
+  ;; 
+  (when isHonest(n) -->
+    s : bool <- read CtrbPartyAdv[n ,m ,k ] ; return s 
+  )
+) 
+))
+)
+ ||
+(family InPartyAdv[bound N + 2 dependentBound I] 
+ indices: n ,i 
+ bounds: bound N + 2 dependentBound I ::= 
+  (when isSemiHonest(n) -->
+    in : bool <- read In[n ,i ] ; return in 
+  )
+  ;; 
+  (when isHonest(n) -->
+    in : bool <- read InPartyAdv[n ,i ] ; return in 
+  )
+) ||
+(family InRcvdPartyAdv[bound N + 2 dependentBound I] 
+ indices: n ,i 
+ bounds: bound N + 2 dependentBound I ::= 
+  (when isHonest(n) -->
+    x : bool <- read In[n ,i ] ; return ()
+  )
+  ;; 
+  (when isSemiHonest(n) -->
+    in : unit <- read InRcvdPartyAdv[n ,i ] ; return in 
+  )
+) ||
+(family InShare[bound N + 2 bound N + 2 dependentBound I] 
+ indices: n ,m ,i 
+ bounds: bound N + 2 bound N + 2 dependentBound I ::= 
+  in : bool <- read InShare$[n ,m ,i ] ; return in 
+) ||
+(family InShare$[bound N + 2 bound N + 2 dependentBound I] 
+ indices: m ,n ,i 
+ bounds: bound N + 2 bound N + 2 dependentBound I ::= 
+  (when m = N + 1 --> 
+    s : bool <- read InShare$-Sum[N ,n ,i ] ;
+    x : bool <- read In[n ,i ] ; 
+    return xor((x ,s ))
+  )
+   ;; 
+  (otherwise --> 
+    x : bool <- read In[n ,i ] ; samp flip (())
+  )
+) ||
+(family InShare$-Sum[bound N + 1 bound N + 2 dependentBound I] 
+ indices: m ,n ,i 
+ bounds: bound N + 1 bound N + 2 dependentBound I ::= 
+  (when 0 = m --> 
+    in : bool <- read InShare$[0, n ,i ] ; return in 
+  )
+  ;; 
+  (otherwise --> 
+    s : bool <- read InShare$-Sum[m - 1 ,n ,i ] ; 
+    x : bool <- read InShare$[m ,n ,i ] ; 
+    return xor((s ,x ))
+  )
+) ||
+(family InShare$-SumPartyAdv[bound N + 1 bound N + 2 dependentBound I] 
+ indices: m ,n ,i 
+ bounds: bound N + 1 bound N + 2 dependentBound I ::= 
+  (when isSemiHonest(n) -->
+    s : bool <- read InShare$-Sum[m ,n ,i ] ; return s
+  )
+  ;; 
+  (when isHonest(n) -->
+    s : bool <- read InShare$-SumPartyAdv[m ,n ,i ] ; return s 
+  )
+) ||
+(family InShare$PartyAdv[bound N + 2 bound N + 2 dependentBound I] 
+ indices: m ,n ,i 
+ bounds: bound N + 2 bound N + 2 dependentBound I ::= 
+ (when isSemiHonest(n) --> 
+   in : bool <- read InShare$[m ,n ,i ] ; return in 
+ ) 
+ ;; 
+ (when isHonest(n) --> 
+   in : bool <- read InShare$PartyAdv[m ,n ,i ] ; return in 
+ )
+) ||
+(family InSharePartyAdv[bound N + 2 bound N + 2 dependentBound I] 
+ indices: n ,m ,i 
+ bounds: bound N + 2 bound N + 2 dependentBound I ::= 
+ (when isSemiHonest(n) -->
+ 
+   s : bool <- read InShare[n ,m ,i ] ; return s 
+ ) 
+ ;; 
+ (when isHonest(n ) -->
+ 
+   s : bool <- read InSharePartyAdv[n ,m ,i ] ; return s 
+ )
+) ||
+(family Out[bound N + 2 bound K] 
+ indices: n ,k 
+ bounds: bound N + 2 bound K ::= 
+  s : bool <- read OutShareSum[n ,N + 1 ,k ] ; return s
+) ||
+(family OutPartyAdv[bound N + 2 bound K] 
+ indices: n ,k 
+ bounds: bound N + 2 bound K ::= 
+  (when isSemiHonest(n) --> 
+    s : bool <- read Out[n ,k ] ; return s 
+  ) 
+  ;; 
+  (when isHonest(n) -->
+    s : bool <- read OutPartyAdv[n ,k ] ; return s 
+  )
+) ||
+(family OutShare[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when isOutputWire(k ) --> 
+    s : bool <- read Share[m ,k ] ; return s
+  ) 
+  ;; 
+  (when not isOutputWire(k) --> 
+    z : bool <- read OutShare[n ,m ,k ] ; return z 
+  )
+) ||
+(family OutSharePartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when isSemiHonest(n) --> 
+    s : bool <- read OutShare[n ,m , k ] ; return s 
+  ) 
+  ;; 
+  (when isHonest(n) -->
+ 
+    s : bool <- read OutSharePartyAdv[n ,m ,k ] ; return s 
+  )
+) ||
+(family OutShareSum[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when 0 = m --> 
+    s : bool <- read OutShare[n ,0 ,k ] ; return s 
+  ) 
+  ;;
+  (otherwise -->  
+    s : bool <- read OutShareSum[n ,m - 1 ,k ] ; 
+    x : bool <- read OutShare[n ,m ,k ] ; 
+    return xor((s ,x ))
+  )
+) ||
+(family OutShareSumPartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when isSemiHonest(n) --> 
+    s : bool <- read OutShareSum[n ,m ,k ] ; return s 
+  ) 
+  ;; 
+  (when isHonest(n) --> 
+    s : bool <- read OutShareSumPartyAdv[n ,m ,k ] ; return s 
+  )
+) ||
+(family RcvdInSharePartyAdv[bound N + 2 bound N + 2 dependentBound I] 
+ indices: n ,m ,i 
+ bounds: bound N + 2 bound N + 2 dependentBound I ::= 
+  (when isSemiHonest(n) --> 
+    in : bool <- read InShare$[n ,m ,i ] ; return in
+  ) 
+  ;; 
+  (when isHonest(n) --> 
+    s : bool <- read RcvdInSharePartyAdv[n ,m ,i ] ; return s 
+  )
+) ||
+(family RcvdOutSharePartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when isSemiHonest(n) and isOutputWire(k) --> 
+    s : bool <- read Share[m, k] ; return s 
+  )
+  ;; 
+  (when isHonest(n) or not isOutputWire(k) --> 
+    s : bool <- read RcvdOutSharePartyAdv[n ,m ,k ] ; return s 
+  )
+) ||
+(family SendInSharePartyAdv[bound N + 2 bound N + 2 dependentBound I] 
+ indices: m ,n ,i 
+ bounds: bound N + 2 bound N + 2 dependentBound I ::= 
+  (when isSemiHonest(n) --> 
+    in : bool <- read InShare$[m ,n ,i ] ; return in
+  )
+  ;; 
+  (when isHonest(n) --> 
+    s : bool <- read SendInSharePartyAdv[m ,n ,i ] ; return s 
+  )
+) ||
+(family SendOutSharePartyAdv[bound N + 2 bound N + 2 bound K] 
+ indices: m ,n ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when isSemiHonest(n) and isOutputWire(k) --> 
+    s : bool <- read Share[n ,k ] ; 
+    return s
+  ) 
+  ;; 
+  (when isHonest(n) or not isOutputWire(k) -->
+    s : bool <- read SendOutSharePartyAdv[m ,n ,k ]  ; return s 
+  )
+) ||
+(family ShareSum[bound N + 2 bound K] 
+ indices: m ,k 
+ bounds: bound N + 2 bound K ::= 
+  (when 0 = m --> 
+    s : bool <- read Share[0, k] ; return s
+  )
+  ;; 
+  (when not (0 = m) --> 
+    xm : bool <- read Share[m ,k ] ; 
+    xs : bool <- read ShareSum[m - 1 ,k ] ; 
+    return xor((xs ,xm ))
+  )
+) ||
+(family Shares[bound K] 
+ indices: k 
+ bounds: bound K ::= 
+(when isInputGate (k ) --> (
+ (family Share[fixedBound N + 1 bound K] 
+ indices: n ,k 
+ bounds: fixedBound N + 1 bound K ::= 
+  in : bool <- read InShare[N + 1 , wire0(k), wire1(k)] ; 
+  xs : bool <- read ShareSum[N ,k ] ; 
+  return in  
+ ) || 
+ (family Share[bound N + 1 bound K] 
+ indices: n ,k 
+ bounds: bound N + 1 bound K
+    ::= 
+  in : bool <- read InShare[n , wire0(k), wire1(k)] ; return in 
+) ||
+(family SendBit[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  sb : bool <- read SendBit[n ,m ,k ] ; return sb 
+) || 
+(family RcvdBit[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  rb : bool <- read RcvdBit[n ,m ,k ] ; return rb
+) || 
+(family CtrbSum[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read CtrbSum[n ,m ,k ] ; return b
+) || 
+(family Ctrb[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read Ctrb[n ,m ,k ] ; return b
+)
+)) ;; 
+(when isNotGate (k ) --> (
+ (family Share[fixedBound N + 1 bound K] 
+ indices: n ,k 
+ bounds: fixedBound N + 1 bound K ::= 
+  x : bool <- read Share[N + 1 ,wire0(k)] ;
+  xs : bool <- read ShareSum[N ,k ] ; 
+  return neg(x )
+ ) || 
+ (family Share[bound N + 1 bound K] 
+ indices: n ,k 
+ bounds: bound N + 1 bound K ::= 
+  s : bool <- read Share[n ,wire0(k)] ; return s
+ ) || 
+ (family SendBit[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  sb : bool <- read SendBit[n ,m ,k ] ; 
+  return sb
+ ) || 
+ (family RcvdBit[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  rb : bool <- read RcvdBit[n ,m ,k ] ; 
+  return rb
+ ) || 
+ (family CtrbSum[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read CtrbSum[n ,m ,k ] ; return b 
+ ) || 
+ (family Ctrb[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read Ctrb[n ,m ,k ] ; return b
+ ) 
+)) ;; 
+(when isXorGate (k ) --> (
+ (family Share[fixedBound N + 1 bound K] 
+ indices: n ,k 
+ bounds: fixedBound N + 1 bound K ::= 
+  x : bool <- read Share[N + 1 , wire0(k)] ;
+  xs : bool <- read ShareSum[N ,k ] ;
+  y : bool <- read Share[N + 1 , wire1(k)] ; 
+  return xor((x ,y ))
+ ) || 
+ (family Share[bound N + 1 bound K] 
+ indices: n ,k 
+ bounds: bound N + 1 bound K ::=
+  x : bool <- read Share[n , wire0(k)] ; 
+  y : bool <- read Share[n , wire1(k)] ; 
+  return xor((x ,y ))
+ ) || 
+ (family SendBit[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  sb : bool <- read SendBit[n ,m ,k ] ; return sb 
+ ) || 
+ (family RcvdBit[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  rb : bool <- read RcvdBit[n ,m ,k ] ; return rb 
+ ) || 
+ (family CtrbSum[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read CtrbSum[n ,m ,k ] ; return b 
+ ) || 
+ (family Ctrb[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read Ctrb[n ,m ,k ] ; return b 
+ )
+)) ;;
+(when isAndGate (k ) --> (
+ (family Share[fixedBound N + 1 bound K] 
+ indices: n ,k 
+ bounds: fixedBound N + 1 bound K ::= 
+  bs : bool <- read CtrbSum[N + 1 ,N + 1 ,k ] ;
+  xs : bool <- read ShareSum[N ,k ] ; 
+  return bs 
+ ) || 
+ (family Share[bound N + 1 bound K] 
+ indices: n ,k 
+ bounds: bound N + 1 bound K ::= 
+  bs : bool <- read CtrbSum[n ,N + 1 ,k ] ; return bs 
+ ) ||
+ (family SendBit[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when (n < m) --> 
+    x : bool <- read Share[n , wire0(k)] ;
+    y : bool <- read Share[n , wire1(k)] ; 
+    samp flip (())
+  ) ;; 
+  (when (m <= n) --> 
+    sb : bool <- read SendBit[n ,m ,k ] ; return sb
+  )
+ ) || 
+ (family RcvdBit[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  b : bool <- read SendBit[m ,n ,k ] ; 
+  xm : bool <- read Share[m , wire0(k)] ;
+  xn : bool <- read Share[n , wire0(k)] ;
+  ym : bool <- read Share[m , wire1(k)] ;
+  yn : bool <- read Share[n , wire1(k)] ; 
+  return xor((xor((**((xm ,yn )), **((xn ,ym )))),b ))
+ ) || 
+ (family CtrbSum[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when (0 = m) --> 
+    b : bool <- read Ctrb[n ,0 ,k ] ; return b 
+  ) ;;
+  (when not (0 = m) --> 
+    b : bool <- read Ctrb[n ,m ,k ] ;
+    s : bool <- read CtrbSum[n ,m - 1 ,k ] ; 
+    return xor((s ,b ))
+  )
+ ) || 
+ (family Ctrb[bound N + 2 bound N + 2 bound K] 
+ indices: n ,m ,k 
+ bounds: bound N + 2 bound N + 2 bound K ::= 
+  (when (n < m) --> 
+    s : bool <- read SendBit[n ,m ,k ] ; return s 
+  ) ;; 
+  (when (m = n) --> 
+    x : bool <- read Share[n , wire0(k)] ;
+    y : bool <- read Share[n , wire1(k)] ; 
+    return **((x ,y ))
+  ) ;; 
+  (when (m < n) --> 
+    r : bool <- read RcvdBit[n ,m ,k ] ; return r 
+  )
+ )
+))  
+)
+)
+ .
