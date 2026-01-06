@@ -1,0 +1,535 @@
+lang IPDL 
+
+type msg .
+type key .
+
+function g : unit -> msg .
+function mul : msg * msg -> msg .
+function inv : msg -> msg .
+function exp : msg * key -> msg .
+
+distribution unif_key : unit -> key .
+distribution unif_msg : unit -> msg .
+
+expression-assumption %automatic mulInv using x y : 
+   (x : msg) (y : msg) |= 
+   mul( (mul((x, y)), inv(y)) ) = x .
+
+reaction-assumption sampExp using k : 
+   emptyCCtxt ; emptyTCtxt ; nil |= 
+   k : key <- samp unif_key(()) ; return exp((g(()), k))
+    = 
+   samp unif_msg(()) 
+     .
+
+expression-assumption %manual commute using k l : 
+   (k : key) (l : key) |= 
+    exp( (exp ( (g (()), l)) , k))
+    = 
+    exp( (exp ( (g (()), k)) , l))
+.    
+
+reaction-assumption mulFixedMsg using k m : 
+   emptyCCtxt ; (m : msg) ; nil |= 
+   k : msg <- samp unif_msg(()) ; return mul((m, k))
+    = 
+   samp unif_msg(()) 
+     .
+
+approx-assumption ddh using ka kb ddh : 
+ (chn ddh :: msg * (msg * msg)) ; no inputs ; no assumptions |=
+ ddh ::= preNF(nil, ka : key <- samp unif_key(()) ; 
+                    kb : key <- samp unif_key(()) ; 
+                    return ( exp((g(()), ka)),
+                             ( exp((g(()), kb)), 
+                               exp( (exp((g(()), ka)), kb) ) 
+                             )
+                           )
+               ) 
+ =
+ ddh ::= preNF(nil, ka : key <- samp unif_key(()) ; 
+                    kb : key <- samp unif_key(()) ; 
+                    kr : key <- samp unif_key(()) ; 
+                    return ( exp((g(()), ka)),
+                             (exp((g(()), kb)), 
+                              exp((g(()), kr))
+                             )
+                            )
+              ) .   
+         
+
+channel context deltaDHKE =
+output Key-Alice : msg ;
+output Key-Bob : msg ;
+output LeakPublicKey-AliceAdvNet : msg ;
+output LeakPublicKey-BobAdvNet : msg ;
+input OkPublicKey-AliceAdvNet : msg ;
+input OkPublicKey-BobAdvNet : msg
+.
+
+protocol realDHKE = 
+    new SecretKey-Alice : key in
+    new SecretKey-Bob : key in
+    new Send-Alice-Bob : msg in
+    new Send-Bob-Alice : msg in
+    new Recv-Alice-Bob : msg in 
+    new Recv-Bob-Alice : msg in
+    ( `` begin new
+     ( SecretKey-Alice ::= samp unif_key (())
+     )
+     ||
+     (Send-Alice-Bob ::= 
+        ka : key <- read SecretKey-Alice ;
+        return exp ( (g (()), ka) )
+     )
+     ||
+     (SecretKey-Bob ::= samp unif_key (())
+     )
+     ||
+     (Send-Bob-Alice ::= 
+        kb : key <- read SecretKey-Bob ;
+        return exp ( (g (()), kb) ) 
+     ) 
+     ||
+     (LeakPublicKey-AliceAdvNet ::= 
+       sa : msg <- read Send-Alice-Bob ; return sa
+     )  
+     ||
+     (LeakPublicKey-BobAdvNet ::= 
+       sb : msg <- read Send-Bob-Alice ; return sb
+     )
+     ||
+     (Recv-Alice-Bob ::= 
+        oa : msg <- read OkPublicKey-AliceAdvNet ;
+        sab : msg <- read Send-Alice-Bob ;
+        return sab
+     ) 
+     ||
+     (Recv-Bob-Alice ::= 
+        ob : msg <- read OkPublicKey-BobAdvNet ;
+        sba : msg <- read Send-Bob-Alice ;
+        return sba
+     )
+     ||
+     (Key-Alice ::= 
+        rb : msg <- read Recv-Bob-Alice ;
+        ka : key <- read SecretKey-Alice ;
+        return exp ( (rb, ka) )
+     ) 
+      ||
+     (Key-Bob ::= 
+        ra : msg <- read Recv-Alice-Bob ;
+        kb : key <- read SecretKey-Bob ;
+        return exp ( (ra, kb) )
+     )                                                
+    ) `` end new
+ .   
+
+protocol idealPlusSimDHKE = 
+    new OkKey-AliceAdvId : msg in
+    new OkKey-BobAdvId : msg in
+    idealDHKE
+    ||
+    simDHKE
+    where idealDHKE = (
+        new SharedKey : msg in
+    (
+     (SharedKey ::= samp unif_msg(())
+     ) 
+     ||
+     (Key-Alice ::= oka : msg <- read OkKey-AliceAdvId ;
+                    sk : msg <- read SharedKey ;
+                    return sk
+     )
+     ||
+     (Key-Bob ::= okb : msg <- read OkKey-BobAdvId ;
+                  sk : msg <- read SharedKey ;
+                    return sk
+     )
+    )
+    ) and
+    simDHKE = (
+        new SecretKey-Alice : key in
+    new SecretKey-Bob : key in
+    new PublicKey-Alice : msg in
+    new PublicKey-Bob : msg in
+    ( 
+     (SecretKey-Alice ::= samp unif_key(())
+     )
+     ||
+     (SecretKey-Bob ::= samp unif_key(())
+     )
+     ||
+     (PublicKey-Alice ::= 
+        ka : key <- read SecretKey-Alice ;
+        return exp ( ( g(()), ka) )
+     )
+     ||
+     (PublicKey-Bob ::= 
+        kb : key <- read SecretKey-Bob ;
+        return exp ( ( g(()), kb) )
+     ) 
+     ||
+     (LeakPublicKey-AliceAdvNet ::= 
+        pka : msg <- read PublicKey-Alice ;
+        return pka
+     )
+     ||
+     (LeakPublicKey-BobAdvNet ::= 
+        pkb : msg <- read PublicKey-Bob ;
+        return pkb
+     )
+     ||
+     (OkKey-AliceAdvId ::= 
+        ob : msg <- read OkPublicKey-BobAdvNet ;
+        return ob
+     )
+     ||
+     (OkKey-BobAdvId ::= 
+        oa : msg <- read OkPublicKey-AliceAdvNet ;
+        return oa
+     )
+    )
+    )
+ .
+
+channel context delta = 
+input OkCtxtAdvNet : msg ;
+input In : msg ;
+input OkPublicKey-AliceAdvNet : msg ;
+input OkPublicKey-BobAdvNet : msg ;  
+output LeakCtxtNetAdv : msg ;
+output LeakPublicKey-AliceAdvNet : msg ;
+output LeakPublicKey-BobAdvNet : msg ;
+output Out : msg
+.
+
+protocol realOTP =
+    new Key-Alice : msg in
+    new Key-Bob : msg in
+    new SecretKey-Alice : key in
+    new SecretKey-Bob : key in
+    new Send-Alice-Bob : msg in
+    new Send-Bob-Alice : msg in
+    new Recv-Alice-Bob : msg in 
+    new Recv-Bob-Alice : msg in
+    new Send : msg in
+    new Recv : msg in
+    ( `` begin new
+     ( SecretKey-Alice ::= samp unif_key (())
+     )
+     ||
+     (Send-Alice-Bob ::= 
+        ka : key <- read SecretKey-Alice ;
+        return exp ( (g (()), ka) )
+     )
+     ||
+     ( SecretKey-Bob ::= samp unif_key (())
+     )
+     ||
+     (Send-Bob-Alice ::= 
+        kb : key <- read SecretKey-Bob ;
+        return exp ( (g (()), kb) ) 
+     ) 
+     ||
+     (LeakPublicKey-AliceAdvNet ::= 
+        sa : msg <- read Send-Alice-Bob ; return sa
+     )
+     ||
+     (LeakPublicKey-BobAdvNet ::= 
+       sb : msg <- read Send-Bob-Alice ; return sb
+     )
+     ||
+     (Recv-Alice-Bob ::= 
+        oa : msg <- read OkPublicKey-AliceAdvNet ;
+        sab : msg <- read Send-Alice-Bob ;
+        return sab
+     ) 
+     ||
+     (Recv-Bob-Alice ::= 
+        ob : msg <- read OkPublicKey-BobAdvNet ;
+        sba : msg <- read Send-Bob-Alice ;
+        return sba
+     )
+     ||
+     (Key-Alice ::= 
+        rb : msg <- read Recv-Bob-Alice ;
+        ka : key <- read SecretKey-Alice ;
+        return exp ( (rb, ka) )
+     ) 
+      ||
+     (Key-Bob ::= 
+        ra : msg <- read Recv-Alice-Bob ;
+        kb : key <- read SecretKey-Bob ;
+        return exp ( (ra, kb) )
+     )
+     ||
+     (Send ::= 
+        m : msg <- read In ;
+        ka : msg <- read Key-Alice ;
+        return mul ( (m, ka) )
+     )
+     ||
+     (Recv ::= 
+        okc : msg <- read OkCtxtAdvNet ;
+        send : msg <- read Send ;
+        return send
+     )   
+     ||
+     (Out ::= 
+        r : msg <- read Recv ;
+        kb : msg <- read Key-Bob ;
+        return mul ( (r, inv(kb)) )
+     )
+     ||     
+     (LeakCtxtNetAdv ::= 
+       send : msg <- read Send ; return send 
+     )  
+    ) `` end new
+.
+
+ protocol idealPlusSimOTP =  
+    new LeakMsgRcvdIdAdv : unit in
+    new OkMsgAdvId : unit in 
+     idealOTP 
+     ||
+     simOTP 
+    where idealOTP = ( 
+    (Out ::= 
+        ok : unit <- read OkMsgAdvId ;
+        m : msg <- read In ;
+        return m
+    ) 
+    || 
+    (LeakMsgRcvdIdAdv ::= 
+       m : msg <- read In ; return ()
+    )
+    ) 
+    and 
+    simOTP = ( 
+    new OkKey-AliceAdvId : msg in
+    new OkKey-BobAdvId : msg in
+     ( 
+     (LeakCtxtNetAdv ::= 
+        lr : unit <- read LeakMsgRcvdIdAdv ;
+        oka : msg <- read OkKey-AliceAdvId ;
+        samp unif_msg (())                           
+     )
+     ||
+     (OkMsgAdvId ::= 
+        okc : msg <- read OkCtxtAdvNet ;
+        oka : msg <- read OkKey-AliceAdvId ;
+        okb : msg <- read OkKey-BobAdvId ;
+        return ()
+     ) 
+     ||
+    ( 
+    new SecretKey-Alice : key in
+    new SecretKey-Bob : key in
+    new PublicKey-Alice : msg in
+    new PublicKey-Bob : msg in
+    ( 
+     (SecretKey-Alice ::= samp unif_key (())
+     )
+     ||
+     (SecretKey-Bob ::= samp unif_key (())
+     )
+     ||
+     (PublicKey-Alice ::= 
+        ka : key <- read SecretKey-Alice ;
+        return exp ( ( g(()), ka) )
+     )
+     ||
+     (PublicKey-Bob ::= 
+        kb : key <- read SecretKey-Bob ;
+        return exp ( ( g(()), kb) )
+     ) 
+     ||
+     (LeakPublicKey-AliceAdvNet ::= 
+        pka : msg <- read PublicKey-Alice ;
+        return pka
+     )
+     ||
+     (LeakPublicKey-BobAdvNet ::= 
+        pkb : msg <- read PublicKey-Bob ;
+        return pkb
+     )
+     ||
+     (OkKey-AliceAdvId ::= 
+        ob : msg <- read OkPublicKey-BobAdvNet ;
+        return ob
+     )
+     ||
+     (OkKey-BobAdvId ::= 
+        oa : msg <- read OkPublicKey-AliceAdvNet ;
+        return oa
+     )
+    )
+    )
+     )
+     )
+  .
+
+approx subproof dhkeProof = 
+subst chn Send-Alice-Bob into chn Recv-Alice-Bob then
+fold chn Send-Alice-Bob into chn LeakPublicKey-AliceAdvNet then
+subst chn Send-Bob-Alice into chn Recv-Bob-Alice then
+fold chn Send-Bob-Alice into chn LeakPublicKey-BobAdvNet then
+fold chn Recv-Alice-Bob into chn Key-Bob then
+fold chn Recv-Bob-Alice into chn Key-Alice then
+use expression assumption commute on chn Key-Alice at 1 then
+add internal channel SharedKey typed: msg 
+    assigned: 
+      ka : key <- read SecretKey-Alice ; 
+      kb : key <- read SecretKey-Bob ;
+      return exp((exp((g(()), ka)), kb)) then
+sym from change chn  Key-Alice with 
+  ob : msg <- read OkPublicKey-BobAdvNet ;
+  sk : msg <- read SharedKey ;
+  return sk
+in currentProtocol(
+    subst chn SharedKey into chn Key-Alice
+)  then
+sym from change chn  Key-Bob with 
+  oa : msg <- read OkPublicKey-AliceAdvNet ;
+  sk : msg <- read SharedKey ;
+  return sk
+in currentProtocol(
+    subst chn SharedKey into chn Key-Bob
+) then
+add internal channel PublicKey-Alice typed: msg 
+ assigned: ka : key <- read SecretKey-Alice ; return exp((g(()), ka))  then
+sym from change chn LeakPublicKey-AliceAdvNet with
+  pka : msg <- read PublicKey-Alice ; return pka
+in currentProtocol (
+    subst chn PublicKey-Alice into chn  LeakPublicKey-AliceAdvNet
+) then
+add internal channel PublicKey-Bob typed: msg 
+ assigned: kb : key <- read SecretKey-Bob ; return exp((g(()), kb))  then
+sym from change chn LeakPublicKey-BobAdvNet with
+  pkb : msg <- read PublicKey-Bob ; return pkb
+in currentProtocol (
+    subst chn PublicKey-Bob into chn  LeakPublicKey-BobAdvNet
+) then
+sym from change chn PublicKey-Alice with
+ ka : key <- read SecretKey-Alice ; kb : key <- read SecretKey-Bob ; return exp((g(()), ka))
+in currentProtocol(
+    drop read chn SecretKey-Bob from chn PublicKey-Alice
+) then
+sym from change chn PublicKey-Bob with
+ ka : key <- read SecretKey-Alice ; kb : key <- read SecretKey-Bob ; return exp((g(()), kb))
+in currentProtocol(
+    drop read chn SecretKey-Alice from chn PublicKey-Bob
+) then
+add internal channel DDH3 typed: msg * (msg * msg)
+assigned: 
+ ka : key <- read SecretKey-Alice ; 
+ kb : key <- read SecretKey-Bob ;
+ return (  exp( (g(()), ka) ), 
+             (exp( (g(()), kb) ) , 
+              exp( ( exp( (g(()), ka) )
+                   , kb
+                   ) 
+                 )
+             )
+        ) then
+sym from change chn SharedKey with 
+ ddh : msg * (msg * msg) <- read DDH3 ; return snd snd ddh
+ in currentProtocol( 
+  subst chn DDH3 into chn SharedKey
+ )  then
+ sym from change chn PublicKey-Alice with 
+ ddh : msg * (msg * msg) <- read DDH3 ; return fst ddh
+ in currentProtocol( 
+  subst chn DDH3 into chn PublicKey-Alice
+ ) then
+ sym from change chn PublicKey-Bob with 
+ ddh : msg * (msg * msg) <- read DDH3 ; return fst snd ddh
+ in currentProtocol( 
+  subst chn DDH3 into chn PublicKey-Bob
+ ) then
+ fold chn SecretKey-Bob into chn DDH3 then
+ fold chn SecretKey-Alice into chn DDH3 then-approx
+use approx assumption ddh on chn DDH3 then-approx
+sym from 
+change chn DDH3 with
+ ka : key <- read SecretKey-Alice ; 
+ kb : key <- read SecretKey-Bob ;
+ kr : key <- read Key ;
+ return ( exp((g(()), ka)),
+          ( exp((g(()), kb)), 
+            exp((g(()), kr)) 
+          ) 
+        )
+in
+extend(
+extend(
+extend currentProtocol with 
+internal channel SecretKey-Bob typed: key
+assigned: samp unif_key(())
+) with 
+internal channel SecretKey-Alice typed: key
+assigned: samp unif_key(()) 
+) with 
+internal channel Key typed: key
+assigned: samp unif_key(()) 
+(
+  fold chn Key into chn DDH3 then
+  fold chn SecretKey-Bob into chn DDH3 then
+  fold chn SecretKey-Alice into chn DDH3 
+) then 
+subst chn DDH3 into chn SharedKey then
+subst chn DDH3 into chn PublicKey-Alice then
+fold chn DDH3 into chn PublicKey-Bob then
+drop read chn SecretKey-Alice from chn SharedKey then
+drop read chn SecretKey-Bob from chn SharedKey then
+drop read chn SecretKey-Bob from chn PublicKey-Alice then
+drop read chn Key from chn PublicKey-Alice then
+drop read chn SecretKey-Alice from chn PublicKey-Bob then 
+drop read chn Key from chn PublicKey-Bob then
+fold chn Key into chn SharedKey then
+use assumption sampExp on chn SharedKey then
+sym from  idealPlusSimDHKE (
+fold chn OkKey-AliceAdvId into chn Key-Alice then
+fold chn OkKey-BobAdvId into chn Key-Bob
+) then
+restructure idealPlusSimDHKE
+.
+
+ start with realOTP over delta
+
+ fold chn Recv into chn Out then
+ subst chn Send into chn Out then 
+ fold chn Send into chn LeakCtxtNetAdv then
+ restructure 
+  (gather  
+    chn SecretKey-Alice , chn SecretKey-Bob ,
+    chn Send-Alice-Bob , chn Send-Bob-Alice ,
+    chn Recv-Bob-Alice, chn Recv-Alice-Bob ,
+    chn Key-Alice, chn Key-Bob ,
+    chn LeakPublicKey-AliceAdvNet , 
+    chn LeakPublicKey-BobAdvNet
+   from currentProtocol 
+   hiding 
+    chn SecretKey-Alice , chn SecretKey-Bob ,
+    chn Send-Alice-Bob , chn Send-Bob-Alice ,
+    chn Recv-Bob-Alice, chn Recv-Alice-Bob ) then-approx 
+ call-approx dhkeProof then-approx
+ bring declarations of hidden channels in front then
+ subst chn Key-Alice into chn LeakCtxtNetAdv then
+ fold chn Key-Alice into chn Out then
+ fold chn Key-Bob into chn Out then 
+ drop read chn SharedKey from chn Out then
+ fold chn SharedKey into chn LeakCtxtNetAdv then
+ use assumption mulFixedMsg on chn LeakCtxtNetAdv then
+ sym from idealPlusSimOTP(
+    fold chn OkMsgAdvId into chn Out then
+    fold chn LeakMsgRcvdIdAdv into chn LeakCtxtNetAdv
+ ) then 
+ restructure idealPlusSimOTP
+
+ check-proof idealPlusSimOTP
+ 
+ current-protocol
+ show-bounds
+ quit

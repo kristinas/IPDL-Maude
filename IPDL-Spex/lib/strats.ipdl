@@ -1,0 +1,33 @@
+lang IPDL 
+parameter N : nat .
+
+output c : bool .
+output d : bool .
+output g[bound N] : bool .
+
+protocol P = 
+ (c ::= return True )
+ ||
+ (family F[bound N] indices: i bounds: bound N ::= 
+   ( ( when isHonest(i) --> 
+       (
+       (d ::= return True) 
+       || 
+       (family g[bound N] indices: i bounds: bound N ::= 
+           ( (when (i = 0) --> return True) 
+             ;; 
+             (otherwise --> return False) ) 
+           ) 
+       ) 
+     ) 
+   ;; 
+     ( otherwise --> 
+       ( 
+       (d ::= return True) 
+       || 
+       (family g[bound N] indices: i bounds: bound N ::= return True) 
+       ) 
+     ) 
+   )
+ )
+.  

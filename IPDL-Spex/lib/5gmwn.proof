@@ -1,0 +1,995 @@
+call addWire then
+compose fam Shares[bound K] with fam Wire[bound K] in group 
+
+sym from 
+             change fam Shares[bound K] and Wire[bound K]
+             with 
+              (
+                ( family Shares[bound K] 
+ indices: k 
+ bounds: bound K ::= 
+ (
+     (when  isInputGate(k) --> (
+(family Ctrb[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read Ctrb[n, m, k] ; return b
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read CtrbSum[n, m, k] ; return b
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ rb : bool <-  read RcvdBit[n, m, k] ; return rb
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : bool <-  read SendBit[n, m, k] ; return sb
+)
+||
+(family Share[bound (N + 1) bound K]
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ in : bool <-  read InShare[n, wire0(k), wire1(k)] ; return in
+)
+||
+(family Share[fixedBound (N + 1) bound K]
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : bool <-  read ShareSum[N + 1, k] ; 
+ xs : bool <-  read ShareSum[N, k] ; 
+ return xor((xs, x))
+)
+||
+(family ShareSum[bound (N + 1) bound K]
+ indices: m, k
+ bounds: bound (N + 1) bound K
+::=
+(when (m = 0) -->
+ s : bool <-  read Share[0, k] ; return s
+ )
+;;
+(when not (m = 0) -->
+ xm : bool <-  read Share[m, k] ; 
+ xs : bool <-  read ShareSum[m - 1, k] ; 
+ return xor((xs, xm))
+)
+)
+||
+(family ShareSum[fixedBound (N + 1) bound K]
+ indices: m, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ w : bool <- read Wire[k] ; return w
+)
+))
+;;
+(when  isNotGate(k) --> (
+(family Ctrb[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read Ctrb[n, m, k] ; return b
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read CtrbSum[n, m, k] ; return b
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ rb : bool <-  read RcvdBit[n, m, k] ; return rb
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : bool <-  read SendBit[n, m, k] ; return sb
+)
+||
+(family Share[bound (N + 1) bound K]
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ s : bool <-  read Share[n, wire0(k)] ; return s
+)
+||
+(family Share[fixedBound (N + 1) bound K]
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : bool <-  read ShareSum[N + 1, k] ; 
+    xs : bool <-  read ShareSum[N, k] ; 
+    return xor((xs, x))
+)
+||
+(family ShareSum[bound (N + 1) bound K]
+ indices: m, k
+ bounds: bound (N + 1) bound K
+::=
+(when (m = 0) -->
+ s : bool <-  read Share[0, k] ; return s
+)
+;;
+(when not (m = 0) -->
+ xm : bool <-  read Share[m, k] ; 
+ xs : bool <-  read ShareSum[m - 1, k] ; 
+ return xor((xs, xm))
+ )
+)
+||
+(family ShareSum[fixedBound (N + 1) bound K]
+ indices: m, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ w : bool <- read Wire[k] ; return w
+)
+))
+;;
+(when  isXorGate(k) --> (
+(family Ctrb[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read Ctrb[n, m, k] ; return b
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read CtrbSum[n, m, k] ; return b
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ rb : bool <-  read RcvdBit[n, m, k] ; return rb
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : bool <-  read SendBit[n, m, k] ; return sb
+)
+||
+(family Share[bound (N + 1) bound K]
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ x : bool <-  read Share[n, wire0(k)] ; 
+ y : bool <-  read Share[n, wire1(k)] ;
+ return xor((x, y))
+)
+||
+(family Share[fixedBound (N + 1) bound K]
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : bool <-  read ShareSum[N + 1, k] ; 
+ xs : bool <-  read ShareSum[N, k] ; 
+ return xor((xs, x))
+)
+||
+(family ShareSum[bound (N + 1) bound K]
+ indices: m, k
+ bounds: bound (N + 1) bound K
+::=
+(when (m = 0) -->
+ s : bool <-  read Share[0, k] ; return s
+)
+;;
+(when not (m = 0) -->
+ xm : bool <-  read Share[m, k] ; 
+ xs : bool <-  read ShareSum[m - 1, k] ; 
+ return xor((xs, xm))
+)
+)
+||
+(family ShareSum[fixedBound (N + 1) bound K]
+ indices: m, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ w : bool <- read Wire[k] ; return w
+)
+))
+;;
+(when  isAndGate(k) --> (
+(family Ctrb[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (n < m) -->
+ s : bool <-  read SendBit[n, m, k] ; return s
+)
+;;
+(when (m = n) -->
+ x : bool <-  read Share[n, wire0(k)] ; 
+ y : bool <-  read Share[n, wire1(k)] ;
+ return **((x, y))
+)
+;;
+(when (m < n) -->
+ r : bool <-  read RcvdBit[n, m, k] ; return r
+)
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (m = 0) -->
+ b : bool <-  read Ctrb[n, 0, k] ; return b
+)
+;;
+(when not (m = 0) -->
+ b : bool <-  read Ctrb[n, m, k] ; 
+ s : bool <-  read CtrbSum[n, m - 1, k] ; 
+ return xor((s, b))
+)
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read SendBit[m, n, k] ; 
+ xm : bool <-  read Share[m, wire0(k)] ; 
+ xn : bool <-  read Share[n, wire0(k)] ; 
+ ym : bool <-  read Share[m, wire1(k)] ; 
+ yn : bool <-  read Share[n, wire1(k)] ; 
+ return xor( ( xor(( **((xm, yn)), **((xn, ym))  )) , b) )
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (n < m) -->
+ x : bool <-  read Share[n, wire0(k)] ; 
+ y : bool <-  read Share[n, wire1(k)] ;
+    samp flip (()) 
+)
+;;
+(when (m <= n) -->
+ sb : bool <-  read SendBit[n, m, k] ; return sb
+)
+)
+||
+(family Share[bound (N + 1) bound K]
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ bs : bool <-  read CtrbSum[n, N + 1, k] ; return bs
+)
+||
+(family Share[fixedBound (N + 1) bound K]
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : bool <-  read ShareSum[N + 1, k] ; 
+    xs : bool <-  read ShareSum[N, k] ; 
+ return xor((xs, x))   
+)
+||
+(family ShareSum[bound (N + 1) bound K]
+ indices: m, k
+ bounds: bound (N + 1) bound K
+::=
+(when (m = 0) -->
+ s : bool <-  read Share[0, k] ; return s
+)
+;;
+(when not (m = 0) -->
+ xm : bool <-  read Share[m, k] ; 
+ xs : bool <-  read ShareSum[m - 1, k] ; 
+ return xor((xs, xm))
+)
+)
+||
+(family ShareSum[fixedBound (N + 1) bound K]
+ indices: m, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ w : bool <- read Wire[k] ; return w
+)
+))    
+     ) 
+)
+||
+(
+family Wire[bound K] 
+ indices: k
+ bounds: bound K ::=
+ (when isInputGate(k) -->  
+   i : bool <- read In[wire0(k), wire1(k)] ; return i
+ ) ;;
+ (when isNotGate(k) --> 
+   x : bool <- read Wire[wire0(k)] ; return neg(x)
+ ) ;;
+ (when isXorGate(k) --> 
+   x : bool <- read Wire[wire0(k)] ;
+   y : bool <- read Wire[wire1(k)] ;
+   return xor((x, y))
+ ) ;;
+ (when isAndGate(k) --> 
+   x : bool <- read Wire[wire0(k)] ;
+   y : bool <- read Wire[wire1(k)] ;
+   return **((x, y)) 
+ ) 
+)
+              )
+             in currentProtocol
+(
+ in the presence of
+  fam InShare[bound N + 2 bound N + 2 dependentBound I]
+ rewrite group Shares[bound K] and Wire[bound K]
+ to (
+    ( family Shares[bound K] 
+ indices: k 
+ bounds: bound K ::= 
+ (
+     (when  isInputGate(k) --> (
+(family Ctrb[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read Ctrb[n, m, k] ; return b
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read CtrbSum[n, m, k] ; return b
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ rb : bool <-  read RcvdBit[n, m, k] ; return rb
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : bool <-  read SendBit[n, m, k] ; return sb
+)
+||
+(family Share[bound (N + 1) bound K]
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ in : bool <-  read InShare[n, wire0(k), wire1(k)] ; return in
+)
+||
+(family Share[fixedBound (N + 1) bound K]
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : bool <-  read ShareSum[N + 1, k] ; 
+ xs : bool <-  read ShareSum[N, k] ; 
+ return xor((xs, x))
+)
+||
+(family ShareSum[bound (N + 1) bound K]
+ indices: m, k
+ bounds: bound (N + 1) bound K
+::=
+(when (m = 0) -->
+ s : bool <-  read Share[0, k] ; return s
+ )
+;;
+(when not (m = 0) -->
+ xm : bool <-  read Share[m, k] ; 
+ xs : bool <-  read ShareSum[m - 1, k] ; 
+ return xor((xs, xm))
+)
+)
+||
+(family ShareSum[fixedBound (N + 1) bound K]
+ indices: m, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ i : bool <-  read In[wire0(k), wire1(k)] ; 
+    return i
+)
+))
+;;
+(when  isNotGate(k) --> (
+(family Ctrb[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read Ctrb[n, m, k] ; return b
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read CtrbSum[n, m, k] ; return b
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ rb : bool <-  read RcvdBit[n, m, k] ; return rb
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : bool <-  read SendBit[n, m, k] ; return sb
+)
+||
+(family Share[bound (N + 1) bound K]
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ s : bool <-  read Share[n, wire0(k)] ; return s
+)
+||
+(family Share[fixedBound (N + 1) bound K]
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : bool <-  read ShareSum[N + 1, k] ; 
+    xs : bool <-  read ShareSum[N, k] ; 
+    return xor((xs, x))
+)
+||
+(family ShareSum[bound (N + 1) bound K]
+ indices: m, k
+ bounds: bound (N + 1) bound K
+::=
+(when (m = 0) -->
+ s : bool <-  read Share[0, k] ; return s
+)
+;;
+(when not (m = 0) -->
+ xm : bool <-  read Share[m, k] ; 
+ xs : bool <-  read ShareSum[m - 1, k] ; 
+ return xor((xs, xm))
+ )
+)
+||
+(family ShareSum[fixedBound (N + 1) bound K]
+ indices: m, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : bool <-  read ShareSum[N + 1, wire0(k)] ;
+    return neg(x)
+)
+))
+;;
+(when  isXorGate(k) --> (
+(family Ctrb[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read Ctrb[n, m, k] ; return b
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read CtrbSum[n, m, k] ; return b
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ rb : bool <-  read RcvdBit[n, m, k] ; return rb
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : bool <-  read SendBit[n, m, k] ; return sb
+)
+||
+(family Share[bound (N + 1) bound K]
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ x : bool <-  read Share[n, wire0(k)] ; 
+ y : bool <-  read Share[n, wire1(k)] ;
+ return xor((x, y))
+)
+||
+(family Share[fixedBound (N + 1) bound K]
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : bool <-  read ShareSum[N + 1, k] ; 
+ xs : bool <-  read ShareSum[N, k] ; 
+ return xor((xs, x))
+)
+||
+(family ShareSum[bound (N + 1) bound K]
+ indices: m, k
+ bounds: bound (N + 1) bound K
+::=
+(when (m = 0) -->
+ s : bool <-  read Share[0, k] ; return s
+)
+;;
+(when not (m = 0) -->
+ xm : bool <-  read Share[m, k] ; 
+ xs : bool <-  read ShareSum[m - 1, k] ; 
+ return xor((xs, xm))
+)
+)
+||
+(family ShareSum[fixedBound (N + 1) bound K]
+ indices: m, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : bool <-  read ShareSum[N + 1, wire0(k)] ; 
+ y : bool <-  read ShareSum[N + 1, wire1(k)] ; 
+ return xor((x, y))
+)
+))
+;;
+(when  isAndGate(k) --> (
+(family Ctrb[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (n < m) -->
+ s : bool <-  read SendBit[n, m, k] ; return s
+)
+;;
+(when (m = n) -->
+ x : bool <-  read Share[n, wire0(k)] ; 
+ y : bool <-  read Share[n, wire1(k)] ;
+ return **((x, y))
+)
+;;
+(when (m < n) -->
+ r : bool <-  read RcvdBit[n, m, k] ; return r
+)
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (m = 0) -->
+ b : bool <-  read Ctrb[n, 0, k] ; return b
+)
+;;
+(when not (m = 0) -->
+ b : bool <-  read Ctrb[n, m, k] ; 
+ s : bool <-  read CtrbSum[n, m - 1, k] ; 
+ return xor((s, b))
+)
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <-  read SendBit[m, n, k] ; 
+ xm : bool <-  read Share[m, wire0(k)] ; 
+ xn : bool <-  read Share[n, wire0(k)] ; 
+ ym : bool <-  read Share[m, wire1(k)] ; 
+ yn : bool <-  read Share[n, wire1(k)] ; 
+ return xor( ( xor(( **((xm, yn)), **((xn, ym))  )) , b) )
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,  m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (n < m) -->
+ x : bool <-  read Share[n, wire0(k)] ; 
+ y : bool <-  read Share[n, wire1(k)] ;
+    samp flip (()) 
+)
+;;
+(when (m <= n) -->
+ sb : bool <-  read SendBit[n, m, k] ; return sb
+)
+)
+||
+(family Share[bound (N + 1) bound K]
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ bs : bool <-  read CtrbSum[n, N + 1, k] ; return bs
+)
+||
+(family Share[fixedBound (N + 1) bound K]
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : bool <-  read ShareSum[N + 1, k] ; 
+    xs : bool <-  read ShareSum[N, k] ; 
+ return xor((xs, x))   
+)
+||
+(family ShareSum[bound (N + 1) bound K]
+ indices: m, k
+ bounds: bound (N + 1) bound K
+::=
+(when (m = 0) -->
+ s : bool <-  read Share[0, k] ; return s
+)
+;;
+(when not (m = 0) -->
+ xm : bool <-  read Share[m, k] ; 
+ xs : bool <-  read ShareSum[m - 1, k] ; 
+ return xor((xs, xm))
+)
+)
+||
+(family ShareSum[fixedBound (N + 1) bound K]
+ indices: m, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : bool <-  read ShareSum[N + 1, wire0(k)] ; 
+ y : bool <-  read ShareSum[N + 1, wire1(k)] ; 
+ return **((x, y))
+)
+))    
+     ) 
+)
+||
+(
+family Wire[bound K] 
+ indices: k
+ bounds: bound K ::=
+  s : bool <- read ShareSum[N + 1, k] ; return s
+)
+ )
+  by induction on k bound B (
+    remove chn ShareSum[N + 1, B] 
+        from group Shares[fixedBound B] then
+    merge case for chn Wire[B] and chn ShareSum[N + 1, B]
+         into group CGroup then
+    case distinction on group CGroup[bound 1](
+        case: (
+         subst chn Wire[B] into chn ShareSum[N + 1, B] then 
+         call symInputWS
+        )
+        case: (
+         subst chn Wire[B] into chn ShareSum[N + 1, B] then
+         subst fam Wire[bound B] into chn ShareSum[N + 1, B] then
+         subst fam Wire[bound B] into chn Wire[B] then
+         call symInputWS then
+         rename s to x in chn ShareSum[N + 1, B] 
+        )
+        case: (
+         subst chn Wire[B] into chn ShareSum[N + 1, B] then
+         subst fam Wire[bound B] into chn ShareSum[N + 1, B] at x then
+         rename s to x in chn ShareSum[N + 1, B] then
+         subst fam Wire[bound B] into chn ShareSum[N + 1, B] then
+         rename s to y in chn ShareSum[N + 1, B] then
+         subst fam Wire[bound B] into chn Wire[B] then
+         rename s to x in chn Wire[B] then
+         subst fam Wire[bound B] into chn Wire[B] then
+         rename s to y in chn Wire[B] then
+         call symInputWS 
+        )
+        case: (
+        subst chn Wire[B] into chn ShareSum[N + 1, B] then
+         subst fam Wire[bound B] into chn ShareSum[N + 1, B] then
+         rename s to x in chn ShareSum[N + 1, B] then
+         subst fam Wire[bound B] into chn ShareSum[N + 1, B] then
+         rename s to y in chn ShareSum[N + 1, B] then
+         subst fam Wire[bound B] into chn Wire[B] then
+         rename s to x in chn Wire[B] then
+         subst fam Wire[bound B] into chn Wire[B] then
+         rename s to y in chn Wire[B] then
+         call symInputWS
+        )
+       ) then
+       combine fam CGroup[bound 1] then
+       merge cases for chn Wire[B] then
+       move channel ShareSum[N + 1, B] on each branch of group Shares[fixedBound B]    
+    )   
+) 
+
+decompose fam Shares[bound K] with fam Wire[bound K] 
+
+remove and merge fam ShareSum[fixedBound N + 1 bound K]
+ from group Shares[bound K] 
+ 
+call addWiresGroup 
+
+split fam InShare$PartyAdv[bound (N + 2) bound (N + 2) dependentBound I] on first index
+
+on branch isSemiHonest(n) of 
+ family InShare$PartyAdv[fixedBound (N + 1) bound (N + 2) dependentBound I] (
+   subst fam InShare$[bound (N + 2) bound (N + 2) dependentBound I]
+    into fam InShare$PartyAdv[fixedBound (N + 1) bound (N + 2) dependentBound I]
+ ) 
+ 
+split fam SendInSharePartyAdv[bound (N + 2) bound (N + 2) dependentBound I] 
+ on first index 
+ 
+on branch isSemiHonest(n) of family 
+ SendInSharePartyAdv[fixedBound (N + 1) bound (N + 2) dependentBound I] (
+  subst fam InShare$[bound (N + 2) bound (N + 2) dependentBound I]
+   into fam SendInSharePartyAdv[fixedBound (N + 1) bound (N + 2) dependentBound I] 
+) 
+
+split fam InShare [bound (N + 2) bound (N + 2) dependentBound I] 
+ on first index
+ 
+subst fam InShare$[bound (N + 2) bound (N + 2) dependentBound I]
+ into fam InShare[fixedBound (N + 1) bound (N + 2) dependentBound I]
+ 
+split fam InShare$[bound (N + 2) bound (N + 2) dependentBound I] on 
+ first index
+ 
+absorb fam InShare$[fixedBound (N + 1) bound (N + 2) dependentBound I]
+
+absorb fam InShare[fixedBound (N + 1) bound (N + 2) dependentBound I]
+
+remove fam RcvdBit[bound (N + 2) bound (N + 2) bound K] 
+ from group Shares[bound K]
+ 
+ split fam RcvdBit[bound (N + 2) bound (N + 2) bound K]  
+  on second index
+  
+move family  RcvdBit[bound (N + 2) bound (N + 1) bound K] 
+ on each branch of group Shares[bound K]
+ 
+move family RcvdBit[bound (N + 2) fixedBound (N + 1) bound K] 
+ on each branch of group Shares[bound K]
+ 
+on branch isAndGate(k) of group Shares[bound K] (
+  diverge on fam RcvdBit[bound (N + 2) fixedBound (N + 1) bound K]  
+   with branch m <= n of fam SendBit[bound (N + 2) bound (N + 2) bound K] 
+    var r
+  )
+  
+on all branches of fam Shares[bound K] 
+ split fam SendBit[bound (N + 2) bound (N + 2) bound K] on first index
+ 
+on all branches of fam Shares[bound K] 
+ split fam RcvdBit[bound (N + 2) bound (N + 1) bound K] 
+    on first index
+    
+on all branches of fam Shares[bound K]
+ split fam RcvdBit[bound (N + 2) fixedBound (N + 1) bound K] 
+     on first index 
+     
+on all branches of fam Shares[bound K]
+ split fam CtrbSum[bound (N + 2) bound (N + 2) bound K] 
+     on first index
+     
+on all branches of fam Shares[bound K]
+ split fam Ctrb[bound (N + 2) bound (N + 2) bound K] 
+    on first index
+    
+ extract  
+  fam Ctrb[fixedBound (N + 1) bound (N + 2) bound K],
+  fam CtrbSum[fixedBound (N + 1) bound (N + 2) bound K],
+  fam SendBit[fixedBound (N + 1) bound (N + 2) bound K],
+  fam RcvdBit[fixedBound (N + 1) bound (N + 1) bound K],
+  fam RcvdBit[fixedBound (N + 1) fixedBound (N + 1) bound K]
+ from group Shares[bound K]
+ into group Ctrbs
+ 
+ group-absorb group Ctrbs[bound K]
+ 
+ split fam RcvdOutSharePartyAdv[bound N + 2 bound N + 2 bound K]
+ on second index
+ 
+split fam OutSharePartyAdv[bound N + 2 bound N + 2 bound K]
+ on second index
+ 
+ remove and merge fam Share[fixedBound N + 1 bound K] 
+ from group Shares[bound K]
+ 
+ on branch (isSemiHonest(n) and isOutputWire(k))
+ of family RcvdOutSharePartyAdv[bound N + 2 fixedBound N + 1 bound K] (
+  subst fam Share[fixedBound N + 1 bound K] 
+   into fam RcvdOutSharePartyAdv[bound N + 2 fixedBound N + 1 bound K] 
+)
+
+on branch (isSemiHonest(n) and isOutputWire(k))
+ of family OutSharePartyAdv[bound N + 2 fixedBound N + 1 bound K] (
+  subst fam Share[fixedBound N + 1 bound K] 
+   into fam OutSharePartyAdv[bound N + 2 fixedBound N + 1 bound K] 
+)
+
+absorb fam Share[fixedBound N + 1 bound K] 
+
+on branch (isSemiHonest(n) and isOutputWire(k))
+ of family RcvdOutSharePartyAdv[bound N + 2 fixedBound N + 1 bound K] (
+  subst fam ShareSum[fixedBound N + 1 bound K] 
+   into fam RcvdOutSharePartyAdv[bound N + 2 fixedBound N + 1 bound K] 
+)
+
+on branch (isSemiHonest(n) and isOutputWire(k))
+ of family OutSharePartyAdv[bound N + 2 fixedBound N + 1 bound K] (
+  subst fam ShareSum[fixedBound N + 1 bound K] 
+   into fam OutSharePartyAdv[bound N + 2 fixedBound N + 1 bound K] 
+)
+
+split fam OutShareSumPartyAdv[bound (N + 2) bound (N + 2) bound K]
+ on second index 
+ 
+on branch (isSemiHonest(n) and isOutputWire(k))
+ of family OutShareSumPartyAdv[bound N + 2 fixedBound N + 1 bound K] (
+  subst fam ShareSum[fixedBound N + 1 bound K] 
+   into fam OutShareSumPartyAdv[bound N + 2 fixedBound N + 1 bound K] 
+) 
+
+on branch isOutputWire(k)
+ of family Out[bound N + 2 bound K] (
+  subst fam ShareSum[fixedBound N + 1 bound K]
+   into fam Out[bound N + 2 bound K] 
+) 
+
+absorb fam ShareSum[fixedBound N + 1 bound K] 
+
+remove and merge fam ShareSum[bound N + 1 bound K]
+ from group Shares[bound K]
+ 
+merge case for fam Adv[bound K]
+ and fam Shares[bound K] into group Circ 
+ 
+rename indices to m, n, i in fam InShare[bound N + 1 bound N + 2 dependentBound I ] 
+
+sym from change 
+        fam OutShareSumPartyAdv[bound (N + 2) fixedBound (N + 1) bound K]
+        with 
+         (when (isSemiHonest(n) and isOutputWire(k)) -->
+           out : bool <- read Out[n, k] ; return out
+         ) ;;
+         (when (isHonest(n) or not isOutputWire(k)) -->
+           s : bool <- read OutShareSumPartyAdv[n, N + 1, k] ; return s
+         )
+        in currentProtocol
+       (
+       on branch (isSemiHonest(n) and isOutputWire(k))
+        of family OutShareSumPartyAdv[bound (N + 2) fixedBound (N + 1) bound K] (
+        subst fam Out[bound N + 2 bound K]
+         into fam OutShareSumPartyAdv[bound (N + 2) fixedBound (N + 1) bound K] 
+       )
+       ) 
+       
+ sym from change 
+        fam OutSharePartyAdv[bound (N + 2) fixedBound (N + 1) bound K]
+        with 
+         (when (isSemiHonest(n) and isOutputWire(k)) -->
+           out : bool <- read Out[n, k] ;
+           xs : bool <- read ShareSum[N, k] ; 
+           return xor((xs, out))
+         ) ;;
+         (when (isHonest(n) or not isOutputWire(k)) -->
+           s : bool <- read OutSharePartyAdv[n, N + 1, k] ; return s
+         )  
+        in currentProtocol
+       (
+       on branch (isSemiHonest(n) and isOutputWire(k))
+         of family OutSharePartyAdv[bound (N + 2) fixedBound (N + 1) bound K] (
+         subst fam Out[bound N + 2 bound K] 
+          into fam OutSharePartyAdv[bound (N + 2) fixedBound (N + 1) bound K]  
+       )
+       ) 
+                  
+sym from change 
+        fam RcvdOutSharePartyAdv[bound (N + 2) fixedBound (N + 1) bound K]
+        with 
+         (when (isSemiHonest(n) and isOutputWire(k)) -->
+           out : bool <- read Out[n, k] ;
+           xs : bool <- read  ShareSum[N, k] ;
+           return xor((xs, out))
+         ) ;;
+         (when (isHonest(n) or not isOutputWire(k)) -->
+           s : bool <- read RcvdOutSharePartyAdv[n, N + 1, k] ; return s
+         )
+        in currentProtocol
+       (
+       on branch (isSemiHonest(n) and isOutputWire(k))
+        of family RcvdOutSharePartyAdv[bound (N + 2) fixedBound (N + 1) bound K] (
+         subst fam Out[bound N + 2 bound K]
+          into fam RcvdOutSharePartyAdv[bound (N + 2) fixedBound (N + 1) bound K]
+        ) 
+       )
+       
+discard branch m = N + 1 of fam InShare$[bound (N + 1) bound (N + 2) dependentBound I]
+
+sym from idealPlusSim over deltaIdealPlusSim (
+on branch isSemiHonest(n) 
+ of family InShare$[bound (N + 1) bound (N + 2) dependentBound I](
+   subst fam InIdAdv[bound N + 2 dependentBound I] 
+    into fam InShare$[bound (N + 1) bound (N + 2) dependentBound I]
+ ) then
+ on branch isSemiHonest(n)
+  of family InPartyAdv[bound (N + 2) dependentBound I] (
+  subst fam InIdAdv[bound N + 2 dependentBound I] 
+   into fam InPartyAdv[bound (N + 2) dependentBound I]
+  ) then
+ on branch isSemiHonest(n)
+  of family InShare$PartyAdv[fixedBound N + 1 bound (N + 2) dependentBound I] ( 
+  subst fam InIdAdv[bound N + 2 dependentBound I] 
+   into fam InShare$PartyAdv[fixedBound N + 1 bound (N + 2) dependentBound I] then
+   rename in to x in fam InShare$PartyAdv[fixedBound N + 1 bound (N + 2) dependentBound I]
+ ) then
+ on branch isSemiHonest(n)
+  of family SendInSharePartyAdv[fixedBound (N + 1) bound (N + 2) dependentBound I] (
+   subst fam InIdAdv[bound N + 2 dependentBound I] 
+    into fam SendInSharePartyAdv[fixedBound (N + 1) bound (N + 2) dependentBound I] then
+   rename in to x in fam SendInSharePartyAdv[fixedBound (N + 1) bound (N + 2) dependentBound I] 
+ ) then
+ on branch isHonest(n) 
+  of family InShare$[bound (N + 1) bound (N + 2) dependentBound I] (
+   subst fam InRcvdIdAdv[bound (N + 2) dependentBound I]
+    into fam InShare$[bound (N + 1) bound (N + 2) dependentBound I]
+ ) then
+ on branch isHonest(n)
+  of family InRcvdPartyAdv[bound (N + 2) dependentBound I] (
+   subst fam InRcvdIdAdv[bound (N + 2) dependentBound I]
+    into fam InRcvdPartyAdv[bound (N + 2) dependentBound I] then
+    rename in to x in fam InRcvdPartyAdv[bound (N + 2) dependentBound I]
+ ) then
+ on branch isSemiHonest(n)
+  of family OutPartyAdv[bound N + 2 bound K] (
+  subst fam OutIdAdv[bound N + 2 bound K]
+   into fam OutPartyAdv[bound N + 2 bound K] then
+  rename out to s in fam OutPartyAdv[bound N + 2 bound K]
+ ) then
+ on branch (isSemiHonest(n) and isOutputWire(k))
+  of family OutSharePartyAdv[bound (N + 2) fixedBound (N + 1) bound K] (
+  subst fam OutIdAdv[bound N + 2 bound K]
+   into fam OutSharePartyAdv[bound (N + 2) fixedBound (N + 1) bound K] 
+ ) then
+ on branch (isSemiHonest(n) and isOutputWire(k))
+  of family OutShareSumPartyAdv[bound (N + 2) fixedBound (N + 1) bound K] (
+  subst fam OutIdAdv[bound N + 2 bound K]
+   into fam OutShareSumPartyAdv[bound (N + 2) fixedBound (N + 1) bound K]
+ ) then
+ on branch (isSemiHonest(n) and isOutputWire(k))
+  of family RcvdOutSharePartyAdv[bound (N + 2) fixedBound (N + 1) bound K] (
+   subst fam OutIdAdv[bound N + 2 bound K]
+    into fam RcvdOutSharePartyAdv[bound (N + 2) fixedBound (N + 1) bound K]
+  ) then 
+ on branch isOutputWire(k)
+  of family Out [bound (N + 2) bound K] (
+  rename out to w in fam Out [bound (N + 2) bound K] 
+ ) then
+ merge cases for fam InShare$[bound (N + 1) bound (N + 2) dependentBound I] then
+ rename in to x in fam InShare$[bound (N + 1) bound (N + 2) dependentBound I] then
+ absorb fam OutIdAdv[bound (N + 2) bound K] then
+ absorb fam InRcvdIdAdv[bound (N + 2) dependentBound I] then  
+ absorb fam InIdAdv[bound (N + 2) dependentBound I] then
+ on branch isAndGate(k) of group Circ[bound K] (
+ fix index for fam RcvdBit[bound N + 1 fixedBound N + 1 bound K ]
+ )
+)

@@ -1,0 +1,38 @@
+lang IPDL
+
+parameter N : nat .
+
+channel context delta = 
+output f[bound N] : bool ;
+output g[bound N] : bool ;
+output h[bound N] : bool .
+
+protocol P =  
+ (family f[bound N] indices: i bounds: bound N 
+  ::= return True
+ )
+ ||
+ (family G[bound N] indices: i bounds: bound N
+  ::=
+   (when honest(i) --> (
+     (family h[bound N] indices: i bounds: bound N ::= return True ) 
+     || 
+     (family g[bound N] indices: i bounds: bound N ::= x : bool <- read f[i] ; return x)
+   ))
+   ;;
+   (when corrupt(i) --> 
+    (
+     (family h[bound N] indices: i bounds: bound N ::= return False ) 
+     || 
+     (family g[bound N] indices: i bounds: bound N ::= return False)
+    )
+   )
+ )
+. 
+
+start with P over delta then
+case distinction on group G[bound N] (
+ case: (subst fam f[bound N] into fam g[bound N])
+ 
+ case: (idle)
+)

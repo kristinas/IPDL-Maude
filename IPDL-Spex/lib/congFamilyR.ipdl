@@ -1,0 +1,101 @@
+lang IPDL 
+
+parameter N : nat .
+parameter K : nat .
+
+  assumption %automatic andFalseLeft using x : 
+   (x : bool)  |= 
+   and( (False, x) ) = False .
+
+    assumption %automatic andFalseRight using x : 
+   (x : bool)  |= 
+   and( (x, False) ) = False . 
+
+   assumption %automatic andTrueLeft using x : 
+   (x : bool)  |= 
+   and( (True, x) ) = x .
+
+    assumption %automatic andTrueRight using x : 
+   (x : bool)  |= 
+   and( (x, True) ) = x .
+   
+    assumption %automatic xorFalseLeft using x : 
+   (x : bool)  |= 
+   xor( (False, x) ) = x .
+
+    assumption %automatic xorFalseRight using x : 
+   (x : bool)  |= 
+   xor( (x, False) ) = x . 
+   
+    assumption %automatic xorFalse using x : 
+   (x : bool)  |= 
+   xor( (x, x) ) = False . 
+   
+   assumption %automatic falseXor using x : 
+   (x : bool)  |= 
+   xor( (False, False) ) = False . 
+
+
+channel context Delta = 
+ input SendBit[bound N + 2 bound N + 2 bound K] : bool ;
+ input Share[ bound N + 2 bound K] : bool ;
+
+ output RcvdBit[bound N + 2 bound N + 2 bound K] : bool ;
+ output test : bool 
+.
+
+protocol P = 
+ (test ::= return True) 
+ ||
+ (
+ family RcvdBit[bound N + 2 bound N + 2 bound K] 
+indices: n, m, k
+bounds: bound N + 2 bound N + 2 bound K ::= 
+(when (m < n) -->
+nf(               (b : bool <- read SendBit[m, n, k])
+                  (xm : bool <- read Share[m, wire0(k)])
+                  (xn : bool <- read Share[n, wire0(k)])
+                  (ym : bool <- read Share[m, wire1(k)]) 
+                   yn : bool <- read Share[n, wire1(k)], 
+    if xn 
+      then (if yn then return xor((xor((xm, ym)), b)) 
+                 else return xor((ym, b)) )
+      else (if yn then return xor((xm, b)) 
+                 else return b)
+  )
+ ) ;;
+ (when (n <= m) -->
+      nf(z : bool <- read RcvdBit[n, m, k], return z)
+ ) 
+ 
+ ).
+
+ start with P over Delta then
+ sym from change fam RcvdBit[bound N + 2 bound N + 2 bound K]
+          with 
+  (when (m < n) -->        
+  nf(               (b : bool <- read SendBit[m, n, k])
+                  (xm : bool <- read Share[m, wire0(k)])
+                  (xn : bool <- read Share[n, wire0(k)])
+                  (ym : bool <- read Share[m, wire1(k)]) 
+                   yn : bool <- read Share[n, wire1(k)], 
+                  
+                  return xor (
+                    ( xor (( and((xm, yn))  , and((xn, ym))  )), 
+                    b)
+                  )
+
+    ) 
+   ) ;;
+ (when (n <= m) -->
+      nf(z : bool <- read RcvdBit[n, m, k], return z)
+ ) 
+  in currentProtocol(    
+  on branch (m < n) of family RcvdBit[bound N + 2 bound N + 2 bound K] (     
+ on reaction of fam RcvdBit[bound N + 2 bound N + 2 bound K] (
+  if-ext on yn then if-ext on xn
+ )
+ )
+ )
+ 
+ current-protocol

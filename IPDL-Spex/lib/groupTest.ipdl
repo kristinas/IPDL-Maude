@@ -1,0 +1,24 @@
+lang IPDL
+
+parameter N : nat .
+
+channel context delta = 
+ output F[bound N] : bool ;
+ output G[bound N] : bool
+.
+
+subproof test = 
+ group fam G[bound N] in Group indices: i bounds: bound N
+. 
+
+protocol P = 
+ (family F[bound N] indices: i bounds: bound N ::= return True) 
+ ||
+ (family G[bound N] indices: i bounds: bound N ::= return False)
+.
+
+start with P over delta
+
+call test
+
+

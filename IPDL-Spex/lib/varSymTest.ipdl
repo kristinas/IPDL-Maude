@@ -1,0 +1,52 @@
+lang IPDL 
+
+parameter N : nat .
+parameter B : nat .
+
+hypothesis isHonest(B) .
+
+channel context delta = 
+ output Ctrb-OK[bound N + 2 bound N + 2 fixedBound B ] : unit ;
+ output Ctrb[bound N + 2 bound N + 2 fixedBound B ] : bool 
+.
+
+protocol real = 
+ (
+    family Ctrb-OK[bound N + 2 bound N + 2 fixedBound B ]
+     indices: n , m , k 
+     bounds: bound N + 2 bound N + 2 fixedBound B ::= 
+      c : unit <- read Ctrb-OK[ n, m, B] ; return c
+ )
+ || 
+ ( 
+    family Group[bound N + 2 bound N + 2 fixedBound B ]  
+     indices: n , m , k 
+     bounds: bound N + 2 bound N + 2 fixedBound B ::= 
+    ( when (isHonest(B)) --> 
+    (family Ctrb[bound N + 2 bound N + 2 fixedBound B ]
+     indices: n , m , k 
+     bounds: bound N + 2 bound N + 2 fixedBound B ::= 
+      c : bool <- read Ctrb[ n, m, B] ; return c
+    )  
+    )
+    ;;
+    (when (isSemiHonest(B)) --> 
+    (family Ctrb[bound N + 2 bound N + 2 fixedBound B ]
+     indices: n , m , k 
+     bounds: bound N + 2 bound N + 2 fixedBound B ::= 
+      c : bool <- read Ctrb[ n, m, B] ; return c
+    )
+    )  
+ )
+  .
+
+start with real over delta 
+
+
+using branch when isHonest(B) of 
+ group Group[bound N + 2 bound N + 2 fixedBound B ] 
+(
+sym var c terms n, m, B
+          diverge fam Ctrb[bound N + 2 bound N + 2 fixedBound B ]
+          into fam Ctrb-OK[bound N + 2 bound N + 2 fixedBound B ] var c
+)          

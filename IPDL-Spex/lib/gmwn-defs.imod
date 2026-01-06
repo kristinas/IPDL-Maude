@@ -1,0 +1,558 @@
+import BASEGMWN .
+
+parameter N : nat .
+parameter K : nat .
+
+`` Sigma
+
+function xor : bool * bool -> bool .
+function ** : bool * bool  -> bool .
+function neg : bool -> bool .
+distribution flip : unit -> bool .
+
+`` assumptions
+
+expression-assumption %automatic andFalseLeft using x : 
+   (x : bool)  |= 
+   **( (False, x) ) = False .
+
+    expression-assumption %automatic andFalseRight using x : 
+   (x : bool)  |= 
+   **( (x, False) ) = False . 
+
+   expression-assumption %automatic andTrueLeft using x : 
+   (x : bool)  |= 
+   **( (True, x) ) = x .
+
+    expression-assumption %automatic andTrueRight using x : 
+   (x : bool)  |= 
+   **( (x, True) ) = x .
+   
+    expression-assumption %automatic xorFalseLeft using x : 
+   (x : bool)  |= 
+   xor( (False, x) ) = x .
+
+    expression-assumption %automatic xorFalseRight using x : 
+   (x : bool)  |= 
+   xor( (x, False) ) = x . 
+   
+    expression-assumption %automatic xorFalse using x : 
+   (x : bool)  |= 
+   xor( (x, x) ) = False . 
+   
+   expression-assumption %automatic falseXor using x : 
+   (x : bool)  |= 
+   xor( (False, False) ) = False . 
+
+   expression-assumption %manual xor-idem-2 using x, y :
+    (x : bool) (y : bool) |=
+    xor( (x, xor((y, x ))) ) = y .
+
+    expression-assumption %manual xor-idem-1 using x, y :
+    (x : bool) (y : bool) |=
+    xor( (x, xor((x, y ))) ) = y .
+
+    expression-assumption %manual xor-idem-3 using x, y :
+    (x : bool) (y : bool) |=
+    xor( (xor((x, y)), y) ) = x .
+
+    expression-assumption %manual xor-comm using x, y :
+    (x : bool) (y : bool) |=
+    xor((x, y)) = xor((y, x)) .
+
+    expression-assumption %manual neg-over-xor using x, y : 
+    (x : bool) (y : bool) |=
+    xor( (x, neg(y)) ) = neg( xor((x, y)) ) .
+
+    expression-assumption %manual rearrange-xor using x1, x2, x3, x4 : 
+    (x1 : bool) (x2 : bool)
+    (x3 : bool) (x4 : bool) |=
+    xor( ( xor((x1, x2)) , xor((x3, x4)) ) ) 
+    =
+    xor( ( xor((x1, x3)) , xor((x2, x4)) ) )  .
+
+    expression-assumption %manual middle-xor using x1, x2, x3, x4 : 
+    (x1 : bool) (x2 : bool)
+    (x3 : bool) (x4 : bool) |=
+    xor( ( xor((x1, x2)) , xor((x3, x4)) ) ) 
+    =
+    xor( ( xor( (x1, xor( (x2, x3) ) ) ) , x4 ) ) .
+
+    expression-assumption %manual derived-xor-and-rule using e1, e2, e3, e4, e5, e6 :
+    (e1 : bool) (e2 : bool) (e3 : bool)
+    (e4 : bool) (e5 : bool) (e6 : bool) |=
+    xor( (  xor(( **((e1, e2)) , **((e3, e2)) ))  , 
+            xor(( **((e4, e5)) , **((e4, e6)) ))  
+       ) )
+    =    
+    xor((
+        **((xor((e1, e3)), e2)) ,
+        **((e4, xor((e5, e6)))) 
+    )) . 
+
+    expression-assumption %manual derived-xor-rule using e1, e2, e3, e4 :
+    (e1 : bool) (e2 : bool) (e3 : bool)
+    (e4 : bool) |=
+    xor(( xor((e1, xor((e2, e3)) ))  , e4 )) 
+    = 
+    xor(( xor((e1, e2)) , xor((e3, e4)) )) .
+
+    expression-assumption %manual distrib-twice using e1, e2, e3, e4 :
+    (e1 : bool) (e2 : bool) (e3 : bool)
+    (e4 : bool) |=
+    **(( xor((e1, e2)) , xor((e3, e4)) ))
+    =
+    xor(
+    ( xor((**((e1, e3)) , **((e1, e4))))
+        ,
+      xor((**((e2, e3)) , **((e2, e4))))  
+    )
+    )
+    .
+
+
+hypothesis not (isNotGate(0)) .
+hypothesis not (isXorGate(0)) .
+hypothesis not (isAndGate(0)) .
+hypothesis isHonest(N + 1) .
+
+`` for the anonymous protocols
+
+channel context deltaSRW = 
+ 
+ input OTMsg-0[s, r, w] : bool ;
+ input OTMsg-1[s, r, w] : bool ;
+ input OTMsg-2[s, r, w] : bool ;
+ input OTMsg-3[s, r, w] : bool ;
+
+ input OTChc-0[s, r, w] : bool ;
+ input OTChc-1[s, r, w] : bool ;
+
+ output OTMsg-0OtAdv[s, r, w] : bool ;
+ output OTMsg-1OtAdv[s, r, w] : bool ;
+ output OTMsg-2OtAdv[s, r, w] : bool ;
+ output OTMsg-3OtAdv[s, r, w] : bool ;
+
+ output OTMsgRcvd-0OtAdv[s, r, w] : unit ;
+ output OTMsgRcvd-1OtAdv[s, r, w] : unit ;
+ output OTMsgRcvd-2OtAdv[s, r, w] : unit ;
+ output OTMsgRcvd-3OtAdv[s, r, w] : unit ;
+
+ output OTChc-0OtAdv[s, r, w] : bool ;
+ output OTChc-1OtAdv[s, r, w] : bool ;
+
+ output OTChcRcvd-0OtAdv[s, r, w] : unit ;
+ output OTChcRcvd-1OtAdv[s, r, w] : unit ;
+
+ output OTOut[s, r, w] : bool ;
+ output OTOutOtAdv[s, r, w] : bool 
+
+.
+
+protocol 1OutOf4OTIdeal-Honest-Honest =
+   ( OTMsg-0OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-0OtAdv[s, r, w] ; return om
+   ) ||
+      ( OTMsg-1OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-1OtAdv[s, r, w] ; return om
+   ) ||
+      ( OTMsg-2OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-2OtAdv[s, r, w] ; return om
+   ) ||
+      ( OTMsg-3OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-3OtAdv[s, r, w] ; return om
+   )  ||
+      ( OTMsgRcvd-0OtAdv[s, r, w] ::= 
+       m0 : bool <- read OTMsg-0[s, r, w] ; return ()
+   ) ||
+      ( OTMsgRcvd-1OtAdv[s, r, w] ::= 
+       m1 : bool <- read OTMsg-1[s, r, w] ; return ()
+   ) ||
+      ( OTMsgRcvd-2OtAdv[s, r, w] ::= 
+       m2 : bool <- read OTMsg-2[s, r, w] ; return ()
+   ) ||
+      ( OTMsgRcvd-3OtAdv[s, r, w] ::= 
+       m3 : bool <- read OTMsg-3[s, r, w] ; return ()
+   ) || 
+      ( OTChc-0OtAdv[s, r, w] ::= 
+       oc : bool <- read OTChc-0OtAdv[s, r, w] ; return oc
+   ) ||
+      ( OTChc-1OtAdv[s, r, w] ::= 
+       oc : bool <- read OTChc-1OtAdv[s, r, w] ; return oc
+   ) || 
+      ( OTChcRcvd-0OtAdv[s, r, w] ::= 
+       c0 : bool <- read OTChc-0[s, r, w] ; return ()
+   ) ||
+      ( OTChcRcvd-1OtAdv[s, r, w] ::= 
+       c1 : bool <- read OTChc-1[s, r, w] ; return ()
+   ) || 
+     ( OTOut[s, r, w] ::=
+      
+           m0 : bool <- read OTMsg-0[s, r, w] ;
+           m1 : bool <- read OTMsg-1[s, r, w] ;
+           m2 : bool <- read OTMsg-2[s, r, w] ;
+           m3 : bool <- read OTMsg-3[s, r, w] ;
+           c0 : bool <- read OTChc-0[s, r, w] ;
+           c1 : bool <- read OTChc-1[s, r, w] ;
+           (if c0 then
+             if c1 then return m3 else return m2
+           else 
+             if c1 then return m1 else return m0
+           )  
+       
+   ) || 
+      ( OTOutOtAdv[s, r, w] ::= 
+       out : bool <- read OTOutOtAdv[s, r, w] ; return out
+   )
+  .
+
+  protocol 1OutOf4OTIdeal-Honest-SemiHonest =
+   ( OTMsg-0OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-0OtAdv[s, r, w] ; return om
+   ) ||
+      ( OTMsg-1OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-1OtAdv[s, r, w] ; return om
+   ) ||
+      ( OTMsg-2OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-2OtAdv[s, r, w] ; return om
+   ) ||
+      ( OTMsg-3OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-3OtAdv[s, r, w] ; return om
+   )  ||
+      ( OTMsgRcvd-0OtAdv[s, r, w] ::= 
+       m0 : bool <- read OTMsg-0[s, r, w] ; return ()
+   ) ||
+      ( OTMsgRcvd-1OtAdv[s, r, w] ::= 
+       m1 : bool <- read OTMsg-1[s, r, w] ; return ()
+   ) ||
+      ( OTMsgRcvd-2OtAdv[s, r, w] ::= 
+       m2 : bool <- read OTMsg-2[s, r, w] ; return ()
+   ) ||
+      ( OTMsgRcvd-3OtAdv[s, r, w] ::= 
+       m3 : bool <- read OTMsg-3[s, r, w] ; return ()
+   ) || 
+      ( OTChc-0OtAdv[s, r, w] ::= 
+       oc : bool <- read OTChc-0[s, r, w] ; return oc
+   ) ||
+      ( OTChc-1OtAdv[s, r, w] ::= 
+       oc : bool <- read OTChc-1[s, r, w] ; return oc
+   ) || 
+      ( OTChcRcvd-0OtAdv[s, r, w] ::= 
+       oc : unit <- read OTChcRcvd-0OtAdv[s, r, w] ; return oc
+   ) ||
+      ( OTChcRcvd-1OtAdv[s, r, w] ::= 
+       oc : unit <- read OTChcRcvd-1OtAdv[s, r, w] ; return oc
+   ) || 
+     ( OTOut[s, r, w] ::=
+      
+           m0 : bool <- read OTMsg-0[s, r, w] ;
+           m1 : bool <- read OTMsg-1[s, r, w] ;
+           m2 : bool <- read OTMsg-2[s, r, w] ;
+           m3 : bool <- read OTMsg-3[s, r, w] ;
+           c0 : bool <- read OTChc-0[s, r, w] ;
+           c1 : bool <- read OTChc-1[s, r, w] ;
+           (if c0 then
+             if c1 then return m3 else return m2
+           else 
+             if c1 then return m1 else return m0
+           )  
+       
+   ) || 
+      ( OTOutOtAdv[s, r, w] ::= 
+       out : bool <- read OTOut[s, r, w] ; return out
+   )
+  .
+
+  protocol 1OutOf4OTIdeal-SemiHonest-Honest =
+   ( OTMsg-0OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-0[s, r, w] ; return om
+   ) ||
+      ( OTMsg-1OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-1[s, r, w] ; return om
+   ) ||
+      ( OTMsg-2OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-2[s, r, w] ; return om
+   ) ||
+      ( OTMsg-3OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-3[s, r, w] ; return om
+   )  ||
+      ( OTMsgRcvd-0OtAdv[s, r, w] ::= 
+       om : unit <- read OTMsgRcvd-0OtAdv[s, r, w] ; return om
+   ) ||
+      ( OTMsgRcvd-1OtAdv[s, r, w] ::= 
+       om : unit <- read OTMsgRcvd-1OtAdv[s, r, w] ; return om
+   ) ||
+      ( OTMsgRcvd-2OtAdv[s, r, w] ::= 
+       om : unit <- read  OTMsgRcvd-2OtAdv[s, r, w] ; return om
+   ) ||
+      ( OTMsgRcvd-3OtAdv[s, r, w] ::= 
+       om : unit <- read OTMsgRcvd-3OtAdv[s, r, w] ; return om
+   ) || 
+      ( OTChc-0OtAdv[s, r, w] ::= 
+       oc : bool <- read OTChc-0OtAdv[s, r, w] ; return oc
+   ) ||
+      ( OTChc-1OtAdv[s, r, w] ::= 
+       oc : bool <- read OTChc-1OtAdv[s, r, w] ; return oc
+   ) || 
+      ( OTChcRcvd-0OtAdv[s, r, w] ::= 
+       c0 : bool <- read OTChc-0[s, r, w] ; return ()
+   ) ||
+      ( OTChcRcvd-1OtAdv[s, r, w] ::= 
+       c1 : bool <- read OTChc-1[s, r, w] ; return ()
+   ) || 
+     ( OTOut[s, r, w] ::=
+      
+           m0 : bool <- read OTMsg-0[s, r, w] ;
+           m1 : bool <- read OTMsg-1[s, r, w] ;
+           m2 : bool <- read OTMsg-2[s, r, w] ;
+           m3 : bool <- read OTMsg-3[s, r, w] ;
+           c0 : bool <- read OTChc-0[s, r, w] ;
+           c1 : bool <- read OTChc-1[s, r, w] ;
+           (if c0 then
+             if c1 then return m3 else return m2
+           else 
+             if c1 then return m1 else return m0
+           )  
+       
+   ) || 
+      ( OTOutOtAdv[s, r, w] ::= 
+       out : bool <- read OTOutOtAdv[s, r, w] ; return out
+   )
+  .
+
+protocol 1OutOf4OTIdeal-SemiHonest-SemiHonest =
+   ( OTMsg-0OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-0[s, r, w] ; return om
+   ) ||
+      ( OTMsg-1OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-1[s, r, w] ; return om
+   ) ||
+      ( OTMsg-2OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-2[s, r, w] ; return om
+   ) ||
+      ( OTMsg-3OtAdv[s, r, w] ::= 
+       om : bool <- read OTMsg-3[s, r, w] ; return om
+   )  ||
+      ( OTMsgRcvd-0OtAdv[s, r, w] ::= 
+       om : unit <- read OTMsgRcvd-0OtAdv[s, r, w] ; return om
+   ) ||
+      ( OTMsgRcvd-1OtAdv[s, r, w] ::= 
+       om : unit <- read OTMsgRcvd-1OtAdv[s, r, w] ; return om
+   ) ||
+      ( OTMsgRcvd-2OtAdv[s, r, w] ::= 
+       om : unit <- read  OTMsgRcvd-2OtAdv[s, r, w] ; return om
+   ) ||
+      ( OTMsgRcvd-3OtAdv[s, r, w] ::= 
+       om : unit <- read OTMsgRcvd-3OtAdv[s, r, w] ; return om
+   ) || 
+      ( OTChc-0OtAdv[s, r, w] ::= 
+       oc : bool <- read OTChc-0[s, r, w] ; return oc
+   ) ||
+      ( OTChc-1OtAdv[s, r, w] ::= 
+       oc : bool <- read OTChc-1[s, r, w] ; return oc
+   ) || 
+      ( OTChcRcvd-0OtAdv[s, r, w] ::= 
+       oc : unit <- read OTChcRcvd-0OtAdv[s, r, w] ; return oc
+   ) ||
+      ( OTChcRcvd-1OtAdv[s, r, w] ::= 
+       oc : unit <- read OTChcRcvd-1OtAdv[s, r, w] ; return oc
+   ) || 
+     ( OTOut[s, r, w] ::=
+      
+           m0 : bool <- read OTMsg-0[s, r, w] ;
+           m1 : bool <- read OTMsg-1[s, r, w] ;
+           m2 : bool <- read OTMsg-2[s, r, w] ;
+           m3 : bool <- read OTMsg-3[s, r, w] ;
+           c0 : bool <- read OTChc-0[s, r, w] ;
+           c1 : bool <- read OTChc-1[s, r, w] ;
+           (if c0 then
+             if c1 then return m3 else return m2
+           else 
+             if c1 then return m1 else return m0
+           )  
+       
+   ) || 
+      ( OTOutOtAdv[s, r, w] ::= 
+       out : bool <- read OTOut[s, r, w] ; return out
+   )
+  .
+
+protocol 1OutOf4OTReal-Honest-Honest .
+protocol 1OutOf4OTReal-Honest-SemiHonest .
+protocol 1OutOf4OTReal-SemiHonest-Honest .
+protocol 1OutOf4OTReal-SemiHonest-SemiHonest . 
+
+approx-assumption HH2HH using nil : 
+emptyCCtxt ; 
+no inputs ; 
+no assumptions
+ |= 
+ 1OutOf4OTReal-Honest-Honest = 1OutOf4OTIdeal-Honest-Honest .
+
+approx-assumption SHH2SHH using nil : 
+emptyCCtxt ; 
+no inputs ; 
+no assumptions
+ |= 
+ 1OutOf4OTReal-SemiHonest-Honest = 1OutOf4OTIdeal-SemiHonest-Honest .
+
+ approx-assumption HSH2HSH using nil : 
+emptyCCtxt ; 
+no inputs ; 
+no assumptions
+ |= 
+ 1OutOf4OTReal-Honest-SemiHonest = 1OutOf4OTIdeal-Honest-SemiHonest .
+
+ approx-assumption SHSH2SHSH using nil : 
+emptyCCtxt ; 
+no inputs ; 
+no assumptions
+ |= 
+ 1OutOf4OTReal-SemiHonest-SemiHonest = 1OutOf4OTIdeal-SemiHonest-SemiHonest .
+
+channel context deltaNMK = 
+ 
+ input OTMsg-0[n, m, k] : bool ;
+ input OTMsg-1[n, m, k] : bool ;
+ input OTMsg-2[n, m, k] : bool ;
+ input OTMsg-3[n, m, k] : bool ;
+
+ input OTChc-0[n, m, k] : bool ;
+ input OTChc-1[n, m, k] : bool ;
+
+ output OTMsg-0OtAdv[n, m, k] : bool ;
+ output OTMsg-1OtAdv[n, m, k] : bool ;
+ output OTMsg-2OtAdv[n, m, k] : bool ;
+ output OTMsg-3OtAdv[n, m, k] : bool ;
+
+ output OTMsgRcvd-0OtAdv[n, m, k] : unit ;
+ output OTMsgRcvd-1OtAdv[n, m, k] : unit ;
+ output OTMsgRcvd-2OtAdv[n, m, k] : unit ;
+ output OTMsgRcvd-3OtAdv[n, m, k] : unit ;
+
+ output OTChc-0OtAdv[n, m, k] : bool ;
+ output OTChc-1OtAdv[n, m, k] : bool ;
+
+ output OTChcRcvd-0OtAdv[n, m, k] : unit ;
+ output OTChcRcvd-1OtAdv[n, m, k] : unit ;
+
+ output OTOut[n, m, k] : bool ;
+ output OTOutOtAdv[n, m, k] : bool 
+
+.
+
+embedding phi from deltaSRW to deltaNMK = 
+   OTMsg-0[s, r, w] |->  OTMsg-0[n, m, k] ;
+   OTMsg-1[s, r, w] |->  OTMsg-1[n, m, k] ;
+   OTMsg-2[s, r, w] |->  OTMsg-2[n, m, k] ;
+   OTMsg-3[s, r, w] |->  OTMsg-3[n, m, k] ;
+
+   OTChc-0[s, r, w] |-> OTChc-0[n, m, k] ;
+   OTChc-1[s, r, w] |-> OTChc-1[n, m, k] ;
+
+  OTMsg-0OtAdv[s, r, w] |-> OTMsg-0OtAdv[n, m, k] ;
+  OTMsg-1OtAdv[s, r, w] |-> OTMsg-1OtAdv[n, m, k] ;
+  OTMsg-2OtAdv[s, r, w] |-> OTMsg-2OtAdv[n, m, k] ;
+  OTMsg-3OtAdv[s, r, w] |-> OTMsg-3OtAdv[n, m, k] ;
+
+  OTMsgRcvd-0OtAdv[s, r, w] |-> OTMsgRcvd-0OtAdv[n, m, k] ;
+  OTMsgRcvd-1OtAdv[s, r, w] |-> OTMsgRcvd-1OtAdv[n, m, k] ;
+  OTMsgRcvd-2OtAdv[s, r, w] |-> OTMsgRcvd-2OtAdv[n, m, k] ;
+  OTMsgRcvd-3OtAdv[s, r, w] |-> OTMsgRcvd-3OtAdv[n, m, k] ;
+
+  OTChc-0OtAdv[s, r, w] |-> OTChc-0OtAdv[n, m, k] ;
+  OTChc-1OtAdv[s, r, w] |-> OTChc-1OtAdv[n, m, k] ;
+
+  OTChcRcvd-0OtAdv[s, r, w] |-> OTChcRcvd-0OtAdv[n, m, k] ;
+  OTChcRcvd-1OtAdv[s, r, w] |-> OTChcRcvd-1OtAdv[n, m, k] ;
+
+  OTOut[s, r, w] |-> OTOut[n, m, k] ;
+  OTOutOtAdv[s, r, w] |-> OTOutOtAdv[n, m, k]
+.
+
+channel context deltaNMKfam = 
+  input OTMsg-0[bound N + 2 bound N + 2 bound K] : bool ;
+  input OTMsg-1[bound N + 2 bound N + 2 bound K] : bool ;
+  input OTMsg-2[bound N + 2 bound N + 2 bound K] : bool ;
+  input OTMsg-3[bound N + 2 bound N + 2 bound K] : bool ;
+
+  input OTChc-0[bound N + 2 bound N + 2 bound K] : bool ;
+  input OTChc-1[bound N + 2 bound N + 2 bound K] : bool ;
+  
+  output OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+  output OTMsg-1OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+  output OTMsg-2OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+  output OTMsg-3OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+
+  output OTMsgRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+  output OTMsgRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+  output OTMsgRcvd-2OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+  output OTMsgRcvd-3OtAdv[bound N + 2 bound N + 2 bound K] : unit ; 
+
+  output OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+  output OTChc-1OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+
+  output OTChcRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+  output OTChcRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+
+  output OTOut[bound N + 2 bound N + 2 bound K] : bool ;
+  output OTOutOtAdv[bound N + 2 bound N + 2 bound K] : bool 
+  .
+
+protocol 1OutOf4OTIdeal = 
+     family 1OutOf4OTIdeal[bound N + 2 bound N + 2 bound K] 
+     indices: n, m, k
+     bounds: bound N + 2 bound N + 2 bound K ::=
+     ( when ( isHonest(n) and isHonest(m) ) -->  
+      embed(1OutOf4OTIdeal-Honest-Honest, phi)
+     ) ;;
+     ( when ( isSemiHonest(n) and isHonest(m) ) -->  
+      embed(1OutOf4OTIdeal-SemiHonest-Honest, phi)
+     ) ;;
+     ( when ( isHonest(n) and isSemiHonest(m) ) -->  
+      embed(1OutOf4OTIdeal-Honest-SemiHonest, phi)
+     ) ;;
+     ( when ( isSemiHonest(n) and isSemiHonest(m) ) -->  
+      embed(1OutOf4OTIdeal-SemiHonest-SemiHonest, phi)
+     )
+  . 
+
+`` deltaReal 
+
+channel context deltaReal =
+
+input    In[bound N + 2 dependentBound I] : bool ;
+output   Out[bound N + 2 bound K] : bool ;
+output   CtrbPartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   CtrbSumPartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   InPartyAdv[bound N + 2 dependentBound I] : bool ;
+output   InRcvdPartyAdv[bound N + 2 dependentBound I] : unit ;
+output   InSharePartyAdv[bound N + 2 bound N + 2 dependentBound I] : bool ;
+output   InShare$PartyAdv[bound N + 2 bound N + 2 dependentBound I] : bool ;
+output   InShare$-SumPartyAdv[bound N + 1 bound N + 2 dependentBound I] : bool ;
+output   OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OTChc-1OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OTChcRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+output   OTChcRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+output   OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OTMsg-1OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OTMsg-2OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OTMsg-3OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OTMsgRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+output   OTMsgRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+output   OTMsgRcvd-2OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+output   OTMsgRcvd-3OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+output   OTOutOtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OutPartyAdv[bound N + 2 bound K] : bool ;
+output   OutSharePartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OutShareSumPartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   RcvdBitPartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   RcvdInSharePartyAdv[bound N + 2 bound N + 2 dependentBound I] : bool ;
+output   RcvdOutSharePartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   SendBitPartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   SendInSharePartyAdv[bound N + 2 bound N + 2 dependentBound I] : bool ;
+output   SendOutSharePartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   SharePartyAdv[bound N + 2 bound K] : bool
+ .
+
+

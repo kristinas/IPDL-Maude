@@ -1,0 +1,282 @@
+lang IPDL
+
+parameter q : nat .
+
+type msg .
+type key .
+type ctxt .
+
+function zeros : unit -> msg .
+
+distribution genKey : unit -> key .
+distribution enc : msg * key -> ctxt .
+
+channel context deltaLR = 
+ output Enc[bound q] : ctxt ;
+ input Msg-L[bound q] : msg ;
+ input Msg-R[bound q] : msg 
+. 
+
+`` assumptions
+approx assumption lr using ml mr k :
+ (fam Msg[bound q] :: msg) (fam Enc[bound q] :: ctxt) ; 
+  fam Msg[bound q] ; no assumptions |= 
+  newNF( < Key : key >, 
+   ( 
+    (Key ::= samp genKey (()))
+    ||
+    (family Enc[bound q] indices: i bounds: bound q ::= 
+       ml : msg <- read Msg-L[i] ;
+       mr : msg <- read Msg-R[i] ;
+       k : key <- read Key ;
+       samp enc((ml, k))
+    ) 
+   )
+    )
+   =
+   newNF( < Key : key >, 
+   ( 
+    (Key ::= samp genKey (()))
+    ||
+    (family Enc[bound q] indices: i bounds: bound q ::= 
+       ml : msg <- read Msg-L[i] ;
+       mr : msg <- read Msg-R[i] ;
+       k : key <- read Key ;
+       samp enc((mr, k))
+    ) 
+   )
+   ) . 
+
+approx assumption cm using m k  :
+ (fam Msg[bound q] :: msg) (fam Enc[bound q] :: ctxt) ; 
+  fam Msg[bound q] ; no assumptions |= 
+  newNF( < Key : key >, 
+   ( 
+    (Key ::= samp genKey (()))
+    ||
+    (family Enc[bound q] indices: i bounds: bound q ::= 
+       m : msg <- read Msg[i] ;
+       k : key <- read Key ;
+       samp enc((m, k))
+    ) 
+   )
+    )
+   =
+   newNF( < Key : key >, 
+   ( 
+    (Key ::= samp genKey (()))
+    ||
+    (family Enc[bound q] indices: i bounds: bound q ::= 
+       m : msg <- read Msg[i] ;
+       k : key <- read Key ;
+       samp enc(( zeros(()), k))
+    ) 
+   )
+   ) . 
+
+protocol lrLeft = 
+  new Key : key in
+   (
+    ( Key ::= samp genKey (()) )
+    ||
+    (family Enc[bound q] indices: i bounds: bound q ::= 
+       ml : msg <- read Msg-L[i] ;
+       mr : msg <- read Msg-R[i] ;
+       k : key <- read Key ;
+       samp enc((ml, k))
+    ) 
+   ) 
+ .
+
+ protocol lrRight = 
+  new Key : key in
+   (
+    ( Key ::= samp genKey (()) )
+    ||
+    (family Enc[bound q] indices: i bounds: bound q ::= 
+       ml : msg <- read Msg-L[i] ;
+       mr : msg <- read Msg-R[i] ;
+       k : key <- read Key ;
+       samp enc((mr, k))
+    ) 
+   ) 
+ .
+
+ protocol int1 = 
+     newfamily Msg[bound q] indices: i bounds: bound q : msg in 
+   (  
+     (family Msg[bound q] indices: i bounds: bound q ::=   
+      ml : msg <- read Msg-L[i] ;
+      mr : msg <- read Msg-R[i] ;
+      return ml
+    )
+    ||
+     (
+     new Key : key in
+   (
+    ( Key ::= samp genKey (()) )
+    ||
+    (family Enc[bound q] indices: i bounds: bound q ::=  
+       m : msg <- read Msg[i] ;
+       k : key <- read Key ;
+       samp enc((m, k))
+    ) 
+   )
+    )
+   ) 
+ . 
+
+ protocol int2 = 
+     newfamily Msg[bound q] indices: i bounds: bound q : msg in 
+     (
+     (family Msg[bound q] indices: i bounds: bound q ::= 
+
+      ml : msg <- read Msg-L[i] ;
+      mr : msg <- read Msg-R[i] ;
+      return mr
+    )
+    || 
+    ( new Key : key in
+   (
+    ( Key ::= samp genKey (()) )
+    ||
+    (family Enc[bound q] indices: i bounds: bound q ::=  
+       m : msg <- read Msg[i] ;
+       k : key <- read Key ;
+       samp enc(( zeros(()) , k))
+    ) 
+   )  
+    ) 
+     )
+ . 
+
+ protocol int3 = 
+     newfamily Msg[bound q] indices: i bounds: bound q : msg in 
+     (
+        (family Msg[bound q] indices: i bounds: bound q ::= 
+      ml : msg <- read Msg-L[i] ;
+      mr : msg <- read Msg-R[i] ;
+      return mr
+     )
+     ||
+    ( new Key : key in
+   (
+    ( Key ::= samp genKey (()) )
+    ||
+    (family Enc[bound q] indices: i bounds: bound q ::=  
+       m : msg <- read Msg[i] ;
+       k : key <- read Key ;
+       samp enc((m, k))
+    ) 
+   ) 
+    )  
+     )
+     
+ .
+
+ channel context deltaCM = 
+ output Enc[bound q] : ctxt ;
+ input Msg[bound q] : msg 
+.
+
+ protocol cmLeft = 
+  new Key : key in
+   (
+    ( Key ::= samp genKey (()) )
+    ||
+    (family Enc[bound q] indices: i bounds: bound q ::=  
+       m : msg <- read Msg[i] ;
+       k : key <- read Key ;
+       samp enc((m, k))
+    ) 
+   ) 
+ .
+
+ protocol cmRight = 
+  new Key : key in
+   (
+    ( Key ::= samp genKey (()) )
+    ||
+    (family Enc[bound q] indices: i bounds: bound q ::=  
+       m : msg <- read Msg[i] ;
+       k : key <- read Key ;
+       samp enc(( zeros(()) , k))
+    ) 
+   ) 
+ .
+
+ protocol int0 = 
+  newfamily Msg-L[bound q] indices: i bounds: bound q : msg in
+  newfamily Msg-R[bound q] indices: i bounds: bound q : msg in 
+  (
+  (family Msg-L[bound q] indices: i bounds: bound q ::= 
+      m : msg <- read Msg[i] ;
+      return m
+  )
+  ||
+  (family Msg-R[bound q] indices: i bounds: bound q ::= 
+      return zeros(())
+  )
+  || 
+  (new Key : key in
+   (
+    ( Key ::= samp genKey (()) )
+    ||
+    (family Enc[bound q] indices: i bounds: bound q ::= 
+       ml : msg <- read Msg-L[i] ;
+       mr : msg <- read Msg-R[i] ;
+       k : key <- read Key ;
+       samp enc((ml, k))
+    ) 
+   ) 
+   )
+  )
+.  
+
+start with lrLeft over deltaLR 
+
+sym from int1(    
+ fold fam Msg[bound q] into fam Enc[bound q] 
+) then 
+restructure int1 then-approx
+use approx assumption cm then-approx
+bring declarations of hidden channels in front then 
+fold fam Msg[bound q] into fam Enc[bound q] then
+sym from int2 (
+   fold fam Msg[bound q] into fam Enc[bound q]
+) then 
+restructure int2 then-approx
+sym-approx from int3(
+restructure int3 then-approx
+use approx assumption cm
+) then-approx
+fold fam Msg[bound q] into fam Enc[bound q] then-approx
+sym-approx from lrRight(
+   idle
+)
+
+check-proof lrRight
+
+current-protocol
+eof
+
+start with cmLeft over deltaCM
+
+sym from int0(    
+ fold fam Msg-L[bound q] into fam Enc[bound q] then 
+ fold fam Msg-R[bound q] into fam Enc[bound q]
+) then
+restructure int0 then-approx
+use approx assumption lr then-approx
+    bring declarations of hidden channels in front then
+    fold fam Msg-L[bound q] into fam Enc[bound q] then 
+    fold fam Msg-R[bound q] into fam Enc[bound q] then
+sym from cmRight (idle)  
+
+current-protocol
+check-proof cmRight
+
+
+
+ 
+ 

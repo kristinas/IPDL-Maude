@@ -1,0 +1,47 @@
+lang IPDL
+
+parameter N : nat .
+
+hypothesis 0 <T N .
+
+channel context Delta = 
+ output F[bound N] : bool ;
+ output C : bool
+.
+
+protocol P = 
+ (C ::= f : bool <- read F[0] ; return f)
+ ||
+ (family F[bound N] indices: i bounds: bound N ::= 
+ ((when i = 0 --> return False)
+ ;;
+ (when not (i = 0) --> return True)
+ )
+ ) .
+
+ start with P over Delta
+ 
+ using branch when (i = 0) of family F[bound N] (
+    subst fam F[bound N] into chn C 
+ )
+
+current-protocol
+quit
+
+protocol P = 
+ (C ::= f : bool <- read F[0] ; return f)
+ ||
+ (family F[bound N] indices: i bounds: bound N ::= 
+ ((when i = 0 --> return False)
+ ;;
+ (when not (i = 0) --> return True)
+ )
+ ) .
+
+ start with P over Delta
+
+ using branch when (i = 0) of family F[bound N] (
+    subst fam F[bound N] into chn C
+ )
+
+ current-protocol

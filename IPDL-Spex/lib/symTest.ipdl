@@ -1,0 +1,35 @@
+lang IPDL
+
+parameter N : nat .
+parameter B : nat .
+
+channel context delta = 
+ output c : bool ;
+ output Ctrb[bound N + 2 bound N + 2 fixedBound B ] : bool ;
+ output Ctrb-OK[bound N + 2 bound N + 2 fixedBound B ] : unit 
+. 
+
+protocol real = 
+(family Ctrb-OK[bound N + 2 bound N + 2 fixedBound B ]
+  indices: n ,m ,k 
+  bounds: bound N + 2 bound N + 2 fixedBound B ::= 
+  nf (c : unit <- read Ctrb-OK[n ,m ,B ],return c )
+)
+||
+(family Ctrb[bound N + 2 bound N + 2 fixedBound B ]
+  indices: n ,m ,k 
+  bounds: bound N + 2 bound N + 2 fixedBound B ::= 
+  nf (b : bool <- read Ctrb[n ,m ,k ],return b )
+)
+|| 
+c ::= return True
+.
+
+start with real over delta
+
+eof
+
+sym var c terms n, m, B 
+         diverge fam Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+         into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+         var c

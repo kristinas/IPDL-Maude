@@ -1,0 +1,96 @@
+lang IPDL
+
+channel context deltaSRW = 
+ 
+ input OTMsg-0[s, r, w] : bool ;
+ input OTMsg-1[s, r, w] : bool ;
+ input OTMsg-2[s, r, w] : bool ;
+ input OTMsg-3[s, r, w] : bool ;
+
+ input OTChc-0[s, r, w] : bool ;
+ input OTChc-1[s, r, w] : bool ;
+
+ output OTMsgOtAdv-0[s, r, w] : bool ;
+ output OTMsgOtAdv-1[s, r, w] : bool ;
+ output OTMsgOtAdv-2[s, r, w] : bool ;
+ output OTMsgOtAdv-3[s, r, w] : bool ;
+
+ output OTMsgRcvdOtAdv-0[s, r, w] : unit ;
+ output OTMsgRcvdOtAdv-1[s, r, w] : unit ;
+ output OTMsgRcvdOtAdv-2[s, r, w] : unit ;
+ output OTMsgRcvdOtAdv-3[s, r, w] : unit ;
+
+ output OTChc-0OtAdv[s, r, w] : bool ;
+ output OTChc-1OtAdv[s, r, w] : bool ;
+
+ output OTChcRcvd-0OtAdv[s, r, w] : unit ;
+ output OTChcRcvd-1OtAdv[s, r, w] : unit ;
+
+ output OTOut[s, r, w] : bool ;
+ output OTOutOtAdv[s, r, w] : bool 
+
+.
+
+channel context deltaNMK = 
+ 
+ input OTMsg-0[n, m, k] : bool ;
+ input OTMsg-1[n, m, k] : bool ;
+ input OTMsg-2[n, m, k] : bool ;
+ input OTMsg-3[n, m, k] : bool ;
+
+ input OTChc-0[n, m, k] : bool ;
+ input OTChc-1[n, m, k] : bool ;
+
+ output OTMsgOtAdv-0[n, m, k] : bool ;
+ output OTMsgOtAdv-1[n, m, k] : bool ;
+ output OTMsgOtAdv-2[n, m, k] : bool ;
+ output OTMsgOtAdv-3[n, m, k] : bool ;
+
+ output OTMsgRcvdOtAdv-0[n, m, k] : unit ;
+ output OTMsgRcvdOtAdv-1[n, m, k] : unit ;
+ output OTMsgRcvdOtAdv-2[n, m, k] : unit ;
+ output OTMsgRcvdOtAdv-3[n, m, k] : unit ;
+
+ output OTChc-0OtAdv[n, m, k] : bool ;
+ output OTChc-1OtAdv[n, m, k] : bool ;
+
+ output OTChcRcvd-0OtAdv[n, m, k] : unit ;
+ output OTChcRcvd-1OtAdv[n, m, k] : unit ;
+
+ output OTOut[n, m, k] : bool ;
+ output OTOutOtAdv[n, m, k] : bool 
+
+.
+
+embedding phi from deltaSRW to deltaNMK = 
+   OTMsg-0[s, r, w] |->  OTMsg-0[n, m, k] ;
+   OTMsg-1[s, r, w] |->  OTMsg-1[n, m, k] ;
+   OTMsg-2[s, r, w] |->  OTMsg-2[n, m, k] ;
+   OTMsg-3[s, r, w] |->  OTMsg-3[n, m, k] ;
+
+   OTChc-0[s, r, w] |-> OTChc-0[n, m, k] ;
+   OTChc-1[s, r, w] |-> OTChc-1[n, m, k] ;
+
+  OTMsgOtAdv-0[s, r, w] |-> OTMsgOtAdv-0[n, m, k] ;
+  OTMsgOtAdv-1[s, r, w] |-> OTMsgOtAdv-1[n, m, k] ;
+  OTMsgOtAdv-2[s, r, w] |-> OTMsgOtAdv-2[n, m, k] ;
+  OTMsgOtAdv-3[s, r, w] |-> OTMsgOtAdv-3[n, m, k] ;
+
+  OTMsgRcvdOtAdv-0[s, r, w] |-> OTMsgRcvdOtAdv-0[n, m, k] ;
+  OTMsgRcvdOtAdv-1[s, r, w] |-> OTMsgRcvdOtAdv-1[n, m, k] ;
+  OTMsgRcvdOtAdv-2[s, r, w] |-> OTMsgRcvdOtAdv-2[n, m, k] ;
+  OTMsgRcvdOtAdv-3[s, r, w] |-> OTMsgRcvdOtAdv-3[n, m, k] ;
+
+  OTChc-0OtAdv[s, r, w] |-> OTChc-0OtAdv[n, m, k] ;
+  OTChc-1OtAdv[s, r, w] |-> OTChc-1OtAdv[n, m, k] ;
+
+  OTChcRcvd-0OtAdv[s, r, w] |-> OTChcRcvd-0OtAdv[n, m, k] ;
+  OTChcRcvd-1OtAdv[s, r, w] |-> OTChcRcvd-1OtAdv[n, m, k] ;
+
+  OTOut[s, r, w] |-> OTOut[n, m, k] ;
+  OTOutOtAdv[s, r, w] |-> OTOutOtAdv[n, m, k]
+.
+
+protocol 1OutOf4OTReal-SemiHonest-SemiHonest .
+
+protocol Q = embed(1OutOf4OTReal-SemiHonest-SemiHonest, phi) .

@@ -1,0 +1,6 @@
+lang IPDL
+
+subproof aSubProof = 
+ subst  chn C into chn D then
+ absorb chn C
+ .

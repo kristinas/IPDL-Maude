@@ -1,0 +1,12 @@
+lang IPDL
+
+parameter N : bool .
+
+channel context delta = 
+input I[bound (N + 2)] : bool ;
+output c : bool .
+
+protocol P = newfamily O[bound (N + 2)] indices: i bounds: bound (N + 2) : bool in ( (family O[bound (N + 2)] indices: i bounds: bound (N + 2) ::= x : bool <- read I[i] ; return x) || (c ::= return True) ) .
+
+start with P over delta then  
+split fam O[bound (N + 2)] on first index

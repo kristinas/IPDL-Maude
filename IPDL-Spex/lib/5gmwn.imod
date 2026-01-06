@@ -1,0 +1,16 @@
+lang IPDL
+
+include gmwn-defs.imod
+include deltaRealSplit.imod
+include pInt3.imod
+include idealPlusSimGMWN.imod
+
+include gmwn-subs.imod
+
+
+start with pInt3 over deltaRealSplit 
+
+include 5gmwn.proof
+
+check-proof idealPlusSim
+quit

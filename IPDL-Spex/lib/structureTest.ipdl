@@ -1,0 +1,55 @@
+lang IPDL 
+
+
+channel context delta = 
+ output F[bound 5] : bool ;
+ output c : bool
+.
+
+protocol P = 
+ P1 || P2 
+ where
+ P1 =
+ family F[bound 5] indices: i bounds: bound 5 ::= 
+ (
+  (when (i = 0) -->   return True)
+  ;;
+  (otherwise --> return False)
+ ) 
+ and
+ P2 = c ::= return True
+.
+
+start with P over delta
+
+current-protocol
+quit
+
+channel context delta = 
+ output d : bool ; 
+ output q1 : bool ;
+ output q2 : bool ;
+ output q3 : bool ;
+ output f : bool 
+. 
+
+current-protocol
+quit
+
+protocol P = 
+  new c : bool in
+   P1 || P2 || P3
+  where
+   P1 = c ::= return True || (d ::= x : bool <- read q3 ; return x)
+   and
+   P2 = (new e : bool in
+         Q1 || Q2 || Q3 
+        where Q1 = (q1 ::= return True)
+        and Q2 = (q2 ::= x : bool <- read q1 ; return x)
+        and Q3 = (q3 ::= return True) || (e ::= return False)
+        ) 
+   and P3 = f ::= return True
+.      
+
+start with P over delta
+        

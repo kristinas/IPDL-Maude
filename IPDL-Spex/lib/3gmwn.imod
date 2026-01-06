@@ -1,0 +1,17 @@
+lang IPDL
+
+include gmwn-defs.imod
+include pInt1.imod
+include deltaRealSplit.imod
+include pInt2.imod
+
+include gmwn-subs.imod
+
+`` up to the absorb of SOS is 10.4.3
+start with pInt1 over deltaReal
+
+include 3gmwn.proof
+
+current-protocol
+     check-proof pInt2
+          quit

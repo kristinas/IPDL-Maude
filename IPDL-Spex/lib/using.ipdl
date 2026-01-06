@@ -1,0 +1,125 @@
+lang IPDL
+
+parameter N : nat .
+parameter K : nat .
+
+channel context delta = 
+  input In[bound N bound N bound K] : bool ;
+  output F1[bound N bound N bound K] : bool ;
+  output F2[bound N bound N bound K] : bool ;
+  output G1[bound N bound N bound K] : bool ;
+  output G2[bound N bound N bound K] : bool 
+.
+
+protocol real =
+  (family Group1[bound K]
+  indices: k
+  bounds: bound K ::=
+   (when (isHonest(k)) --> (
+    ( family F1[bound N bound N bound K]
+      indices: m, n, k bounds: bound N bound N bound K ::=
+     (when m < n --> x : bool <- read G1[m, n, k] ; return x)
+     ;;
+     (when n <= m --> x : bool <- read F1[m, n, k] ; return x)
+   ) 
+   ||
+   (family F2[bound N bound N bound K]
+      indices: m, n, k bounds: bound N bound N bound K ::=
+      return True
+   )  
+   )
+   )
+   ;;
+   (when (isSemiHonest(k)) --> (
+     ( family F1[bound N bound N bound K]
+      indices: m, n, k bounds: bound N bound N bound K ::=
+     (when m < n --> x : bool <- read G1[m, n, k] ; return x)
+     ;;
+     (when n <= m --> x : bool <- read F1[m, n, k] ; return x)
+   ) 
+   ||
+   (family F2[bound N bound N bound K]
+      indices: m, n, k bounds: bound N bound N bound K ::=
+      return True
+   )
+   )
+   )
+  )
+  ||
+  (family Group2[bound K]
+  indices: k
+  bounds: bound K ::=
+   (when (isHonest(k)) --> (
+    ( family G1[bound N bound N bound K]
+      indices: m, n, k bounds: bound N bound N bound K ::=
+     (when m < n --> x : bool <- read In[m, n, k] ; return x)
+     ;;
+     (when n <= m --> x : bool <- read G1[m, n, k] ; return x)
+   ) 
+   ||
+   (family G2[bound N bound N bound K]
+      indices: m, n, k bounds: bound N bound N bound K ::=
+      return True
+   )  
+   )
+   )
+   ;;
+   (when (isSemiHonest(k)) --> (
+     ( family G1[bound N bound N bound K]
+      indices: m, n, k bounds: bound N bound N bound K ::=
+     (when m < n --> x : bool <- read In[m, n, k] ; return x)
+     ;;
+     (when n <= m --> x : bool <- read G1[m, n, k] ; return x)
+   ) 
+   ||
+   (family G2[bound N bound N bound K]
+      indices: m, n, k bounds: bound N bound N bound K ::=
+      return True
+   )
+   )
+   )
+  )
+.    
+
+start with real over delta
+
+case distinction on group Group1[bound K] (
+
+ case: (
+
+  on branch m < n of family F1[bound N bound N bound K] (
+
+using branch when isHonest(k) of group Group2[bound K] (
+
+ using branch when (m < n) of family G1[bound N bound N bound K] ( 
+    subst fam G1[bound N bound N bound K] into fam F1[bound N bound N bound K]
+ )
+
+)
+)
+
+ )
+
+ case: (idle)
+
+)    
+
+current-protocol
+quit
+
+!!!! this won't work because on branch on groups needs new!
+
+on branch isHonest(k) of group Group1[bound K] (
+
+on branch m < n of family F1[bound N bound N bound K] (
+
+using branch when isHonest(k) of group Group2[bound K] (
+
+ using branch when (m < n) of family G1[bound N bound N bound K] ( 
+    subst fam G1[bound N bound N bound K] into fam F1[bound N bound N bound K]
+ )
+
+)
+)
+
+)

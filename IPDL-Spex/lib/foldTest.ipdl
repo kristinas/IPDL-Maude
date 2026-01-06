@@ -1,0 +1,24 @@
+lang IPDL
+
+parameter N : nat .
+distribution flip : unit -> bool .
+
+channel context delta = 
+output LC : bool ;
+input  IC : bool 
+.
+
+protocol P = 
+  new C[N + 1] : bool in ( 
+    ( C[N + 1] ::= samp flip (()) ) 
+    || 
+    (LC ::= x : bool <- read IC ; y : bool <- read C[N + 1] ; return y) 
+  ) .
+
+
+start with P over delta 
+`` should this work? TODO
+fold chn C[N + 1] into chn LC
+
+current-protocol
+quit

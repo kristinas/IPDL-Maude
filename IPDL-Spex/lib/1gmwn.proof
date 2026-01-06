@@ -1,0 +1,173 @@
+on branch isSemiHonest(n) of family SendInSharePartyAdv[bound N + 2 bound N + 2 dependentBound I](
+    subst fam SendInShare[bound N + 2 bound N + 2 dependentBound I]
+    into fam SendInSharePartyAdv[bound N + 2 bound N + 2 dependentBound I]
+) 
+
+rename variables m to x, n to y, i to z of fam SendInShare[bound N + 2 bound N + 2 dependentBound I] 
+
+on branch isSemiHonest(n) 
+ of family RcvdInSharePartyAdv[bound N + 2 bound N + 2 dependentBound I](
+    subst fam SendInShare[bound N + 2 bound N + 2 dependentBound I]
+    into fam RcvdInSharePartyAdv[bound N + 2 bound N + 2 dependentBound I]
+)
+ 
+subst fam SendInShare[bound N + 2 bound N + 2 dependentBound I]
+into  fam InShare[bound N + 2 bound N + 2 dependentBound I] 
+
+absorb fam SendInShare[bound N + 2 bound N + 2 dependentBound I] 
+
+on branch isInputGate(k) of group Circuit[bound N + 2 bound K] (
+    call eliminateOTDivergent
+) 
+
+`` not
+on branch isNotGate(k) of group Circuit[bound N + 2 bound K] (
+   call eliminateOTDivergent
+) 
+
+`` xor
+on branch isXorGate(k) of group Circuit[bound N + 2 bound K] (
+   call eliminateOTDivergent
+) 
+
+``and 
+on branch isAndGate(k) of group Circuit[bound N + 2 bound K] (
+    subst fam OTMsg-0[bound N + 2 bound N + 2 bound K]
+    into fam OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K] then   
+   subst fam OTMsg-1[bound N + 2 bound N + 2 bound K]
+    into fam OTMsg-1OtAdv[bound N + 2 bound N + 2 bound K] then
+    subst fam OTMsg-2[bound N + 2 bound N + 2 bound K]
+    into fam OTMsg-2OtAdv[bound N + 2 bound N + 2 bound K] then
+    subst fam OTMsg-3[bound N + 2 bound N + 2 bound K]
+    into fam OTMsg-3OtAdv[bound N + 2 bound N + 2 bound K] then
+    subst fam OTMsg-0[bound N + 2 bound N + 2 bound K]
+       into fam OTMsgRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] then
+    subst fam OTMsg-1[bound N + 2 bound N + 2 bound K]
+       into fam OTMsgRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] then
+    subst fam OTMsg-2[bound N + 2 bound N + 2 bound K]
+       into fam OTMsgRcvd-2OtAdv[bound N + 2 bound N + 2 bound K] then
+    subst fam OTMsg-3[bound N + 2 bound N + 2 bound K]
+       into fam OTMsgRcvd-3OtAdv[bound N + 2 bound N + 2 bound K] then
+    rename variables n to m, m to n, k to k of fam RcvdBit[bound N + 2 bound N + 2 bound K] then
+    on branch isSemiHonest(m) of family OTOutOtAdv[bound N + 2 bound N + 2 bound K](
+        reverse subst fam RcvdBit[bound N + 2 bound N + 2 bound K]
+                in fam OTOutOtAdv[bound N + 2 bound N + 2 bound K]
+                using fam OTOut[bound N + 2 bound N + 2 bound K] 
+    ) then
+    rename variables m to x, n to y, k to z of fam RcvdBit[bound N + 2 bound N + 2 bound K] then
+    subst fam OTOut[bound N + 2 bound N + 2 bound K] into  fam RcvdBit[bound N + 2 bound N + 2 bound K] then
+    rename variables x to n, y to m, z to k of fam RcvdBit[bound N + 2 bound N + 2 bound K] then
+    rename variables n to m, m to n, k to k of fam OTMsg-0[bound N + 2 bound N + 2 bound K] then
+    rename variables n to m, m to n, k to k of fam OTMsg-1[bound N + 2 bound N + 2 bound K] then
+    rename variables n to m, m to n, k to k of fam OTMsg-2[bound N + 2 bound N + 2 bound K] then
+    rename variables n to m, m to n, k to k of fam OTMsg-3[bound N + 2 bound N + 2 bound K] then
+    subst or diverge fam OTMsg-0[bound N + 2 bound N + 2 bound K]
+    into fam RcvdBit[bound N + 2 bound N + 2 bound K] var z then
+    on branch m < n of family RcvdBit[bound N + 2 bound N + 2 bound K](
+        subst fam OTMsg-1[bound N + 2 bound N + 2 bound K] 
+        into fam RcvdBit[bound N + 2 bound N + 2 bound K] then
+        subst fam OTMsg-2[bound N + 2 bound N + 2 bound K] 
+        into fam RcvdBit[bound N + 2 bound N + 2 bound K] then
+        subst fam OTMsg-3[bound N + 2 bound N + 2 bound K] 
+        into fam RcvdBit[bound N + 2 bound N + 2 bound K] then 
+        rename x to xm, y to ym in fam RcvdBit[bound N + 2 bound N + 2 bound K] then
+        subst fam OTChc-0[bound N + 2 bound N + 2 bound K] 
+        into fam RcvdBit[bound N + 2 bound N + 2 bound K] then
+        rename x to xn in fam RcvdBit[bound N + 2 bound N + 2 bound K] then
+        subst fam OTChc-1[bound N + 2 bound N + 2 bound K] 
+        into fam RcvdBit[bound N + 2 bound N + 2 bound K] then
+        rename x to yn in fam RcvdBit[bound N + 2 bound N + 2 bound K] 
+    ) then
+    rename variables m to n, n to m, k to k of fam OTMsg-0[bound N + 2 bound N + 2 bound K] then
+    rename variables m to n, n to m, k to k of fam OTMsg-1[bound N + 2 bound N + 2 bound K] then
+    rename variables m to n, n to m, k to k of fam OTMsg-2[bound N + 2 bound N + 2 bound K] then
+    rename variables m to n, n to m, k to k of fam OTMsg-3[bound N + 2 bound N + 2 bound K] then
+    rename variables m to n, n to m, k to k of fam OTChc-0[bound N + 2 bound N + 2 bound K] then
+    rename variables m to n, n to m, k to k of fam OTChc-1[bound N + 2 bound N + 2 bound K] then
+    subst fam OTChc-0[bound N + 2 bound N + 2 bound K] 
+       into fam OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] then
+    subst fam OTChc-1[bound N + 2 bound N + 2 bound K] 
+       into fam OTChc-1OtAdv[bound N + 2 bound N + 2 bound K] then   
+    subst fam OTChc-0[bound N + 2 bound N + 2 bound K] 
+       into fam OTChcRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] then
+    subst fam OTChc-1[bound N + 2 bound N + 2 bound K] 
+       into fam OTChcRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] then
+    rename variables n to m, m to n, k to k of fam OTChc-0[bound N + 2 bound N + 2 bound K] then
+    rename variables n to m, m to n, k to k of fam OTChc-1[bound N + 2 bound N + 2 bound K] then
+    rename variables n to m, m to n, k to k of fam SendBit[bound N + 2 bound N + 2 bound K] then
+ sym from change fam RcvdBit[bound N + 2 bound N + 2 bound K]
+          with 
+  (when (m < n) -->        
+  nf(               (b : bool <- read SendBit[m, n, k])
+                  (xm : bool <- read Share[m, wire0(k)])
+                  (xn : bool <- read Share[n, wire0(k)])
+                  (ym : bool <- read Share[m, wire1(k)]) 
+                   yn : bool <- read Share[n, wire1(k)], 
+                  
+                  return xor (
+                    ( xor (( **((xm, yn))  , **((xn, ym))  )), 
+                    b)
+                  )
+
+    ) 
+   ) ;;
+ (when (n <= m) -->
+      nf(z : bool <- read RcvdBit[n, m, k], return z)
+ ) 
+  in currentProtocol(    
+  on branch (m < n) of family RcvdBit[bound N + 2 bound N + 2 bound K] (     
+ on reaction of fam RcvdBit[bound N + 2 bound N + 2 bound K] (
+  if-ext on yn then if-ext on xn
+ )
+ )
+ ) then
+ sym from change fam RcvdBit[bound N + 2 bound N + 2 bound K]
+          with 
+  (when (m < n) -->        
+  nf(               (b : bool <- read SendBit[m, n, k])
+                  (xm : bool <- read Share[m, wire0(k)])
+                  (xn : bool <- read Share[n, wire0(k)])
+                  (ym : bool <- read Share[m, wire1(k)]) 
+                   yn : bool <- read Share[n, wire1(k)], 
+                  
+                  return xor (
+                    ( xor (( **((xm, yn))  , **((xn, ym))  )), 
+                    b)
+                  )
+
+    ) 
+   ) ;;
+ (when (n <= m) -->
+   nf(               (b : bool <- read SendBit[m, n, k])
+                  (xm : bool <- read Share[m, wire0(k)])
+                  (xn : bool <- read Share[n, wire0(k)])
+                  (ym : bool <- read Share[m, wire1(k)]) 
+                   yn : bool <- read Share[n, wire1(k)], 
+                  
+                  return xor (
+                    ( xor (( **((xm, yn))  , **((xn, ym))  )), 
+                    b)
+                  )
+
+    ) 
+ ) 
+  in currentProtocol(    
+  on branch (n <= m) of family RcvdBit[bound N + 2 bound N + 2 bound K] (     
+ diverge on fam RcvdBit[bound N + 2 bound N + 2 bound K] 
+     with branch n <= m 
+     of fam SendBit[bound N + 2 bound N + 2 bound K] 
+     var z 
+ )
+ ) then 
+ merge cases for fam RcvdBit[bound N + 2 bound N + 2 bound K] then
+ rename variables m to n, n to m, k to k of fam SendBit[bound N + 2 bound N + 2 bound K]
+    
+) 
+
+combine fam Circuit[bound N + 2 bound K] 
+
+sym from pInt0 (
+combine fam Adv[bound K] then
+combine fam Shares[bound K] then 
+combine fam 1OutOf4OT[bound K]
+)

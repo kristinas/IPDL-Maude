@@ -1,0 +1,14 @@
+lang IPDL
+
+protocol P .
+
+channel context Delta = 
+ output c : bool 
+.
+
+protocol Q = 
+ P || c ::= return True 
+.
+
+start with Q over Delta 
+
