@@ -1,0 +1,53 @@
+lang IPDL
+
+`` OTP that also samples a JUNK coin J it reads but never uses. Proving it
+`` equivalent to the plain ideal forces us to discard the unused fresh sample.
+``
+`` LESSON (learned the hard way): `drop read chn A from chn B` is implemented by
+`` rule DROP-nf (syntax.maude), which ONLY fires when A is a PURE sample
+`` (A ::= samp Dist) and B's read of A is unused. You cannot drop the read of a
+`` COMPUTED channel this way -- which is why a doubly-masked output does not
+`` collapse to a single-coin ideal.
+
+function xor : bool * bool -> bool .
+distribution flip : unit -> bool .
+
+channel context delta =
+ input In : bool ;
+ output Out : bool
+.
+
+reaction-assumption otp using x y :
+   emptyCCtxt ; x : bool ; nil |=
+    y : bool <- samp flip (()) ; return xor( (x, y) )
+    = samp flip(()) .
+
+protocol real =
+    new Key : bool in
+    new Junk : bool in
+    (
+      (Key  ::= samp flip (()) )
+      ||
+      (Junk ::= samp flip (()) )
+      ||
+      (Out  ::= m : bool <- read In ;
+                j : bool <- read Junk ;     `` read but never used
+                k : bool <- read Key ;
+                return xor((m, k)) )
+    )
+    .
+
+protocol ideal =
+    (Out ::= m : bool <- read In ; samp flip (()) )
+    .
+
+start with real over delta then
+drop read chn Junk from chn Out then    `` Junk is a pure sample, j unused -> droppable
+absorb chn Junk then                     `` remove the now-orphaned sample channel
+fold chn Key into chn Out then
+use assumption otp on chn Out then
+restructure ideal
+
+current-protocol
+check-proof ideal
+quit
