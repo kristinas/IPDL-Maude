@@ -1,0 +1,59 @@
+lang IPDL
+
+`` ============================================================================
+`` EXPECTED RESULT: Ongoing  (this file documents a LIMITATION, see AGENTS.md
+`` gotcha #3). It does NOT close, on purpose. Kept as evidence of why.
+`` ============================================================================
+``
+`` Double-mask OTP: Out = (In XOR K1) XOR K2, two independent fresh keys.
+`` LESSONS baked into this proof:
+``  1. The otp assumption only fires when the masked value is a SINGLE bound
+``     variable -> route the inner mask (In XOR K1) through its own channel C1
+``     so that Out reads a variable `c1`.
+``  2. After peeling the outer mask, Out = c1 <- read C1 ; samp flip, where c1 is
+``     UNUSED. Folding C1 in would leave a dead coin (the NF does NOT gc dead
+``     samples). Instead `drop read` the unused C1 dependency.
+``  3. The doubly-masked output is independent of In, so the honest ideal is a
+``     plain fresh coin.
+
+function xor : bool * bool -> bool .
+distribution flip : unit -> bool .
+
+channel context delta =
+ input In : bool ;
+ output Out : bool
+.
+
+reaction-assumption otp using x y :
+   emptyCCtxt ; x : bool ; nil |=
+    y : bool <- samp flip (()) ; return xor( (x, y) )
+    = samp flip(()) .
+
+protocol real =
+    new K1 : bool in
+    new K2 : bool in
+    new C1 : bool in
+    (
+      (K1 ::= samp flip (()) )
+      ||
+      (K2 ::= samp flip (()) )
+      ||
+      (C1 ::= m : bool <- read In ; k1 : bool <- read K1 ; return xor((m, k1)) )
+      ||
+      (Out ::= c1 : bool <- read C1 ; k2 : bool <- read K2 ; return xor((c1, k2)) )
+    )
+    .
+
+protocol ideal =
+    (Out ::= samp flip (()) )
+    .
+
+start with real over delta then
+fold chn K2 into chn Out then
+use assumption otp on chn Out then
+drop read chn C1 from chn Out then
+restructure ideal
+
+current-protocol
+check-proof ideal
+quit
