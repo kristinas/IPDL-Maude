@@ -1,0 +1,24 @@
+combine fam Adv[bound K] 
+
+combine fam Shares[bound K] 
+
+combine fam 1OutOf4OT[bound K] 
+
+absorb fam OTOut[ bound N + 2 bound N + 2 bound K] 
+
+absorb fam OTMsg-0[bound N + 2 bound N + 2 bound K] 
+
+absorb fam OTMsg-1[bound N + 2 bound N + 2 bound K] 
+
+absorb fam OTMsg-2[bound N + 2 bound N + 2 bound K] 
+
+absorb fam OTMsg-3[bound N + 2 bound N + 2 bound K] 
+
+absorb fam OTChc-0[bound N + 2 bound N + 2 bound K] 
+
+absorb fam OTChc-1[bound N + 2 bound N + 2 bound K] 
+
+sym from pInt1(
+  combine fam Adv[bound K] then
+  combine fam Shares[bound K] 
+) 
