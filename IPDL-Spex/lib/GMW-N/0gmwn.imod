@@ -1,0 +1,17 @@
+lang IPDL
+
+include gmwn-defs.imod
+include realGMWN.imod
+include restr.imod
+
+include gmwn-subs.imod
+
+begin approx  proof
+start with real over deltaReal
+include 0gmwn.proof
+restructure restr
+qed
+
+check-proof restr 
+show-bounds
+quit
