@@ -1,0 +1,39 @@
+`` deltaRealSplit 
+
+channel context deltaRealSplit =
+
+input    In[bound N + 2 dependentBound I] : bool ;
+output   Out[bound N + 2 bound K] : bool ;
+output   CtrbPartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   CtrbSumPartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   InPartyAdv[bound N + 2 dependentBound I] : bool ;
+output   InRcvdPartyAdv[bound N + 2 dependentBound I] : unit ;
+output   InSharePartyAdv[bound N + 2 bound N + 2 dependentBound I] : bool ;
+output   InShare$PartyAdv[bound N + 2 bound N + 2 dependentBound I] : bool ;
+output   InShare$-SumPartyAdv[bound N + 1 bound N + 2 dependentBound I] : bool ;
+output   OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OTChc-1OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OTChcRcvd-0OtAdv[bound N + 2 fixedBound N + 1 bound K] : unit ;
+output   OTChcRcvd-1OtAdv[bound N + 2 fixedBound N + 1 bound K] : unit ;
+output   OTChcRcvd-0OtAdv[bound N + 2 bound N + 1 bound K] : unit ;
+output   OTChcRcvd-1OtAdv[bound N + 2 bound N + 1 bound K] : unit ;
+output   OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OTMsg-1OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OTMsg-2OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OTMsg-3OtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OTMsgRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+output   OTMsgRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+output   OTMsgRcvd-2OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+output   OTMsgRcvd-3OtAdv[bound N + 2 bound N + 2 bound K] : unit ;
+output   OTOutOtAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OutPartyAdv[bound N + 2 bound K] : bool ;
+output   OutSharePartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   OutShareSumPartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   RcvdBitPartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   RcvdInSharePartyAdv[bound N + 2 bound N + 2 dependentBound I] : bool ;
+output   RcvdOutSharePartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   SendBitPartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   SendInSharePartyAdv[bound N + 2 bound N + 2 dependentBound I] : bool ;
+output   SendOutSharePartyAdv[bound N + 2 bound N + 2 bound K] : bool ;
+output   SharePartyAdv[bound N + 2 bound K] : bool
+ .
