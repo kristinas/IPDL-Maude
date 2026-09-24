@@ -1,0 +1,3874 @@
+`` all subproofs go after this line
+strict subproof eliminateOTDivergent = 
+  on branch isSemiHonest(n) of family OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTMsg-0[bound N + 2 bound N + 2 bound K]  
+       var om
+    ) then
+    merge cases for fam OTMsg-0OtAdv[bound N + 2 bound N + 2 bound K] then
+    on branch isHonest(n) of family OTMsgRcvd-0OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTMsgRcvd-0OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTMsg-0[bound N + 2 bound N + 2 bound K]  
+       var om
+    ) then
+    merge cases for fam OTMsgRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] then
+    on branch isSemiHonest(n) of family OTMsg-1OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTMsg-1OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTMsg-1[bound N + 2 bound N + 2 bound K]  
+       var om
+    ) then
+    merge cases for fam OTMsg-1OtAdv[bound N + 2 bound N + 2 bound K] then
+    on branch isHonest(n) of family OTMsgRcvd-1OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTMsgRcvd-1OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTMsg-1[bound N + 2 bound N + 2 bound K]  
+       var om
+    ) then
+    merge cases for fam OTMsgRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] then
+    on branch isSemiHonest(n) of family OTMsg-2OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTMsg-2OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTMsg-2[bound N + 2 bound N + 2 bound K]  
+       var om
+    ) then
+    merge cases for fam OTMsg-2OtAdv[bound N + 2 bound N + 2 bound K] then
+    on branch isHonest(n) of family OTMsgRcvd-2OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTMsgRcvd-2OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTMsg-2[bound N + 2 bound N + 2 bound K]  
+       var om
+    ) then
+    merge cases for fam OTMsgRcvd-2OtAdv[bound N + 2 bound N + 2 bound K] then
+    on branch isSemiHonest(n) of family OTMsg-3OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTMsg-3OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTMsg-3[bound N + 2 bound N + 2 bound K]  
+       var om
+    ) then
+    merge cases for fam OTMsg-3OtAdv[bound N + 2 bound N + 2 bound K] then
+    on branch isHonest(n) of family OTMsgRcvd-3OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTMsgRcvd-3OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTMsg-3[bound N + 2 bound N + 2 bound K]  
+       var om
+    ) then
+    merge cases for fam OTMsgRcvd-3OtAdv[bound N + 2 bound N + 2 bound K] then
+    rename variables m to x, n to y, k to z of fam OTChc-0[bound N + 2 bound N + 2 bound K] then
+    on branch isSemiHonest(m) of family OTChc-0OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTChc-0OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTChc-0[bound N + 2 bound N + 2 bound K]  
+       var oc
+    ) then
+    merge cases for fam OTChc-0OtAdv[bound N + 2 bound N + 2 bound K] then
+    on branch isHonest(m) of family OTChcRcvd-0OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTChcRcvd-0OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTChc-0[bound N + 2 bound N + 2 bound K]  
+       var oc
+    ) then
+    merge cases for fam OTChcRcvd-0OtAdv[bound N + 2 bound N + 2 bound K] then
+    rename variables x to m, y to n, z to k of fam OTChc-0[bound N + 2 bound N + 2 bound K] then
+    rename variables m to x, n to y, k to z of fam OTChc-1[bound N + 2 bound N + 2 bound K] then
+    on branch isSemiHonest(m) of family OTChc-1OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTChc-1OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTChc-1[bound N + 2 bound N + 2 bound K]  
+       var oc
+    ) then
+    merge cases for fam OTChc-1OtAdv[bound N + 2 bound N + 2 bound K] then
+    on branch isHonest(m) of family OTChcRcvd-1OtAdv[bound N + 2 bound N + 2 bound K ] (
+       diverge on fam OTChcRcvd-1OtAdv[bound N + 2 bound N + 2 bound K]
+       with fam OTChc-1[bound N + 2 bound N + 2 bound K]  
+       var oc
+    ) then
+    merge cases for fam OTChcRcvd-1OtAdv[bound N + 2 bound N + 2 bound K] then
+    rename variables x to m, y to n, z to k of fam OTChc-1[bound N + 2 bound N + 2 bound K] then
+    diverge on fam OTOut[bound N + 2 bound N + 2 bound K] 
+    with fam OTMsg-0[bound N + 2 bound N + 2 bound K]  
+    var o then
+    on branch isSemiHonest(m) of family OTOutOtAdv[bound N + 2 bound N + 2 bound K]  (
+       diverge on fam OTOutOtAdv[bound N + 2 bound N + 2 bound K] 
+       with fam OTOut[bound N + 2 bound N + 2 bound K]  
+       var out
+    ) then
+    merge cases for fam OTOutOtAdv[bound N + 2 bound N + 2 bound K]
+.
+
+strict subproof addSharesOK = 
+group  
+   fam ShareOK[bound N + 2 bound K],
+   fam SendBit-OK[bound N + 2 bound N + 2 bound K],
+   fam RcvdBit-OK[bound N + 2 bound N + 2 bound K],
+   fam Ctrb-OK[bound N + 2 bound N + 2 bound K],
+   fam CtrbSum-OK[bound N + 2 bound N + 2 bound K]
+in SharesOK 
+indices: k
+bounds: bound K .
+
+strict subproof addInitOK =
+group  
+  fam InShareOK[bound N + 2 bound N + 2 dependentBound I],
+  fam InShare$-OK[bound N + 2 bound N + 2 dependentBound I],
+  fam InShare$Sum-OK[bound N + 1 bound N + 2 dependentBound I]
+in InitOK 
+indices: m, n, i
+bounds: bound N + 2 bound N + 2 dependentBound I .
+
+strict subproof changeShares = 
+ sym from 
+( branch when (isInputGate(k)) of fam Shares[bound K]
+ change fam Share[fixedBound N + 1 bound K]
+ with x : unit <- read InShareOK[N + 1, wire0(k), wire1(k)] ;
+      in : bool <- read InShare[N + 1, wire0(k), wire1(k)] ;
+      return in
+ in 
+ (branch when (isNotGate(k))  of fam Shares[bound K]
+  change fam Share[fixedBound N + 1 bound K]
+  with 
+       s : unit <- read ShareOK[N + 1, wire0(k)] ;
+       x : bool <- read Share[N + 1, wire0(k)] ;
+       return neg(x)
+  in (
+   branch when (isXorGate(k)) of fam Shares[bound K]
+   change fam Share[fixedBound N + 1 bound K]
+   with  
+         a : unit <- read ShareOK[N + 1, wire0(k)] ;
+         b : unit <- read ShareOK[N + 1, wire1(k)] ;
+         x : bool <- read Share[N + 1, wire0(k)] ;
+         y : bool <- read Share[N + 1, wire1(k)] ;
+         return xor((x, y)) 
+   in (branch when (isAndGate(k)) of fam Shares[bound K]
+   change fam Share[fixedBound N + 1 bound K]
+   with
+    x : unit <- read CtrbSum-OK[N + 1, N + 1, k] ;
+    bs : bool <- read CtrbSum[N + 1, N + 1, k] ;
+    return bs    
+   in currentProtocol
+   )
+  )        
+  ) 
+)  (
+   ungroup fam SharesOK[bound K] then
+   ungroup fam InitOK[bound N + 2 bound N + 2 dependentBound I] then
+   on branch isInputGate(k) of group Shares[bound K](
+     subst fam InShareOK[bound N + 2 bound N + 2 dependentBound I] 
+     into fam Share[fixedBound N + 1 bound K]
+   ) then
+   on branch isNotGate(k) of group Shares[bound K](
+     subst fam ShareOK[bound N + 2 bound K]
+     into fam Share[fixedBound N + 1 bound K]
+   ) then
+   on branch isXorGate(k) of group Shares[bound K](
+     subst fam ShareOK[bound N + 2 bound K]
+     into fam Share[fixedBound N + 1 bound K] then
+     rename x to inA in fam Share[fixedBound N + 1 bound K] then
+     subst fam ShareOK[bound N + 2 bound K]
+     into fam Share[fixedBound N + 1 bound K] then
+     rename x to y, inA to x in fam Share[fixedBound N + 1 bound K]  
+   )  then 
+   on branch isAndGate(k) of group Shares[bound K](
+     subst fam CtrbSum-OK[bound N + 2 bound N + 2 bound K]
+     into fam Share[fixedBound N + 1 bound K] 
+   ) then
+   call addSharesOK then
+   call addInitOK 
+   ) 
+.
+
+strict subproof addInOK = 
+ add internal family In-OK 
+     indices: n, i 
+     bounds: bound N + 2 dependentBound I 
+     typed: unit 
+     assigned: 
+       in : bool <- read In[n, i] ; 
+       return ()
+.
+
+strict subproof addWiresOK =
+ add internal family Wire-OK
+     indices: k
+     bounds: bound K 
+     typed: unit
+     assigned: 
+          (when (isInputGate(k)) --> 
+            in : unit <- read In-OK[wire0(k), wire1(k)] ;
+            return in
+          )
+          ;;
+          (when (isNotGate(k)) --> 
+            w : unit <- read Wire-OK[wire0(k)] ;
+            return ()
+          )
+          ;;
+          (when (isXorGate(k)) --> 
+            w0 : unit <- read Wire-OK[wire0(k)] ;
+            w1 : unit <- read Wire-OK[wire1(k)] ;
+            return () 
+          )
+          ;;
+          (when (isAndGate(k)) --> 
+            w0 : unit <- read Wire-OK[wire0(k)] ;
+            w1 : unit <- read Wire-OK[wire1(k)] ;
+            return () 
+          ) then
+  group  
+   fam Wire-OK[bound K]
+in Wires-OK 
+indices: k
+bounds: bound K        
+.
+
+strict subproof splitShareOK = 
+ split fam ShareOK[bound N + 2 bound K] on first index inside group SharesOK[bound K]
+.
+
+strict subproof sym3 = 
+ add internal family InShareOK
+indices: m, n, i
+bounds: bound N + 2 bound N + 2 dependentBound I 
+typed: unit 
+assigned: 
+ is : bool <- read InShare[m, n, i] ; return () then
+add internal family ShareOK
+indices: n, k
+bounds: bound N + 2 bound K
+typed: unit
+assigned: x : bool <- read Share[n, k] ; return ()
+.
+
+strict subproof sym4 =
+ on branch isAndGate(k) of group Adv[bound K](
+on branch n < N + 1 of family OTChcRcvd-0OtAdv[bound N + 2 fixedBound N + 1 bound K](
+  sym from change fam OTChcRcvd-0OtAdv[bound N + 2 fixedBound N + 1 bound K] 
+    with x : unit <- read ShareOK[N + 1, wire0(k)] ; return ()
+    in currentProtocol(
+      subst fam ShareOK[bound N + 2 bound K]
+      into fam OTChcRcvd-0OtAdv[bound N + 2 fixedBound N + 1 bound K] 
+    )
+) then
+on branch n < N + 1 of family OTChcRcvd-1OtAdv[bound N + 2 fixedBound N + 1 bound K](
+  sym from change fam OTChcRcvd-1OtAdv[bound N + 2 fixedBound N + 1 bound K] 
+    with x : unit <- read ShareOK[N + 1, wire1(k)] ; return ()
+    in currentProtocol(
+      subst fam ShareOK[bound N + 2 bound K]
+      into fam OTChcRcvd-1OtAdv[bound N + 2 fixedBound N + 1 bound K] 
+    )
+)
+)
+.
+
+strict subproof sym5 = 
+ add internal family InShare$-OK
+indices: m, n, i
+bounds: bound N + 2  bound N + 2 dependentBound I
+typed: unit
+assigned: is : bool <- read InShare$[m, n, i] ; return () then
+add internal family InShare$Sum-OK
+indices: m, n, i
+bounds: bound N + 1  bound N + 2 dependentBound I
+typed: unit
+assigned: is : bool <- read InShare$-Sum[m, n, i] ; return () then
+add internal family SendBit-OK
+indices: n, m, k
+bounds: bound N + 2  bound N + 2 bound K
+typed: unit
+assigned: s : bool <- read SendBit[n, m, k] ; return () then
+add internal family RcvdBit-OK
+indices: n, m, k
+bounds: bound N + 2  bound N + 2 bound K
+typed: unit
+assigned: r : bool <- read RcvdBit[n, m, k] ; return () then
+add internal family Ctrb-OK
+indices: n, m, k
+bounds: bound N + 2  bound N + 2 bound K
+typed: unit
+assigned: c : bool <- read Ctrb[n, m, k] ; return () then
+add internal family CtrbSum-OK
+indices: n, m, k
+bounds: bound N + 2  bound N + 2 bound K
+typed: unit
+assigned: c : bool <- read CtrbSum[n, m, k] ; return ()
+.
+
+strict subproof sym8 = 
+ sym from 
+         branch
+          when (isInputGate(k)) 
+         of 
+          fam Shares[bound K] 
+         change 
+          fam Share[fixedBound (N + 1) bound K] 
+         with 
+          x : unit <- read InShareOK[N + 1, wire0(k), wire1(k)] ;
+          in : bool <- read InShare[N + 1, wire0(k), wire1(k)] ;
+          return in
+         in 
+         (branch
+           when (isNotGate(k)) 
+         of 
+           fam Shares[bound K] 
+         change 
+          fam Share[fixedBound (N + 1) bound K] 
+         with 
+          s : unit <- read ShareOK[N + 1, wire0(k)] ;
+          x : bool <- read Share[N + 1, wire0(k)];
+          return neg(x)
+         in 
+         (branch
+            when (isXorGate(k))
+          of  
+           fam Shares[bound K] 
+          change 
+           fam Share[fixedBound (N + 1) bound K] 
+          with 
+           a : unit <- read ShareOK[N + 1, wire0(k)] ;
+           b : unit <- read ShareOK[N + 1, wire1(k)] ;
+           x : bool <- read Share[N + 1, wire0(k)] ;
+           y : bool <- read Share[N + 1, wire1(k)] ;
+           return xor((x, y))
+         in 
+          (branch
+            when (isAndGate(k))
+          of  
+           fam Shares[bound K] 
+          change 
+           fam Share[fixedBound (N + 1) bound K] 
+          with 
+           x : unit <- read CtrbSum-OK[N + 1, N + 1, k] ;
+           bs : bool <- read CtrbSum[N + 1, N + 1, k] ;
+           return bs 
+         in currentProtocol
+          ) ) )
+ ( on branch isInputGate(k) of group Shares[bound K] (
+     subst fam InShareOK[bound (N + 2) bound (N + 2) dependentBound I]
+      into fam Share[fixedBound (N + 1) bound K]
+   ) then
+   on branch isNotGate(k) of group Shares[bound K] (
+     subst fam ShareOK[bound (N + 2) bound K]
+      into fam Share[fixedBound (N + 1) bound K]
+   ) then  
+   on branch isXorGate(k) of group Shares[bound K] (
+     subst fam ShareOK[bound (N + 2) bound K]
+      into fam Share[fixedBound (N + 1) bound K] then
+     rename x to inA in fam Share[fixedBound (N + 1) bound K] then
+     subst fam ShareOK[bound (N + 2) bound K]
+      into fam Share[fixedBound (N + 1) bound K] then
+     rename x to y, inA to x 
+      in fam Share[fixedBound (N + 1) bound K] 
+   ) then 
+   on branch isAndGate(k) of group Shares[bound K] (
+     subst fam CtrbSum-OK[bound (N + 2) bound (N + 2) bound K]
+      into fam Share[fixedBound (N + 1) bound K]
+   )  
+ )
+ .
+
+strict subproof inIndSym7 = 
+ sym from
+       change 
+        fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B]  
+        with
+         s : bool <- read SendBit[n, m, B] ;  return ()
+        in currentProtocol
+(  
+  sym from 
+          change 
+        fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+        with
+         (when (n < m) --> 
+           s : bool <- read SendBit[n, m, B] ;  return () 
+         )
+         ;;
+         (when (m <= n) --> 
+           s : bool <- read SendBit[n, m, B] ;  return () 
+         )
+        in currentProtocol 
+         ( merge cases for fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+         ) then
+
+ case distinction on family SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] (
+  case:(
+   using branch when isAndGate(B)
+         of group Shares[fixedBound B]
+         ( 
+           using branch when n < m
+            of family SendBit[bound (N + 2) bound (N + 2) fixedBound B]
+            ( drop read 
+                fam SendBit[bound (N + 2) bound (N + 2) fixedBound B]
+              from fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+            )
+         )       
+ )
+
+ case: (
+  using branch when isAndGate(B)
+         of group Shares[fixedBound B]
+         ( 
+           using branch when m <= n
+            of family SendBit[bound (N + 2) bound (N + 2) fixedBound B]
+            ( diverge 
+                on fam SendBit[bound (N + 2) bound (N + 2) fixedBound B] 
+                with fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+                var sb
+            )
+         )
+ )
+ )
+)
+
+. 
+
+strict subproof inIndSym10 =
+ rewrite family CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound B]
+  to c : bool <- read CtrbSum[n, m, B] ; return ()
+  by induction on m bound M
+  (
+  case distinction on family CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B](
+   case: (subst fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+     into fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B] then 
+    sym from 
+     change fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B]
+     with c : bool <- read CtrbSum[n, M, B] ;  return ()
+     in currentProtocol 
+     (
+       using branch when isAndGate(B) of
+        group Shares[fixedBound B]
+        ( subst fam CtrbSum[bound (N + 2) bound (N + 2) fixedBound B]
+           into fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B]
+        ) then     
+        rename b to c in fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B]
+    )
+  ) 
+   
+   case: ( subst fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+      into fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B] then
+     rename c to b in fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B] then
+     subst fam CtrbSum-OK[bound (N + 2) bound M fixedBound B]
+      into fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B] then       
+     rename c to s in fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B] then       
+     sym from 
+      change fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B]
+        with c : bool <- read CtrbSum[n, M, B] ; return ()
+          in currentProtocol 
+      ( using branch when isAndGate(B) of
+        group Shares[fixedBound B]
+        ( subst fam CtrbSum[bound (N + 2) bound (N + 2) fixedBound B]
+           into fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B]
+        )
+      )
+   )
+  
+  
+  ) then
+   
+  merge cases for fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B]
+  
+  )
+
+.
+
+strict subproof inIndSym11 =
+ sym from 
+   change 
+        fam ShareOK[bound (N + 1) fixedBound B]
+        with
+         x : bool <- read Share[n, B] ; return ()
+        in currentProtocol
+  ( using branch when isAndGate(B)
+     of group Shares[fixedBound B]
+    (subst fam Share[bound (N + 1) fixedBound B]
+      into fam ShareOK[bound (N + 1) fixedBound B] then
+     rename bs to c in fam ShareOK[bound (N + 1) fixedBound B]  
+    ) 
+  )      
+.
+
+strict subproof inIndSym12 =
+ sym from 
+   change 
+        chn ShareOK[N + 1, B]
+        with
+         x : bool <- read Share[N + 1, B] ; return ()
+        in currentProtocol
+  ( using branch when isAndGate(B)
+     of group Shares[fixedBound B]
+    (subst chn Share[N + 1, B]
+      into chn ShareOK[N + 1, B] then
+     rename bs to c in chn ShareOK[N + 1, B]  
+    ) then
+    subst fam CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound B]
+     into chn ShareOK[N + 1, B]
+  )      
+.   
+
+strict subproof changeComp =
+sym from
+     change fam SharesOK[bound K]
+        with 
+           (when (isInputGate(k)) -->
+         (  
+(family Ctrb-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : unit <- read Ctrb-OK[n, m, k] ; return c
+)
+||
+(family CtrbSum-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : unit <- read CtrbSum-OK[n, m, k] ; return c
+)
+||
+(family RcvdBit-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ r : unit <- read RcvdBit-OK[n, m, k] ; return r
+)
+||
+(family SendBit-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ s : unit <- read SendBit-OK[n, m, k] ; return s
+)
+||
+(
+family ShareOK[bound (N + 1) bound K] 
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ i : unit <- read InShareOK[n, wire0(k), wire1(k)] ; return i
+)
+||
+(
+family ShareOK[fixedBound (N + 1) bound K] 
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ i : unit <- read InShareOK[N + 1, wire0(k), wire1(k)] ;
+ return i
+)
+         )
+) 
+;;
+(when (isNotGate(k)) -->
+(
+(family Ctrb-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : unit <- read Ctrb-OK[n, m, k] ; return c
+)
+||
+(family CtrbSum-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : unit <- read CtrbSum-OK[n, m, k] ; return c
+)
+||
+(family RcvdBit-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ r : unit <- read RcvdBit-OK[n, m, k] ; return r
+)
+||
+(family SendBit-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ s : unit <- read SendBit-OK[n, m, k] ; return s
+)
+||
+(
+family ShareOK[bound (N + 1) bound K] 
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ x : unit <- read ShareOK[n, wire0(k)] ; return x
+)
+||
+(
+family ShareOK[fixedBound (N + 1) bound K] 
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : unit <- read ShareOK[N + 1, wire0(k)] ; 
+ return x
+)
+)
+)
+;;
+(when (isXorGate(k)) -->
+(
+(family Ctrb-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : unit <- read Ctrb-OK[n, m, k] ; return c
+)
+||
+(family CtrbSum-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : unit <- read CtrbSum-OK[n, m, k] ; return c
+)
+||
+(family RcvdBit-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ r : unit <- read RcvdBit-OK[n, m, k] ; return r
+)
+||
+(family SendBit-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ s : unit <- read SendBit-OK[n, m, k] ; return s
+)
+||
+(
+family ShareOK[bound (N + 1) bound K] 
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ x : unit <- read ShareOK[n, wire0(k)] ;
+ y : unit <- read ShareOK[n, wire1(k)] ; 
+ return ()
+)
+||
+(
+family ShareOK[fixedBound (N + 1) bound K] 
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : unit <- read ShareOK[N + 1, wire0(k)] ;
+ y : unit <- read ShareOK[N + 1, wire1(k)] ; 
+ return ()
+)
+)
+)
+;;
+(when (isAndGate(k)) -->
+(
+(family Ctrb-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (n < m) -->
+ s : unit <- read SendBit-OK[n, m, k] ; return s
+) 
+;;
+(when (m < n) -->
+ r : unit <- read RcvdBit-OK[n, m, k] ; return r
+)
+;;
+(when (m = n) -->
+ x : unit <- read ShareOK[n, wire0(k)] ; 
+ y : unit <- read ShareOK[n, wire1(k)] ; 
+ return () 
+)
+)
+||
+(family CtrbSum-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (0 = m) -->
+ c : unit <- read Ctrb-OK[n, 0, k] ; return c
+)
+;;
+(when (not (0 = m)) -->
+  x : unit <- read CtrbSum-OK[n, m - 1, k] ;
+  y : unit <- read Ctrb-OK[n, m, k] ; 
+  return () 
+)
+)
+||
+(family RcvdBit-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : unit <- read SendBit-OK[m, n, k] ;
+ xm : unit <- read ShareOK[m, wire0(k)] ;
+ xn : unit <- read ShareOK[n, wire0(k)] ; 
+ ym : unit <- read ShareOK[m, wire1(k)] ; 
+ yn : unit <- read ShareOK[n, wire1(k)] ; 
+ return ()
+)
+||
+(family SendBit-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (n < m) -->
+ x : unit <- read ShareOK[n, wire0(k)] ;
+ y : unit <- read ShareOK[n, wire1(k)] ; 
+    return ()
+)
+;;
+(when (m <= n) -->
+ sb : unit <- read SendBit-OK[n, m, k] ; return sb
+)
+)
+||
+(family ShareOK[bound (N + 1) bound K] 
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ c : unit <- read CtrbSum-OK[n, N + 1, k] ; return c
+)
+||
+(family ShareOK[fixedBound (N + 1) bound K] 
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ c : unit <- read CtrbSum-OK[N + 1, N + 1, k] ;
+ return c  
+)
+)
+)
+  in currentProtocol 
+(
+in the presence of 
+  fam InitOK[bound (N + 2) bound (N + 2) dependentBound I]
+  rewrite
+  group Shares[bound K] and SharesOK[bound K]
+  to
+  (
+(family Shares[bound K] 
+ indices: k
+ bounds: bound K
+::=
+(
+(when (isInputGate(k)) -->
+(
+(family Ctrb[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read  Ctrb[n, m, k] ; return b
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read  CtrbSum[n, m, k] ; return b
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ rb : bool <- read  RcvdBit[n, m, k] ; return rb
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : bool <- read  SendBit[n, m, k] ; return sb
+)
+||
+(family Share[bound (N + 1) bound K] 
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ in : bool <- read  InShare[n, wire0(k), wire1(k)] ; return in
+)
+||
+(family Share[fixedBound (N + 1) bound K] 
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ in : bool <- read  InShare[N + 1, wire0(k), wire1(k)] ;
+ x : unit <- read  InShareOK[N + 1, wire0(k), wire1(k)] ; 
+ return in
+)
+)
+)
+;;
+(when (isNotGate(k)) -->
+(
+(family Ctrb[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read  Ctrb[n, m, k] ; return b
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read  CtrbSum[n, m, k] ; return b
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ rb : bool <- read  RcvdBit[n, m, k] ; return rb
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : bool <- read  SendBit[n, m, k] ; return sb
+)
+||
+(family Share[bound (N + 1) bound K] 
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ s : bool <- read  Share[n, wire0(k)] ; return s
+)
+||
+(family Share[fixedBound (N + 1) bound K] 
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ s : unit <- read  ShareOK[N + 1, wire0(k)] ;
+ x : bool <- read  Share[N + 1, wire0(k)] ; 
+ return neg(x)
+)
+)
+)
+;;
+(when (isXorGate(k)) -->
+(
+(family Ctrb[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read  Ctrb[n, m, k] ; return b
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read  CtrbSum[n, m, k] ; return b
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ rb : bool <- read  RcvdBit[n, m, k] ; return rb
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : bool <- read  SendBit[n, m, k] ; return sb
+)
+||
+(family Share[bound (N + 1) bound K] 
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ x : bool <- read  Share[n, wire0(k)] ;
+ y : bool <- read  Share[n, wire1(k)] ;
+ return xor((x, y))
+)
+||
+(family Share[fixedBound (N + 1) bound K] 
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ a : unit <- read  ShareOK[N + 1, wire0(k)] ;
+ b : unit <- read  ShareOK[N + 1, wire1(k)] ;
+ x : bool <- read  Share[N + 1, wire0(k)] ;
+ y : bool <- read  Share[N + 1, wire1(k)] ; 
+ return xor((x, y))
+)
+) 
+)
+;;
+(when (isAndGate(k)) -->
+(
+(family Ctrb[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (n < m) -->
+ s : bool <- read  SendBit[n, m, k] ; return s
+)
+;;
+(when (m = n) -->
+ x : bool <- read  Share[n, wire0(k)] ;
+ y : bool <- read  Share[n, wire1(k)] ;
+ return **((x, y))
+) 
+;;
+(when (m < n) -->
+ r : bool <- read  RcvdBit[n, m, k] ; return r
+)
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (0 = m) -->
+ b : bool <- read  Ctrb[n, 0, k] ; return b
+)
+;;
+(when (not (0 = m)) -->
+  b : bool <- read  Ctrb[n, m, k] ;
+  s : bool <- read  CtrbSum[n, m - 1, k] ; 
+  return xor((s, b))
+)
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read  SendBit[m, n, k] ;
+ xm : bool <- read  Share[m, wire0(k)] ;
+ xn : bool <- read  Share[n, wire0(k)] ;
+ ym : bool <- read  Share[m, wire1(k)] ;
+ yn : bool <- read  Share[n, wire1(k)] ; 
+    return xor( (  xor( (**((xm, yn)) , **((xn, ym))) ),  b) )
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (n < m) -->
+ x : bool <- read  Share[n, wire0(k)] ;
+ y : bool <- read  Share[n, wire1(k)] ;
+ samp flip(())
+) 
+;;
+(when (m <= n) -->
+ sb : bool <- read  SendBit[n, m, k] ; return sb
+)
+)
+||
+(family Share[bound (N + 1) bound K] 
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ bs : bool <- read  CtrbSum[n, N + 1, k] ; return bs
+)
+||
+(family Share[fixedBound (N + 1) bound K] 
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ bs : bool <- read  CtrbSum[N + 1, N + 1, k] ;
+ x : unit <- read  CtrbSum-OK[N + 1, N + 1, k] ;
+ return bs
+)
+)
+)
+)
+)
+||
+(family SharesOK[bound K] 
+ indices: k
+ bounds: bound K
+::=
+(
+(family Ctrb-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : bool <- read  Ctrb[n, m, k] ;  return ()
+)
+||
+(family CtrbSum-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : bool <- read  CtrbSum[n, m, k] ;  return ()
+)
+||
+(family RcvdBit-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ r : bool <- read  RcvdBit[n, m, k] ;  return ()
+)
+||
+(family SendBit-OK[bound (N + 2) bound (N + 2) bound K] 
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ s : bool <- read  SendBit[n, m, k] ;  return ()
+)
+||
+(family ShareOK[bound (N + 1) bound K] 
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ x : bool <- read  Share[n, k] ; return ()
+)
+||
+(family ShareOK[fixedBound (N + 1) bound K] 
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ x : bool <- read  Share[N + 1, k] ; return ()
+)
+)
+)
+)
+  by induction on k bound B 
+ (
+  ungroup fam InitOK[bound (N + 2) bound (N + 2) dependentBound I] then
+  case distinction on group SharesOK[fixedBound B] 
+  (
+   case: (
+    using branch when isInputGate(B) of group Shares[fixedBound B]( 
+    sym var c terms n, m, B 
+          diverge fam Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] var c then
+    sym var c terms n, m, B 
+          diverge fam CtrbSum[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound B] var c then    
+    sym var r terms n, m, B 
+          diverge fam RcvdBit[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] var r then 
+    sym var s terms n, m, B 
+          diverge fam SendBit[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] var s then    
+    subst fam InShareOK[bound N + 2 bound N + 2 dependentBound I ]
+    into chn ShareOK[N + 1, B] then
+      sym from 
+          change 
+        chn ShareOK[N + 1, B]
+        with
+         x : bool <- read Share[N + 1, B] ; return ()
+        in currentProtocol  
+        (  subst chn Share[N + 1, B] into chn ShareOK[N + 1, B] then
+           subst fam InShareOK[bound (N + 2) bound (N + 2) dependentBound I]
+            into chn ShareOK[N + 1, B] then 
+           rename in to is in chn ShareOK[N + 1, B] 
+        ) then
+    rename indices to x, y in fam ShareOK[bound(N + 1) fixedBound B] then
+      subst fam InShareOK[bound (N + 2) bound (N + 2) dependentBound I]
+       into fam ShareOK[bound (N + 1) fixedBound B] then
+      rename indices to n, k in fam ShareOK[bound(N + 1) fixedBound B] then
+      rename is to in in fam ShareOK[bound(N + 1) fixedBound B] then
+      sym from 
+         change 
+        fam ShareOK[bound(N + 1) fixedBound B]
+        with
+         x : bool <- read Share[n, B] ; return ()
+        in currentProtocol 
+         ( subst
+             fam Share[bound (N + 1) fixedBound B] into
+             fam ShareOK[bound (N + 1) fixedBound B]
+         )     
+                 
+   ) 
+   ) 
+
+   case: (
+    using branch when isNotGate(B) of group Shares[fixedBound B]( 
+
+    sym var c terms n, m, B 
+          diverge fam Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] var c then
+    sym var c terms n, m, B 
+          diverge fam CtrbSum[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound B] var c then    
+    sym var r terms n, m, B 
+          diverge fam RcvdBit[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] var r then 
+    sym var s terms n, m, B 
+          diverge fam SendBit[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] var s then
+    using group SharesOK[bound B]
+       ( subst fam ShareOK[fixedBound (N + 1) bound B] into
+               chn ShareOK[N + 1, B] ) then
+      sym from 
+       change chn ShareOK[N + 1, B]
+       with
+         x : bool <- read Share[N + 1, B] ; return ()
+        in currentProtocol ( 
+          subst chn Share[N + 1, B] into chn ShareOK[N + 1, B] then
+          using group SharesOK[bound B]
+           ( 
+             subst fam ShareOK[fixedBound (N + 1) bound B] 
+              into chn ShareOK[N + 1, B]
+           ) 
+         ) then
+      using group SharesOK[bound B]
+       ( subst fam ShareOK[bound (N + 1) bound B] into
+               fam ShareOK[bound(N + 1) fixedBound B] ) then
+      sym from 
+       change 
+        fam ShareOK[bound (N + 1) fixedBound B]
+        with
+         x : bool <- read Share[n, B] ; return ()
+        in currentProtocol 
+         (
+         subst fam Share[bound (N + 1) fixedBound B]
+          into fam ShareOK[bound (N + 1) fixedBound B] then
+         rename s to x in fam ShareOK[bound(N + 1) fixedBound B]   
+         )          
+   )
+   ) 
+
+   case:(
+    using branch when isXorGate(B) of group Shares[fixedBound B]( 
+
+    sym var c terms n, m, B 
+          diverge fam Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] var c then
+    sym var c terms n, m, B 
+          diverge fam CtrbSum[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound B] var c then    
+    sym var r terms n, m, B 
+          diverge fam RcvdBit[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] var r then 
+    sym var s terms n, m, B 
+          diverge fam SendBit[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] var s then 
+      using group SharesOK[bound B]
+       ( subst fam ShareOK[fixedBound (N + 1) bound B] into
+               chn ShareOK[N + 1, B] then
+         rename x to a in chn ShareOK[N + 1, B] then 
+         subst fam ShareOK[fixedBound (N + 1) bound B] into
+               chn ShareOK[N + 1, B] then 
+         rename x to y, a to x in chn ShareOK[N + 1, B] ) then       
+     sym from 
+        change 
+        chn ShareOK[N + 1, B]
+        with
+         x : bool <- read Share[N + 1, B] ; return ()
+        in currentProtocol 
+        ( 
+        subst chn Share[N + 1, B] into chn ShareOK[N + 1, B] then 
+        using group SharesOK[bound B] 
+         (subst fam ShareOK[fixedBound (N + 1) bound B] into
+               chn ShareOK[N + 1, B] then
+         rename x to a in chn ShareOK[N + 1, B] then 
+         subst fam ShareOK[fixedBound (N + 1) bound B] into
+               chn ShareOK[N + 1, B] then 
+         rename x to y, a to x in chn ShareOK[N + 1, B]
+         ) 
+        ) then
+     using group SharesOK[bound B]
+       ( subst fam ShareOK[bound (N + 1) bound B] into
+               fam ShareOK[bound (N + 1) fixedBound B] then
+         rename x to a in fam ShareOK[bound (N + 1) fixedBound B] then 
+         subst fam ShareOK[bound (N + 1) bound B] into
+               fam ShareOK[bound (N + 1) fixedBound B] then 
+         rename x to y, a to x in fam ShareOK[bound (N + 1) fixedBound B] ) then    
+     sym from 
+      change 
+        fam ShareOK[bound (N + 1) fixedBound B]
+        with
+         x : bool <- read Share[n, B] ; return ()
+        in currentProtocol (
+            subst fam Share[bound (N + 1) fixedBound B] 
+             into fam ShareOK[bound (N + 1) fixedBound B]
+            )
+  )
+
+   )
+
+   case: (
+    on branch n < m of family SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] (
+    using group SharesOK[bound B]( 
+    subst fam ShareOK[bound (N + 1) bound B] 
+        into fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+    rename x to a in fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+    subst fam ShareOK[bound (N + 1) bound B] 
+        into fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+    rename x to y, a to x in fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+    ) 
+  ) then 
+  call inIndSym7 then
+   using group SharesOK[bound B]
+        (
+         subst fam ShareOK[bound (N + 1) bound B] 
+          into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+         rename x to a in fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+         subst fam ShareOK[bound (N + 1) bound B] 
+          into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then     
+         rename x to yn, a to xn 
+          in fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then    
+         subst fam ShareOK[bound (N + 1) bound B] 
+          into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then 
+         rename x to a in fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then 
+         subst fam ShareOK[bound (N + 1) bound B] 
+          into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then 
+         rename x to ym, a to xm 
+          in fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+         rename xm to a, xn to xm, yn to xn, ym to yn, a to ym 
+          in fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then        
+         rename indices to x, y, z
+           in fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then     
+         subst fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+          into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then         
+         rename indices to n, m, k
+           in fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then     
+         rename s to b in fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B]       
+        ) then
+       sym from 
+         change 
+        fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+        with
+         r : bool <- read RcvdBit[n, m, B] ;  return ()
+        in currentProtocol
+       (
+         using branch when isAndGate(B)
+         of group Shares[fixedBound B]
+         (subst fam RcvdBit[bound (N + 2) bound (N + 2) fixedBound B] 
+           into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B]  )
+       ) then
+       on branch n < m of 
+        family Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+       (subst fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+         into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+       ) then
+       on branch m < n of 
+        family Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+       (subst fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+         into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+       ) then
+       unsplit fam ShareOK[bound (N + 1) bound B] 
+        and fam ShareOK[fixedBound (N + 1) bound B] inside group SharesOK[bound B] then
+       using group SharesOK[bound B]
+        ( on branch m = n 
+          of family Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+          (
+            subst fam ShareOK[bound (N + 2) bound B] 
+             into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+            rename x to a in fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] then 
+            subst fam ShareOK[bound (N + 2) bound B] 
+             into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+            rename x to y, a to x 
+              in fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+          )   
+        ) then
+        split fam ShareOK[bound (N + 2) bound B] inside group SharesOK[bound B] then   
+        sym from 
+         change 
+        fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+        with
+         c : bool <- read Ctrb[n, m, B] ; return ()
+        in currentProtocol
+        (
+         sym from 
+          change 
+        fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+        with
+         (when (n < m) --> 
+           c : bool <- read Ctrb[n, m, B] ;  return ()
+         )
+         ;;
+         (when (m < n) --> 
+           c : bool <- read Ctrb[n, m, B] ;  return ()
+         )
+         ;;
+         (when (m = n) --> 
+           c : bool <- read Ctrb[n, m, B] ;  return ()
+         )
+        in currentProtocol
+         (merge cases for fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] ) then
+        case distinction on family Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+        (
+        
+         case: (
+         using branch when isAndGate(B) of
+          group Shares[fixedBound B]
+          (using branch when n < m of
+            family Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+           (subst fam Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+             into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]) 
+          )
+        )
+         
+         case: (
+         using branch when isAndGate(B) of
+          group Shares[fixedBound B]
+          (using branch when m < n of
+            family Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+           (subst fam Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+             into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]) 
+          )
+        ) 
+         
+         case:   (
+         using branch when isAndGate(B) of
+          group Shares[fixedBound B]
+          (using branch when n = m of
+            family Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+           (subst fam Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+             into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]) 
+          )
+        ) 
+        
+        )
+        ) then
+  call inIndSym10 then
+  subst fam CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+            into fam ShareOK[bound (N + 1) fixedBound B] then
+  call inIndSym11 then 
+  subst fam CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound B]
+   into chn ShareOK[N + 1, B] then
+  call inIndSym12 
+   )  
+
+  ) then
+  merge cases for fam SharesOK[fixedBound B] then
+  call addInitOK 
+
+  )
+)
+
+.
+
+strict subproof asym0 =
+  sym from 
+   change fam InShareOK[bound (N + 2) bound (N + 2) dependentBound I]
+     with is : unit <- read InShare$-OK[m, n, i] ;  return ()
+       in currentProtocol
+  (subst fam InShare$-OK[bound (N + 2) bound (N + 2) dependentBound I] 
+    into fam InShareOK[bound (N + 2) bound (N + 2) dependentBound I] 
+  )        
+ . 
+
+strict subproof asym1 =
+  sym from
+    change 
+     fam InShare$-OK[fixedBound (N + 1) bound (N + 2) dependentBound I]
+    with
+       s : unit <- read InShare$Sum-OK[N, n, i] ; 
+       x : unit <- read In-OK[n, i] ;
+       return () 
+    in currentProtocol
+  (subst fam In-OK[bound (N + 2) dependentBound I]
+    into fam InShare$-OK[fixedBound (N + 1) bound (N + 2) dependentBound I] then
+   subst fam InShare$Sum-OK[bound (N + 1) bound (N + 2) dependentBound I]
+    into fam InShare$-OK[fixedBound (N + 1) bound (N + 2) dependentBound I]
+  )             
+ .
+ 
+ strict subproof asym2 = 
+  compose fam InShare$-OK[bound (N + 1) bound (N + 2) dependentBound I] 
+   with fam InShare$Sum-OK[bound (N + 1) bound (N + 2) dependentBound I] in group then
+sym from 
+  change 
+   fam InShare$Sum-OK[bound (N + 1) bound (N + 2) dependentBound I]
+  with
+        (when (0 = m) -->
+           in : unit <- read InShare$-OK[m, n, i] ; return () 
+        )
+        ;;
+        (otherwise -->
+           s : unit <- read InShare$Sum-OK[m - 1, n, i] ; 
+           x : unit <- read InShare$-OK[m, n, i] ;
+              return () 
+        )
+        in currentProtocol (
+in the presence of 
+   fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I],
+   fam InShare$[bound (N + 2) bound (N + 2) dependentBound I]
+rewrite 
+ group InShare$-OK[bound N + 1 bound N + 2 dependentBound I] and InShare$Sum-OK[bound N + 1 bound N + 2 dependentBound I]
+ to (
+    (family InShare$Sum-OK[bound N + 1 bound N + 2 dependentBound I]
+     indices: m ,n ,i 
+     bounds: bound N + 1 bound N + 2 dependentBound I ::= 
+     is : bool <- read InShare$-Sum[m ,n ,i] ; return ()
+    ) 
+    || 
+    (family InShare$-OK[bound N + 1 bound N + 2 dependentBound I]
+      indices: m ,n ,i 
+      bounds: bound N + 1 bound N + 2 dependentBound I ::= 
+      x : bool <- read In [n ,i] ; return ()
+    )
+   )
+   by induction on m bound M
+(
+turn otherwise into neg 
+     for fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] then
+case distinction on  family InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I](
+  case: (
+    subst fam InShare$-OK[fixedBound M bound N + 2 dependentBound I]
+ into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I]     
+  )
+
+  case: (
+    subst fam InShare$Sum-OK[bound M bound (N + 2) dependentBound I] 
+ into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] then
+subst fam InShare$-OK[fixedBound M bound (N + 2) dependentBound I]
+ into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] then
+rename is to s in fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] 
+  )
+) then 
+sym from 
+             change 
+              fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I]
+             with 
+              is : bool <- read InShare$-Sum[M, n, i] ;  return ()
+             in currentProtocol
+(
+sym from 
+    change 
+              fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] 
+             with 
+              ( when (M = 0) --> 
+                 is : bool <- read InShare$-Sum[M, n, i] ;  return ()
+              )
+              ;;
+              ( when (not (M = 0)) --> 
+                 is : bool <- read InShare$-Sum[M, n, i] ;  return ()
+              )
+             in currentProtocol
+    (merge cases for 
+      fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I]  
+    ) then
+   turn otherwise into neg 
+      for fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I] then
+    case distinction on family InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I](
+ 
+     case: (
+     
+ subst branch when m = 0 of 
+    fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I]
+    into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] 
+  then
+      drop read branch when not (m = N + 1) of  
+            fam InShare$[bound (N + 2) bound (N + 2) dependentBound I] 
+         from fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I]
+     )
+
+     case: (
+      subst branch when not (m = 0) of 
+    fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I]
+    into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] 
+  then
+      drop read branch when not (m = N + 1) of  
+            fam InShare$[bound (N + 2) bound (N + 2) dependentBound I] 
+         from fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I]
+     )
+    ) then 
+     turn neg into otherwise 
+      for fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I]
+)
+)
+) then
+decompose fam InShare$-OK[bound (N + 1) bound (N + 2) dependentBound I] 
+   with fam InShare$Sum-OK[bound (N + 1) bound (N + 2) dependentBound I]
+ . 
+
+strict subproof asym01 =
+  sym from change 
+        fam InShare$-OK[bound (N + 1) bound (N + 2) dependentBound I]
+        with
+          x : unit <- read In-OK[n, i] ; return ()
+        in currentProtocol
+ ( subst fam In-OK[bound (N + 2) dependentBound I] 
+     into fam InShare$-OK[bound (N + 1) bound (N + 2) dependentBound I] then
+    rename in to x in 
+     fam InShare$-OK[bound (N + 1) bound (N + 2) dependentBound I]     
+ )   
+ .  
+
+strict subproof indProofInitOK =
+ in the presence of fam In-OK[bound N + 2 dependentBound I] 
+rewrite group InitOK[bound (N + 2) bound (N + 2) dependentBound I]
+ to
+   (family InShare$-OK[bound (N + 2) bound (N + 2) dependentBound I] 
+     indices: m, n, i
+     bounds: bound (N + 2) bound (N + 2) dependentBound I
+::=
+ x : unit <- read In-OK[n, i] ; return ()
+)
+||
+(family InShare$Sum-OK[bound (N + 1) bound (N + 2) dependentBound I]  
+     indices: m, n, i
+     bounds: bound (N + 1) bound (N + 2) dependentBound I
+::=
+x : unit <- read In-OK[n, i] ; return ()
+)
+||
+(family InShareOK[bound (N + 2) bound (N + 2) dependentBound I] 
+     indices: m, n, i
+     bounds: bound (N + 2) bound (N + 2) dependentBound I
+::=
+x : unit <- read In-OK[n, i] ; return ()
+)
+ by induction on m bound M (
+case distinction on
+family InShare$-OK[fixedBound M bound (N + 2) dependentBound I]
+   (
+    case:(
+    using group InitOK[bound M bound (N + 2) dependentBound I](
+    subst fam InShare$Sum-OK[bound M bound (N + 2) dependentBound I]
+     into fam InShare$-OK[fixedBound M bound (N + 2) dependentBound I]
+    )
+    )
+
+    case:(
+      idle
+    ) 
+   ) then
+merge cases for fam InShare$-OK[fixedBound M bound (N + 2) dependentBound I] then
+   subst fam InShare$-OK[fixedBound M bound (N + 2) dependentBound I]
+    into fam InShareOK[fixedBound M bound (N + 2) dependentBound I] then
+   turn otherwise into neg 
+    for fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] then
+   case distinction on family InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I](
+   case: (
+    subst  fam InShare$-OK[fixedBound M bound (N + 2) dependentBound I]
+     into  fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I]
+   )  
+   case: 
+   (using group InitOK[bound M bound N + 2 dependentBound I ](
+    subst fam InShare$Sum-OK[bound M bound (N + 2) dependentBound I]
+     into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] ) then
+    subst fam InShare$-OK[fixedBound M bound (N + 2) dependentBound I]
+     into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I]
+   ) 
+   ) then 
+   merge cases for fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] 
+) 
+. 
+
+strict subproof symInput =
+ sym from 
+             change 
+              fam ShareOK[bound (N + 1) fixedBound B]
+             with 
+              w : unit <- read Wire-OK[B] ; return w
+             in currentProtocol(  
+     using group Wires-OK[fixedBound B]
+     (
+       using branch when isInputGate(B) of channel Wire-OK[B]
+       (subst chn Wire-OK[B] 
+         into fam ShareOK[bound (N + 1) fixedBound B]
+       )
+     ) then
+     unit-ext on fam ShareOK[bound (N + 1) fixedBound B] at 1 then
+     rename in to x in fam ShareOK[bound (N + 1) fixedBound B] 
+             ) 
+.   
+
+strict subproof symInputC =
+  sym from 
+             change 
+              chn ShareOK[N + 1, B]
+             with 
+              w : unit <- read Wire-OK[B] ; return w
+             in currentProtocol
+   (
+            using group Wires-OK[fixedBound B]
+            (using branch when isInputGate(B)
+              of channel Wire-OK[B]
+             (subst chn Wire-OK[B]
+              into chn ShareOK[N + 1, B]
+             ) )
+              then
+              unit-ext on chn ShareOK[N + 1, B] at 1 then 
+              rename in to x in chn ShareOK[N + 1, B]
+  ) 
+. 
+
+strict subproof wireSymNot =
+   sym from 
+             change 
+              fam ShareOK[bound (N + 1) fixedBound B]
+             with 
+              w : unit <- read Wire-OK[B] ; return w
+             in currentProtocol
+   (
+     using group Wires-OK[fixedBound B]
+     (
+       using branch when isNotGate(B) 
+       of channel Wire-OK[B]
+       (subst chn Wire-OK[B] 
+         into fam ShareOK[bound (N + 1) fixedBound B])
+     ) 
+   )    
+ .
+ 
+ strict subproof wireSymNotC =
+    sym from 
+             change 
+              chn ShareOK[N + 1, B]
+             with 
+              w : unit <- read Wire-OK[B] ; return w
+             in currentProtocol
+   (
+            using group Wires-OK[fixedBound B]
+            (using branch when isNotGate(B)
+              of channel Wire-OK[B]
+             (subst chn Wire-OK[B]
+              into chn ShareOK[N + 1, B]) 
+            )
+  )
+ .
+
+ strict subproof wireSymXor =
+  sym from 
+             change 
+              fam ShareOK[bound (N + 1) fixedBound B]
+             with 
+              w : unit <- read Wire-OK[B] ; return w
+             in currentProtocol
+   (
+     using group Wires-OK[fixedBound B]
+     (
+       using branch when isXorGate(B) 
+       of channel Wire-OK[B]
+       (subst chn Wire-OK[B] 
+         into fam ShareOK[bound (N + 1) fixedBound B])
+     ) 
+   )    
+ .
+
+strict subproof wireSymXorC =
+  sym from 
+             change 
+              chn ShareOK[N + 1, B]
+             with 
+              w : unit <- read Wire-OK[B] ; return w
+             in currentProtocol
+   (
+            using group Wires-OK[fixedBound B]
+            (using branch when isXorGate(B)
+              of channel Wire-OK[B]
+             (subst chn Wire-OK[B]
+              into chn ShareOK[N + 1, B]) 
+            )
+  )
+ .
+ strict subproof wireSymAnd =
+  sym from 
+             change 
+              fam ShareOK[bound (N + 1) fixedBound B]
+             with 
+              w : unit <- read Wire-OK[B] ; return w
+             in currentProtocol
+   (
+     using group Wires-OK[fixedBound B]
+     (
+       using branch when isAndGate(B) 
+       of channel Wire-OK[B]
+       (subst chn Wire-OK[B] 
+         into fam ShareOK[bound (N + 1) fixedBound B])
+     ) 
+   )          
+ . 
+
+ strict subproof wireSymAndC =
+   sym from 
+             change 
+              chn ShareOK[N + 1, B]
+             with 
+              w : unit <- read Wire-OK[B] ; return w
+             in currentProtocol
+   (
+            using group Wires-OK[fixedBound B]
+            (using branch when isAndGate(B)
+              of channel Wire-OK[B]
+             (subst chn Wire-OK[B]
+              into chn ShareOK[N + 1, B]) 
+            )
+  )
+ .
+
+strict subproof symRcvdBit =
+    sym from
+             change 
+              fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+             with 
+              (when (m < n) --> 
+                sb : unit <- read SendBit-OK[m, n, B]  ;
+                xm : unit <- read ShareOK[m, wire0(B)] ;
+                xn : unit <- read ShareOK[n, wire0(B)] ;
+                ym : unit <- read ShareOK[m, wire1(B)] ; 
+                yn : unit <- read ShareOK[n, wire1(B)] ; 
+                return () 
+              ) ;;
+              (when (n <= m) --> 
+                sb : unit <- read SendBit-OK[m, n, B]  ;
+                xm : unit <- read ShareOK[m, wire0(B)] ;
+                xn : unit <- read ShareOK[n, wire0(B)] ;
+                ym : unit <- read ShareOK[m, wire1(B)] ; 
+                yn : unit <- read ShareOK[n, wire1(B)] ; 
+                return () 
+              )
+             in currentProtocol
+  ( merge cases for 
+     fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+  )
+.
+
+strict subproof indWiresShares =
+ in the presence of 
+  fam InitOK[bound (N + 2) bound (N + 2) dependentBound I]
+  rewrite 
+   group Wires-OK[bound K] and SharesOK[bound K]
+  to
+  ( 
+ (family SharesOK[bound K] 
+    indices: k
+    bounds: bound K
+::=
+(when (isInputGate(k)) -->
+(
+(family Ctrb-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : unit <- read Ctrb-OK[n, m, k] ; return c
+)
+||
+(family CtrbSum-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : unit <- read CtrbSum-OK[n, m, k] ; return c
+)
+||
+(family RcvdBit-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ r : unit <- read RcvdBit-OK[n, m, k] ; return r
+)
+||
+(family SendBit-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ s : unit <- read SendBit-OK[n, m, k] ; return s
+)
+||
+(family ShareOK[bound (N + 1) bound K]
+  indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ w : unit <- read Wire-OK[k] ; return w
+)
+||
+(family ShareOK[fixedBound (N + 1) bound K]
+  indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ w : unit <- read Wire-OK[k] ; return w
+)
+)
+)
+;;
+(when (isNotGate(k)) -->
+(
+(family Ctrb-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : unit <- read Ctrb-OK[n, m, k] ; return c
+)
+||
+(family CtrbSum-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : unit <- read CtrbSum-OK[n, m, k] ; return c
+)
+||
+(family RcvdBit-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ r : unit <- read RcvdBit-OK[n, m, k] ; return r
+)
+||
+(family SendBit-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ s : unit <- read SendBit-OK[n, m, k] ; return s
+)
+||
+(family ShareOK[bound (N + 1) bound K]
+  indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ w : unit <- read Wire-OK[k] ; return w
+)
+||
+(family ShareOK[fixedBound (N + 1) bound K]
+  indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ w : unit <- read Wire-OK[k] ; return w
+)
+)
+)
+;;
+(when (isXorGate(k)) -->
+(
+(family Ctrb-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : unit <- read Ctrb-OK[n, m, k] ; return c
+)
+||
+(family CtrbSum-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ c : unit <- read CtrbSum-OK[n, m, k] ; return c
+)
+||
+(family RcvdBit-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ r : unit <- read RcvdBit-OK[n, m, k] ; return r
+)
+||
+(family SendBit-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ s : unit <- read SendBit-OK[n, m, k] ; return s
+)
+||
+(family ShareOK[bound (N + 1) bound K]
+  indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ w : unit <- read Wire-OK[k] ; return w
+)
+||
+(family ShareOK[fixedBound (N + 1) bound K]
+  indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ w : unit <- read Wire-OK[k] ; return w
+)
+)
+)
+;;
+(when (isAndGate(k)) -->
+(
+(family Ctrb-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ w0 : unit <- read Wire-OK[wire0(k)] ; 
+ w1 : unit <- read Wire-OK[wire1(k)] ;
+ return () 
+)
+||
+(family CtrbSum-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ w0 : unit <- read Wire-OK[wire0(k)] ; 
+ w1 : unit <- read Wire-OK[wire1(k)] ;
+ return ()
+)
+||
+(family RcvdBit-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (m < n) -->
+ w0 : unit <- read Wire-OK[wire0(k)] ; 
+ w1 : unit <- read Wire-OK[wire1(k)] ;
+ return ()
+)
+;;
+(when (n <= m) -->
+ rb : unit <- read RcvdBit-OK[n, m, k] ; return rb
+)
+)
+||
+(family SendBit-OK[bound (N + 2) bound (N + 2) bound K]
+ indices: n, m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (n < m) -->
+ w0 : unit <- read Wire-OK[wire0(k)] ; 
+ w1 : unit <- read Wire-OK[wire1(k)] ;
+ return ()
+)
+;;
+(when (m <= n) -->
+ sb : unit <- read SendBit-OK[n, m, k] ; return sb
+)
+)
+||
+(family ShareOK[bound (N + 1) bound K]
+  indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ w : unit <- read Wire-OK[k] ; return w
+)
+||
+(family ShareOK[fixedBound (N + 1) bound K]
+  indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ w : unit <- read Wire-OK[k] ; return w
+)
+)
+ )
+)
+||
+(family Wires-OK[bound K] 
+  indices: k
+  bounds: bound K
+::=
+family Wire-OK[bound K] 
+ indices: k
+ bounds: bound K
+::=
+(when (isInputGate(k)) -->
+ in : unit <- read In-OK[wire0(k), wire1(k)] ; return in
+)
+;;
+(when (isNotGate(k)) -->
+ w : unit <- read Wire-OK[wire0(k)] ; return ()
+)
+;;
+(when (isXorGate(k)) -->
+ w0 : unit <- read Wire-OK[wire0(k)] ;
+ w1 : unit <- read Wire-OK[wire1(k)] ;
+ return () 
+)
+;;
+(when (isAndGate(k)) -->
+ w0 : unit <- read Wire-OK[wire0(k)] ;
+ w1 : unit <- read Wire-OK[wire1(k)] ;
+ return () 
+)
+)
+)
+  by induction on k bound B 
+(  
+ungroup fam InitOK[bound (N + 2) bound (N + 2) dependentBound I] then
+remove fam ShareOK[bound (N + 1) bound B] from group SharesOK[bound B] then
+         merge cases for fam ShareOK[bound (N + 1) bound B] then
+         remove fam ShareOK[fixedBound (N + 1) bound B]
+           from group SharesOK[bound B] then  
+         merge cases for fam ShareOK[fixedBound (N + 1) bound B] then
+         unsplit fam ShareOK[bound (N + 1) bound B]
+          and fam ShareOK[fixedBound (N + 1) bound B] then
+ case distinction on group SharesOK[fixedBound B](
+  case: (
+    subst fam InShareOK[bound (N + 2) bound (N + 2) dependentBound I]
+          into fam ShareOK[bound (N + 1) fixedBound B] then
+           call symInput  then
+           subst fam InShareOK[bound (N + 2) bound (N + 2) dependentBound I]
+           into chn ShareOK[N + 1, B] then
+           call symInputC 
+  )
+
+ case: (
+    subst fam ShareOK[bound (N + 2) bound B]
+           into fam ShareOK[bound (N + 1) fixedBound B] then
+          unit-ext on fam ShareOK[bound (N + 1) fixedBound B] at 1 then
+           call wireSymNot then
+           subst fam ShareOK[bound (N + 2) bound B]
+           into chn ShareOK[N + 1, B] then
+           unit-ext on chn ShareOK[N + 1, B] at 1 then
+           call wireSymNotC    
+  )
+
+  case: (
+     subst fam ShareOK[bound (N + 2) bound B]
+           into fam ShareOK[bound (N + 1) fixedBound B] then
+          rename w to w0 in fam ShareOK[bound (N + 1) fixedBound B] then           
+          subst fam ShareOK[bound (N + 2) bound B]
+           into fam ShareOK[bound (N + 1) fixedBound B] then
+          rename w to w1 in fam ShareOK[bound (N + 1) fixedBound B] then           
+          call wireSymXor then
+           subst fam ShareOK[bound (N + 2) bound B]
+           into chn ShareOK[N + 1, B] then
+           rename w to w0 in chn ShareOK[N + 1, B] then
+           subst fam ShareOK[bound (N + 2) bound B]
+           into chn ShareOK[N + 1, B] then
+           rename w to w1 in chn ShareOK[N + 1, B] then
+           call wireSymXorC        
+  )
+
+    case: (
+    case distinction on 
+          family SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+         (
+           case: (
+            subst fam ShareOK[bound (N + 2) bound B]
+             into fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+            rename w to w0 in 
+             fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+            subst fam ShareOK[bound (N + 2) bound B]
+             into fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+            rename w to w1 in 
+             fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+           )
+           
+           case: ( idle )
+         
+         ) then
+         rename indices to m, n, k in  
+          fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+         call symRcvdBit then 
+         case distinction on
+          family RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+         ( 
+           case: (
+            using branch when m < n of
+            family  SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+            ( subst fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+               into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+            ) then
+            subst fam ShareOK[bound (N + 2) bound B]
+             into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+            subst fam ShareOK[bound (N + 2) bound B]
+             into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then 
+            rename w to w0 in 
+             fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then 
+            subst fam ShareOK[bound (N + 2) bound B]
+             into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+            subst fam ShareOK[bound (N + 2) bound B]
+             into fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] then 
+            rename w to w1 in 
+             fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+           )
+           
+           case: (
+           using branch when n <= m of 
+           family  SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+           (
+            diverge on
+             fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B] 
+             with
+             fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+             var rb
+           )
+              
+           )
+          ) then 
+          rename indices to n, m, k in  
+          fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B]  then
+      case distinction on
+  family Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+ (
+  
+   case: (
+    using branch when n < m of 
+     family SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+    (subst fam SendBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+      into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+    ) 
+   )
+   
+  case: (
+    using branch when m < n of 
+     family RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+    (subst fam RcvdBit-OK[bound (N + 2) bound (N + 2) fixedBound B]
+      into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+    ) 
+   )
+   
+   case: (
+     subst fam ShareOK[bound (N + 2) bound B]
+      into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+     rename w to w0 in fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+      subst fam ShareOK[bound (N + 2) bound B]
+      into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] then
+     rename w to w1 in fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+   )
+ 
+ ) then 
+ merge cases for 
+  fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+          then
+      in the presence of fam  Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+      rewrite family CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound B]
+      to 
+       w0 : unit <- read Wire-OK[wire0(B)] ;
+       w1 : unit <- read Wire-OK[wire1(B)] ;
+       return () 
+      by induction on m bound M
+      (
+        case distinction on family CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B](
+          case: (
+            subst fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+             into fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B]
+          )
+          case: (subst fam CtrbSum-OK[bound N + 2 bound M fixedBound B]
+         into fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B] then
+       subst fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+         into fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B]) 
+
+        ) then
+      merge cases for 
+        fam CtrbSum-OK[bound (N + 2) fixedBound M fixedBound B]
+      ) then
+          subst fam CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound B]
+           into fam ShareOK[bound (N + 1) fixedBound B] then
+          call wireSymAnd then
+          subst fam CtrbSum-OK[bound (N + 2) bound (N + 2) fixedBound B]
+           into chn ShareOK[N + 1, B] then
+          call wireSymAndC
+
+    )
+ ) then 
+ call addInitOK then
+         split fam ShareOK[bound (N + 2) bound B] on first index then
+         move family ShareOK[bound (N + 1) bound B] 
+          on each branch of group SharesOK[bound B] then
+         move family ShareOK[fixedBound (N + 1) bound B] 
+          on each branch of group SharesOK[bound B] 
+  )  
+.
+
+strict subproof addHidden = 
+  sym from 
+  extend currentProtocol 
+  with internal family Hidden
+  indices: k
+  bounds: bound K 
+  typed: unit
+  assigned:
+   return ()
+ ( absorb fam Hidden[bound K]  
+ )
+.
+
+strict subproof addHiddenGroup =
+group  
+  fam Hidden[bound K]
+in HiddenGroup 
+indices: k
+bounds: bound K 
+.
+
+strict subproof symSharesInput =
+  sym from 
+             change 
+              chn Share[N + 1, B]
+             with 
+              in : bool <- read InShare[N + 1, wire0(B),wire1(B)] ; 
+              w : unit <- read Wire-OK[B] ;
+              return in
+             in currentProtocol
+            (
+              rename in to is in chn Share[N + 1, B] then
+              using group Wires-OK[bound K]
+              (subst fam Wire-OK[bound K]
+                into chn  Share[N + 1, B]
+              ) then  
+              rename in to x, is to in
+               in chn Share[N + 1, B]
+            )             
+ .
+
+ strict subproof symSharesNot = 
+  sym from 
+            change 
+              chn Share[N + 1, B]
+             with 
+              w : unit <- read Wire-OK[B] ;
+              x : bool <- read Share[N + 1, wire0(B)] ; 
+              return neg(x)
+             in currentProtocol
+           (
+             using group Wires-OK[bound K]
+              (subst fam Wire-OK[bound K]
+                into chn  Share[N + 1, B]
+              )  
+           ) 
+ .
+ 
+ strict subproof symSharesXor = 
+  sym from 
+            change 
+              chn Share[N + 1, B]
+             with 
+              w : unit <- read Wire-OK[B] ;
+              x : bool <- read Share[N + 1, wire0(B)] ; 
+              y : bool <- read Share[N + 1, wire1(B)] ; 
+              return xor((x, y))
+             in currentProtocol
+           (
+             using group Wires-OK[bound K]
+              (subst fam Wire-OK[bound K]
+                into chn  Share[N + 1, B]
+              )  
+           ) 
+ .
+  
+ strict subproof symSharesAnd = 
+  sym from 
+            change 
+              chn Share[N + 1, B]
+             with 
+              bs : bool <- read CtrbSum[N + 1, N + 1, B] ; 
+              w : unit <- read Wire-OK[B] ; 
+              return bs
+             in currentProtocol
+           (
+             using group Wires-OK[bound K]
+              (subst fam Wire-OK[bound K]
+                into chn  Share[N + 1, B]
+              )  
+           )
+ .
+
+strict subproof indTimingShares =
+ in the presence of 
+ fam InitOK[bound N + 2 bound N + 2 dependentBound I],
+ fam Wires-OK[bound K],
+ fam ShareOK[fixedBound (N + 1) bound K],
+ fam CtrbSum-OK[bound (N + 2) bound (N + 2) bound K]
+rewrite group HiddenGroup[bound K] and Shares[bound K]
+  to 
+  (
+(family HiddenGroup[bound K] 
+  indices: k
+  bounds: bound K
+::=
+(family Hidden[bound K] 
+  indices: k
+  bounds: bound K
+::=
+return ()
+)
+)
+||
+ (
+    family Shares[bound K]
+     indices: k
+  bounds: bound K
+::=
+(
+(when (isInputGate(k)) -->
+(
+(family Ctrb[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read Ctrb[n, m, k] ; return b
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read CtrbSum[n, m, k] ; return b
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ rb : bool <- read RcvdBit[n, m, k] ; return rb
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : bool <- read SendBit[n, m, k] ; return sb
+)
+||
+(family Share[bound (N + 1) bound K]
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ in : bool <- read InShare[n , wire0(k) , wire1(k)] ; return in
+)
+||
+(family Share[fixedBound (N + 1) bound K]
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ in : bool <- read InShare[N + 1, wire0(k) , wire1(k)] ; 
+ w : unit <- read  Wire-OK[k] ; 
+ return in
+) 
+)
+)
+;;
+(when (isNotGate(k)) -->
+(
+(family Ctrb[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read Ctrb[n, m, k] ; return b
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read CtrbSum[n, m, k] ; return b
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ rb : bool <- read RcvdBit[n, m, k] ; return rb
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : bool <- read SendBit[n, m, k] ; return sb
+)
+||
+(family Share[bound (N + 1) bound K]
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ s : bool <- read Share[n , wire0(k)] ; return s
+)
+||
+(family Share[fixedBound (N + 1) bound K]
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ w : unit <- read  Wire-OK[k] ;
+ x : bool <- read Share[N + 1 , wire0(k)] ; 
+ return neg(x)
+) 
+)
+)
+;;
+(when (isXorGate(k)) -->
+(
+(family Ctrb[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read Ctrb[n, m, k] ; return b
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read CtrbSum[n, m, k] ; return b
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ rb : bool <- read RcvdBit[n, m, k] ; return rb
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ sb : bool <- read SendBit[n, m, k] ; return sb
+)
+||
+(family Share[bound (N + 1) bound K]
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ x : bool <- read Share[n , wire0(k)] ;  
+ y : bool <- read Share[n , wire1(k)] ; 
+ return  xor((x, y))
+)
+||
+(family Share[fixedBound (N + 1) bound K]
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ w : unit <- read  Wire-OK[k] ;
+ x : bool <- read Share[N + 1, wire0(k)] ; 
+ y : bool <- read Share[N + 1, wire1(k)] ; 
+ return  xor((x, y))
+)
+)
+)
+;;
+when (isAndGate(k)) -->
+(
+(family Ctrb[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (n < m) -->
+ s : bool <- read SendBit[n, m, k] ; return s
+) 
+;;
+(when (m = n) -->
+ x : bool <- read Share[n , wire0(k)] ;
+ y : bool <- read Share[n , wire1(k)] ; 
+ return  **((x, y))
+) 
+;;
+(when (m < n) -->
+ r : bool <- read RcvdBit[n, m, k] ; return r
+)
+)
+||
+(family CtrbSum[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (0 = m) -->
+ b : bool <- read Ctrb[n, 0, k] ; return b
+) 
+;;
+(when not (0 = m) -->
+ b : bool <- read Ctrb[n, m, k] ; 
+ s : bool <- read CtrbSum[n, m - 1, k] ; 
+ return xor((s, b))
+) 
+)
+||
+(family RcvdBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+ b : bool <- read SendBit[m, n, k] ;
+ xm : bool <- read Share[m , wire0(k)] ; 
+ xn : bool <- read Share[n , wire0(k)] ; 
+ ym : bool <- read Share[m , wire1(k)] ; 
+ yn : bool <- read Share[n, wire1(k)] ; 
+ return xor( ( xor( (**((xm, yn)), **((xn, ym))) ) , b) ) 
+)
+||
+(family SendBit[bound (N + 2) bound (N + 2) bound K]
+ indices: n,m, k
+ bounds: bound (N + 2) bound (N + 2) bound K
+::=
+(when (n < m) -->
+ x : bool <- read Share[n , wire0(k)] ;
+ y : bool <- read Share[n , wire1(k)] ; 
+  samp flip (())
+)
+;;
+(when (m <= n) -->
+ sb : bool <- read SendBit[n, m, k] ; return sb
+)
+)
+||
+(family Share[bound (N + 1) bound K]
+ indices: n, k
+ bounds: bound (N + 1) bound K
+::=
+ bs : bool <- read CtrbSum[n, N + 1, k] ; return bs
+)
+||
+(family Share[fixedBound (N + 1) bound K]
+ indices: n, k
+ bounds: fixedBound (N + 1) bound K
+::=
+ bs : bool <- read CtrbSum[N + 1, N + 1, k] ;
+ w : unit <- read Wire-OK[k] ; 
+ return bs
+)
+)
+) 
+ )
+)
+  by induction on k bound B (
+ungroup fam InitOK[bound N + 2 bound N + 2 dependentBound I] then
+case distinction on group Shares[fixedBound B] (
+  case: (
+     subst fam InShareOK[bound (N + 2) bound (N + 2) dependentBound I] 
+      into chn Share[N + 1, B] then 
+     call symSharesInput
+  )
+  case: (
+    subst fam ShareOK[fixedBound (N + 1) bound K] 
+      into chn Share[N + 1, B] then 
+     call symSharesNot
+  )
+  case: (
+    subst fam ShareOK[fixedBound (N + 1) bound K] 
+      into chn Share[N + 1, B] then 
+     rename w to w0 in chn Share[N + 1, B] then
+     subst fam ShareOK[fixedBound (N + 1) bound K] 
+      into chn Share[N + 1, B] then 
+     rename w to w1 in chn Share[N + 1, B] then      
+     call symSharesXor
+  )
+  case: (
+    subst fam CtrbSum-OK[bound (N + 2) bound (N + 2) bound K] 
+      into chn Share[N + 1, B] then    
+     call symSharesAnd
+  )
+) then
+call addInitOK
+)
+
+.
+
+strict subproof addCtrbsOK = 
+group  
+   fam SendBit-OK[bound N + 2 bound N + 2 bound K],
+   fam RcvdBit-OK[bound N + 2 bound N + 2 bound K],
+   fam Ctrb-OK[bound N + 2 bound N + 2 bound K],
+   fam CtrbSum-OK[bound N + 2 bound N + 2 bound K]
+in Ctrbs-OK 
+indices: k
+bounds: bound K .
+
+strict subproof restoreCtrbsOK = 
+ call addCtrbsOK then
+ sym from 
+  change fam Ctrbs-OK[bound K]
+    with 
+    (
+(when isInputGate(k) --> (
+ (family SendBit-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k 
+    bounds: bound N + 2 bound N + 2 bound K ::= 
+    s : unit <- read SendBit-OK[n ,m ,k ] ;
+    return s
+ ) || 
+ (family RcvdBit-OK[bound N + 2 bound N + 2 bound K] 
+    indices: n ,m ,k 
+    bounds: bound N + 2 bound N + 2 bound K ::= 
+    r : unit <- read RcvdBit-OK[n ,m ,k ] ; 
+    return r 
+ ) || 
+ (family CtrbSum-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k 
+    bounds: bound N + 2 bound N + 2 bound K ::= 
+    c : unit <- read CtrbSum-OK[n ,m ,k] ; return c
+ ) || 
+ (family Ctrb-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k 
+    bounds: bound N + 2 bound N + 2 bound K ::= 
+    c : unit <- read Ctrb-OK[n ,m ,k ] ; return c 
+ ) 
+ )
+) 
+ ;; 
+( when isNotGate(k) --> (
+ (family SendBit-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k 
+    bounds: bound N + 2 bound N + 2 bound K ::= 
+    s : unit <- read SendBit-OK[n ,m ,k ] ; return s
+ ) || 
+ (family RcvdBit-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k bounds: bound N + 2 bound N + 2 bound K ::= 
+    r : unit <- read RcvdBit-OK[n ,m ,k ] ; return r 
+ ) || 
+ (family CtrbSum-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k bounds: bound N + 2 bound N + 2 bound K ::= 
+    c : unit <- read CtrbSum-OK[n ,m ,k ] ; return c 
+ ) || 
+ (family Ctrb-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k bounds: bound N + 2 bound N + 2 bound K ::= 
+    c : unit <- read Ctrb-OK[n ,m ,k ] ; return c 
+ )
+ )
+)   
+;; 
+( when isXorGate(k) --> (
+ (family SendBit-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k 
+    bounds: bound N + 2 bound N + 2 bound K ::= 
+    s : unit <- read SendBit-OK[n ,m ,k ] ; return s
+ ) || 
+ (family RcvdBit-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k bounds: bound N + 2 bound N + 2 bound K ::= 
+    r : unit <- read RcvdBit-OK[n ,m ,k ] ; return r 
+ ) || 
+ (family CtrbSum-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k bounds: bound N + 2 bound N + 2 bound K ::= 
+    c : unit <- read CtrbSum-OK[n ,m ,k ] ; return c 
+ ) || 
+ (family Ctrb-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k bounds: bound N + 2 bound N + 2 bound K ::= 
+    c : unit <- read Ctrb-OK[n ,m ,k ] ; return c 
+ )
+ )
+)    
+;; 
+(
+when isAndGate(k)--> (
+ (family SendBit-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k bounds: bound N + 2 bound N + 2 bound K ::= 
+    (
+    (when n < m --> 
+     w0 : unit <- read Wire-OK[wire0(k)] ; 
+     w1 : unit <- read Wire-OK[wire1(k)] ; 
+     return ()
+   ) 
+   ;; 
+   (when m <= n --> 
+    sb : unit <- read SendBit-OK[n ,m ,k ] ; 
+    return sb
+   )
+   ) 
+ ) || 
+ (family RcvdBit-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k bounds: bound N + 2 bound N + 2 bound K ::= 
+    (
+    (when m < n --> 
+      w0 : unit <- read Wire-OK[wire0(k)] ; 
+      w1 : unit <- read Wire-OK[wire1(k)] ;
+      return ()
+    ) 
+    ;; 
+    (when n <= m --> 
+      rb : unit <- read RcvdBit-OK[n ,m ,k ] ; 
+      return rb
+    )
+    ) 
+ ) || 
+ (family CtrbSum-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k bounds: bound N + 2 bound N + 2 bound K ::= 
+    w0 : unit <- read Wire-OK[wire0(k)] ;
+    w1 : unit <- read Wire-OK[wire1(k)] ;
+    return ()
+ ) || 
+ (family Ctrb-OK[bound N + 2 bound N + 2 bound K]
+    indices: n ,m ,k bounds: bound N + 2 bound N + 2 bound K ::= 
+     w0 : unit <- read Wire-OK[wire0(k)] ;
+     w1 : unit <- read Wire-OK[wire1(k)] ; 
+     return ()
+ )
+ )
+)
+)
+      in currentProtocol
+  ( combine fam Ctrbs-OK[bound K] then
+    call addCtrbsOK 
+  )         
+.  
+
+strict subproof introShareSumOK = 
+ sym from 
+  extend currentProtocol 
+  with internal family ShareSum-OK 
+  indices: m, k 
+  bounds: bound N + 1 bound K 
+  typed: unit
+  assigned:
+   s : bool  <- read ShareSum[m, k] ;
+   return ()
+ ( absorb fam ShareSum-OK[bound N + 1 bound K]  
+ )
+.
+
+strict subproof sym20 =
+ sym from  
+         branch 
+          when isAndGate(k)
+         of
+          fam Adv[bound K]
+         change
+          fam  OTChcRcvd-1OtAdv[bound (N + 2) fixedBound (N + 1) bound K]
+         with
+          (when (n < N + 1) -->
+             x : unit <- read ShareSum-OK[N, wire1(k)] ; return ()
+          )  
+          ;;
+          (when (n = N + 1) -->
+             oc : unit <- read OTChcRcvd-1OtAdv[n, N + 1, k] ; return oc
+          )
+          in
+          (
+          branch 
+           when isAndGate(k)
+         of
+          fam Adv[bound K]
+         change
+          fam  OTChcRcvd-0OtAdv[bound (N + 2) fixedBound (N + 1) bound K]
+         with
+          (when (n < N + 1) -->
+             x : unit <- read ShareSum-OK[N, wire0(k)] ; return ()
+          )   
+          ;;
+          (when (n = N + 1) -->
+             oc : unit <- read OTChcRcvd-0OtAdv[n, N + 1, k] ; return oc
+          )
+          in
+          currentProtocol)
+       (
+       on branch isAndGate(k)
+          of group Adv[bound K]
+         (on branch n < N + 1 
+           of family OTChcRcvd-1OtAdv[bound N + 2 fixedBound N + 1 bound K]
+           ( subst fam ShareSum-OK[bound (N + 1) bound K] 
+              into fam OTChcRcvd-1OtAdv[bound N + 2 fixedBound N + 1 bound K] then
+             rename s to x 
+              in fam OTChcRcvd-1OtAdv[bound N + 2 fixedBound N + 1 bound K]      
+           ) then
+           on branch n < N + 1
+           of family OTChcRcvd-0OtAdv[bound N + 2 fixedBound N + 1 bound K]
+           ( subst fam ShareSum-OK[bound (N + 1) bound K] 
+              into fam OTChcRcvd-0OtAdv[bound N + 2 fixedBound N + 1 bound K] then
+             rename s to x 
+              in fam OTChcRcvd-0OtAdv[bound N + 2 fixedBound N + 1 bound K]      
+           )
+           
+         )
+     )     
+   . 
+
+strict subproof symShareSumOK0 =
+  sym from
+        change 
+         fam ShareSum-OK[fixedBound M bound K]
+        with
+         s : bool <- read ShareSum[M, k] ;  return ()
+        in 
+        currentProtocol
+       (call subst1 then
+       rename s to x in fam ShareSum-OK[fixedBound M bound K]
+       )                             
+ .
+ 
+strict subproof subst1 = 
+    subst branch when (0 = m)
+    of fam ShareSum[bound (N + 2) bound K]
+    into fam  ShareSum-OK[fixedBound M bound K] 
+
+ . 
+strict subproof symShareSumOKM = 
+  sym from
+        change 
+         fam ShareSum-OK[fixedBound M bound K]
+        with
+         s : bool <- read ShareSum[M, k] ;  return ()
+        in 
+        currentProtocol
+       (call subst2 then
+       rename xm to x, xs to s 
+         in fam ShareSum-OK[fixedBound M bound K]
+       )        
+ .
+
+strict subproof subst2 = 
+ subst branch when not (0 = m)
+    of fam ShareSum[bound (N + 2) bound K]
+    into fam  ShareSum-OK[fixedBound M bound K] 
+ . 
+
+strict subproof inIndSym9 =
+ sym from 
+         change 
+        fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+        with
+         c : bool <- read Ctrb[n, m, B] ; return ()
+        in currentProtocol
+        (
+         sym from 
+          change 
+        fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+        with
+         (when (n < m) --> 
+           c : bool <- read Ctrb[n, m, B] ;  return ()
+         )
+         ;;
+         (when (m < n) --> 
+           c : bool <- read Ctrb[n, m, B] ;  return ()
+         )
+         ;;
+         (when (m = n) --> 
+           c : bool <- read Ctrb[n, m, B] ;  return ()
+         )
+        in currentProtocol
+         (merge cases for fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B] ) then
+        on branch n < m of 
+           family Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+         (
+         using branch when isAndGate(B) of
+          group Shares[fixedBound B]
+          (using branch when n < m of
+            family Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+           (subst fam Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+             into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]) 
+          )
+        ) then 
+        on branch m < n of 
+           family Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+         (
+         using branch when isAndGate(B) of
+          group Shares[fixedBound B]
+          (using branch when m < n of
+            family Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+           (subst fam Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+             into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]) 
+          )
+        ) then 
+        on branch n = m of 
+           family Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]
+         (
+         using branch when isAndGate(B) of
+          group Shares[fixedBound B]
+          (using branch when n = m of
+            family Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+           (subst fam Ctrb[bound (N + 2) bound (N + 2) fixedBound B]
+             into fam Ctrb-OK[bound (N + 2) bound (N + 2) fixedBound B]) 
+          )
+        ) 
+        )
+        .  
+strict subproof addGroupOS = 
+  group 
+    fam OutShareSum[bound (N + 2) bound (N + 2) bound K]
+  in GroupOS
+  indices: n, m, k
+  bounds: bound (N + 2) bound (N + 2) bound K
+ . 
+
+ strict subproof addBranchGroupOS =
+  sym from  
+   change 
+        fam GroupOS[bound (N + 2) bound (N + 2) bound K]
+        with (
+        (when (isOutputWire(k))  --> 
+         (family OutShareSum[bound N + 2 bound N + 2 bound K ]
+          indices: n ,m ,k 
+          bounds: bound N + 2 bound N + 2 bound K ::= 
+          (when (0 = m) --> 
+           s : bool <- read OutShare [n ,0 ,k ] ; return s 
+          ) ;;
+          (otherwise --> 
+            s : bool <- read OutShareSum [n ,m - 1 ,k ] ; 
+            x : bool <- read OutShare [n ,m ,k ] ;
+            return xor((s ,x ))
+          )
+         ) 
+        )  ;;
+        (when (not isOutputWire(k))  --> 
+         (family OutShareSum[bound N + 2 bound N + 2 bound K ]
+          indices: n ,m ,k 
+          bounds: bound N + 2 bound N + 2 bound K ::= 
+          (when (0 = m) --> 
+           s : bool <- read OutShare [n ,0 ,k ] ; return s 
+          ) ;;
+          (otherwise --> 
+            s : bool <- read OutShareSum [n ,m - 1 ,k ] ; 
+            x : bool <- read OutShare [n ,m ,k ] ;
+            return xor((s ,x ))
+          )
+         )
+        )
+        ) 
+        in currentProtocol
+    (
+   merge cases for fam GroupOS[bound (N + 2) bound (N + 2) bound K]
+    )
+ .
+
+strict subproof indShareSum = 
+ in the presence of 
+  fam Share[bound (N + 1) fixedBound B],
+  fam InShare[bound (N + 2) bound (N + 2) dependentBound I],
+  fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I] 
+ rewrite family ShareSum[bound (N + 1) fixedBound B]
+ to i : bool <- read InShare$-Sum[m, wire0(B), wire1(B)] ; 
+    return i
+ by induction on m bound M (
+
+ case distinction on 
+     channel ShareSum[M, B]
+   (
+   
+   case: (
+    subst fam Share[bound (N + 1) fixedBound B]
+     into chn ShareSum[M, B] then
+    subst fam InShare[bound (N + 2) bound (N + 2) dependentBound I]  
+     into chn ShareSum[M, B] then
+      sym from
+   change chn ShareSum[M, B]
+        with
+         in : bool <- read InShare$-Sum[M, wire0(B), wire1(B)] ;
+         return in
+        in currentProtocol
+       (
+        
+           subst branch when m = 0 of fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I]
+            into chn ShareSum[M, B]
+        
+       )
+   )
+
+    case: (
+    subst fam Share[bound (N + 1) fixedBound B]
+     into chn ShareSum[M, B] then
+    subst fam InShare[bound (N + 2) bound (N + 2) dependentBound I]  
+     into chn ShareSum[M, B] then 
+    subst fam ShareSum[bound M fixedBound B]
+     into chn ShareSum[M, B] then
+    rename i to s, in to x 
+     in chn ShareSum[M, B] then   
+      sym from
+   change chn ShareSum[M, B]
+        with
+         in : bool <- read InShare$-Sum[M, wire0(B), wire1(B)] ;
+         return in
+        in currentProtocol
+       (
+        
+           subst branch when (not (m = 0))
+            of fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I]
+            into chn ShareSum[M, B] 
+         
+       )
+          )
+   ) then 
+   merge cases for chn ShareSum[M, B] then
+   rename in to i 
+    in chn ShareSum[M, B]
+  )  
+.
+strict subproof addInternalsInputBranch = 
+ sym from 
+  extend 
+   ( 
+    extend 
+     (extend currentProtocol 
+        with internal family InShare$Sum-OK
+                     indices: m, p, i 
+                     bounds: bound (N + 1) bound (N + 2) dependentBound I  
+                     typed: unit 
+                     assigned: 
+                       i : bool  <- read InShare$-Sum[m, p, i] ;
+                      return ()
+     )
+     with internal family InShare$-OK 
+                   indices: m, p, i
+                   bounds: bound (N + 1) bound (N + 2) dependentBound I  
+                   typed: unit
+                   assigned:   
+                      i : bool  <- read InShare$[m, p, i] ;
+                      return ()
+   ) 
+  with internal family In-OK 
+                indices: p, i 
+                bounds: bound (N + 2) dependentBound I 
+                typed: unit
+                assigned: 
+                  i : bool <- read In[p, i] ; return ()
+ (
+  absorb fam In-OK[bound (N + 2) dependentBound I] then
+  absorb fam InShare$-OK[bound (N + 1) bound (N + 2) dependentBound I] then
+  absorb fam InShare$Sum-OK[bound (N + 1) bound (N + 2) dependentBound I]
+ )      
+ .   
+
+strict subproof pSetupInd0 =
+  in the presence of 
+   fam InShare$-OK[bound (N + 1) bound (N + 2) dependentBound I],
+   fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I]
+  rewrite family InShare$Sum-OK[bound (N + 1) bound (N + 2) dependentBound I]    
+  to i : bool <- read InShare$-Sum[m, p, i] ;
+     return ()
+  by induction on m bound M (
+     case distinction on 
+      family InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I]
+     (
+     
+     case: (
+     subst fam InShare$-OK[bound (N + 1) bound (N + 2) dependentBound I]
+      into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] then
+     sym from 
+    change 
+        fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I]
+        with
+         i : bool  <- read InShare$-Sum[M, p, i] ;
+         return ()
+        in currentProtocol
+        ( subst branch when m = 0 of fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I]
+           into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] then
+       rename in to i 
+        in fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I]
+        )      
+     )
+     
+     case: (
+     subst fam InShare$-OK[bound (N + 1) bound (N + 2) dependentBound I]
+      into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] then
+     rename i to x 
+      in fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] then
+     subst fam InShare$Sum-OK[bound M bound (N + 2) dependentBound I]
+      into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] then 
+     rename i to s  
+      in fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] then
+      sym from
+   change 
+        fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I]
+        with
+         i : bool  <- read InShare$-Sum[M, p, i] ;
+         return ()
+        in currentProtocol
+       (
+           subst branch when not (m = 0) 
+            of fam InShare$-Sum[bound (N + 1) bound (N + 2) dependentBound I]
+            into fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I]
+      )                      
+     )
+     
+     ) then
+     merge cases for
+      fam InShare$Sum-OK[fixedBound M bound (N + 2) dependentBound I] 
+  )  
+.
+
+strict subproof dropInShare$ = 
+  rename indices to m, p, i
+     in fam InShare$[bound (N + 2) bound (N + 2) dependentBound I] then
+    drop read branch when not (m = N + 1)  of fam InShare$[bound (N + 2) bound (N + 2) dependentBound I] 
+             from fam InShare$-OK[bound (N + 1) bound (N + 2) dependentBound I] then
+    rename indices to m, n, i
+     in fam InShare$[bound (N + 2) bound (N + 2) dependentBound I]    
+ .
+
+ strict subproof rewriteSharesBoundNotAux =
+  in the presence of 
+  fam Shares[bound B],
+  fam Share[bound (N + 1) fixedBound B] 
+ rewrite family ShareSum[bound (N + 1) fixedBound B]
+ to s : bool <- read ShareSum[m, wire0(B)] ; return s
+ by induction on m bound M (
+ remove and merge fam ShareSum[bound(N + 1) bound B] 
+      from group Shares[bound B] then
+     case distinction on  
+       channel ShareSum[M, B]
+     (
+       case:(
+       subst fam Share[bound (N + 1) fixedBound B]
+        into chn ShareSum[M, B]
+       )
+       case:(
+        subst fam Share[bound (N + 1) fixedBound B]
+        into chn ShareSum[M, B] then
+        rename s to new in chn ShareSum[M, B] then
+        subst fam ShareSum[bound M fixedBound B]
+        into chn ShareSum[M, B] 
+       )
+     ) then
+    sym from change chn ShareSum[M, B]
+       with
+        (when (0 = M) -->
+           s : bool <- read ShareSum[M, wire0(B)] ; return s
+        )
+       ;;
+        (when (not (0 = M)) -->
+           s : bool <- read ShareSum[M, wire0(B)] ; return s
+        )
+       in currentProtocol (
+         case distinction on channel
+        ShareSum[M, B]
+       (
+         case: (
+           subst branch when (m = 0) of fam ShareSum[bound (N + 1) bound B]
+        into chn ShareSum[M, B]
+        )
+         case: (
+         subst  branch when not (m = 0) of fam ShareSum[bound (N + 1) bound B]
+        into chn ShareSum[M, B] then
+           rename xm to new, xs to s
+            in chn  ShareSum[M, B] 
+         )
+       )
+       ) then
+       merge cases for chn ShareSum[M, B] then 
+      move family ShareSum[bound (N + 1) bound B] 
+       on each branch of group Shares[bound B]
+    )
+ .
+ strict subproof setupIndShareSumXor = 
+in the presence of
+  fam Shares[bound B],
+  fam Share[bound (N + 1) fixedBound B] 
+ rewrite family ShareSum[bound (N + 1) fixedBound B]
+ to x : bool <- read ShareSum[m, wire0(B)] ; 
+    y : bool <- read ShareSum[m, wire1(B)] ; 
+    return xor((x, y))
+ by induction on m bound M (
+remove and merge fam ShareSum[bound (N + 1) bound B]
+    from group Shares[bound B] then
+case distinction on channel ShareSum[M, B]
+  (
+  
+   case: (
+   
+     subst fam Share[bound (N + 1) fixedBound B]
+      into chn ShareSum[M, B] then
+     sym from change 
+        chn ShareSum[M, B]
+        with
+         x : bool <- read ShareSum[M, wire0(B)] ;
+         y : bool <- read ShareSum[M, wire1(B)] ;
+         return xor((x, y))
+        in currentProtocol
+        ( call pSubstFamCaseChn0 then
+        rename s to x 
+          in chn ShareSum[M, B] then
+          call pSubstFamCaseChn0 then
+        rename s to y 
+          in chn ShareSum[M, B] 
+        )  
+   )
+   
+   case: (
+     subst fam ShareSum[bound M fixedBound B] 
+      into chn ShareSum[M, B] then
+     rename x to a, y to b 
+       in chn ShareSum[M, B] then
+     subst fam Share[bound (N + 1) fixedBound B]
+      into chn ShareSum[M, B] then
+     use expression assumption rearrange-xor
+          on chn ShareSum[M, B] at 1 then        
+     sym from change 
+        chn ShareSum[M, B]
+        with
+         x : bool <- read ShareSum[M, wire0(B)] ;
+         y : bool <- read ShareSum[M, wire1(B)] ; 
+         return xor((x, y))
+        in currentProtocol
+        (subst branch when not (m = 0) of fam ShareSum[bound (N + 1) bound B] 
+   into chn ShareSum[M, B] at x then
+         rename xs to a, xm to x in chn ShareSum[M, B] then
+           subst branch when not (m = 0) of fam ShareSum[bound (N + 1) bound B] 
+   into chn ShareSum[M, B] at y then
+         rename xs to b, xm to y in chn ShareSum[M, B]                
+        
+        )
+   )
+  ) then
+  merge cases for chn ShareSum[M, B] then
+  move family ShareSum[bound (N + 1) bound B]
+    on each branch of group Shares[bound B] 
+ )  
+.
+strict subproof pSubstFamCaseChn0 =
+  subst branch when m = 0 of fam ShareSum[bound (N + 1) bound B] 
+   into chn ShareSum[M, B]
+ . 
+
+strict subproof pSubstFamCaseChn1 =
+  subst branch when not (m = 0) of fam ShareSum[bound (N + 1) bound B] 
+   into chn ShareSum[M, B]
+ .  
+
+strict subproof addColAndColSum =
+ sym from
+  extend
+  (extend currentProtocol 
+        with internal family Col
+                     indices: i, j
+                     bounds: bound (N + 2) bound (N + 2)
+                     typed: bool 
+                     assigned: 
+                       c : bool  <- read CtrbSum[i, j, B] ;
+                      return c
+     )
+  with internal family ColSum
+                     indices: i, j
+                     bounds: bound (N + 2) bound (N + 2)
+                     typed: bool 
+                     assigned: 
+                     ( (when (i = 0) --> 
+                        c : bool <- read Col[0, j] ; return c
+                      ) 
+                      ;;
+                      (when (not (i = 0)) --> 
+                        bs : bool <- read ColSum[i - 1, j] ;
+                        bi : bool <- read Col[i, j] ;
+                        return xor((bs, bi))
+                      )  
+                     ) 
+ (
+   absorb fam Col[bound (N + 2) bound (N + 2)] then
+   absorb fam ColSum[bound (N + 2) bound (N + 2)]
+ )    
+ .
+
+strict subproof setupIndSSAnd = 
+in the presence of 
+ fam Share[bound (N + 1) fixedBound B] ,
+ fam ColSum[bound (N + 2) bound (N + 2)] ,
+ fam Col[bound (N + 2) bound (N + 2)]
+rewrite family ShareSum[bound (N + 1) fixedBound B]
+to c : bool <- read ColSum[m, N + 1] ; return c
+by induction on m bound M
+(
+ case distinction on 
+  channel ShareSum[M, B]
+ (
+ 
+  case:(
+  subst fam Share[bound (N + 1) fixedBound B]
+   into chn ShareSum[M, B] then 
+  sym from change 
+        chn ShareSum[M, B]
+        with
+         c : bool <- read ColSum[M, N + 1] ; return c
+        in currentProtocol
+        ( 
+   subst branch when i = 0 of fam ColSum[bound (N + 2) bound (N + 2)]
+    into chn ShareSum[M, B] then
+          subst fam Col[bound (N + 2) bound (N + 2)]
+           into chn ShareSum[M, B] then
+          rename c to bs in chn ShareSum[M, B] 
+        )
+  )
+  
+  case: (
+  subst fam Share[bound (N + 1) fixedBound B]
+   into chn ShareSum[M, B] then
+  subst fam ShareSum[bound M fixedBound B]
+   into chn ShareSum[M, B] then
+   sym from change 
+        chn ShareSum[M, B]
+        with
+         c : bool <- read ColSum[M, N + 1] ; return c
+        in currentProtocol
+        (      
+   subst  branch when (not (i = 0)) of  fam ColSum[bound (N + 2) bound (N + 2)]
+    into chn ShareSum[M, B] then
+ subst fam Col[bound (N + 2) bound (N + 2)]
+    into chn ShareSum[M, B]  then 
+ rename c to t in chn ShareSum[M, B]  then 
+ rename bs to c in chn ShareSum[M, B]  then 
+ rename t to bs in chn ShareSum[M, B] 
+ )       
+  ) 
+   
+ ) then 
+ merge cases for chn ShareSum[M, B] 
+)     
+.
+
+strict subproof changeColToInductive =
+ sym from  
+             change fam Col[bound (N + 2) bound (N + 2)]
+             with 
+              (when (j = 0) --> 
+                c : bool  <- read Ctrb[i, 0, B] ; 
+                return c
+              )
+              ;;
+              (when (not (j = 0)) --> 
+                bs : bool <- read Col[i, j - 1] ;
+                bj : bool <- read Ctrb[i, j, B] ;
+                return xor((bs, bj))
+              )
+             in currentProtocol
+ (
+ in the presence of 
+ fam CtrbSum[bound (N + 2) bound (N + 2) fixedBound B]
+ rewrite family Col[bound (N + 2) bound (N + 2)]
+ to c : bool <- read CtrbSum[i, j, B] ; return c
+ by induction on j bound J
+(
+  case distinction on 
+   family Col[bound (N + 2) fixedBound J]
+  (
+   case: (
+    sym from 
+  change
+   fam Col[bound (N + 2) fixedBound J]
+  with c : bool <- read CtrbSum[i, J, B] ; return c
+  in currentProtocol 
+  (  subst branch when (m = 0) of fam CtrbSum[bound (N + 2) bound (N + 2) fixedBound B]
+       into fam Col[bound (N + 2) fixedBound J] then
+    rename b to c in fam Col[bound (N + 2) fixedBound J]
+  ) 
+   )
+   
+   case: (
+    subst fam Col[bound (N + 2) bound J]
+     into fam Col[bound (N + 2) fixedBound J] then
+    sym from 
+  change
+   fam Col[bound (N + 2) fixedBound J]
+  with c : bool <- read CtrbSum[i, J, B] ; return c
+  in currentProtocol 
+(   subst branch when (not (m = 0)) of fam CtrbSum[bound (N + 2) bound (N + 2) fixedBound B]
+     into fam Col[bound (N + 2) fixedBound J] then 
+  rename b to bj, s to c 
+   in fam Col[bound (N + 2) fixedBound J]      
+ )
+   )
+  ) then  
+ merge cases for fam Col[bound (N + 2) fixedBound J]      
+)
+)
+.     
+
+strict subproof addRowAndRowSum =
+ sym from
+ ( extend
+   (extend currentProtocol 
+        with internal family Row
+                     indices: i, j
+                     bounds: bound (N + 2) bound (N + 2)
+                     typed: bool 
+                     assigned: 
+                      ( when (i = 0) --> 
+                         c : bool <- read Ctrb[0, j, B] ; return c
+                      )
+                      ;;
+                      (when (not (i = 0)) -->
+                        r : bool <- read Row[i - 1, j] ;
+                        bi : bool <- read Ctrb[i, j, B] ;
+                        return xor((r, bi)) 
+                      )
+     )
+     with internal family RowSum
+                     indices: i, j
+                     bounds: bound (N + 2) bound (N + 2)
+                     typed: bool 
+                     assigned: 
+                      ( when (j = 0) --> 
+                         r : bool <- read Row[i, 0] ; return r
+                      )
+                      ;;
+                      (when (not (j = 0)) -->
+                        r : bool <- read RowSum[i, j - 1] ;
+                        bj : bool <- read Row[i, j] ;
+                        return xor((r, bj)) 
+                      ) 
+ )
+(
+ absorb fam Row[bound (N + 2) bound (N + 2)] then
+ absorb fam RowSum[bound (N + 2) bound (N + 2)]
+ )       
+ .
+
+strict subproof symColSumSameCasesPartTwo =
+ sym from 
+ change chn ColSum[X, Y]
+ with
+  (when (Y = 0) --> 
+    r : bool <- read RowSum[X, Y] ; return r
+  )
+   ;;
+  (when (not (Y = 0)) --> 
+    r : bool <- read RowSum[X, Y] ; return r
+  )
+   in currentProtocol
+   (merge cases for chn ColSum[X, Y])
+. 
+
+strict subproof setupIndColRowPartTwo =
+  in the presence of 
+   fam Row[bound (N + 2) bound (N + 2)] ,
+   fam Col[bound (N + 2) bound (N + 2)] 
+  rewrite group 
+  RowSum[fixedBound X bound N + 2] and ColSum[fixedBound X bound N + 2]
+  to  
+  (
+   (family RowSum[fixedBound X bound (N + 2)]
+ indices: i, j
+ bounds: fixedBound X bound (N + 2)
+::=
+ c : bool <- read ColSum[0, j] ; return c
+)
+||
+(family ColSum[fixedBound X bound (N + 2)]
+  indices: i, j
+ bounds: fixedBound X bound (N + 2)
+::=
+ c : bool <- read Col[0, j] ; return c
+)
+  )
+  by induction on j bound Y (
+        call symColSumSameCasesPartTwo then
+        merge case for chn RowSum[X, Y] and chn ColSum[X, Y]
+         into group CGroup then
+        case distinction on 
+         group CGroup[bound 1] 
+        (
+        case:(
+          subst  branch when (i = 0) of fam Row[bound (N + 2) bound (N + 2)]
+           into chn RowSum[X, Y] then   
+        sym from 
+  change chn RowSum[X, Y] 
+  with c : bool <- read Col[0, Y] ; return c
+  in currentProtocol
+  (
+   subst branch when (j = 0) of fam Col[bound (N + 2) bound (N + 2)]
+     into chn RowSum[X, Y] 
+  )   then
+        subst chn RowSum[X, Y] into chn ColSum[X, Y] then
+       sym from
+ change chn RowSum[X, Y] 
+ with c : bool <- read ColSum[X, Y] ; return c
+ in currentProtocol
+ (
+   subst chn ColSum[X, Y]
+    into chn RowSum[X, Y]
+ ) then
+        use assumptions for X in chn RowSum[X, Y]
+       )
+        
+       case: (
+        subst fam RowSum[fixedBound X bound Y]
+         into chn RowSum[X, Y] then
+        subst fam ColSum[fixedBound X bound Y]
+         into chn RowSum[X, Y] then
+        rename c to bs
+            in chn RowSum[X, Y] then
+         subst branch when (i = 0) of fam Row[bound (N + 2) bound (N + 2)]
+          into chn RowSum[X, Y] then
+        rename c to bj   
+          in chn RowSum[X, Y] then
+        sym from
+  change chn RowSum[X, Y]
+  with  c : bool <- read Col[X, Y] ; return c
+  in currentProtocol
+  (
+     subst branch when (not (j = 0)) of fam Col[bound (N + 2) bound (N + 2)]
+        into chn RowSum[X, Y] then
+     use assumptions for X in chn RowSum[X, Y]
+  ) then               
+        subst chn RowSum[X, Y] into chn ColSum[X, Y] then
+        sym from
+ change chn RowSum[X, Y]
+ with  c : bool <- read ColSum[X, Y] ; return c
+ in currentProtocol
+ (subst chn ColSum[X, Y] 
+  into chn RowSum[X, Y]
+ ) then 
+        use assumptions for X in chn RowSum[X, Y] then
+        use assumptions for X in chn ColSum[X, Y]
+       )         
+        ) then
+        merge cases for fam CGroup[bound 1] then
+        ungroup fam CGroup[bound 1]  
+)
+.
+strict subproof symForRowSumPart2Zero =
+ sym from
+   change chn RowSum[X, Y]
+   with 
+     c : bool <- read ColSum[X, Y] ;
+     return c
+   in currentProtocol
+  ( subst chn ColSum[X, Y]
+     into chn RowSum[X, Y]
+  )
+.     
+strict subproof symForColSumPart2Zero =
+ sym from
+  change chn ColSum[X, Y]
+    with 
+      bi : bool <- read Col[X, Y] ;
+      bs : bool <- read ColSum[X - 1, Y] ;
+      return xor((bs, bi))
+    in currentProtocol
+    ( use assumptions for Y in chn ColSum[X, Y])
+. 
+
+strict subproof symRSPartTwoNZ =
+ sym from 
+  change chn RowSum[X, Y] 
+  with
+   bi : bool <- read Col[X, Y] ;
+   bs : bool <- read ColSum[X - 1, Y] ;
+   return xor((bs, bi)) 
+  in currentProtocol
+       ( subst fam ColSum[bound X bound (N + 2)] 
+          into chn RowSum[X, Y] then
+         subst branch when (not (j = 0)) of fam Col[bound (N + 2) bound (N + 2)]
+            into chn RowSum[X, Y] then 
+         rename bj to b, bs to bc
+             in chn RowSum[X, Y] then  
+         subst branch when (not (j = 0)) of fam RowSum[bound X bound (N + 2)]
+            into chn RowSum[X, Y] then 
+         rename bj to br, r to bs
+          in chn RowSum[X, Y]
+       )
+ .
+
+strict subproof setupIndColRow =
+ in the presence of 
+  fam Col[bound (N + 2) bound (N + 2)] ,
+  fam Row[bound (N + 2) bound (N + 2)]   
+ rewrite group 
+  RowSum[bound (N + 2) bound (N + 2)] and ColSum[bound (N + 2) bound (N + 2)]
+ to 
+ (
+ (family ColSum[bound (N + 2) bound (N + 2)] 
+  indices: i, j
+  bounds: bound (N + 2) bound (N + 2)
+::=
+ r : bool <- read RowSum[i, j] ; return r
+)
+||
+(family RowSum[bound (N + 2) bound (N + 2)] 
+  indices: i, j
+  bounds: bound (N + 2) bound (N + 2)
+::=
+(when (0 = j) -->
+  r : bool <- read Row[i, 0] ; return r
+)  
+;;
+(when (not (0 = j)) -->
+  bj : bool <- read Row[i, j] ; 
+   r : bool <- read RowSum[i, j - 1] ;
+   return xor((r, bj))
+)
+)
+ )
+ by induction on i bound X
+`` big induction starts here
+( 
+case distinction on family ColSum[fixedBound X bound (N + 2)] (
+    case:(
+`` this branch works, keep
+in the presence of 
+   fam Row[bound (N + 2) bound (N + 2)] ,
+   fam Col[bound (N + 2) bound (N + 2)] ,
+   fam ColSum[fixedBound X bound (N + 2)]
+  rewrite family RowSum[fixedBound X bound (N + 2)]
+  to c : bool <- read ColSum[0, j] ; return c
+  by induction on j bound Y
+  (
+    case distinction on
+     channel RowSum[X, Y]
+    (
+    
+     case: (
+      
+        subst branch when (i = 0) of fam Row[bound (N + 2) bound (N + 2)]
+         into chn RowSum[X, Y] then
+       sym from change 
+        chn RowSum[X, Y]
+        with c : bool <- read ColSum[0, Y] ; return c
+        in currentProtocol
+   (  subst fam ColSum[fixedBound X bound (N + 2)]
+         into chn RowSum[X, Y] then         
+          subst branch when (j = 0) of fam Col[bound (N + 2) bound (N + 2)]
+           into chn RowSum[X, Y] 
+  ) 
+     )
+     
+     case: (
+      subst fam RowSum[fixedBound X bound Y]
+       into chn RowSum[X, Y] then
+      rename c to cs in chn RowSum[X, Y] then
+      subst branch when (i = 0) of fam Row[bound (N + 2) bound (N + 2)]
+         into chn RowSum[X, Y] then
+      rename c to bj in chn RowSum[X, Y] then
+      subst fam ColSum[fixedBound X bound (N + 2)] 
+       into chn RowSum[X, Y] then
+      rename c to bs in chn RowSum[X, Y] then
+      sym from change 
+        chn RowSum[X, Y]
+        with c : bool <- read ColSum[0, Y] ; return c
+        in currentProtocol
+       (
+        subst fam ColSum[fixedBound X bound (N + 2)]
+         into chn RowSum[X, Y] then 
+        subst branch when (not (j = 0)) of fam Col[bound (N + 2) bound (N + 2)]
+         into chn RowSum[X, Y] 
+       )  
+     )  
+    ) then
+      merge cases for chn RowSum[X, Y]
+      ) then
+   compose fam RowSum[fixedBound X bound (N + 2)]
+    with fam ColSum[fixedBound X bound (N + 2)] in group then
+sym from change 
+  fam RowSum[fixedBound X bound (N + 2)] and ColSum[fixedBound X bound (N + 2)]
+ with 
+  (family ColSum[fixedBound X bound (N + 2)] 
+  indices: i, j
+  bounds: fixedBound X bound (N + 2) 
+::=
+ r : bool <- read RowSum[X, j] ; return r
+)
+||
+(family RowSum[fixedBound X bound (N + 2)] 
+  indices: i, j
+  bounds: fixedBound X bound (N + 2) 
+::=
+(when (0 = j) -->
+  r : bool <- read Row[X, 0] ; return r
+)
+;;
+(when (not (0 = j)) -->
+ bj : bool <- read Row[X, j] ;
+ r : bool <- read RowSum[X, j - 1] ;
+ return xor((r, bj))
+)
+)
+       in currentProtocol
+(
+call setupIndColRowPartTwo
+) then
+decompose fam RowSum[fixedBound X bound (N + 2)]
+    with fam ColSum[fixedBound X bound (N + 2)]
+)
+
+case: (
+`` this branch works too, keep
+rewrite family RowSum[fixedBound X bound (N + 2)]
+ to c : bool <- read ColSum[X, j] ; return c
+ by induction on j bound Y
+ (   
+   case distinction on
+    channel RowSum[X, Y]
+   (
+    case: 
+    (  subst branch when (not (i = 0)) of fam Row[bound (N + 2) bound (N + 2)]
+         into chn RowSum[X, Y] then  
+       sym from 
+        change
+         chn RowSum[X, Y]
+         with 
+          c : bool <- read ColSum[X, Y] ; return c
+         in
+         currentProtocol
+       ( subst fam ColSum[fixedBound X bound (N + 2)]
+          into chn RowSum[X, Y] then
+         subst fam ColSum[bound X bound (N + 2)]
+          into chn RowSum[X, Y] then   
+         use assumptions for Y in chn RowSum[X, Y] then
+         subst branch when (j = 0) of fam Col[bound (N + 2) bound (N + 2)]
+            into chn RowSum[X, Y] then  
+         rename c to bi in chn RowSum[X, Y] then
+         subst branch when (j = 0) of fam RowSum[bound X bound N + 2]
+            into chn RowSum[X, Y]
+      )
+    )
+    
+    case:
+    (
+      subst fam RowSum[fixedBound X bound Y]
+       into chn RowSum[X, Y] then
+      subst fam ColSum[fixedBound X bound (N + 2)]
+       into chn RowSum[X, Y] then 
+      rename bi to bc in chn RowSum[X, Y] then 
+      subst branch when (not (i = 0)) of fam Row[bound (N + 2) bound (N + 2)]
+        into chn RowSum[X, Y] then 
+      use expression assumption rearrange-xor
+          on chn RowSum[X, Y] at 1 then 
+      rename r to br
+       in chn RowSum[X, Y] then    
+      subst fam ColSum[bound X bound (N + 2)]     
+       into chn RowSum[X, Y] then 
+       sym from 
+        change
+         chn RowSum[X, Y]
+         with 
+          c : bool <- read ColSum[X, Y] ; return c
+         in
+         currentProtocol
+       (  
+         subst fam ColSum[fixedBound X bound (N + 2)]
+          into chn RowSum[X, Y] then
+         subst fam ColSum[bound X bound (N + 2)]
+          into chn RowSum[X, Y] then   
+         subst branch when (not (j = 0)) of fam Col[bound (N + 2) bound (N + 2)]
+            into chn RowSum[X, Y] then  
+         rename bj to bi 
+          in chn RowSum[X, Y] then
+         subst  branch when (not (j = 0)) of fam RowSum[bound X bound (N + 2)]
+            into chn RowSum[X, Y] then    
+         rename bj to br, bs to bc  
+          in chn RowSum[X, Y] 
+       )            
+    )   
+   ) then
+   merge cases for chn RowSum[X, Y]
+ ) then 
+ compose fam RowSum[fixedBound X bound (N + 2)]
+    with fam ColSum[fixedBound X bound (N + 2)] in group then
+ sym from
+  change  
+   fam RowSum[fixedBound X bound (N + 2)]
+    and ColSum[fixedBound X bound (N + 2)]
+  with ((family ColSum[fixedBound X bound (N + 2)] 
+  indices: i, j
+  bounds: fixedBound X bound (N + 2)
+::=
+ r : bool <- read RowSum[X, j] ; return r
+)
+||
+(family RowSum[fixedBound X bound (N + 2)]
+  indices: i, j
+  bounds: fixedBound X bound (N + 2)
+::=
+(when (0 = j) -->
+ r : bool <- read Row[X, 0] ; return r
+) 
+;;
+(when (not (0 = j)) -->
+  bj : bool <- read Row[X, j] ; 
+   r : bool <- read RowSum[X, j - 1] ;
+   return xor((r, bj))
+)
+)
+)
+       in currentProtocol 
+(       
+rewrite group  
+        RowSum[fixedBound X bound (N + 2)]
+    and ColSum[fixedBound X bound (N + 2)]
+   to  (
+   (family ColSum[fixedBound X bound (N + 2)] 
+  indices: i, j
+  bounds: fixedBound X bound (N + 2) ::=
+   bi : bool <- read Col[X, j] ; 
+   bs : bool <- read ColSum[X - 1, j] ;
+   return xor((bs, bi))
+)
+||
+(
+family RowSum[fixedBound X bound (N + 2)]
+  indices: i, j
+  bounds: fixedBound X bound (N + 2)
+::=
+ c : bool <- read ColSum[X, j] ; return c
+)
+   )
+   by induction on j bound Y (
+       call symColSumSameCasesPartTwo then
+       merge case for chn RowSum[X, Y] and chn ColSum[X, Y]
+         into group CGroup then
+       case distinction on
+        group CGroup[bound 1]
+       (
+         case: (
+          subst branch when (not (i = 0)) of fam Row[bound (N + 2) bound (N + 2)]
+             into chn RowSum[X, Y] then
+          sym from
+       change chn RowSum[X, Y]
+       with 
+        bi : bool <- read Col[X, 0] ;
+        bs : bool <- read ColSum[X - 1, 0] ;
+        return xor((bs, bi))
+       in currentProtocol
+       ( subst fam ColSum[bound X bound (N + 2)]
+          into chn RowSum[X, Y] then
+         subst branch when (j = 0)  of fam RowSum[bound X bound (N + 2)]
+          into chn RowSum[X, Y] then
+         subst branch when (j = 0) of fam Col[bound (N + 2) bound (N + 2)]
+          into chn RowSum[X, Y] then
+         rename c to bi in chn RowSum[X, Y]
+        )            then
+          subst chn RowSum[X, Y] 
+           into chn ColSum[X, Y] then
+          call symForRowSumPart2Zero then
+          call symForColSumPart2Zero
+         )
+         case: (
+         rename r to new in chn RowSum[X, Y] then
+         subst branch when (not (i = 0)) of fam Row[bound (N + 2) bound (N + 2)]
+             into chn RowSum[X, Y] then
+         subst fam RowSum[fixedBound X bound Y]  
+          into chn RowSum[X, Y] then 
+         rename bi to b, r to br
+          in chn RowSum[X, Y] then 
+         subst fam ColSum[fixedBound X bound Y] 
+          into chn RowSum[X, Y] then 
+         rename bi to bc in chn RowSum[X, Y] then 
+         subst fam ColSum[bound X bound (N + 2)] 
+          into chn RowSum[X, Y] then 
+         rename r to bs in chn RowSum[X, Y] then 
+         use expression assumption rearrange-xor
+          on chn RowSum[X, Y] at 1 then        
+         call symRSPartTwoNZ then
+         subst chn RowSum[X, Y] into chn ColSum[X, Y] then
+         call symForRowSumPart2Zero              
+         )
+       ) then
+       merge cases for fam CGroup[bound 1] then
+       ungroup fam CGroup[bound 1] 
+   )    
+) then
+decompose fam RowSum[fixedBound X bound (N + 2)]
+    with fam ColSum[fixedBound X bound (N + 2)]
+)
+) then
+merge cases for fam ColSum[fixedBound X bound (N + 2)]
+`` ends big induction below
+) 
+.
+
+strict subproof addSqr =
+ sym from
+  (extend currentProtocol 
+        with internal family Sqr
+                     indices:  i 
+                     bounds: bound (N + 2)
+                     typed: bool 
+                     assigned: 
+                       c : bool  <- read ColSum[i, i] ;
+                      return c
+  )
+  (
+   absorb fam Sqr[bound (N + 2)]
+  )
+ .  
+
+ strict subproof revertColSumInductive =
+ sym from
+        change fam ColSum[bound (N + 2) bound (N + 2)]
+       with 
+       (when (0 = i) -->
+         c : bool <- read Col[0, j] ; return c
+       )
+       ;;
+       (when (not (0 = i)) -->
+         bi : bool <- read Col[i, j] ;
+         bs : bool <- read ColSum[i - 1, j] ;
+         return xor((bs, bi))
+       )        
+       in currentProtocol
+       (
+       compose
+ fam RowSum[bound (N + 2) bound (N + 2)]
+with  
+ fam ColSum[bound (N + 2) bound (N + 2)]
+in group then  
+call setupIndColRow then
+decompose
+ fam RowSum[bound (N + 2) bound (N + 2)]
+with  
+ fam ColSum[bound (N + 2) bound (N + 2)]
+       )
+.  
+strict subproof addWire =
+  sym from
+   extend currentProtocol with
+    internal family Wire indices: k bounds: bound K 
+    typed: bool 
+    assigned: s : bool <- read ShareSum[N + 1, k] ;
+              return s
+ (absorb fam Wire[bound K])              
+.
+ 
+strict subproof addWiresGroup =
+group  
+  fam Wire[bound K]
+in Wires
+indices: k
+bounds: bound K
+. 
+strict subproof symInputWS =
+  sym from change 
+       chn Wire[B]
+       with  s : bool <- read ShareSum[N + 1, B] ; return s
+       in currentProtocol
+       ( subst chn ShareSum[N + 1, B]
+          into chn Wire[B] )
+.        
+`` all subproofs end with this line
