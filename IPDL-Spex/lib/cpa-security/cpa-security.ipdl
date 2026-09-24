@@ -1,0 +1,249 @@
+lang IPDL
+
+parameter q : nat .
+
+type key .
+type msg .
+type ctxt .
+
+function zeros : unit -> msg .
+
+distribution enc : msg * key -> ctxt .
+distribution gen_key : unit -> key .
+
+approx-assumption lr-cpa using ml mr k keyN encN msgLN msgRN :
+ (fam msgLN[bound q] :: msg)
+ (fam msgRN[bound q] :: msg) (fam encN[bound q]:: ctxt) ;
+ fam msgLN[bound q], fam msgRN[bound q] ;
+ no assumptions
+ |=
+  new keyN : key in
+  (keyN ::= samp gen_key (()) )
+   ||
+   (family encN[bound q] indices: i bounds: bound q ::=
+            ml : msg <- read msgLN[i] ;
+            mr : msg <- read msgRN[i] ;
+            k : key <- read keyN ;
+            samp enc((ml, k))
+   )
+  =
+   new keyN : key in
+   (keyN ::= samp gen_key (()) )
+   ||
+   (family encN[bound q] indices: i bounds: bound q ::=
+            ml : msg <- read msgLN[i] ;
+            mr : msg <- read msgRN[i] ;
+            k : key <- read keyN ;
+            samp enc((mr, k))
+   )
+.
+
+approx-assumption chosen-message using m k keyN encN msgN :
+ (fam msgN[bound q] :: msg) (fam encN[bound q]:: ctxt) ;
+ fam msgN[bound q];
+ no assumptions
+ |=
+  new keyN : key in
+  (keyN ::= samp gen_key (()) )
+   ||
+   (family encN[bound q] indices: i bounds: bound q ::=
+            m : msg <- read msgN[i] ;
+            k : key <- read keyN ;
+            samp enc((m, k))
+   )
+  =
+   new keyN : key in
+   (keyN ::= samp gen_key (()) )
+   ||
+   (family encN[bound q] indices: i bounds: bound q ::=
+            m : msg <- read msgN[i] ;
+            k : key <- read keyN ;
+            samp enc((zeros(()), k))
+   )
+.
+
+channel context deltaRL =
+    input MsgL[bound q] : msg ;
+    input MsgR[bound q] : msg ;
+    output Enc[bound q] : ctxt
+.
+
+protocol realRL =
+    new Key : key in
+    (Key ::= samp gen_key (()) )
+     ||
+    (family Enc[bound q] indices: i bounds: bound q ::=
+            ml : msg <- read MsgL[i] ;
+            mr : msg <- read MsgR[i] ;
+            k : key <- read Key ;
+            samp enc((ml, k))
+    )
+.
+
+protocol idealRL =
+    new Key : key in
+    (Key ::= samp gen_key (()) )
+     ||
+    (family Enc[bound q] indices: i bounds: bound q ::=
+            ml : msg <- read MsgL[i] ;
+            mr : msg <- read MsgR[i] ;
+            k : key <- read Key ;
+            samp enc((mr, k))
+    )
+.
+
+begin approx proof
+
+start with realRL over deltaRL
+
+sym from
+ change
+    fam Enc[bound q]
+    with
+        m : msg <- read Msg[i] ;
+        k : key <- read Key ;
+        samp enc((m, k))
+    in
+    (extend currentProtocol
+    with internal family Msg
+    indices: i bounds: bound q
+    typed: msg
+    assigned:
+        ml : msg <- read MsgL[i] ;
+        mr : msg <- read MsgR[i] ;
+        return ml
+    )
+ (
+    fold fam Msg[bound q] into fam Enc[bound q]
+ )
+
+restructure
+ (gather chn Key , fam Enc[bound q] from currentProtocol hiding chn Key)
+
+use approx assumption chosen-message
+
+bring declarations of hidden channels in front
+
+fold fam Msg[bound q] into fam Enc[bound q]
+
+sym from
+   change
+    fam Enc[bound q]
+    with
+        m : msg <- read Msg[i] ;
+        k : key <- read Key ;
+        samp enc((zeros(()), k))
+    in
+    (extend currentProtocol
+    with internal family Msg
+    indices: i bounds: bound q
+    typed: msg
+    assigned:
+        ml : msg <- read MsgL[i] ;
+        mr : msg <- read MsgR[i] ;
+        return mr
+    )
+ (
+    fold fam Msg[bound q] into fam Enc[bound q]
+ )
+
+`` in order to apply the approx assumption from right to left
+`` we will do a sym-approx proof where we apply it from left to right
+
+sym-approx from
+    change
+    fam Enc[bound q]
+    with
+        m : msg <- read Msg[i] ;
+        k : key <- read Key ;
+        samp enc((m, k))
+    in currentProtocol
+    (
+        restructure (gather chn Key , fam Enc[bound q] from currentProtocol hiding chn Key) then-approx
+        use approx assumption chosen-message then-approx
+        bring declarations of hidden channels in front
+    )
+
+fold fam Msg[bound q] into fam Enc[bound q]
+
+check-proof idealRL
+
+eof
+
+
+channel context deltaLR =
+    input Msg[bound q] : msg ;
+    output Enc[bound q] : ctxt
+.
+
+protocol realLR =
+ new Key : key in
+  (
+  (Key ::= samp gen_key (()) )
+   ||
+   (family Enc[bound q] indices: i bounds: bound q ::=
+            m : msg <- read Msg[i] ;
+            k : key <- read Key ;
+            samp enc((m, k))
+   )
+  )
+.
+
+protocol idealLR =
+ new Key : key in
+  (
+  (Key ::= samp gen_key (()) )
+   ||
+   (family Enc[bound q] indices: i bounds: bound q ::=
+            m : msg <- read Msg[i] ;
+            k : key <- read Key ;
+            samp enc((zeros(()), k))
+   )
+  )
+.
+
+begin approx proof
+
+start with realLR over deltaLR
+
+sym from
+    change
+    fam Enc[bound q]
+    with
+        ml : msg <- read MsgL[i] ;
+        mr : msg <- read MsgR[i] ;
+        k : key <- read Key ;
+        samp enc((ml, k))
+    in (
+    extend
+    (extend currentProtocol
+    with internal family MsgL
+    indices: i bounds: bound q
+    typed: msg
+    assigned:
+        m : msg <- read Msg[i] ;
+        return m
+    )
+    with internal family MsgR
+    indices: i bounds: bound q
+    typed: msg
+    assigned:
+        return zeros(())
+    )
+    (
+        fold fam MsgL[bound q] into fam Enc[bound q] then
+        fold fam MsgR[bound q] into fam Enc[bound q]
+    )
+
+restructure
+ (gather chn Key , fam Enc[bound q] from currentProtocol hiding chn Key)
+
+use approx assumption lr-cpa
+
+bring declarations of hidden channels in front
+
+fold fam MsgL[bound q] into fam Enc[bound q]
+
+fold fam MsgR[bound q] into fam Enc[bound q]
+
+check-proof idealLR
