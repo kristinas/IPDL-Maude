@@ -1,9 +1,0 @@
-lang IPDL
-
-channel context Delta = 
- output  C : bool 
-.
-
-protocol P = 
- C ::= x : bool <- read C ; return x
-.

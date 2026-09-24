@@ -1,5 +1,0 @@
-lang IPDL
-
-distribution flip1 : unit -> bool .
-distribution flip2 : unit -> bool .
-add
