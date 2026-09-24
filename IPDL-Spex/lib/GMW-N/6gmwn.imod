@@ -1,0 +1,12 @@
+lang IPDL
+
+include gmwn-defs.imod
+
+include gmwn-subs.imod
+
+start with idealPlusSim over deltaIdealPlusSim 
+
+include 6gmwn.proof
+
+ current-protocol
+ quit
