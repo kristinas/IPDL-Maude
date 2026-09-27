@@ -1,0 +1,49 @@
+lang IPDL
+
+`` Demonstrates `sym from`: the ideal expresses its output through a HIDDEN
+`` channel H (a simulator). Our forward steps reduce `real` to `Out = read In ; coin`,
+`` but the ideal's Out instead reads H. `sym from ideal ( ... )` transforms the
+`` IDEAL side (folding H away) so both meet at the same normal form.
+
+function xor : bool * bool -> bool .
+distribution flip : unit -> bool .
+
+channel context delta =
+ input In : bool ;
+ output Out : bool
+.
+
+reaction-assumption otp using x y :
+   emptyCCtxt ; x : bool ; nil |=
+    y : bool <- samp flip (()) ; return xor( (x, y) )
+    = samp flip(()) .
+
+protocol real =
+    new Key : bool in
+    (
+      (Key ::= samp flip (()) )
+      ||
+      (Out ::= m : bool <- read In ; k : bool <- read Key ; return xor((m, k)) )
+    )
+    .
+
+protocol ideal =
+    new H : bool in
+    (
+      (H   ::= m : bool <- read In ; samp flip (()) )
+      ||
+      (Out ::= h : bool <- read H ; return h )
+    )
+    .
+
+start with real over delta then
+fold chn Key into chn Out then
+use assumption otp on chn Out then
+sym from ideal (
+   fold chn H into chn Out
+) then
+restructure ideal
+
+current-protocol
+check-proof ideal
+quit

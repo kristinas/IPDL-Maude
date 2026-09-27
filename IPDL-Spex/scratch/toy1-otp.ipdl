@@ -1,0 +1,41 @@
+lang IPDL
+
+`` A minimal one-time-pad: ciphertext = message XOR fresh key.
+`` Real samples a key and outputs message XOR key; ideal just outputs a fresh coin.
+
+function xor : bool * bool -> bool .
+distribution flip : unit -> bool .
+
+channel context delta =
+ input In : bool ;
+ output Out : bool
+.
+
+`` One-time-pad assumption: masking a fixed value x with a fresh uniform bit
+`` yields a fresh uniform bit.
+reaction-assumption otp using x y :
+   emptyCCtxt ; x : bool ; nil |=
+    y : bool <- samp flip (()) ; return xor( (x, y) )
+    = samp flip(()) .
+
+protocol real =
+    new Key : bool in
+    (
+      (Key ::= samp flip (()) )
+      ||
+      (Out ::= m : bool <- read In ; k : bool <- read Key ; return xor((m, k)) )
+    )
+    .
+
+protocol ideal =
+    (Out ::= m : bool <- read In ; samp flip (()) )
+    .
+
+start with real over delta then
+fold chn Key into chn Out then
+use assumption otp on chn Out then
+restructure ideal
+
+current-protocol
+check-proof ideal
+quit
