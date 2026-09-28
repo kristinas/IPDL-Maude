@@ -67,22 +67,22 @@ expression-assumption %manual and-distrib-xor using x, y, z :
 
 `` derived
 
-   expression-assumption %automatic andFalseLeft using x : 
+expression-assumption %automatic andFalseLeft using x : 
    (x : bool)  |= 
    **( (False, x) ) = False .
-   
+
    expression-assumption %automatic andTrueLeft using x : 
    (x : bool)  |= 
    **( (True, x) ) = x .
    
-   expression-assumption %automatic xorTrueLeft using x : 
-   (x : bool)  |= 
-   neg(x) = xor( (True, x) ) .
-   
-   expression-assumption %automatic xorFalseLeft using x : 
+    expression-assumption %automatic xorFalseLeft using x : 
    (x : bool)  |= 
    xor( (False, x) ) = x .
- 
+   
+   expression-assumption %automatic falseXor using x : 
+   (x : bool)  |= 
+   xor( (False, False) ) = False . 
+
    expression-assumption %manual xor-idem-2 using x, y :
     (x : bool) (y : bool) |=
     xor( (x, xor((y, x ))) ) = y .
@@ -104,7 +104,7 @@ expression-assumption %manual and-distrib-xor using x, y, z :
     (x3 : bool) (x4 : bool) |=
     xor( ( xor((x1, x2)) , xor((x3, x4)) ) ) 
     =
-    xor( ( xor((x1, x3)) , xor((x2, x4)) ) ) .
+    xor( ( xor((x1, x3)) , xor((x2, x4)) ) )  .
 
     expression-assumption %manual middle-xor using x1, x2, x3, x4 : 
     (x1 : bool) (x2 : bool)
@@ -144,6 +144,7 @@ expression-assumption %manual and-distrib-xor using x, y, z :
     )
     )
     .
+
 
 hypothesis not (isNotGate(0)) .
 hypothesis not (isXorGate(0)) .
