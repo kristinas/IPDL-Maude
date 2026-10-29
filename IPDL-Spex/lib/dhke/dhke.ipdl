@@ -36,18 +36,20 @@ reaction-assumption mulFixedMsg using k m :
    samp unif_msg(())
      .
 
-approx-assumption ddh using ka kb :
+approx-assumption ddh using ka kb ddh :
  (chn ddh :: msg * (msg * msg)) ; no inputs ; no assumptions |=
- ddh ::= preNF(nil, ka : key <- samp unif_key(()) ;
+ ddh ::= preNF(nil, nothing,  
+                    ka : key <- samp unif_key(()) ;
                     kb : key <- samp unif_key(()) ;
                     return ( exp((g(()), ka)),
                              ( exp((g(()), kb)),
                                exp( (exp((g(()), ka)), kb) )
                              )
                            )
-               )
+               )              
  =
- ddh ::= preNF(nil, ka : key <- samp unif_key(()) ;
+ ddh ::= preNF(nil, nothing,
+                    ka : key <- samp unif_key(()) ;
                     kb : key <- samp unif_key(()) ;
                     kr : key <- samp unif_key(()) ;
                     return ( exp((g(()), ka)),
@@ -370,57 +372,78 @@ protocol realOTP =
      )
   .
 
-approx subproof dhkeProof =
-subst chn Send-Alice-Bob into chn Recv-Alice-Bob then
-fold chn Send-Alice-Bob into chn LeakPublicKey-AliceAdvNet then
-subst chn Send-Bob-Alice into chn Recv-Bob-Alice then
-fold chn Send-Bob-Alice into chn LeakPublicKey-BobAdvNet then
-fold chn Recv-Alice-Bob into chn Key-Bob then
-fold chn Recv-Bob-Alice into chn Key-Alice then
-use expression assumption commute on chn Key-Alice at 1 then
+begin approx proof
+
+ start with realDHKE over deltaDHKE
+
+ subst chn Send-Alice-Bob into chn Recv-Alice-Bob
+
+fold chn Send-Alice-Bob into chn LeakPublicKey-AliceAdvNet
+
+subst chn Send-Bob-Alice into chn Recv-Bob-Alice
+
+fold chn Send-Bob-Alice into chn LeakPublicKey-BobAdvNet 
+
+fold chn Recv-Alice-Bob into chn Key-Bob 
+
+fold chn Recv-Bob-Alice into chn Key-Alice
+    
+use expression assumption commute on chn Key-Alice at 1
+
+ 
 add internal channel SharedKey typed: msg
     assigned:
       ka : key <- read SecretKey-Alice ;
       kb : key <- read SecretKey-Bob ;
-      return exp((exp((g(()), ka)), kb)) then
+      return exp((exp((g(()), ka)), kb)) 
+      
 sym from change chn  Key-Alice with
   ob : msg <- read OkPublicKey-BobAdvNet ;
   sk : msg <- read SharedKey ;
   return sk
 in currentProtocol(
     subst chn SharedKey into chn Key-Alice
-)  then
+) 
+
 sym from change chn  Key-Bob with
   oa : msg <- read OkPublicKey-AliceAdvNet ;
   sk : msg <- read SharedKey ;
   return sk
 in currentProtocol(
     subst chn SharedKey into chn Key-Bob
-) then
+) 
+
 add internal channel PublicKey-Alice typed: msg
- assigned: ka : key <- read SecretKey-Alice ; return exp((g(()), ka))  then
+ assigned: ka : key <- read SecretKey-Alice ; return exp((g(()), ka)) 
+ 
 sym from change chn LeakPublicKey-AliceAdvNet with
   pka : msg <- read PublicKey-Alice ; return pka
 in currentProtocol (
     subst chn PublicKey-Alice into chn  LeakPublicKey-AliceAdvNet
-) then
+) 
+
 add internal channel PublicKey-Bob typed: msg
- assigned: kb : key <- read SecretKey-Bob ; return exp((g(()), kb))  then
+ assigned: kb : key <- read SecretKey-Bob ; return exp((g(()), kb))
+ 
 sym from change chn LeakPublicKey-BobAdvNet with
   pkb : msg <- read PublicKey-Bob ; return pkb
 in currentProtocol (
     subst chn PublicKey-Bob into chn  LeakPublicKey-BobAdvNet
-) then
+) 
+
 sym from change chn PublicKey-Alice with
  ka : key <- read SecretKey-Alice ; kb : key <- read SecretKey-Bob ; return exp((g(()), ka))
 in currentProtocol(
     drop read chn SecretKey-Bob from chn PublicKey-Alice
-) then
+) 
+
 sym from change chn PublicKey-Bob with
  ka : key <- read SecretKey-Alice ; kb : key <- read SecretKey-Bob ; return exp((g(()), kb))
 in currentProtocol(
     drop read chn SecretKey-Alice from chn PublicKey-Bob
-) then
+) 
+
+
 add internal channel DDH3 typed: msg * (msg * msg)
 assigned:
  ka : key <- read SecretKey-Alice ;
@@ -432,25 +455,33 @@ assigned:
                    )
                  )
              )
-        ) then
+        ) 
+        
+        
 sym from change chn SharedKey with
  ddh : msg * (msg * msg) <- read DDH3 ; return snd snd ddh
  in currentProtocol(
   subst chn DDH3 into chn SharedKey
- )  then
+ )  
+ 
  sym from change chn PublicKey-Alice with
  ddh : msg * (msg * msg) <- read DDH3 ; return fst ddh
  in currentProtocol(
   subst chn DDH3 into chn PublicKey-Alice
- ) then
+ ) 
+ 
  sym from change chn PublicKey-Bob with
  ddh : msg * (msg * msg) <- read DDH3 ; return fst snd ddh
  in currentProtocol(
   subst chn DDH3 into chn PublicKey-Bob
- ) then
- fold chn SecretKey-Bob into chn DDH3 then
- fold chn SecretKey-Alice into chn DDH3 then-approx
-use approx assumption ddh on chn DDH3 then-approx
+ ) 
+ 
+ fold chn SecretKey-Bob into chn DDH3
+ 
+ fold chn SecretKey-Alice into chn DDH3 
+
+use approx assumption ddh on chn DDH3
+ 
 sym from
 change chn DDH3 with
  ka : key <- read SecretKey-Alice ;
@@ -477,69 +508,40 @@ assigned: samp unif_key(())
   fold chn Key into chn DDH3 then
   fold chn SecretKey-Bob into chn DDH3 then
   fold chn SecretKey-Alice into chn DDH3
-) then
-subst chn DDH3 into chn SharedKey then
-subst chn DDH3 into chn PublicKey-Alice then
-fold chn DDH3 into chn PublicKey-Bob then
-drop read chn SecretKey-Alice from chn SharedKey then
-drop read chn SecretKey-Bob from chn SharedKey then
-drop read chn SecretKey-Bob from chn PublicKey-Alice then
-drop read chn Key from chn PublicKey-Alice then
-drop read chn SecretKey-Alice from chn PublicKey-Bob then
-drop read chn Key from chn PublicKey-Bob then
-fold chn Key into chn SharedKey then
-use assumption sampExp on chn SharedKey then
+) 
+
+subst chn DDH3 into chn SharedKey 
+
+subst chn DDH3 into chn PublicKey-Alice 
+
+fold chn DDH3 into chn PublicKey-Bob 
+
+drop read chn SecretKey-Alice from chn SharedKey 
+
+drop read chn SecretKey-Bob from chn SharedKey 
+
+drop read chn SecretKey-Bob from chn PublicKey-Alice
+
+drop read chn Key from chn PublicKey-Alice 
+
+drop read chn SecretKey-Alice from chn PublicKey-Bob 
+
+drop read chn Key from chn PublicKey-Bob
+
+fold chn Key into chn SharedKey
+
+use assumption sampExp on chn SharedKey
+
+
 sym from  idealPlusSimDHKE (
 fold chn OkKey-AliceAdvId into chn Key-Alice then
 fold chn OkKey-BobAdvId into chn Key-Bob
-) then
-restructure idealPlusSimDHKE
-.
+) 
 
-begin approx proof
+restructure idealPlusSimDHKE 
 
- start with realOTP over delta
-
- fold chn Recv into chn Out
-
- subst chn Send into chn Out
-
- fold chn Send into chn LeakCtxtNetAdv
-
- restructure
-  (gather
-    chn SecretKey-Alice , chn SecretKey-Bob ,
-    chn Send-Alice-Bob , chn Send-Bob-Alice ,
-    chn Recv-Bob-Alice, chn Recv-Alice-Bob ,
-    chn Key-Alice, chn Key-Bob ,
-    chn LeakPublicKey-AliceAdvNet ,
-    chn LeakPublicKey-BobAdvNet
-   from currentProtocol
-   hiding
-    chn SecretKey-Alice , chn SecretKey-Bob ,
-    chn Send-Alice-Bob , chn Send-Bob-Alice ,
-    chn Recv-Bob-Alice, chn Recv-Alice-Bob )
-
-  eof
-
-    then-approx
- call-approx dhkeProof then-approx
- bring declarations of hidden channels in front then
- subst chn Key-Alice into chn LeakCtxtNetAdv then
- fold chn Key-Alice into chn Out then
- fold chn Key-Bob into chn Out then
- drop read chn SharedKey from chn Out then
- fold chn SharedKey into chn LeakCtxtNetAdv then
- use assumption mulFixedMsg on chn LeakCtxtNetAdv then
- sym from idealPlusSimOTP(
-    fold chn OkMsgAdvId into chn Out then
-    fold chn LeakMsgRcvdIdAdv into chn LeakCtxtNetAdv
- ) then
- restructure idealPlusSimOTP
-
- check-proof idealPlusSimOTP
-
- current-protocol
+check-proof idealPlusSimDHKE
  show-bounds
+ size idealPlusSimDHKE
  quit
 
