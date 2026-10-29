@@ -38,7 +38,8 @@ reaction-assumption mulFixedMsg using k m :
 
 approx-assumption ddh using ka kb ddh : 
  (chn ddh :: msg * (msg * msg)) ; no inputs ; no assumptions |=
- ddh ::= preNF(nil, ka : key <- samp unif_key(()) ; 
+ ddh ::= preNF(nil, nothing, 
+                    ka : key <- samp unif_key(()) ; 
                     kb : key <- samp unif_key(()) ; 
                     return ( exp((g(()), ka)),
                              ( exp((g(()), kb)), 
@@ -47,7 +48,8 @@ approx-assumption ddh using ka kb ddh :
                            )
                ) 
  =
- ddh ::= preNF(nil, ka : key <- samp unif_key(()) ; 
+ ddh ::= preNF(nil, nothing, 
+                    ka : key <- samp unif_key(()) ; 
                     kb : key <- samp unif_key(()) ; 
                     kr : key <- samp unif_key(()) ; 
                     return ( exp((g(()), ka)),
@@ -518,7 +520,7 @@ begin approx proof
    hiding 
     chn SecretKey-Alice , chn SecretKey-Bob ,
     chn Send-Alice-Bob , chn Send-Bob-Alice ,
-    chn Recv-Bob-Alice, chn Recv-Alice-Bob ) 
+    chn Recv-Bob-Alice, chn Recv-Alice-Bob )   
      
  call-approx dhkeProof 
  
@@ -526,8 +528,8 @@ begin approx proof
  
  subst chn Key-Alice into chn LeakCtxtNetAdv 
  
- fold chn Key-Alice into chn Out
- 
+ fold chn Key-Alice into chn Out 
+
  fold chn Key-Bob into chn Out 
  
  drop read chn SharedKey from chn Out
