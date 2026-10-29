@@ -167,8 +167,9 @@ sym-approx from
 fold fam Msg[bound q] into fam Enc[bound q]
 
 check-proof idealRL
+size idealRL
 
-eof
+quit
 
 
 channel context deltaLR =
@@ -247,3 +248,4 @@ fold fam MsgL[bound q] into fam Enc[bound q]
 fold fam MsgR[bound q] into fam Enc[bound q]
 
 check-proof idealLR
+size idealLR
