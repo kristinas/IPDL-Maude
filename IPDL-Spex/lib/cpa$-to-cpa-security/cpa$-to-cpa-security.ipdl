@@ -136,3 +136,5 @@ sym-approx from
 fold fam Msg[bound q] into fam Enc[bound q]
 
 check-proof idealRL
+size idealRL
+show-bounds
