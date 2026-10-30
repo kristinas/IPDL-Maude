@@ -46,14 +46,21 @@ protocol idealPlusSim =
   )
  .
 
-start with real over delta then 
-fold chn Key into chn Ctxt then
-fold chn Ctxt into chn LeakCtxtAliceAdv then 
-use assumption flipInvariantXorFixed on chn LeakCtxtAliceAdv then
+begin strict proof
+
+start with real over delta 
+
+fold chn Key into chn Ctxt 
+
+fold chn Ctxt into chn LeakCtxtAliceAdv 
+
+use assumption flipInvariantXorFixed on chn LeakCtxtAliceAdv 
+
 sym from idealPlusSim (
    fold chn LeakCtxtIdAdv into chn LeakCtxtAliceAdv then 
    fold chn Ctxt into chn LeakCtxtAliceAdv
-) then
+) 
+
 restructure idealPlusSim
 
 current-protocol
